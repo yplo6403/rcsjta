@@ -1,0 +1,105 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/save_btn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dip"
+        android:text="@string/cms_toolkit_settings_save_btn" />
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical" >
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_message_folder_label" />
+
+            <EditText
+                android:id="@+id/cms_rcs_message_folder"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+            
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_imap_server_address_label" />
+
+            <EditText
+                android:id="@+id/cms_imap_server_address"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_imap_user_login_label" />
+
+            <EditText
+                android:id="@+id/cms_imap_user_login"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_imap_user_pwd_label" />
+
+            <EditText
+                android:id="@+id/cms_imap_user_pwd"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+            
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_my_number_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_settings_myNumber"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />            
+            
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

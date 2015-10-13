@@ -1,0 +1,115 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/cms_toolkit_create_btn"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dip"
+        android:text="@string/cms_toolkit_create_message_btn_label" />
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical" >
+
+			<TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_direction_label" />
+                        
+            <Spinner
+                android:id="@+id/cms_toolkit_create_message_direction"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:drawSelectorOnTop="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_from_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_create_message_from"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:text="+33600000001" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_to_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_create_message_to"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:text="+33640332859" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_content_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_create_message_content"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:text="my message content" />
+
+            <Button
+                android:id="@+id/cms_toolkit_create_message_select_flags_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_select_flags_label" />
+
+			<TextView
+			    android:id="@+id/cms_toolkit_create_message_selected_flags"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="" />
+			
+			<TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_create_message_number_label" />
+                        
+            <Spinner
+                android:id="@+id/cms_toolkit_create_message_number"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:drawSelectorOnTop="true" />			
+            
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
