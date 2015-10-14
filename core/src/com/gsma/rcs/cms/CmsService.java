@@ -86,6 +86,9 @@ public class CmsService implements IRcsSmsEventListener {
      * @param listener
      */
     public void registerSmsObserverListener(INativeSmsEventListener listener) {
+        if(sLogger.isActivated()){
+            sLogger.debug("registerSmsObserverListener : ".concat(listener.toString()));
+        }
         mSmsObserver.registerListener(listener);
     }
 
@@ -93,6 +96,9 @@ public class CmsService implements IRcsSmsEventListener {
      * @param listener
      */
     public void unregisterSmsObserverListener(INativeSmsEventListener listener) {
+        if(sLogger.isActivated()){
+            sLogger.debug("unregisterSmsObserverListener : ".concat(listener.toString()));
+        }
         mSmsObserver.unregisterListener(listener);
     }
 

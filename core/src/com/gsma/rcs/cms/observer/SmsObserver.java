@@ -21,18 +21,19 @@ import android.os.Handler;
 import android.provider.BaseColumns;
 import android.provider.Telephony.TextBasedSmsColumns;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class SmsObserver implements INativeSmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(SmsObserver.class.getSimpleName());
 
-    private final TreeSet<INativeSmsEventListener> sSmsEventListeners = new TreeSet<INativeSmsEventListener>();
+    private final List<INativeSmsEventListener> sSmsEventListeners = new ArrayList<INativeSmsEventListener>();
     // Uri used when:
     // - an outgoing sms is sent and delivered
     // - an message or conversation is deleted
@@ -315,12 +316,12 @@ public class SmsObserver implements INativeSmsEventListener {
     public void onIncomingSms(SmsData message) {
         if(sLogger.isActivated()){
             sLogger.debug("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
+            sLogger.debug("listeners size : ".concat(String.valueOf(sSmsEventListeners.size())));
         }
         message.setPushStatus(PushStatus.PUSH_REQUESTED);
         synchronized (sSmsEventListeners) {
-            Iterator<INativeSmsEventListener> iter = sSmsEventListeners.iterator();
-            while (iter.hasNext()) {
-                iter.next().onIncomingSms(message);
+            for(INativeSmsEventListener listener : sSmsEventListeners){
+                listener.onIncomingSms(message);
             }
         }
     }
@@ -332,9 +333,8 @@ public class SmsObserver implements INativeSmsEventListener {
         }
         message.setPushStatus(PushStatus.PUSH_REQUESTED);
         synchronized (sSmsEventListeners) {
-            Iterator<INativeSmsEventListener> iter = sSmsEventListeners.iterator();
-            while (iter.hasNext()) {
-                iter.next().onOutgoingSms(message);
+            for(INativeSmsEventListener listener : sSmsEventListeners){
+                listener.onOutgoingSms(message);
             }
         }
     }
@@ -345,9 +345,8 @@ public class SmsObserver implements INativeSmsEventListener {
             sLogger.debug("onDeliverNativeSms : ".concat(String.valueOf(nativeProviderId)));
         }
         synchronized (sSmsEventListeners) {
-            Iterator<INativeSmsEventListener> iter = sSmsEventListeners.iterator();
-            while (iter.hasNext()) {
-                iter.next().onDeliverNativeSms(nativeProviderId, sentDate);
+            for(INativeSmsEventListener listener : sSmsEventListeners){
+                listener.onDeliverNativeSms(nativeProviderId, sentDate);
             }
         }
     }
@@ -387,15 +386,4 @@ public class SmsObserver implements INativeSmsEventListener {
             }
         }
     }
-
-    @Override
-    public int getPriority() {
-        return PRIORITY_LOW;
-    }
-
-    @Override
-    public int compareTo(INativeSmsEventListener another) {
-        return 0;
-    }
-
 }

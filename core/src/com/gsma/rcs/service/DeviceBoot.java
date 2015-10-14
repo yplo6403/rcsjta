@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.service;
 
+import com.gsma.rcs.cms.CmsService;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -41,5 +42,6 @@ public class DeviceBoot extends BroadcastReceiver {
         LocalContentResolver localContentResolver = new LocalContentResolver(context);
         RcsSettings rcsSettings = RcsSettings.createInstance(localContentResolver);
         LauncherUtils.launchRcsService(context, true, false, rcsSettings);
+        CmsService.createInstance(context);
     }
 }

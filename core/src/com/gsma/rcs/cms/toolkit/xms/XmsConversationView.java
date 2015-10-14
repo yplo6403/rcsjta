@@ -349,16 +349,6 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
     }
 
     @Override
-    public int getPriority() {
-        return PRIORITY_LOW;
-    }
-    
-    @Override
-    public int compareTo(INativeSmsEventListener another) {
-        return another.getPriority() - getPriority();
-    } 
-    
-    @Override
     public void onBasicSynchronizationTaskExecuted(String[] params, Boolean result) {
         if(sLogger.isActivated()){
             sLogger.info("onBasicSynchronizationTaskExecuted");

@@ -297,19 +297,4 @@ public class ImapCommandController  implements INativeSmsEventListener, IRcsSmsE
             sLogger.info("onUpdateFlagTaskExecuted");    
         }
     }
-
-
-
-    @Override
-    public int getPriority() {
-        return PRIORITY_MEDIUM;
-    }
-
-    @Override
-    public int compareTo(INativeSmsEventListener another) {
-        return another.getPriority() - getPriority();
-    }
-
-
-  
 }

@@ -185,16 +185,6 @@ public class SmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
         }
         mXmsLog.updateDeleteStatus(contact, DeleteStatus.DELETED_REQUESTED);
     }
-    
-    @Override
-    public int getPriority() {
-        return PRIORITY_HIGH;
-    }
-
-    @Override
-    public int compareTo(INativeSmsEventListener another) {
-        return another.getPriority() - getPriority();
-    }
 
     @Override
     public Set<FlagChange> getLocalEvents(String folder) {        

@@ -1,6 +1,35 @@
 
 package com.gsma.rcs.cms.toolkit.xms;
 
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.CursorAdapter;
+import android.text.format.DateUtils;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.CmsService;
 import com.gsma.rcs.cms.event.INativeSmsEventListener;
@@ -19,39 +48,13 @@ import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-import android.text.format.DateUtils;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.LayoutInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
+public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeSmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class XmsList extends Activity implements INativeSmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
-
+    /**
+     * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
+     */
+    protected static final int LOADER_ID = 1;
     private static final Logger sLogger = Logger.getLogger(XmsList.class.getSimpleName());
-    
     private final static String SORT = new StringBuilder(
             XmsData.KEY_DATE).append(" DESC").toString();
 
@@ -67,29 +70,28 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
             XmsData.KEY_DIRECTION,
             XmsData.KEY_READ_STATUS
     };
-    
-    
-    private final static int MESSAGE_MAX_SIZE =25;
-    
+
+
+    private final static int MESSAGE_MAX_SIZE = 25;
+
     private final static int MENU_ITEM_DELETE_CONV = 1;
-    
+
     private ListView mListview;
-    private ArrayAdapter<SmsData> mArrayAdapter;
-    private final List<SmsData> mMessages = new ArrayList<SmsData>();
+    private SmsLogAdapter mAdapter;
     private CmsService mCmsService;
 
     private TextView mSyncButton;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.rcs_cms_toolkit_xms_list);
 
-        mArrayAdapter = new SmsLogAdapter(this);
+        mAdapter = new SmsLogAdapter(this);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
         mListview = (ListView) findViewById(android.R.id.list);
         mListview.setEmptyView(emptyView);
-        mListview.setAdapter(mArrayAdapter);
+        mListview.setAdapter(mAdapter);
         registerForContextMenu(mListview);
         mListview.setOnItemClickListener(getOnItemClickListener());
         Button sendButton = (Button) findViewById(R.id.rcs_cms_toolkit_xms_sendBtn);
@@ -101,177 +103,62 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
 
         });
 
-        mSyncButton = (TextView)findViewById(R.id.rcs_cms_toolkit_sync_btn);
-        mSyncButton.setOnClickListener(new OnClickListener(){
+        mSyncButton = (TextView) findViewById(R.id.rcs_cms_toolkit_sync_btn);
+        mSyncButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                try {      
+                try {
                     new BasicSynchronizationTask(
-                            ImapServiceManager.getService(CmsSettings.getInstance()),                 
+                            ImapServiceManager.getService(CmsSettings.getInstance()),
                             LocalStorage.createInstance(ImapLog.getInstance(getApplicationContext())),
                             XmsList.this
-                            ).execute(new String[] {});
-                } catch (ImapServiceNotAvailableException e) {                
+                    ).execute(new String[]{});
+                } catch (ImapServiceNotAvailableException e) {
                     Toast.makeText(XmsList.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
-                }                 
+                }
             }
-            
+
         });
-        
-        mCmsService = CmsService.getInstance();                
-           
+
+        mCmsService = CmsService.getInstance();
     }
 
     @Override
     protected void onResume() {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onResume");
         }
         super.onResume();
         mCmsService.registerSmsObserverListener(this);
-        checkImapServiceStatus();       
-        queryProvider();
+        checkImapServiceStatus();
+        refreshView();
     }
+
     @Override
     protected void onPause() {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onPause");
+        }
         super.onPause();
         mCmsService.unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
-    
-    
+
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mCmsService.unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
-    
-    /**
-     * Messaging log adapter
-     */
-    private class SmsLogAdapter extends ArrayAdapter<SmsData> {
-        private Context mContext;
-
-        private Drawable mDrawableIncoming;
-        private Drawable mDrawableOutgoing;
-        
-        public SmsLogAdapter(Context context) {
-            super(context, R.layout.rcs_cms_toolkit_xms_list_item, mMessages);
-            
-            mDrawableIncoming = context.getResources().getDrawable(
-                    R.drawable.rcs_cms_toolkit_xms_incoming_call);
-            mDrawableOutgoing = context.getResources().getDrawable(
-                    R.drawable.rcs_cms_toolkit_xms_outgoing_call);            
-            mContext = context;
-        }
-
-        private class ViewHolder {
-
-            TextView mContact;
-            TextView mContent;
-            TextView mDate;
-            ImageView mDirection;     
-            int defaultColor;
-
-            ViewHolder(View view) {
-                mContact = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_contact);
-                mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);                
-                mDate = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_date);
-                mDirection = (ImageView) view.findViewById(R.id.rcs_cms_toolkit_xms_direction_icon);
-                defaultColor = mContent.getTextColors().getDefaultColor();
-            }
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
-            ViewHolder viewHolder;
-            if (convertView == null) {
-                convertView = inflater.inflate(R.layout.rcs_cms_toolkit_xms_list_item, parent, false);
-                viewHolder = new ViewHolder(convertView);
-                convertView.setTag(viewHolder);
-            } else {
-                viewHolder = (ViewHolder) convertView.getTag();
-            }
-
-            SmsData msg = mMessages.get(position);
-
-            // Set the date/time field by mixing relative and absolute times
-            long date = msg.getDate();
-            viewHolder.mDate.setText(DateUtils.getRelativeTimeSpanString(date,
-                    System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.FORMAT_ABBREV_RELATIVE));
-
-            // Set the status text and destination icon
-            
-            switch (msg.getDirection()) {
-                case INCOMING:
-                        viewHolder.mDirection.setImageDrawable(mDrawableIncoming);
-                    break;
-                case OUTGOING:
-                        viewHolder.mDirection.setImageDrawable(mDrawableOutgoing);
-                case IRRELEVANT:
-                    break;
-            }            
-            viewHolder.mContact.setText(msg.getContact());
-            viewHolder.mContent.setText(truncate(msg.getContent()));
-
-            viewHolder.mContact.setTypeface(null,Typeface.NORMAL);
-            viewHolder.mContent.setTypeface(null,Typeface.NORMAL);
-            viewHolder.mContent.setTextColor(viewHolder.defaultColor);
-            viewHolder.mContact.setTextColor(viewHolder.defaultColor);
-            if(msg.getReadStatus() == ReadStatus.UNREAD){
-                viewHolder.mContact.setTextColor(Color.GREEN);
-                viewHolder.mContact.setTypeface(null, Typeface.BOLD|Typeface.ITALIC);
-                viewHolder.mContent.setTextColor(Color.GREEN);
-                viewHolder.mContent.setTypeface(null, Typeface.BOLD|Typeface.ITALIC);
-            }            
-            return convertView;
-        }
-    }
-
-    protected void queryProvider() { 
-            mMessages.clear();
-            Cursor cursor = null;
-            try {
-                cursor = getContentResolver().query(XmsData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, null, SORT);
-
-                int baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
-                int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_PROVIDER_ID);                
-                int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
-                int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DATE);
-                int directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
-                int readIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
-                while (cursor.moveToNext()) {                    
-                    SmsData smsData = new SmsData(
-                            cursor.getLong(nativeProviderIdIdx),
-                            cursor.getString(contactIdx),
-                            cursor.getString(contentIdx),
-                            cursor.getLong(dateIdx),
-                            Direction.valueOf(cursor.getInt(directionIdx)),
-                            ReadStatus.valueOf(cursor.getInt(readIdx))
-                            );
-                    smsData.setBaseId(cursor.getString(baseIdIdx));
-                    mMessages.add(smsData);
-                }
-
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
-                }
-            }
-        mArrayAdapter.notifyDataSetChanged();
-    }
 
     private OnItemClickListener getOnItemClickListener() {
         return new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
-               SmsData sms = (SmsData) (parent.getAdapter()).getItem(pos);
-               startActivity(XmsConversationView.forgeIntentToStart(XmsList.this, sms.getContact()));
+                Cursor cursor = (Cursor)(parent.getAdapter()).getItem(pos);
+                startActivity(XmsConversationView.forgeIntentToStart(XmsList.this, cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT))));
             }
         };
     }
@@ -279,31 +166,25 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        menu.add(0, MENU_ITEM_DELETE_CONV, MENU_ITEM_DELETE_CONV, R.string.rcs_cms_toolkit_xms_conversation_delete);        
+        menu.add(0, MENU_ITEM_DELETE_CONV, MENU_ITEM_DELETE_CONV, R.string.rcs_cms_toolkit_xms_conversation_delete);
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        SmsData message = mArrayAdapter.getItem(info.position);                        
-        mMessages.remove(message);
-        mArrayAdapter.notifyDataSetChanged(); 
-        CmsService.getInstance().onDeleteRcsConversation(message.getContact());                
+        Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
+        CmsService.getInstance().onDeleteRcsConversation(cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT)));
+        refreshView();
         return true;
     }
-    
-    private void refreshView(){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                queryProvider();
-            }
-        });        
+
+    private void refreshView() {
+        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
     }
-    
+
     @Override
     public void onIncomingSms(SmsData message) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onIncomingSms");
         }
         refreshView();
@@ -311,7 +192,7 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
 
     @Override
     public void onOutgoingSms(SmsData message) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onOutgoingSms");
         }
         refreshView();
@@ -320,85 +201,73 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
     @Override
     public void onDeliverNativeSms(long nativeProviderId, long sentDate) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void onDeleteNativeConversation(String contact) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeConversation");
         }
-        refreshView();            
+        refreshView();
     }
-    
+
     @Override
     public void onReadNativeSms(long nativeProviderId) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onReadNativeSms");
         }
-        refreshView();      
+        refreshView();
     }
 
     @Override
     public void onDeleteNativeSms(long nativeProviderId) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.debug("onReadNativeSms");
         }
-        refreshView();        
+        refreshView();
     }
 
     @Override
-    public int getPriority() {
-        return PRIORITY_LOW;
-    }
-    
-    @Override
-    public int compareTo(INativeSmsEventListener another) {
-        return another.getPriority() - getPriority();
-    } 
-    
-    @Override
     public void onBasicSynchronizationTaskExecuted(String[] params, Boolean result) {
-        if(sLogger.isActivated()){
+        if (sLogger.isActivated()) {
             sLogger.info("onBasicSynchronizationTaskExecuted");
         }
-        if(!result){
+        if (!result) {
             Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
-        }        
+        }
         displaySyncButton(true);
-        queryProvider();        
-        mListview.setSelection(0);  
+        refreshView();
+        mListview.setSelection(0);
     }
-       
-    private String truncate(String content){
-        if(content.length() > MESSAGE_MAX_SIZE){
+
+    private String truncate(String content) {
+        if (content.length() > MESSAGE_MAX_SIZE) {
             content = content.substring(0, MESSAGE_MAX_SIZE);
             content = content.concat("...");
         }
         return content;
-        
+
     }
-    
-    private void checkImapServiceStatus(){
-        if(!ImapServiceManager.isAvailable()){
+
+    private void checkImapServiceStatus() {
+        if (!ImapServiceManager.isAvailable()) {
             ImapServiceManager.registerListener(this);
             displaySyncButton(false);
-        }
-        else{
+        } else {
             displaySyncButton(true);
         }
     }
-    
-    private void displaySyncButton(boolean display){
-        if(display){
-            mSyncButton.setVisibility(View.VISIBLE); 
-            findViewById(R.id.rcs_cms_toolkit_xms_progressbar).setVisibility(View.GONE);            
+
+    private void displaySyncButton(boolean display) {
+        if (display) {
+            mSyncButton.setVisibility(View.VISIBLE);
+            findViewById(R.id.rcs_cms_toolkit_xms_progressbar).setVisibility(View.GONE);
+        } else {
+            mSyncButton.setVisibility(View.GONE);
+            findViewById(R.id.rcs_cms_toolkit_xms_progressbar).setVisibility(View.VISIBLE);
+
         }
-        else{
-            mSyncButton.setVisibility(View.GONE); 
-            findViewById(R.id.rcs_cms_toolkit_xms_progressbar).setVisibility(View.VISIBLE);            
-            
-        }    
     }
 
     @Override
@@ -406,7 +275,135 @@ public class XmsList extends Activity implements INativeSmsEventListener, BasicS
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                displaySyncButton(true);            }
+                displaySyncButton(true);
+            }
         });
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        /* Create a new CursorLoader with the following query parameters. */
+        return new CursorLoader(this, XmsData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, null, SORT);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        /* A switch-case is useful when dealing with multiple Loaders/IDs */
+        switch (loader.getId()) {
+            case LOADER_ID:
+                /*
+                 * The asynchronous load is complete and the data is now available for use. Only now
+                 * can we associate the queried Cursor with the CursorAdapter.
+                 */
+                mAdapter.swapCursor(cursor);
+                break;
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {        /*
+         * For whatever reason, the Loader's data is now unavailable. Remove any references to the
+         * old data by replacing it with a null Cursor.
+         */
+        mAdapter.swapCursor(null);
+    }
+
+    /**
+     * Messaging log adapter
+     */
+    private class SmsLogAdapter extends CursorAdapter {
+
+        private LayoutInflater mInflater;
+        private Drawable mDrawableIncoming;
+        private Drawable mDrawableOutgoing;
+
+        public SmsLogAdapter(Context context) {
+            super(context, null, 0);
+            mInflater = LayoutInflater.from(context);
+            mContext = context;
+
+            mDrawableIncoming = context.getResources().getDrawable(
+                    R.drawable.rcs_cms_toolkit_xms_incoming_call);
+            mDrawableOutgoing = context.getResources().getDrawable(
+                    R.drawable.rcs_cms_toolkit_xms_outgoing_call);
+            mContext = context;
+        }
+
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+            final ViewHolder holder = (ViewHolder) view.getTag();
+
+            // Set the date/time field by mixing relative and absolute times
+            long date = cursor.getLong(holder.dateIdx);
+            holder.mDate.setText(DateUtils.getRelativeTimeSpanString(date,
+                    System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
+                    DateUtils.FORMAT_ABBREV_RELATIVE));
+
+            // Set the status text and destination icon
+            Direction direction = Direction.valueOf(cursor.getInt(holder.directionIdx));
+            switch (direction) {
+                case INCOMING:
+                    holder.mDirection.setImageDrawable(mDrawableIncoming);
+                    break;
+                case OUTGOING:
+                    holder.mDirection.setImageDrawable(mDrawableOutgoing);
+                case IRRELEVANT:
+                    break;
+            }
+            holder.mContact.setText(cursor.getString(holder.contactIdx));
+            holder.mContent.setText(truncate(cursor.getString(holder.contentIdx)));
+            holder.mContact.setTypeface(null, Typeface.NORMAL);
+            holder.mContent.setTypeface(null, Typeface.NORMAL);
+            holder.mContent.setTextColor(holder.defaultColor);
+            holder.mContact.setTextColor(holder.defaultColor);
+            ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(holder.readIdx));
+            if (readStatus == ReadStatus.UNREAD) {
+                holder.mContact.setTextColor(Color.GREEN);
+                holder.mContact.setTypeface(null, Typeface.BOLD | Typeface.ITALIC);
+                holder.mContent.setTextColor(Color.GREEN);
+                holder.mContent.setTypeface(null, Typeface.BOLD | Typeface.ITALIC);
+            }
+        }
+
+        @Override
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            final View view = mInflater.inflate(R.layout.rcs_cms_toolkit_xms_list_item, parent, false);
+            view.setTag(new ViewHolder(view, cursor));
+            return view;
+        }
+
+        private class ViewHolder {
+
+            TextView mContact;
+            TextView mContent;
+            TextView mDate;
+            ImageView mDirection;
+            int defaultColor;
+
+            int baseIdIdx;
+            int nativeProviderIdIdx;
+            int contactIdx;
+            int contentIdx;
+            int dateIdx;
+            int directionIdx;
+            int readIdx;
+
+            ViewHolder(View view, Cursor cursor) {
+
+                baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
+                nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_PROVIDER_ID);
+                contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
+                dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DATE);
+                directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
+                readIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
+
+                mContact = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_contact);
+                mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);
+                mDate = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_date);
+                mDirection = (ImageView) view.findViewById(R.id.rcs_cms_toolkit_xms_direction_icon);
+                defaultColor = mContent.getTextColors().getDefaultColor();
+            }
+        }
     }
 }
