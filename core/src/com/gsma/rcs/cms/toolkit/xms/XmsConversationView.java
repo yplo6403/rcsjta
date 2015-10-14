@@ -11,6 +11,7 @@ import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationT
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.XmsData;
+import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.DeleteStatus;
 import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
@@ -18,12 +19,15 @@ import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.text.format.DateUtils;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -34,21 +38,22 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class XmsConversationView extends Activity implements INativeSmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
+public class XmsConversationView extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeSmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
     private final static Logger sLogger = Logger.getLogger(XmsConversationView.class.getSimpleName());
-    
+
+    /**
+     * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
+     */
+    protected static final int LOADER_ID = 1;
+
     private final static String SORT = new StringBuilder(
             XmsData.KEY_DATE).append(" ASC").toString();
 
@@ -65,9 +70,8 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
             XmsData.KEY_READ_STATUS,
     }; 
         
-    private ArrayAdapter<SmsData> mArrayAdapter;
-    private final List<SmsData> mMessages = new ArrayList<SmsData>();
-
+    private SmsLogAdapter mAdapter;
+    private XmsLog mXmsLog;
     private final static String EXTRA_CONTACT = "contact";
 
     private String mContact;
@@ -85,16 +89,16 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
         setContentView(R.layout.rcs_cms_toolkit_xms_conversation_view);
         
         mContact = getIntent().getStringExtra(EXTRA_CONTACT);
-        
-        mArrayAdapter = new SmsLogAdapter(this);        
+        mXmsLog = XmsLog.getInstance(getApplicationContext());
+        mAdapter = new SmsLogAdapter(this);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
         mListView = (ListView) findViewById(android.R.id.list);
         mListView.setEmptyView(emptyView);
-        mListView.setAdapter(mArrayAdapter);        
+        mListView.setAdapter(mAdapter);
         registerForContextMenu(mListView);
                 
         mContent = (EditText) findViewById(R.id.rcs_cms_toolkit_xms_send_content);
-        ((Button) findViewById(R.id.rcs_cms_toolkit_xms_send_message_btn)).setOnClickListener(new OnClickListener(){
+        (findViewById(R.id.rcs_cms_toolkit_xms_send_message_btn)).setOnClickListener(new OnClickListener(){
             @Override
             public void onClick(View v) {
                 new SmsSender(getApplicationContext(), mContact, mContent.getText().toString()).send();
@@ -128,11 +132,11 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
     @Override
     protected void onResume() {
         super.onResume();              
-        mCmsService.registerSmsObserverListener(this);                
-        if(queryProvider(mContact)){
-            markConversationAsRead(mContact);    
-        }        
-        mListView.setSelection(mArrayAdapter.getCount());           
+        mCmsService.registerSmsObserverListener(this);
+        refreshView();
+        if(!mXmsLog.getMessages(mContact, ReadStatus.UNREAD).isEmpty()){
+            markConversationAsRead(mContact);
+        }
         checkImapServiceStatus();
     }
     
@@ -150,118 +154,90 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
         mCmsService.unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
-    
+
     /**
      * Messaging log adapter
      */
-    private class SmsLogAdapter extends ArrayAdapter<SmsData> {
-        private Context mContext;
+    private class SmsLogAdapter extends CursorAdapter {
+
+        private LayoutInflater mInflater;
+        private Drawable mItemRight;
+        private Drawable mItemLeft;
 
         public SmsLogAdapter(Context context) {
-            super(context, R.layout.rcs_cms_toolkit_xms_conversation_item, mMessages);
-            mContext = context;
+            super(context, null, 0);
+            mInflater = LayoutInflater.from(context);
+            mItemRight = context.getResources().getDrawable(R.drawable.msg_item_right);
+            mItemLeft = context.getResources().getDrawable(R.drawable.msg_item_left);
         }
 
         private class ViewHolder {
 
             RelativeLayout mItemLayout;
             TextView mContent;
-            TextView mDate;                  
-            Drawable mItemRight;
-            Drawable mItemLeft;
+            TextView mDate;
 
-            ViewHolder(View view) {
+            int baseIdIdx;
+            int nativeProviderIdIdx;
+            int contactIdx;
+            int contentIdx;
+            int dateIdx;
+            int directionIdx;
+            int readStatusIdx;
+
+
+            ViewHolder(View view, Cursor cursor) {
+
+                baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
+                nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_PROVIDER_ID);
+                contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
+                dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DATE);
+                directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
+                readStatusIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
+
                 mItemLayout = (RelativeLayout) view.findViewById(R.id.rcs_cms_toolkit_xms_conv_item);
-                mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);                
-                mDate = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_date);                
-                mItemRight = mContext.getResources().getDrawable(R.drawable.msg_item_right);
-                mItemLeft = mContext.getResources().getDrawable(R.drawable.msg_item_left);
+                mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);
+                mDate = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_date);
             }
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            LayoutInflater inflater = ((Activity) mContext).getLayoutInflater();
-            ViewHolder viewHolder;
-            if (convertView == null) {
-                convertView = inflater.inflate(R.layout.rcs_cms_toolkit_xms_conversation_item, parent, false);
-                viewHolder = new ViewHolder(convertView);
-                convertView.setTag(viewHolder);
-            } else {
-                viewHolder = (ViewHolder) convertView.getTag();
-            }
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            final View view = mInflater.inflate(R.layout.rcs_cms_toolkit_xms_conversation_item, parent, false);
+            view.setTag(new ViewHolder(view, cursor));
+            return view;
+        }
 
-            SmsData msg = mMessages.get(position);
+        @Override
+        public void bindView(View view, Context context, Cursor cursor) {
+            final ViewHolder holder = (ViewHolder) view.getTag();
 
             // Set the date/time field by mixing relative and absolute times
-            long date = msg.getDate();
-            viewHolder.mDate.setText(DateUtils.getRelativeTimeSpanString(date,
+            long date = cursor.getLong(holder.dateIdx);
+            holder.mDate.setText(DateUtils.getRelativeTimeSpanString(date,
                     System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
                     DateUtils.FORMAT_ABBREV_RELATIVE));
-            viewHolder.mContent.setText(msg.getContent());
-            
-            
+            holder.mContent.setText(cursor.getString(holder.contentIdx));
+
+
             RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
                     RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-            switch (msg.getDirection()) {
+            switch (Direction.valueOf(cursor.getInt(holder.directionIdx))) {
                 case INCOMING:
                     lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-                    viewHolder.mItemLayout.setBackgroundDrawable(viewHolder.mItemRight);
+                    holder.mItemLayout.setBackgroundDrawable(mItemRight);
                     break;
                 case OUTGOING:
-                    viewHolder.mItemLayout.setBackgroundDrawable(viewHolder.mItemLeft);
-                    lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);                        
+                    holder.mItemLayout.setBackgroundDrawable(mItemLeft);
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
                 case IRRELEVANT:
                     break;
             }
 
-            viewHolder.mItemLayout.setLayoutParams(lp);                        
-            return convertView;
+            holder.mItemLayout.setLayoutParams(lp);
         }
-    }
 
-    /**
-     * Return true if the conversation should be considered as read
-     * ie at least one message is unread in content provider
-     * @param contact
-     * @return
-     */
-    protected Boolean queryProvider(String contact) { 
-            mMessages.clear();
-            Boolean markConversationAsRead = false;
-            Cursor cursor = null;
-            try {
-                cursor = getContentResolver().query(XmsData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, new String[]{contact}, SORT);
-                int baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
-                int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_PROVIDER_ID);                
-                int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
-                int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DATE);
-                int directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);     
-                int readStatusIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
-                while (cursor.moveToNext()) {
-                    ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(readStatusIdx));
-                    if(ReadStatus.UNREAD == readStatus){
-                        markConversationAsRead = true;
-                    }
-                    SmsData mySmsMessage = new SmsData(
-                            cursor.getLong(nativeProviderIdIdx),
-                            cursor.getString(contactIdx),
-                            cursor.getString(contentIdx),
-                            cursor.getLong(dateIdx),
-                            Direction.valueOf(cursor.getInt(directionIdx)),
-                            readStatus
-                            );                          
-                    mySmsMessage.setBaseId(cursor.getString(baseIdIdx));
-                    mMessages.add(mySmsMessage);
-                }
-                mArrayAdapter.notifyDataSetChanged();
-                return markConversationAsRead;
-            } finally {
-                if (cursor!=null) {
-                    cursor.close();
-                }
-            }        
     }
 
     /**
@@ -279,25 +255,20 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
     }
     
     private void refreshView(){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mArrayAdapter.notifyDataSetChanged();
-                mListView.smoothScrollToPosition(mListView.getLastVisiblePosition()+1);
-            }
-        });        
+        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
     }
     
     @Override
     public void onIncomingSms(SmsData message) {
+        if(!message.getContact().equals(mContact)){
+            return;
+        }
         markMessageAsRead(message.getContact(), message.getBaseId());
-        mMessages.add(message);
         refreshView();
     }
 
     @Override
     public void onOutgoingSms(SmsData message) {
-        mMessages.add(message);
         refreshView();
     }
 
@@ -333,10 +304,9 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        SmsData message = mArrayAdapter.getItem(info.position);                            
-        mMessages.remove(message);
-        mArrayAdapter.notifyDataSetChanged();                
-        CmsService.getInstance().onDeleteRcsSms(mContact, message.getBaseId());
+        Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
+        CmsService.getInstance().onDeleteRcsSms(mContact, cursor.getString(cursor.getColumnIndex(XmsData.KEY_BASECOLUMN_ID)));
+        refreshView();
         return true;
     }
     
@@ -345,6 +315,7 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
     }
 
     private void markMessageAsRead(String contact, String baseId){
+        XmsLog.getInstance(getApplicationContext()).getMessages(mContact, ReadStatus.UNREAD);
         CmsService.getInstance().onReadRcsMessage(contact, baseId);
     }
 
@@ -355,10 +326,9 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
         }
         if(!result){
             Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
-        }     
-        displaySyncButton(true);           
-        queryProvider(mContact);        
-        mListView.setSelection(mArrayAdapter.getCount());  
+        }
+        displaySyncButton(true);
+        refreshView();
     }
     
     private void checkImapServiceStatus(){
@@ -388,7 +358,38 @@ public class XmsConversationView extends Activity implements INativeSmsEventList
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                displaySyncButton(true);            }
+                displaySyncButton(true);
+            }
         });
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
+        /* Create a new CursorLoader with the following query parameters. */
+        return new CursorLoader(this, XmsData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, new String[]{mContact}, SORT);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        /* A switch-case is useful when dealing with multiple Loaders/IDs */
+        switch (loader.getId()) {
+            case LOADER_ID:
+                /*
+                 * The asynchronous load is complete and the data is now available for use. Only now
+                 * can we associate the queried Cursor with the CursorAdapter.
+                 */
+                mAdapter.swapCursor(cursor);
+                mListView.smoothScrollToPosition(mAdapter.getCount());
+                break;
+        }
+    }
+
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {        /*
+         * For whatever reason, the Loader's data is now unavailable. Remove any references to the
+         * old data by replacing it with a null Cursor.
+         */
+        mAdapter.swapCursor(null);
     }
 }

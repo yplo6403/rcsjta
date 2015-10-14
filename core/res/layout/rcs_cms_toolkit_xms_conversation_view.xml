@@ -12,6 +12,7 @@
         android:layout_above="@+id/rcs_cms_toolkit_xms_send_message_btn"
         android:layout_alignParentTop="true"        
         android:listSelector="@android:drawable/list_selector_background"
+        android:stackFromBottom="true"
         android:scrollbarStyle="outsideOverlay" />
 
     <TextView
