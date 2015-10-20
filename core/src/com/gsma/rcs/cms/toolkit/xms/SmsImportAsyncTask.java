@@ -36,8 +36,9 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
     
     private final String[] PROJECTION_IDS = new String[]{
             BaseColumns._ID};
-    
-    private static final String SELECTION_BASE_ID = new StringBuilder(BaseColumns._ID).append("=?").toString();
+
+    private static final String SELECTION_CONTACT_NOT_NULL = new StringBuilder(TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
+    private static final String SELECTION_BASE_ID = new StringBuilder(BaseColumns._ID).append("=?").append(" AND ").append(SELECTION_CONTACT_NOT_NULL).toString();
     
     private ContentResolver mContentResolver;
     private XmsLog mXmsLog; 
@@ -101,9 +102,6 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
             if(cursor.moveToFirst()) {                
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 String  address = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS));     
-                if(address==null){
-                    return null;
-                }
                 PhoneNumber phoneNumber = ContactUtil
                         .getValidPhoneNumberFromAndroid(address);
                 if(phoneNumber != null){

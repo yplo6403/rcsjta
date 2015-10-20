@@ -39,6 +39,7 @@ public class SmsObserver implements INativeSmsEventListener {
     // - an message or conversation is deleted
     private static String sSmsUri = "content://sms/";
     private static String sSmsRaw = "content://sms/raw";
+    private static String sSmsConversations = "content://sms/conversations";
     private static String sSmsInbox = "content://sms/inbox";
     // Uri used when:
     // a message or group of message is marked as read
@@ -62,7 +63,8 @@ public class SmsObserver implements INativeSmsEventListener {
                 BaseColumns._ID, TextBasedSmsColumns.ADDRESS
         };
 
-        private final String WHERE_UNREAD = TextBasedSmsColumns.READ.concat("=0");
+        private final String WHERE_CONTACT_NOT_NULL = new StringBuilder(TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
+        private final String WHERE_UNREAD = new StringBuilder(TextBasedSmsColumns.READ).append("=0").append(" AND ").append(WHERE_CONTACT_NOT_NULL).toString();
         
         private Map<String,Set<Long>> mUnreadMessagesId = new HashMap<String,Set<Long>>();
         private Set<String> mConversations;
@@ -91,8 +93,9 @@ public class SmsObserver implements INativeSmsEventListener {
                 }
 
                 if (!uri.toString().equals(sSmsRaw) &&
-                        !uri.toString().equals(sSmsInbox)
-                        && uri.toString().startsWith(sSmsUri)) { // handle
+                        !uri.toString().equals(sSmsInbox) &&
+                        !uri.toString().startsWith((sSmsConversations)) &&
+                        uri.toString().startsWith(sSmsUri)) { // handle
                                                                                              // incoming/outgoing
                                                                                              // message
                                                                                              // and
@@ -109,6 +112,9 @@ public class SmsObserver implements INativeSmsEventListener {
                             Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                             String address = cursor
                                     .getString(cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS));
+                            if(address==null){
+                                return;
+                            }
                             PhoneNumber phoneNumber = ContactUtil
                                     .getValidPhoneNumberFromAndroid(address);
                             if (phoneNumber != null) {
@@ -205,7 +211,7 @@ public class SmsObserver implements INativeSmsEventListener {
                 int addressIdx = cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS);
                 while (cursor.moveToNext()) {
                     String contact  = cursor.getString(addressIdx);
-                    Long id = cursor.getLong(idIdx);                    
+                    Long id = cursor.getLong(idIdx);
                     Set<Long> ids = unreadMessages.get(contact);
                     if(ids==null){
                         ids = new HashSet<Long>();
@@ -224,7 +230,7 @@ public class SmsObserver implements INativeSmsEventListener {
             Cursor cursor = null;
             try{
                 Uri uri = Uri.parse(sSmsUri);
-                cursor= mContentResolver.query(uri, PROJECTION_CONTACT, null, null, null);
+                cursor= mContentResolver.query(uri, PROJECTION_CONTACT, WHERE_CONTACT_NOT_NULL, null, null);
                 CursorUtil.assertCursorIsNotNull(cursor, uri);
                 int idx  = cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS);
                 while(cursor.moveToNext()) {
@@ -382,7 +388,7 @@ public class SmsObserver implements INativeSmsEventListener {
         }
         synchronized (sSmsEventListeners) {
             for (INativeSmsEventListener listener : sSmsEventListeners) {
-                listener.onDeleteNativeConversation(contact);;
+                listener.onDeleteNativeConversation(contact);
             }
         }
     }
