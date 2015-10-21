@@ -58,7 +58,7 @@ public class FetchMessageCmdHandler extends CmdHandler {
 
     @Override
     public ImapMessage getResult() {        
-        ImapMessageMetadata metadata = new ImapMessageMetadata(mUid);
+        ImapMessageMetadata metadata = new ImapMessageMetadata(mUid, Long.parseLong(mData.get(Constants.METADATA_MODSEQ)));
         CmdUtils.fillFlags(metadata.getFlags(), mData.get(Constants.METADATA_FLAGS));
         return new ImapMessage(Integer.valueOf(mUid), metadata, mPart);
     }

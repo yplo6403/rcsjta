@@ -169,7 +169,8 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            
+            sb.append("UID:").append(mImapMessage.getUid()).append("\r\n");
+            sb.append("MODSEQ:").append(mImapMessage.getMetadata().getModseq()).append("\r\n");
             String body;
             String encoding = mImapMessage.getBody().getHeader(Constants.HEADER_CONTENT_TRANSFER_ENCODING);
             if(encoding!=null && Constants.HEADER_BASE64.equals(encoding)){
