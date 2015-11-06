@@ -32,7 +32,7 @@ import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.CmsService;
-import com.gsma.rcs.cms.event.INativeSmsEventListener;
+import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager.ImapServiceListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
@@ -40,15 +40,16 @@ import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.XmsData;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.DeleteStatus;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.XmsLogData;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.model.MmsData;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 
-public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeSmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
+public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeXmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
     /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
@@ -56,19 +57,19 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     protected static final int LOADER_ID = 1;
     private static final Logger sLogger = Logger.getLogger(XmsList.class.getSimpleName());
     private final static String SORT = new StringBuilder(
-            XmsData.KEY_DATE).append(" DESC").toString();
+            XmsLogData.KEY_DATE).append(" DESC").toString();
 
-    private final static String WHERE_CLAUSE = new StringBuilder(XmsData.KEY_DELETE_STATUS).append("=").append(DeleteStatus.NOT_DELETED.toInt()).append(" group by ")
-            .append(XmsData.KEY_CONTACT).toString();
+    private final static String WHERE_CLAUSE = new StringBuilder(XmsLogData.KEY_DELETE_STATUS).append("=").append(DeleteStatus.NOT_DELETED.toInt()).append(" group by ")
+            .append(XmsLogData.KEY_CONTACT).toString();
 
     private final static String[] PROJECTION = new String[]{
-            XmsData.KEY_BASECOLUMN_ID,
-            XmsData.KEY_NATIVE_PROVIDER_ID,
-            XmsData.KEY_CONTACT,
-            XmsData.KEY_CONTENT,
-            XmsData.KEY_DATE,
-            XmsData.KEY_DIRECTION,
-            XmsData.KEY_READ_STATUS
+            XmsLogData.KEY_BASECOLUMN_ID,
+            XmsLogData.KEY_NATIVE_PROVIDER_ID,
+            XmsLogData.KEY_CONTACT,
+            XmsLogData.KEY_CONTENT,
+            XmsLogData.KEY_DATE,
+            XmsLogData.KEY_DIRECTION,
+            XmsLogData.KEY_READ_STATUS
     };
 
 
@@ -158,7 +159,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             @Override
             public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
                 Cursor cursor = (Cursor)(parent.getAdapter()).getItem(pos);
-                startActivity(XmsConversationView.forgeIntentToStart(XmsList.this, cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT))));
+                startActivity(XmsConversationView.forgeIntentToStart(XmsList.this, cursor.getString(cursor.getColumnIndex(XmsLogData.KEY_CONTACT))));
             }
         };
     }
@@ -173,7 +174,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
-        CmsService.getInstance().onDeleteRcsConversation(cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT)));
+        CmsService.getInstance().onDeleteRcsConversation(cursor.getString(cursor.getColumnIndex(XmsLogData.KEY_CONTACT)));
         refreshView();
         return true;
     }
@@ -205,7 +206,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onDeleteNativeConversation(String contact) {
+    public void onDeleteNativeConversation(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeConversation");
         }
@@ -213,17 +214,41 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onReadNativeSms(long nativeProviderId) {
+    public void onDeleteNativeSms(long nativeProviderId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onReadNativeSms");
+            sLogger.debug("onDeleteNativeSms");
         }
         refreshView();
     }
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onIncomingMms(MmsData message) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onReadNativeSms");
+            sLogger.debug("onIncomingMms");
+        }
+        refreshView();
+    }
+
+    @Override
+    public void onOutgoingMms(MmsData message) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onOutgoingMms");
+        }
+        refreshView();
+    }
+
+    @Override
+    public void onDeleteNativeMms(String mmsId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onDeleteNativeMms");
+        }
+        refreshView();
+    }
+
+    @Override
+    public void onReadNativeConversation(long nativeThreadId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onReadNativeConversation");
         }
         refreshView();
     }
@@ -242,7 +267,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     private String truncate(String content) {
-        if (content.length() > MESSAGE_MAX_SIZE) {
+        if (content!=null && content.length() > MESSAGE_MAX_SIZE) {
             content = content.substring(0, MESSAGE_MAX_SIZE);
             content = content.concat("...");
         }
@@ -283,7 +308,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     @Override
     public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
         /* Create a new CursorLoader with the following query parameters. */
-        return new CursorLoader(this, XmsData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, null, SORT);
+        return new CursorLoader(this, XmsLogData.CONTENT_URI, PROJECTION, WHERE_CLAUSE, null, SORT);
     }
 
     @Override
@@ -390,13 +415,13 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
 
             ViewHolder(View view, Cursor cursor) {
 
-                baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
-                nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_PROVIDER_ID);
-                contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
-                dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DATE);
-                directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
-                readIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
+                baseIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_BASECOLUMN_ID);
+                nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_NATIVE_PROVIDER_ID);
+                contactIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTACT);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTENT);
+                dateIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_DATE);
+                directionIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_DIRECTION);
+                readIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_READ_STATUS);
 
                 mContact = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_contact);
                 mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);

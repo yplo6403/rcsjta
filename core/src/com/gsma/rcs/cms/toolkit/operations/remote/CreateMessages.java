@@ -3,7 +3,7 @@ package com.gsma.rcs.cms.toolkit.operations.remote;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.operations.remote.PushMessageTask.PushMessageTaskCallback;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
@@ -127,7 +127,7 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
             }
             
             Integer number = Integer.valueOf((String)mNumberSpinner.getSelectedItem());            
-            SmsData sms = new  SmsData(null, contact, content, System.currentTimeMillis(), direction, ReadStatus.READ_REQUESTED);
+            SmsData sms = new  SmsData(null, null, contact, content, System.currentTimeMillis(), direction, ReadStatus.READ_REQUESTED);
             SmsData[] messages = new SmsData[number];
             for(int i=0;i<number;i++){
                 messages[i] = sms;

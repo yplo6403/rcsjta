@@ -2,7 +2,6 @@
 package com.gsma.rcs.cms.provider.imap;
 
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-import com.gsma.rcs.cms.provider.xms.XmsData;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.utils.logger.Logger;
@@ -60,7 +59,7 @@ public class ImapLog {
     /**
      * Gets the instance of SecurityLog singleton
      * 
-     * @param localContentResolver
+     * @param context
      * @return the instance of SecurityLog singleton
      */
     public static ImapLog getInstance(Context context) {
@@ -78,9 +77,9 @@ public class ImapLog {
     /**
      * Constructor
      * 
-     * @param localContentResolver
+     * @param context
      */
-    private ImapLog(Context context) {        
+    private ImapLog(Context context) {
         mLocalContentResolver = new LocalContentResolver(context.getContentResolver());
     }
 

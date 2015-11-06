@@ -1,16 +1,15 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
-import com.gsma.rcs.cms.fordemo.ImapCommandController;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
-import com.gsma.rcs.cms.imap.task.PushMessageTask.PushMessageTaskListener;
 import com.gsma.rcs.cms.provider.imap.DataUtils;
 import com.gsma.rcs.cms.provider.imap.FolderData;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
+import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.PushStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISynchronizer;
 import com.gsma.rcs.cms.sync.SynchronizerImpl;
@@ -97,8 +96,9 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             // push on CMS server, messages that are marked as PUSH_requested in database
             // try to get an instance of XmsLog
             XmsLog xmsLog = XmsLog.getInstance(null);
+            PartLog partLog = PartLog.getInstance(null);
             if(xmsLog!=null){
-                PushMessageTask task = new PushMessageTask(mImapService, xmsLog, CmsSettings.getInstance().getMyNumber(), null);
+                PushMessageTask task = new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), null);
                 task.pushMessages(xmsLog.getMessages(PushStatus.PUSH_REQUESTED));                
             }
             

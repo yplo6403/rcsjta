@@ -5,10 +5,11 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 
 import android.util.SparseArray;
 
-public abstract class AbstractXmsData {
+public class XmsData {
     
     /* package private */ String mBaseId;
     /* package private */ Long mNativeProviderId;
+    /* package private */ Long mNativeThreadId;
     /* package private */ String mContact;
     /* package private */ String mContent;
     /* package private */ long mDate;    
@@ -226,96 +227,121 @@ public abstract class AbstractXmsData {
         }
     }
     
-    AbstractXmsData(){        
-    }
+//    XmsLogData(){
+//    }
+//
+//    XmsLogData(Long nativeProviderId, String contact, String content, long date, Direction direction) {
+//        mNativeProviderId = nativeProviderId;
+//        mContact = contact;
+//        mContent = content;
+//        mDate = date;
+//        mDirection = direction;
+//    };
     
-    AbstractXmsData(Long nativeProviderId, String contact, String content, long date, Direction direction) {
-        mNativeProviderId = nativeProviderId;
-        mContact = contact;
-        mContent = content;
-        mDate = date;
-        mDirection = direction;
-    };
-    
-    AbstractXmsData(long nativeProviderId, String contact, String content, long date, Direction direction,
-            ReadStatus readStatus, long deliveryDate) {
-        mNativeProviderId = nativeProviderId;
-        mContact = contact;
-        mContent = content;
-        mDate = date;
-        mDirection = direction;
-        mReadStatus = readStatus;
-        mDeliveryDate = deliveryDate;
-    };
-    
-    public String getContact() { 
-        return mContact;
-    }
-
-    public String getContent() {
-        return mContent;
-    }
-    public void setContent(String content) {
-        mContent = content;
-    }
-    public long getDate() {
-        return mDate;
-    }
-    public void setDate(long date) {
-        mDate = date;
-    }
-    public Direction getDirection() {
-        return mDirection;
-    }
-    public void setDirection(Direction direction) {
-        mDirection = direction;
-    }
-       
-    public MimeType getMimeType() {
-        return mMimeType;
-    }
-    public void setMimeType(MimeType mimeType) {
-        mMimeType = mimeType;
-    }
-    public ReadStatus getReadStatus() {
-        return mReadStatus;
-    }
-    public void setReadStatus(ReadStatus readStatus) {
-        mReadStatus = readStatus;
-    }
-    
-    public Long getDeliveryDate() {
-        return mDeliveryDate;
-    }
-    public void setDeliveryDate(long deliveryDate) {
-        mDeliveryDate = deliveryDate;
-    }
-    
-    public Long getNativeProviderId(){
-        return mNativeProviderId;
-    }
-
-    public DeleteStatus getDeleteStatus() {
-        return mDeleteStatus;
-    }
-    
-    public void setDeleteStatus(DeleteStatus deleteStatus) {
-        mDeleteStatus = deleteStatus;
-    }
+//    XmsLogData(long nativeProviderId, String contact, String content, long date, Direction direction,
+//            ReadStatus readStatus, long deliveryDate) {
+//        mNativeProviderId = nativeProviderId;
+//        mContact = contact;
+//        mContent = content;
+//        mDate = date;
+//        mDirection = direction;
+//        mReadStatus = readStatus;
+//        mDeliveryDate = deliveryDate;
+//    };
 
     public String getBaseId() {
         return mBaseId;
     }
 
-    public void setBaseId(String baseId) {
-        this.mBaseId = baseId;
-    }  
-    
-    public void setPushStatus(PushStatus pushStatus) {
-        this.mPushStatus = pushStatus;
-    } 
-    
+    public void setBaseId(String mBaseId) {
+        this.mBaseId = mBaseId;
+    }
+
+    public Long getNativeProviderId() {
+        return mNativeProviderId;
+    }
+
+    public void setNativeProviderId(Long mNativeProviderId) {
+        this.mNativeProviderId = mNativeProviderId;
+    }
+
+    public Long getNativeThreadId() {
+        return mNativeThreadId;
+    }
+
+    public void setNativeThreadId(Long mNativeThreadId) {
+        this.mNativeThreadId = mNativeThreadId;
+    }
+    public String getContact() {
+        return mContact;
+    }
+
+    public void setContact(String mContact) {
+        this.mContact = mContact;
+    }
+
+    public String getContent() {
+        return mContent;
+    }
+
+    public void setContent(String mContent) {
+        this.mContent = mContent;
+    }
+
+    public long getDate() {
+        return mDate;
+    }
+
+    public void setDate(long mDate) {
+        this.mDate = mDate;
+    }
+
+    public Direction getDirection() {
+        return mDirection;
+    }
+
+    public void setDirection(Direction mDirection) {
+        this.mDirection = mDirection;
+    }
+
+    public MimeType getMimeType() {
+        return mMimeType;
+    }
+
+    public void setMimeType(MimeType mMimeType) {
+        this.mMimeType = mMimeType;
+    }
+
+    public ReadStatus getReadStatus() {
+        return mReadStatus;
+    }
+
+    public void setReadStatus(ReadStatus mReadStatus) {
+        this.mReadStatus = mReadStatus;
+    }
+
+    public DeleteStatus getDeleteStatus() {
+        return mDeleteStatus;
+    }
+
+    public void setDeleteStatus(DeleteStatus mDeleteStatus) {
+        this.mDeleteStatus = mDeleteStatus;
+    }
+
     public PushStatus getPushStatus() {
         return mPushStatus;
     }
+
+    public void setPushStatus(PushStatus mPushStatus) {
+        this.mPushStatus = mPushStatus;
+    }
+
+    public long getDeliveryDate() {
+        return mDeliveryDate;
+    }
+
+    public void setDeliveryDate(long mDeliveryDate) {
+        this.mDeliveryDate = mDeliveryDate;
+    }
+
 }

@@ -2,7 +2,8 @@ package com.gsma.rcs.cms.storage;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
-import com.gsma.rcs.cms.imap.message.sms.ImapSmsMessage;
+import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
+import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 
 import com.sonymobile.rcs.imap.ImapMessage;
@@ -36,6 +37,8 @@ public class ImapMessageResolver {
         switch(messageType){
             case SMS:
                 return new ImapSmsMessage(imapMessage);
+            case MMS:
+                return new ImapMmsMessage(imapMessage);
         }        
         throw new RuntimeException("unsupported message type : ".concat(messageType.toString()));        
     }

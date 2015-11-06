@@ -1,8 +1,9 @@
 package com.gsma.rcs.cms.observer;
 
-import com.gsma.rcs.cms.event.INativeSmsEventListener;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.DeleteStatus;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.model.MmsData;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.services.rcs.RcsService.Direction;
 
@@ -20,10 +21,10 @@ public class SmsObserverTest extends AndroidTestCase {
     
     private Context mContext;
     
-    private SmsData incomingSms = new SmsData(1l, "myContact1", "myContent1", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.UNREAD);
-    private SmsData outgoingSms = new SmsData(2l, "myContact2", "myContent2", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
-    private SmsData sms = new SmsData(3l, "myContact3", "myContent3", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
-    private SmsData sms2 = new SmsData(4l, "myContact3", "myContent3", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
+    private SmsData incomingSms = new SmsData(1l,1l, "myContact1", "myContent1", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.UNREAD);
+    private SmsData outgoingSms = new SmsData(2l,1l, "myContact2", "myContent2", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
+    private SmsData sms = new SmsData(3l,1l, "myContact3", "myContent3", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
+    private SmsData sms2 = new SmsData(4l,1l, "myContact3", "myContent3", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
     
     protected void setUp() throws Exception {
         super.setUp();                        
@@ -32,93 +33,93 @@ public class SmsObserverTest extends AndroidTestCase {
   
     public void test1(){
         
-        SmsObserver smsObserver = SmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
         NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
-        smsObserver.registerListener(nativeSmsListenerMock);
+        xmsObserver.registerListener(nativeSmsListenerMock);
         
-        smsObserver.onIncomingSms(incomingSms);
-        smsObserver.onOutgoingSms(outgoingSms);
+        xmsObserver.onIncomingSms(incomingSms);
+        xmsObserver.onOutgoingSms(outgoingSms);
                         
         Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());        
         Assert.assertEquals(incomingSms, nativeSmsListenerMock.getMessage().get(1l));
         Assert.assertEquals(outgoingSms, nativeSmsListenerMock.getMessage().get(2l));
         
         Long deliveryDate = System.currentTimeMillis();
-        smsObserver.onDeliverNativeSms(1l, deliveryDate);
-        Assert.assertEquals(deliveryDate, nativeSmsListenerMock.getMessage().get(1l).getDeliveryDate());
+        xmsObserver.onDeliverNativeSms(1l, deliveryDate);
+        Assert.assertTrue(deliveryDate == nativeSmsListenerMock.getMessage().get(1l).getDeliveryDate());
         
-        smsObserver.onReadNativeSms(1l);
+        xmsObserver.onReadNativeConversation(1l);
         Assert.assertEquals(ReadStatus.READ_REQUESTED, nativeSmsListenerMock.getMessage().get(1l).getReadStatus());
 
-        smsObserver.onDeleteNativeSms(2l);
+        xmsObserver.onDeleteNativeSms(2l);
         Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeSmsListenerMock.getMessage().get(2l).getDeleteStatus());
 
-        smsObserver.unregisterListener(nativeSmsListenerMock);
+        xmsObserver.unregisterListener(nativeSmsListenerMock);
         
-        smsObserver.onIncomingSms(sms);
+        xmsObserver.onIncomingSms(sms);
         Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());
         Assert.assertNull(nativeSmsListenerMock.getMessage().get(sms.getNativeProviderId()));
     }
     
     public void test2(){
         
-        SmsObserver smsObserver = SmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
         NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
-        smsObserver.registerListener(nativeSmsListenerMock);
+        xmsObserver.registerListener(nativeSmsListenerMock);
                 
-        smsObserver.onIncomingSms(sms);
-        smsObserver.onOutgoingSms(sms2);
+        xmsObserver.onIncomingSms(sms);
+        xmsObserver.onOutgoingSms(sms2);
                         
-        Assert.assertEquals(2, nativeSmsListenerMock.getMessages("myContact3").size());        
+        Assert.assertEquals(2, nativeSmsListenerMock.getMessages(1l).size());
 
-        smsObserver.onDeleteNativeConversation("myContact3");
+        xmsObserver.onDeleteNativeConversation(1l);
         Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeSmsListenerMock.getMessage().get(3l).getDeleteStatus());
         Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeSmsListenerMock.getMessage().get(4l).getDeleteStatus());
 
-        smsObserver.unregisterListener(nativeSmsListenerMock);
+        xmsObserver.unregisterListener(nativeSmsListenerMock);
         
-        smsObserver.onIncomingSms(sms);
+        xmsObserver.onIncomingSms(sms);
         Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());
     }
     
-    private class NativeSmsListenerMock implements INativeSmsEventListener {
+    private class NativeSmsListenerMock implements INativeXmsEventListener {
 
-        private Map<Long,SmsData> smsWithNativeProviderId = new HashMap<Long,SmsData>();
-        private Map<String,List<SmsData>> smsWithContact = new HashMap<String,List<SmsData>>();
+        private Map<Long,SmsData> smsById = new HashMap<Long,SmsData>();
+        private Map<Long,List<SmsData>> smsByThreadId = new HashMap<Long,List<SmsData>>();
                 
         public NativeSmsListenerMock(){
             
         }
         
         public Map<Long,SmsData> getMessage(){
-            return smsWithNativeProviderId;
+            return smsById;
         }
         
-        public List<SmsData> getMessages(String contact){
-            return smsWithContact.get(contact);
+        public List<SmsData> getMessages(Long threadId){
+            return smsByThreadId.get(threadId);
         }
         
 
         @Override
         public void onIncomingSms(SmsData message) {
-            smsWithNativeProviderId.put(message.getNativeProviderId(),message);
+            smsById.put(message.getNativeProviderId(),message);
             
-            List<SmsData> sms = smsWithContact.get(message.getContact());
+            List<SmsData> sms = smsByThreadId.get(message.getContact());
             if(sms==null){
                 sms = new ArrayList<SmsData>();
-                smsWithContact.put(message.getContact(), sms);
+                smsByThreadId.put(message.getNativeThreadId(), sms);
             }
             sms.add(message);
         }
 
         @Override
         public void onOutgoingSms(SmsData message) {
-            smsWithNativeProviderId.put(message.getNativeProviderId(),message);
+            smsById.put(message.getNativeProviderId(),message);
 
-            List<SmsData> sms = smsWithContact.get(message.getContact());
+            List<SmsData> sms = smsByThreadId.get(message.getNativeThreadId());
             if(sms==null){
                 sms = new ArrayList<SmsData>();
-                smsWithContact.put(message.getContact(), sms);
+                smsByThreadId.put(message.getNativeThreadId(), sms);
             }
             sms.add(message);
 
@@ -126,22 +127,39 @@ public class SmsObserverTest extends AndroidTestCase {
 
         @Override
         public void onDeliverNativeSms(long nativeProviderId, long sentDate) {
-            smsWithNativeProviderId.get(nativeProviderId).setDeliveryDate(sentDate);            
-        }
-
-        @Override
-        public void onReadNativeSms(long nativeProviderId) {
-            smsWithNativeProviderId.get(nativeProviderId).setReadStatus(ReadStatus.READ_REQUESTED);            
+            smsById.get(nativeProviderId).setDeliveryDate(sentDate);
         }
 
         @Override
         public void onDeleteNativeSms(long nativeProviderId) {
-            smsWithNativeProviderId.get(nativeProviderId).setDeleteStatus(DeleteStatus.DELETED_REQUESTED);                        
+            smsById.get(nativeProviderId).setDeleteStatus(DeleteStatus.DELETED_REQUESTED);
         }
 
         @Override
-        public void onDeleteNativeConversation(String contact) {
-            for(SmsData smsData : smsWithContact.get(contact)){
+        public void onIncomingMms(MmsData message) {
+
+        }
+
+        @Override
+        public void onOutgoingMms(MmsData message) {
+
+        }
+
+        @Override
+        public void onDeleteNativeMms(String mmsId) {
+
+        }
+
+        @Override
+        public void onReadNativeConversation(long nativeThreadId) {
+            for(SmsData smsData : smsByThreadId.get(nativeThreadId)){
+                smsData.setReadStatus(ReadStatus.READ_REQUESTED);
+            }
+        }
+
+        @Override
+        public void onDeleteNativeConversation(long nativeThreadId) {
+            for(SmsData smsData : smsByThreadId.get(nativeThreadId)){
                 smsData.setDeleteStatus(DeleteStatus.DELETED_REQUESTED);
             }           
         }

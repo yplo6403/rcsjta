@@ -85,14 +85,18 @@ public class DefaultImapService implements ImapService {
 
         while (read < size) {
             String line = ioReadLine();
+            int length = line.getBytes().length;
             int remaining = size-read;  
-            if( remaining >= line.length()+2 ){                            
-                read += line.length()+2 ;
+            if( remaining >= length+2 ){
+                read += length+2 ;
                 sb.append(line).append(ImapUtil.CRLF);
             }
             else{
                 read+=remaining;
-                sb.append(line.substring(0,remaining));
+                byte[] lastBytes = new byte[remaining];
+                System.arraycopy(line.getBytes(), 0, lastBytes, 0, remaining);
+                sb.append(new String(lastBytes));
+                //sb.append(line.substring(0,remaining));
             }
         }
 
@@ -631,14 +635,15 @@ public class DefaultImapService implements ImapService {
     @Override
     public synchronized int append(String folderName, List<Flag> flags, IPart part)
             throws IOException, ImapException {
-        String payload = part.toPayload();
         // append INBOX (\Seen) {310}
-        writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + payload.length()
+        String payload = part.toPayload();
+        int length = payload.getBytes().length;
+        writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length
                 + "}");
         String ok = ioReadLine();
         if (!ok.startsWith("+"))
             return -1;
-        ioWriteln(payload + ImapUtil.CRLF);
+        ioWriteln(payload);
 
         while (true) {
             ok = ioReadLine();

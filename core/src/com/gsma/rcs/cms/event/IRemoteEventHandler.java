@@ -1,6 +1,7 @@
 package com.gsma.rcs.cms.event;
 
 import com.gsma.rcs.cms.imap.message.IImapMessage;
+import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 
 /**
  * LocalStorageMessageHandler interface
@@ -12,20 +13,20 @@ public interface IRemoteEventHandler {
      * Take into account a read flag event from CMS server
      * @param messageId
      */
-    public void onRemoteReadEvent(String messageId);
+    void onRemoteReadEvent(MessageType messageType, String messageId);
     
     /**
      * Take into account a deleted flag event from CMS server
      * @param messageId
      */    
-    public void onRemoteDeleteEvent(String messageId);
+    void onRemoteDeleteEvent(MessageType messageType, String messageId);
         
     /**
      * Create new message in local storage
      * @param message
      * @return messageId
      */
-    public String onRemoteNewMessage(IImapMessage message);
+    String onRemoteNewMessage(MessageType messageType, IImapMessage message);
     
     /**
      * This method checks if the message is already present in local storage.
@@ -33,5 +34,5 @@ public interface IRemoteEventHandler {
      * @param message
      * @return messageId or null if the message is not present in local storage
      */
-    public String getMessageId(IImapMessage message);
+    String getMessageId(MessageType messageType, IImapMessage message);
 }

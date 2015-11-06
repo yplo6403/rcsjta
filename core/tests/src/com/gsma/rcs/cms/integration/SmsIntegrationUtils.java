@@ -1,7 +1,7 @@
 package com.gsma.rcs.cms.integration;
 
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.DeleteStatus;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
@@ -20,10 +20,10 @@ public class SmsIntegrationUtils {
         public static DeleteStatus deleteStatus = DeleteStatus.NOT_DELETED; 
         
         public static SmsData[] conversation = new SmsData[]{
-                new SmsData(1l, contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
-                new SmsData(2l, contact, "How are you?", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
-                new SmsData(3l, contact, "Fine, and you?", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
-                new SmsData(4l, contact, "Fine, thanks", System.currentTimeMillis(), Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, contact, "How are you?", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, contact, "Fine, and you?", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
+                new SmsData(4l,1l, contact, "Fine, thanks", System.currentTimeMillis(), Direction.INCOMING, readStatus),
         };
     }
     
@@ -58,10 +58,10 @@ public class SmsIntegrationUtils {
         public static DeleteStatus deleteStatus = DeleteStatus.NOT_DELETED; 
         
         public static SmsData[] conversation = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "How are you?", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
-                new SmsData(3l, Test1.contact, "Fine, and you?", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
-                new SmsData(4l, Test1.contact, "Fine, thanks", System.currentTimeMillis(), Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "How are you?", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, Test1.contact, "Fine, and you?", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
+                new SmsData(4l,1l, Test1.contact, "Fine, thanks", System.currentTimeMillis(), Direction.INCOMING, readStatus),
         };       
     }
     
@@ -76,10 +76,10 @@ public class SmsIntegrationUtils {
         public static DeleteStatus deleteStatus = DeleteStatus.NOT_DELETED; 
         
         public static SmsData[] conversation = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "yes", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
-                new SmsData(3l, Test1.contact, "yes", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
-                new SmsData(4l, Test1.contact, "yes", System.currentTimeMillis(), Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()-4000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "yes", System.currentTimeMillis()-3000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, Test1.contact, "yes", System.currentTimeMillis()-2000, Direction.OUTGOING, readStatus),
+                new SmsData(4l,1l, Test1.contact, "yes", System.currentTimeMillis(), Direction.INCOMING, readStatus),
         };
     }
     
@@ -88,14 +88,14 @@ public class SmsIntegrationUtils {
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         
         public static SmsData[] conversation_remote = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
         };
         
         public static SmsData[] conversation_local = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
-                new SmsData(3l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
         };        
 
     }
@@ -105,14 +105,14 @@ public class SmsIntegrationUtils {
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         
         public static SmsData[] conversation_local = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
         };
         
         public static SmsData[] conversation_remote = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
-                new SmsData(3l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
         };        
 
     }
@@ -130,26 +130,26 @@ public class SmsIntegrationUtils {
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         
         public static SmsData[] conversation_1 = new SmsData[]{
-                new SmsData(1l, contact1, "Hello 1!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, contact1, "Hi 1", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
-                new SmsData(2l, contact1, "Ciao 1", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
-                new SmsData(2l, contact1, "Bye 1", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, contact1, "Hello 1!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, contact1, "Hi 1", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
+                new SmsData(2l,1l, contact1, "Ciao 1", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
+                new SmsData(2l,1l, contact1, "Bye 1", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
         };
 
         public static SmsData[] conversation_2 = new SmsData[]{
-                new SmsData(2l, contact2, "Hi 2", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
-                new SmsData(2l, contact2, "Ciao 2", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
+                new SmsData(2l,1l, contact2, "Hi 2", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
+                new SmsData(2l,1l, contact2, "Ciao 2", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
         };
 
         public static SmsData[] conversation_3 = new SmsData[]{
-                new SmsData(1l, contact3, "Hello 3!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),                
-                new SmsData(2l, contact3, "Bye 3", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, contact3, "Hello 3!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, contact3, "Bye 3", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
         };
 
         public static SmsData[] conversation_remote = new SmsData[]{
-                new SmsData(1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
-                new SmsData(2l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
-                new SmsData(3l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(3l,1l, Test1.contact, "Hello!", System.currentTimeMillis()+3000, Direction.INCOMING, readStatus),
         };        
 
     }
@@ -163,17 +163,17 @@ public class SmsIntegrationUtils {
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         
         public static SmsData[] conversation_1 = new SmsData[]{
-                new SmsData(1l, contact1, "Hello !", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(1l,1l, contact1, "Hello !", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
         };
 
         public static SmsData[] conversation_2 = new SmsData[]{
-                new SmsData(2l, contact2, "Hi ", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
-                new SmsData(2l, contact2, "Ciao ", System.currentTimeMillis()+2000, Direction.INCOMING, ReadStatus.READ),
+                new SmsData(2l,2l, contact2, "Hi ", System.currentTimeMillis()+2000, Direction.OUTGOING, ReadStatus.READ),
+                new SmsData(2l,2l, contact2, "Ciao ", System.currentTimeMillis()+2000, Direction.INCOMING, ReadStatus.READ),
         };
 
         public static SmsData[] conversation_3 = new SmsData[]{
-                new SmsData(1l, contact3, "Hello !", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),                
-                new SmsData(2l, contact3, "Bye ", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
+                new SmsData(1l,3l, contact3, "Hello !", System.currentTimeMillis()+1000, Direction.INCOMING, readStatus),
+                new SmsData(2l,3l, contact3, "Bye ", System.currentTimeMillis()+2000, Direction.INCOMING, readStatus),
         };
     }
 }

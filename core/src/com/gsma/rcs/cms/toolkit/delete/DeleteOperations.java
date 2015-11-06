@@ -9,6 +9,7 @@ import com.gsma.rcs.cms.imap.task.DeleteTask.DeleteTaskListener;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
+import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 
@@ -27,6 +28,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
     private CmsSettings mSettings;
     private ImapLog mImapLog;
     private XmsLog mXmsLog;
+    private PartLog mPartLog;
     private AlertDialog mInProgressDialog;
 
     @Override
@@ -36,6 +38,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
         mSettings = CmsSettings.getInstance();
         mImapLog = ImapLog.getInstance(context);
         mXmsLog = XmsLog.getInstance(context);
+        mPartLog = PartLog.getInstance(context);
         
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -59,6 +62,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                 try {
                     mImapLog.removeFolders(true);
                     mXmsLog.deleteMessages();
+                    mPartLog.deleteAll();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -79,6 +83,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
             case 2:
                 try {
                     mXmsLog.deleteMessages();
+                    mPartLog.deleteAll();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -89,14 +94,6 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
             case 3:
                 mInProgressDialog = AlertDialogUtils.displayInfo(DeleteOperations.this,
                         getString(R.string.cms_toolkit_in_progress));                
-                try {
-                    mXmsLog.deleteMessages();                    
-                } catch (Exception e) {
-                    mInProgressDialog.dismiss();
-                    e.printStackTrace();
-                    AlertDialogUtils.showMessage(DeleteOperations.this, getString(R.string.cms_toolkit_result_ko));
-                    return;
-                }
                 try {
                     new DeleteTask(ImapServiceManager.getService(mSettings), Operation.DELETE_ALL, this).execute(new String[]{});
                 } catch (ImapServiceNotAvailableException e) {

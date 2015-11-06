@@ -97,8 +97,32 @@
                 android:layout_marginRight="5dip"
                 android:lines="1"
                 android:maxLength="100"
-                android:singleLine="true" />            
-            
+                android:singleLine="true" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/cms_toolkit_settings_push_sms_label"
+                android:id="@+id/cms_toolkit_settings_push_sms" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/cms_toolkit_settings_push_mms_label"
+                android:id="@+id/cms_toolkit_settings_push_mms" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/cms_toolkit_settings_update_flag_imap_sms_label"
+                android:id="@+id/cms_toolkit_settings_update_flag_imap_sms" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@+id/cms_toolkit_settings_update_flag_imap_mms_label"
+                android:id="@+id/cms_toolkit_settings_update_flag_imap_mms" />
+
         </LinearLayout>
     </ScrollView>
 

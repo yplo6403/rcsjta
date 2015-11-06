@@ -4,6 +4,7 @@ package com.gsma.rcs.cms.toolkit;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.CmsService;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
+import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.sync.adapter.CmsAccountException;
 import com.gsma.rcs.cms.sync.adapter.CmsAccountManager;
@@ -18,6 +19,7 @@ import com.gsma.rcs.utils.logger.Logger;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
@@ -97,8 +99,9 @@ public class Toolkit extends ListActivity implements ImportTaskListener {
                 
             case 5:
                 mInProgressDialog = AlertDialogUtils.displayInfo(Toolkit.this,
-                        getString(R.string.cms_toolkit_in_progress));                
-                new SmsImportAsyncTask(getApplicationContext(), XmsLog.getInstance(getApplicationContext()), this).execute();
+                        getString(R.string.cms_toolkit_in_progress));
+                Context context = getApplicationContext();
+                new SmsImportAsyncTask(context, XmsLog.getInstance(context), PartLog.getInstance(context), this).execute();
                 break;                
         }
     }

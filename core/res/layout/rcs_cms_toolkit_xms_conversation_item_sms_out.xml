@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:paddingLeft="12dip"
+	android:paddingRight="0dip"
+	android:paddingTop="5dip"
+	android:paddingBottom="5dip"
+	>
+
+	<RelativeLayout
+		android:id="@+id/rcs_cms_toolkit_xms_conv_item_sms_out"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="0dp"
+		android:padding="10dip"
+		android:layout_alignParentLeft="true"
+		android:background="@drawable/rcs_cms_toolkit_xms_conversation_item_out"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/rcs_cms_toolkit_xms_content"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="@android:color/black"
+			android:layout_marginLeft="5dp"
+			/>
+
+		<TextView
+			android:id="@+id/rcs_cms_toolkit_xms_date"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textColor="@android:color/black"
+			android:layout_below="@+id/rcs_cms_toolkit_xms_content"
+			/>
+
+	</RelativeLayout>
+
+</RelativeLayout>

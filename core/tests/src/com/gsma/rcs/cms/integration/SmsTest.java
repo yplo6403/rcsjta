@@ -1,7 +1,7 @@
 package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.SmsEventHandler;
+import com.gsma.rcs.cms.event.XmsEventHandler;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
@@ -16,9 +16,12 @@ import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
+import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.DeleteStatus;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.XmsLogEnvIntegration;
+import com.gsma.rcs.cms.provider.xms.model.XmsData;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
@@ -53,6 +56,8 @@ public class SmsTest extends AndroidTestCase{
     private BasicSyncStrategy mSyncStrategy;
     private ImapLog mImapLog;
     private XmsLog mXmsLog;
+    private PartLog mPartLog;
+    private XmsLogEnvIntegration mXmsLogEnvIntegration;
     
     protected void setUp() throws Exception {
         super.setUp();                        
@@ -60,7 +65,9 @@ public class SmsTest extends AndroidTestCase{
         mSettings = CmsSettingsMock.getCmsSettings(context);
         mImapLog = ImapLog.getInstance(context);
         mXmsLog = XmsLog.getInstance(context);
-        SmsEventHandler smsEventHandler = new SmsEventHandler(mImapLog, mXmsLog);
+        mPartLog = PartLog.getInstance(context);
+        mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
+        XmsEventHandler smsEventHandler = new XmsEventHandler(mImapLog, mXmsLog, mPartLog);
         mLocalStorage = LocalStorage.createInstance(mImapLog);
         mLocalStorage.registerRemoteEventHandler(MessageType.SMS,smsEventHandler);
         mLocalStorage.addLocalEventHandler(MessageType.SMS, smsEventHandler);
@@ -103,7 +110,7 @@ public class SmsTest extends AndroidTestCase{
         imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);        
         assertEquals(SmsIntegrationUtils.Test1.conversation.length,imapData.size());
         
-        List<SmsData> messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+        List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
         assertEquals(SmsIntegrationUtils.Test1.conversation.length, messages.size());
         for(SmsData message : messages){
             Assert.assertEquals(Test1.readStatus, message.getReadStatus());
@@ -152,7 +159,7 @@ public class SmsTest extends AndroidTestCase{
            assertFalse(mImapLog.getFolders().isEmpty());
            assertEquals(2,mImapLog.getFolders().size());                   
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
-           List<SmsData> messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+           List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(SmsIntegrationUtils.Test1.conversation.length, messages.size());
            for(SmsData message : messages){
                Assert.assertEquals(ReadStatus.READ, message.getReadStatus());
@@ -169,7 +176,7 @@ public class SmsTest extends AndroidTestCase{
            assertFalse(mImapLog.getFolders().isEmpty());
            assertEquals(2,mImapLog.getFolders().size());                   
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
-           messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+           messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(0, messages.size());                      
         } catch (ImapServiceNotAvailableException e) {
             Assert.fail();
@@ -191,7 +198,7 @@ public class SmsTest extends AndroidTestCase{
     
               test1();
               
-              List<SmsData> messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+              List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
               for(SmsData sms:messages){
                   mXmsLog.updateReadStatusdWithBaseId(sms.getBaseId(), ReadStatus.READ_REQUESTED);
               }
@@ -202,12 +209,12 @@ public class SmsTest extends AndroidTestCase{
               // sync with CMS : during this second sync, messages are marked as 'Seen' in local storage
               //startSynchro();
 
-              messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+              messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
               for(SmsData sms:messages){
                   Assert.assertEquals(ReadStatus.READ, sms.getReadStatus());
               }
               
-               messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+               messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
               for(SmsData sms:messages){
                   mXmsLog.updateDeleteStatusdWithBaseId(sms.getBaseId(), DeleteStatus.DELETED_REQUESTED);
               }
@@ -218,7 +225,7 @@ public class SmsTest extends AndroidTestCase{
               // sync with CMS : during this second sync, messages are marked as 'Deleted' in local storage
               //startSynchro();
 
-              messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+              messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
               for(SmsData sms:messages){
                   Assert.assertEquals(DeleteStatus.DELETED, sms.getDeleteStatus());
               }                                   
@@ -247,7 +254,7 @@ public class SmsTest extends AndroidTestCase{
 
              startSynchro();
 
-             List<SmsData> messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+             List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
              for(SmsData sms:messages){
                  Assert.assertEquals(ReadStatus.READ_REQUESTED, sms.getReadStatus());
              }
@@ -255,7 +262,7 @@ public class SmsTest extends AndroidTestCase{
              mXmsLog.updateDeleteStatus(SmsIntegrationUtils.Test1.contact, DeleteStatus.DELETED_REQUESTED);
              startSynchro();
 
-             messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+             messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
              for(SmsData sms:messages){
                  Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, sms.getDeleteStatus());
              }
@@ -283,7 +290,7 @@ public class SmsTest extends AndroidTestCase{
             mXmsLog.updateReadStatus(SmsIntegrationUtils.Test1.contact, ReadStatus.READ_REQUESTED);            
             startSynchro();
 
-            List<SmsData> messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+            List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
             for(SmsData sms:messages){
                 Assert.assertEquals(ReadStatus.READ, sms.getReadStatus());
             }
@@ -291,7 +298,7 @@ public class SmsTest extends AndroidTestCase{
             mXmsLog.updateDeleteStatus(SmsIntegrationUtils.Test1.contact, DeleteStatus.DELETED_REQUESTED);            
             startSynchro();
 
-            messages = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+            messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
             for(SmsData sms:messages){
                 Assert.assertEquals(DeleteStatus.DELETED, sms.getDeleteStatus());
             }
@@ -316,18 +323,15 @@ public class SmsTest extends AndroidTestCase{
                
                // create messages in local storage
                for(SmsData sms : SmsIntegrationUtils.Test1.conversation){
-                   mXmsLog.addMessage(sms);
+                   mXmsLog.addSms(sms);
                }
                            
                startSynchro();
 
-               Assert.assertEquals(SmsIntegrationUtils.Test1.conversation.length,mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact).size());
-               Assert.assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());
-                              
+               Assert.assertEquals(SmsIntegrationUtils.Test1.conversation.length,mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact).size());
                } catch (Exception e) {
                    Assert.fail();
                }
-
            }
            
            /**
@@ -348,12 +352,12 @@ public class SmsTest extends AndroidTestCase{
                   
                   // create messages in local storage
                   for(SmsData sms : SmsIntegrationUtils.Test7.conversation){
-                      mXmsLog.addMessage(sms);
+                      mXmsLog.addSms(sms);
                   }
                               
                   startSynchro();
 
-                  List<SmsData> sms = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);
+                  List<SmsData> sms = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
                   Assert.assertEquals(SmsIntegrationUtils.Test7.conversation.length,sms.size());
                   Map<Integer, MessageData>  imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);
                   Assert.assertEquals(SmsIntegrationUtils.Test7.conversation.length,imapData.size());
@@ -393,12 +397,12 @@ public class SmsTest extends AndroidTestCase{
                      
                      // create messages in local storage
                      for(SmsData sms : SmsIntegrationUtils.Test8.conversation_local){
-                         mXmsLog.addMessage(sms);
+                         mXmsLog.addSms(sms);
                      }
                                  
                      startSynchro();
 
-                     List<SmsData> sms = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);                     
+                     List<SmsData> sms = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
                      Map<Integer, MessageData>  imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);
                      
                      Assert.assertTrue(sms.size() > imapData.size());
@@ -435,12 +439,12 @@ public class SmsTest extends AndroidTestCase{
                         
                         // create messages in local storage
                         for(SmsData sms : SmsIntegrationUtils.Test9.conversation_local){
-                            mXmsLog.addMessage(sms);
+                            mXmsLog.addSms(sms);
                         }
                                     
                         startSynchro();
 
-                        List<SmsData> sms = mXmsLog.getMessages(SmsIntegrationUtils.Test1.contact);                     
+                        List<SmsData> sms = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
                         Map<Integer, MessageData>  imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);
                         
                         Assert.assertTrue(sms.size() == imapData.size());
@@ -466,7 +470,7 @@ public class SmsTest extends AndroidTestCase{
                            
                            createRemoteMessages(SmsIntegrationUtils.Test10.conversation_2);
                            for(SmsData sms : SmsIntegrationUtils.Test10.conversation_2){
-                               mXmsLog.addMessage(sms);
+                               mXmsLog.addSms(sms);
                            }
                                                                   
                            startSynchro();
@@ -475,9 +479,9 @@ public class SmsTest extends AndroidTestCase{
                            startSynchro();
 
                            
-                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_1.length, mXmsLog.getMessages(SmsIntegrationUtils.Test10.contact1).size());
-                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_2.length, mXmsLog.getMessages(SmsIntegrationUtils.Test10.contact2).size());
-                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_3.length, mXmsLog.getMessages(SmsIntegrationUtils.Test10.contact3).size());
+                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_1.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test10.contact1).size());
+                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_2.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test10.contact2).size());
+                           Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_3.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test10.contact3).size());
                            
                            Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_1.length,mImapLog.getMessages(SmsIntegrationUtils.Test10.folder1).size());
                            Assert.assertEquals(SmsIntegrationUtils.Test10.conversation_2.length,mImapLog.getMessages(SmsIntegrationUtils.Test10.folder2).size());
@@ -500,16 +504,16 @@ public class SmsTest extends AndroidTestCase{
                createRemoteMessages(SmsIntegrationUtils.TestLoad.conversation_1);
                createRemoteMessages(SmsIntegrationUtils.Test10.conversation_2);
                for(SmsData sms : SmsIntegrationUtils.Test10.conversation_2){
-                   mXmsLog.addMessage(sms);    
+                   mXmsLog.addSms(sms);
                }        
                createRemoteMessages(SmsIntegrationUtils.Test10.conversation_3);
            }
                                                          
        startSynchro();
                         
-       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_1.length, mXmsLog.getMessages(SmsIntegrationUtils.TestLoad.contact1).size());
-       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_2.length, mXmsLog.getMessages(SmsIntegrationUtils.TestLoad.contact2).size());
-       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_3.length, mXmsLog.getMessages(SmsIntegrationUtils.TestLoad.contact3).size());
+       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_1.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.TestLoad.contact1).size());
+       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_2.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.TestLoad.contact2).size());
+       Assert.assertEquals(TestLoad.iteration*SmsIntegrationUtils.TestLoad.conversation_3.length, mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.TestLoad.contact3).size());
        
        } catch (Exception e) {
            Assert.fail();
@@ -526,12 +530,13 @@ public class SmsTest extends AndroidTestCase{
        }
        if(deleteMessages){
            mXmsLog.deleteMessages();
+           mPartLog.deleteAll();
        }   
        
    }
    
-   private void createRemoteMessages(SmsData[] messages) throws ImapServiceNotAvailableException {       
-       PushMessageTaskMock task = new PushMessageTaskMock(mBasicImapService, mXmsLog, mSettings.getMyNumber(), null);
+   private void createRemoteMessages(XmsData[] messages) throws ImapServiceNotAvailableException {
+       PushMessageTaskMock task = new PushMessageTaskMock(mBasicImapService, mXmsLog, mPartLog,  mSettings.getMyNumber(), null);
        task.pushMessages(Arrays.asList(messages));
    }
    

@@ -27,6 +27,8 @@ public class ImapMessageMetadata {
 
     private final int mUid;
 
+    private long mModseq = -1l;
+
     private final Set<Flag> mFlags = new HashSet<Flag>();
 
     private final String mEnvelope;
@@ -39,6 +41,15 @@ public class ImapMessageMetadata {
 
     public ImapMessageMetadata(int id) {
         mUid = id;
+        mEnvelope = null;
+        mBodyInfo = null;
+        mInternalDate = 0;
+        mSize = 0;
+    }
+
+    public ImapMessageMetadata(int id, long modseq) {
+        mUid = id;
+        mModseq = modseq;
         mEnvelope = null;
         mBodyInfo = null;
         mInternalDate = 0;
@@ -102,6 +113,9 @@ public class ImapMessageMetadata {
         return mUid;
     }
 
+    public long getModseq() {
+        return mModseq;
+    }
     // Example:
     // * 1 FETCH (FLAGS (\Seen) INTERNALDATE "21-Jul-2014 13:20:08 +0000" RFC822.SIZE 66 ENVELOPE
     // (NIL NIL (("Joe" NIL "joe" "sony.com")) (("Joe" NIL "joe" "sony.com")) (("Joe" NIL "joe"

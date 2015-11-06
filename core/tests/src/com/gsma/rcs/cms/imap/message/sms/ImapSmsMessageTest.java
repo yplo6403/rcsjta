@@ -1,8 +1,8 @@
 package com.gsma.rcs.cms.imap.message.sms;
 
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.cmd.CmdUtils;
 
+import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapMessageMetadata;

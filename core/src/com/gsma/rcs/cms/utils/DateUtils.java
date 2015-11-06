@@ -8,10 +8,16 @@ public class DateUtils {
 
     private static final String CMS_DATE_FORMAT = "E, dd MM yyyy HH:mm:ss.S Z";
 
+    private static final String MMS_FILE_DATE_FORMAT = "yyyyMMdd_HHmmss";
+
     public static String getDateAsString(long date){        
         return new SimpleDateFormat(CMS_DATE_FORMAT).format(date);
     }
-    
+
+    public static String getMmsFileDate(long date){
+        return new SimpleDateFormat(MMS_FILE_DATE_FORMAT).format(date);
+    }
+
     public static Long parseDate(String date){
         long d = -1;
         try {

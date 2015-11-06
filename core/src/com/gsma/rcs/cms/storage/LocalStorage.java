@@ -118,11 +118,11 @@ public class LocalStorage implements ISynchronizationHandler{
             
             if (fg.addDeletedFlag()) {
                 msg.setDeleted(true);
-                storageHandler.onRemoteDeleteEvent(msg.getMessageId());
+                storageHandler.onRemoteDeleteEvent(messageType, msg.getMessageId());
             }
             if (fg.addSeenFlag()) {
                 msg.setSeen(true);
-                storageHandler.onRemoteReadEvent(msg.getMessageId());
+                storageHandler.onRemoteReadEvent(messageType, msg.getMessageId());
             }
             mImapLog.addMessage(msg);            
         }        
@@ -145,7 +145,7 @@ public class LocalStorage implements ISynchronizationHandler{
             MessageType messageType = mMessageResolver.resolveType(msg);
             IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
             IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType); 
-            String messageId = remoteEventHandler.getMessageId(resolvedMessage);
+            String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
             if(messageId == null){ // message not present in local storage
                 uids.add(msg.getUid());    
             } 
@@ -155,10 +155,10 @@ public class LocalStorage implements ISynchronizationHandler{
                 boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
                 boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
                 if(isDeleted){
-                    remoteEventHandler.onRemoteDeleteEvent(messageId);
+                    remoteEventHandler.onRemoteDeleteEvent(messageType, messageId);
                 }
                 if(isSeen){
-                    remoteEventHandler.onRemoteReadEvent(messageId);
+                    remoteEventHandler.onRemoteReadEvent(messageType, messageId);
                 }
                 
                 MessageData messageData = new MessageData(msg.getFolderPath(), 0, msg.getUid(),
@@ -176,7 +176,7 @@ public class LocalStorage implements ISynchronizationHandler{
             MessageType messageType = mMessageResolver.resolveType(msg);
             IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
             
-            String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(resolvedMessage); 
+            String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(messageType, resolvedMessage);
             
             MessageData messageData = new MessageData(resolvedMessage.getFolder(), 0, resolvedMessage.getUid(),
                     resolvedMessage.isSeen(),resolvedMessage.isDeleted(),
@@ -204,7 +204,7 @@ public class LocalStorage implements ISynchronizationHandler{
             MessageData msg = mImapLog.getMessage(fg.getFolder(), fg.getUid());
             MessageType messageType = msg.getMessageType();
             ILocalEventHandler storageHandler = mLocalEventHandlers.get(messageType); 
-            storageHandler.finalizeLocalEvents(msg.getMessageId(), fg.addSeenFlag(), fg.addDeletedFlag());
+            storageHandler.finalizeLocalEvents(messageType, msg.getMessageId(), fg.addSeenFlag(), fg.addDeletedFlag());
         }        
     
         

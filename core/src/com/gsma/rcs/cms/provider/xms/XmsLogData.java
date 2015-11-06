@@ -23,9 +23,6 @@
 package com.gsma.rcs.cms.provider.xms;
 
 import com.gsma.services.rcs.RcsService.Direction;
-import com.gsma.services.rcs.chat.ChatLog;
-import com.gsma.services.rcs.chat.ChatLog.Message.Content.ReasonCode;
-import com.gsma.services.rcs.chat.ChatLog.Message.Content.Status;
 
 import android.net.Uri;
 
@@ -33,7 +30,7 @@ import android.net.Uri;
  * Xms data constants
  * 
  */
-public class XmsData {
+public class XmsLogData {
     /**
      * Database URIs
      */
@@ -46,11 +43,10 @@ public class XmsData {
     public static final String DATABASE_NAME = "rcs_cms_xms.db";
 
     /**
-     * Database table
-     */    
-
+     * Database table for XMS messages
+     */
     public static final String TABLE_XMS = "xms";
-    
+
     /**
      * History log member id
      */
@@ -62,9 +58,14 @@ public class XmsData {
     public static final String KEY_BASECOLUMN_ID = "_id";
 
     /**
-     * Naitve provider id
+     * Native provider id
      */
     public static final String KEY_NATIVE_PROVIDER_ID = "native_provider_id";
+
+    /**
+     * Native thread_id
+     */
+    public static final String KEY_NATIVE_THREAD_ID = "native_thread_id";
 
     /**
      * ContactId formatted number of remote contact or null if the message is an outgoing group chat
@@ -85,6 +86,7 @@ public class XmsData {
     /**
      * Content of the message
      */
+    //TODO to be removed
     public static final String KEY_ATTACHMENT = "attachment";
 
     
@@ -100,26 +102,15 @@ public class XmsData {
      */
     public static final String KEY_DIRECTION = "direction";
 
-    /**
-     * @see Read status
-     */
     public static final String KEY_READ_STATUS = "read_status";
     
-    /**
-     * @see Push status
-     */
     public static final String KEY_PUSH_STATUS = "push_status";
-    
-    
-    /**
-     * @see Delete status
-     */
+
     public static final String KEY_DELETE_STATUS = "delete_status";
 
     /**
      * This is set on the receiver side when the message has been delivered.
-     * 
-     * @see com.gsma.services.rcs.RcsCommon.ReadStatus for the list of status.
+     *
      */
     public static final String KEY_DELIVERY_DATE = "delivery_date";
 
@@ -127,6 +118,11 @@ public class XmsData {
      * Time when message inserted
      */
     public static final String KEY_DATE = "date";
+
+    /**
+     * MMS Id
+     */
+    public static final String KEY_MMS_ID = "mms_id";
 
     /**
      * Message correlator

@@ -2,7 +2,7 @@ package com.gsma.rcs.cms.toolkit.operations.remote;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
-import com.gsma.rcs.cms.imap.message.sms.ImapSmsMessage;
+import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;

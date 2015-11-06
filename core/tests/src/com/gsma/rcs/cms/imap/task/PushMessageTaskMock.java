@@ -2,12 +2,13 @@ package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
-import com.gsma.rcs.cms.imap.message.sms.ImapSmsMessage;
+import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
+import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.PushStatus;
-import com.gsma.rcs.cms.provider.xms.model.AbstractXmsData.ReadStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
@@ -20,24 +21,24 @@ import java.util.Map;
 
 public class PushMessageTaskMock extends PushMessageTask {
 
-    public PushMessageTaskMock(BasicImapService imapService, XmsLog xmsLog, String myNumber,
+    public PushMessageTaskMock(BasicImapService imapService, XmsLog xmsLog, PartLog partLog, String myNumber,
             PushMessageTaskListener callback) {
-        super(imapService, xmsLog, myNumber, callback);
+        super(imapService, xmsLog, partLog, myNumber, callback);
         // TODO Auto-generated constructor stub
     }
     
     @Override
-    public Map<Long, Integer> pushMessages(List<SmsData> messages) {
+    public PushMessageResult pushMessages(List<XmsData> messages) {
         String from, to, direction;
         from = to = direction = null;
 
-        Map<Long, Integer> createdUids = new HashMap<Long, Integer>();
+        Map<String, Integer> createdUids = new HashMap<>();
         try {
             List<String> existingFolders = new ArrayList<String>();
             for (ImapFolder imapFolder : mImapService.listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
-            for (SmsData message : messages) {
+            for (XmsData message : messages) {
                 List<Flag> flags = new ArrayList<Flag>();
                 switch (message.getDirection()) {
                     case INCOMING:
@@ -70,11 +71,11 @@ public class PushMessageTaskMock extends PushMessageTask {
                 mImapService.selectCondstore(remoteFolder);
                 int uid = mImapService.append(remoteFolder, flags,
                         imapSmsMessage.getPart());
-                createdUids.put(message.getNativeProviderId(), uid);
+                createdUids.put(message.getBaseId(), uid);
             }            
         } catch (IOException | ImapException e) {
             e.printStackTrace();
         }
-        return createdUids;
+        return new PushMessageResult(createdUids);
     }
 }
