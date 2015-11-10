@@ -180,9 +180,8 @@ public class TerminatingVideoStreamingSession extends VideoStreamingSession {
                     return;
 
                 default:
-                    throw new IllegalArgumentException(
-                            "Unknown invitation answer in run; answer=".concat(String
-                                    .valueOf(answer)));
+                    throw new IllegalArgumentException(new StringBuilder(
+                            "Unknown invitation answer in run; answer=").append(answer).toString());
             }
 
             IVideoPlayer player = getPlayer();
@@ -291,9 +290,6 @@ public class TerminatingVideoStreamingSession extends VideoStreamingSession {
             handleError(new ContentSharingError(ContentSharingError.SEND_RESPONSE_FAILED, e));
 
         } catch (NetworkException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-            }
             handleError(new ContentSharingError(ContentSharingError.SEND_RESPONSE_FAILED, e));
 
         } catch (RuntimeException e) {

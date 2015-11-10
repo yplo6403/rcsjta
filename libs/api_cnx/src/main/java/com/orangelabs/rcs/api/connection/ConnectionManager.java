@@ -1,54 +1,55 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010 France Telecom S.A.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package com.orangelabs.rcs.api.connection;
 
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.util.Log;
 
-        import com.gsma.services.rcs.RcsService;
-        import com.gsma.services.rcs.RcsServiceControl;
-        import com.gsma.services.rcs.RcsServiceListener;
-        import com.gsma.services.rcs.RcsServiceListener.ReasonCode;
-        import com.gsma.services.rcs.capability.CapabilityService;
-        import com.gsma.services.rcs.chat.ChatService;
-        import com.gsma.services.rcs.contact.ContactService;
-        import com.gsma.services.rcs.extension.MultimediaSessionService;
-        import com.gsma.services.rcs.filetransfer.FileTransferService;
-        import com.gsma.services.rcs.history.HistoryService;
-        import com.gsma.services.rcs.sharing.geoloc.GeolocSharingService;
-        import com.gsma.services.rcs.sharing.image.ImageSharingService;
-        import com.gsma.services.rcs.sharing.video.VideoSharingService;
-        import com.gsma.services.rcs.upload.FileUploadService;
+import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsServiceControl;
+import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsServiceListener;
+import com.gsma.services.rcs.RcsServiceListener.ReasonCode;
+import com.gsma.services.rcs.capability.CapabilityService;
+import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.contact.ContactService;
+import com.gsma.services.rcs.extension.MultimediaSessionService;
+import com.gsma.services.rcs.filetransfer.FileTransferService;
+import com.gsma.services.rcs.history.HistoryService;
+import com.gsma.services.rcs.sharing.geoloc.GeolocSharingService;
+import com.gsma.services.rcs.sharing.image.ImageSharingService;
+import com.gsma.services.rcs.sharing.video.VideoSharingService;
+import com.gsma.services.rcs.upload.FileUploadService;
+import com.orangelabs.rcs.api.connection.utils.LogUtils;
+import com.orangelabs.rcs.api.connection.utils.TimerUtils;
 
-        import com.orangelabs.rcs.api.connection.utils.LockAccess;
-        import com.orangelabs.rcs.api.connection.utils.LogUtils;
-
-        import android.app.Activity;
-        import android.app.AlertDialog;
-        import android.content.BroadcastReceiver;
-        import android.content.Context;
-        import android.content.DialogInterface;
-        import android.content.Intent;
-        import android.content.IntentFilter;
-        import android.util.Log;
-
-        import java.util.HashMap;
-        import java.util.HashSet;
-        import java.util.Map;
-        import java.util.Set;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A class to manage RCS API connections
@@ -57,16 +58,11 @@ package com.orangelabs.rcs.api.connection;
  */
 public class ConnectionManager {
 
+    private static final String LOGTAG = LogUtils.getTag(ConnectionManager.class.getSimpleName());
+
+    private static final long API_DELAY_TO_CONNECT = 5000;
+
     private static volatile ConnectionManager sInstance;
-
-    /**
-     * Enumerated type for RCS service name
-     */
-    @SuppressWarnings("javadoc")
-    public enum RcsServiceName {
-        CAPABILITY, CONTACT, CHAT, FILE_TRANSFER, IMAGE_SHARING, VIDEO_SHARING, GEOLOC_SHARING, FILE_UPLOAD, MULTIMEDIA, HISTORY;
-    }
-
     /**
      * Set of connected services
      */
@@ -82,7 +78,7 @@ public class ConnectionManager {
      */
     private final Map<RcsServiceName, RcsService> mApis;
 
-    private final Context mContext;
+    private final Context mCtx;
 
     private final RcsServiceControl mRcsServiceControl;
 
@@ -91,217 +87,37 @@ public class ConnectionManager {
      */
     private final Set<RcsServiceName> mManagedServices;
 
-    private static final String LOGTAG = LogUtils.getTag(ConnectionManager.class.getSimpleName());
+    private final AlarmManager mAlarmManager;
 
-    /**
-     * Client connection listener
-     */
-    private class ClientConnectionNotifier {
-        /**
-         * The set of monitored services
-         */
-        private final Set<RcsServiceName> mMonitoredServices;
+    private PendingIntent mCnxIntent;
 
-        /**
-         * The activity to notify
-         */
-        private Activity mActivity;
+    private int mRetryCount;
 
-        /**
-         * A locker to notify only once
-         */
-        private LockAccess mTriggerOnlyOnce;
+    private static final int MAX_RETRY_API_CNX = 4;
 
-        private RcsServiceListener mListener;
-
-        /**
-         * Constructor
-         *
-         * @param activity the activity to notify
-         * @param triggerOnlyOnce lock access to trigger only once
-         * @param services the list of services to monitor
-         */
-        public ClientConnectionNotifier(Activity activity, LockAccess triggerOnlyOnce,
-                                        RcsServiceName... services) {
-            mActivity = activity;
-            mTriggerOnlyOnce = triggerOnlyOnce;
-            mMonitoredServices = new HashSet<RcsServiceName>();
-            for (RcsServiceName service : services) {
-                mMonitoredServices.add(service);
-            }
-        }
-
-        /**
-         * Constructor
-         *
-         * @param listener Listener to execute if a connection event occurs
-         * @param services services to notify
-         */
-        public ClientConnectionNotifier(RcsServiceListener listener, RcsServiceName... services) {
-            mListener = listener;
-            mMonitoredServices = new HashSet<RcsServiceName>();
-            for (RcsServiceName service : services) {
-                if (!mManagedServices.contains(service)) {
-                    throw new IllegalArgumentException("Service " + service
-                            + " does not belong to set of managed services!");
-                }
-                mMonitoredServices.add(service);
-            }
-        }
-
-        public void notifyConnection() {
-            if (mListener == null) {
-                return;
-            }
-            if (mConnectedServices.containsAll(mMonitoredServices)) {
-                /* All monitored services are connected -> notify connection */
-                mListener.onServiceConnected();
-            }
-        }
-
-        public void notifyDisconnection(ReasonCode error) {
-            if (mActivity != null) {
-                String msg;
-                if (ReasonCode.SERVICE_DISABLED == error) {
-                    msg = "RCS service disabled";
-                } else {
-                    msg = "RCS service disconnected";
-                }
-                showMessageAndExit(mActivity, msg, mTriggerOnlyOnce);
-                return;
-            }
-            if (mListener != null) {
-                mListener.onServiceDisconnected(error);
-            }
-        }
-
-        public Set<RcsServiceName> getMonitoredServices() {
-            return mMonitoredServices;
-        }
-
-    }
-
-    /**
-     * A broadcast receiver to catch ACTION_SERVICE_UP from the RCS stack
-     */
-    private class RcsServiceReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!RcsService.ACTION_SERVICE_UP.equals(intent.getAction())) {
-                return;
-            }
-            if (LogUtils.isActive) {
-                Log.i(LOGTAG, "RCS service is UP");
-            }
-            /* Connect all APIs */
-            ConnectionManager.getInstance().connectApis();
-        }
-    }
-
-    /**
-     * Interface to listen for the response for RCS service starting state query
-     */
-    public interface IRcsServiceStartedListener {
-        /**
-         * Callback response
-         *
-         * @param serviceStarted True if RCS services are started
-         */
-        public void handleResponse(boolean serviceStarted);
-    }
-
-    /**
-     * Get an instance of ConnectionManager.
-     *
-     * @param context the context
-     * @param rcsServiceControl instance of RcsServiceControl
-     * @param services list of managed services
-     * @return the singleton instance.
-     */
-    public static ConnectionManager createInstance(Context context,
-                                                   RcsServiceControl rcsServiceControl, RcsServiceName... services) {
-        Set<RcsServiceName> managedServices = new HashSet<RcsServiceName>();
-        for (RcsServiceName service : services) {
-            managedServices.add(service);
-        }
-        return createInstance(context, rcsServiceControl, managedServices);
-    }
-
-    /**
-     * Get an instance of ConnectionManager.
-     *
-     * @param context the context
-     * @param rcsServiceControl instance of RcsServiceControl
-     * @param managedServices Set of managed services
-     * @return the singleton instance.
-     */
-    public static ConnectionManager createInstance(Context context,
-                                                   RcsServiceControl rcsServiceControl, Set<RcsServiceName> managedServices) {
-        if (sInstance != null) {
-            return sInstance;
-        }
-        synchronized (ConnectionManager.class) {
-            if (sInstance == null) {
-                if (context == null) {
-                    throw new IllegalArgumentException("Context is null");
-                }
-                sInstance = new ConnectionManager(context, managedServices, rcsServiceControl);
-            }
-        }
-        return sInstance;
-    }
-
-    /**
-     * Gets the singleton instance of ConnectionManager.
-     *
-     * @return the singleton instance.
-     */
-    public static ConnectionManager getInstance() {
-        return sInstance;
-    }
-
-    /**
-     * Create a RCS service listener to monitor API connection
-     *
-     * @param service the service to monitor
-     * @return the listener
-     */
-    private RcsServiceListener newRcsServiceListener(final RcsServiceName service) {
-        return new RcsServiceListener() {
-            @Override
-            public void onServiceDisconnected(ReasonCode error) {
-                mConnectedServices.remove(service);
-                notifyDisconnection(service, error);
-            }
-
-            @Override
-            public void onServiceConnected() {
-                mConnectedServices.add(service);
-                notifyConnection(service);
-            }
-        };
-
-    }
+    private static final String ACTION_CONNECT = "com.orangelabs.rcs.ri.api.ACTION_CONNECT";
 
     /**
      * Constructor
      *
-     * @param context
-     * @param managedServices Set of managed services
+     * @param context           The context
+     * @param managedServices   Set of managed services
      * @param rcsServiceControl instance of RcsServiceControl
      */
     private ConnectionManager(Context context, Set<RcsServiceName> managedServices,
                               RcsServiceControl rcsServiceControl) {
-        mContext = context;
+        mCtx = context;
+        mCnxIntent = PendingIntent.getBroadcast(context, 0, new Intent(ACTION_CONNECT), 0);
+        mAlarmManager = (AlarmManager) mCtx.getSystemService(Context.ALARM_SERVICE);
+
         mManagedServices = managedServices;
         mRcsServiceControl = rcsServiceControl;
         /* Construct list of connected services */
-        mConnectedServices = new HashSet<RcsServiceName>();
+        mConnectedServices = new HashSet<>();
         /* Construct list of clients to notify */
-        mClientsToNotify = new HashMap<Activity, ClientConnectionNotifier>();
+        mClientsToNotify = new HashMap<>();
         /* Construct list of APIs */
-        mApis = new HashMap<RcsServiceName, RcsService>();
+        mApis = new HashMap<>();
 
         if (managedServices == null || managedServices.isEmpty()) {
             throw new RuntimeException("Incorrect parameter managedService!");
@@ -353,15 +169,102 @@ public class ConnectionManager {
         }
     }
 
-    private boolean isRcsServiceStarted() {
-        try {
-            return mRcsServiceControl.isServiceStarted();
-        } catch (Exception e) {
-            if (LogUtils.isActive) {
-                Log.w(LOGTAG, "Failed to get RCS service starting state!", e);
+    /**
+     * Create a RCS service listener to monitor API connection
+     *
+     * @param service the service to monitor
+     * @return the listener
+     */
+    private RcsServiceListener newRcsServiceListener(final RcsServiceName service) {
+        return new RcsServiceListener() {
+            @Override
+            public void onServiceConnected() {
+                mConnectedServices.add(service);
+                notifyConnection(service);
             }
-            return false;
+
+            @Override
+            public void onServiceDisconnected(ReasonCode error) {
+                mConnectedServices.remove(service);
+                notifyDisconnection(service, error);
+            }
+        };
+
+    }
+
+    /**
+     * Notify API disconnection to client
+     *
+     * @param service the disconnected service
+     * @param error   the error
+     */
+    private void notifyDisconnection(RcsServiceName service, ReasonCode error) {
+        if (LogUtils.isActive) {
+            Log.w(LOGTAG, service.name() + " " + error);
         }
+        for (ClientConnectionNotifier clientToNotify : mClientsToNotify.values()) {
+            Set<RcsServiceName> monitoredServices = clientToNotify.getMonitoredServices();
+            if (monitoredServices == null || monitoredServices.contains(service)) {
+                clientToNotify.notifyDisconnection(error);
+            }
+        }
+    }
+
+    private void notifyConnection(RcsServiceName service) {
+        if (LogUtils.isActive) {
+            Log.w(LOGTAG, service.name() + " " + " is connected");
+        }
+        for (ClientConnectionNotifier clienttoNotify : mClientsToNotify.values()) {
+            clienttoNotify.notifyConnection();
+        }
+    }
+
+    /**
+     * Get an instance of ConnectionManager.
+     *
+     * @param context           the context
+     * @param rcsServiceControl instance of RcsServiceControl
+     * @param services          list of managed services
+     * @return the singleton instance.
+     */
+    public static ConnectionManager createInstance(Context context,
+                                                   RcsServiceControl rcsServiceControl, RcsServiceName... services) {
+        Set<RcsServiceName> managedServices = new HashSet<>();
+        Collections.addAll(managedServices, services);
+        return createInstance(context, rcsServiceControl, managedServices);
+    }
+
+    /**
+     * Get an instance of ConnectionManager.
+     *
+     * @param ctx               the context
+     * @param rcsServiceControl instance of RcsServiceControl
+     * @param managedServices   Set of managed services
+     * @return the singleton instance.
+     */
+    public static ConnectionManager createInstance(Context ctx,
+                                                   RcsServiceControl rcsServiceControl, Set<RcsServiceName> managedServices) {
+        if (sInstance != null) {
+            return sInstance;
+        }
+        synchronized (ConnectionManager.class) {
+            if (sInstance == null) {
+                if (ctx == null) {
+                    throw new IllegalArgumentException("Context is null");
+                }
+                sInstance = new ConnectionManager(ctx, managedServices, rcsServiceControl);
+            }
+        }
+        return sInstance;
+    }
+
+    /**
+     * Gets the singleton instance of ConnectionManager.
+     *
+     * @return the singleton instance.
+     */
+    public static ConnectionManager getInstance() {
+        return sInstance;
     }
 
     /**
@@ -369,8 +272,12 @@ public class ConnectionManager {
      */
     public void start() {
         /* Register the broadcast receiver to catch ACTION_SERVICE_UP */
-        mContext.registerReceiver(new RcsServiceReceiver(), new IntentFilter(
+        mCtx.registerReceiver(new RcsServiceReceiver(), new IntentFilter(
                 RcsService.ACTION_SERVICE_UP));
+        /* Register the broadcast receiver to pool periodically the API connections */
+        mCtx.registerReceiver(new ReceiveTimerToReConnectApi(), new IntentFilter(
+                ACTION_CONNECT));
+        mRetryCount = 0;
         connectApis();
     }
 
@@ -378,52 +285,32 @@ public class ConnectionManager {
      * Connect APIs
      */
     private void connectApis() {
-        if (isRcsServiceStarted()) {
+        try {
+            if (mRcsServiceControl.isServiceStarted()) {
             /* Connect all APIs */
-            for (RcsServiceName service : mApis.keySet()) {
+                for (RcsServiceName service : mApis.keySet()) {
                 /* Check if not already connected */
-                if (!isServiceConnected(service)) {
-                    try {
+                    if (!isServiceConnected(service)) {
                         if (LogUtils.isActive) {
                             Log.d(LOGTAG, "Connect service ".concat(service.name()));
                         }
                         RcsService rcsService = mApis.get(service);
                         rcsService.connect();
-                    } catch (Exception e) {
-                        if (LogUtils.isActive) {
-                            Log.e(LOGTAG, "Cannot connect service ".concat(service.name()), e);
-                        }
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Notify API disconnection to client
-     *
-     * @param service the disconnected service
-     * @param error the error
-     */
-    private void notifyDisconnection(RcsServiceName service, ReasonCode error) {
-        if (LogUtils.isActive) {
-            Log.w(LOGTAG, new StringBuilder(service.name()).append(" ").append(error).toString());
-        }
-        for (ClientConnectionNotifier clienttoNotify : mClientsToNotify.values()) {
-            Set<RcsServiceName> monitoredServices = clienttoNotify.getMonitoredServices();
-            if (monitoredServices == null || monitoredServices.contains(service)) {
-                clienttoNotify.notifyDisconnection(error);
+        } catch (RcsServiceException e) {
+            Log.w(LOGTAG, "Cannot connect service API: ".concat(e.getMessage()));
+            mRetryCount++;
+            if (mRetryCount < MAX_RETRY_API_CNX) {
+                TimerUtils.setExactTimer(mAlarmManager, System.currentTimeMillis()
+                        + API_DELAY_TO_CONNECT, mCnxIntent);
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Set timer to retry API connection");
+                }
+            } else {
+                Log.e(LOGTAG, "Maximum attempts to connect API is reached");
             }
-        }
-    }
-
-    private void notifyConnection(RcsServiceName service) {
-        if (LogUtils.isActive) {
-            Log.w(LOGTAG, new StringBuilder(service.name()).append(" ").append(" is connected")
-                    .toString());
-        }
-        for (ClientConnectionNotifier clienttoNotify : mClientsToNotify.values()) {
-            clienttoNotify.notifyConnection();
         }
     }
 
@@ -461,13 +348,13 @@ public class ConnectionManager {
     /**
      * Start monitoring the services and finish activities if service is disconnected
      *
-     * @param activity the activity requesting to start monitoring the services
-     * @param exitOnce a locker
-     * @param services the list of services to monitor
+     * @param activity    the activity requesting to start monitoring the services
+     * @param iFinishable the interface to finish activity
+     * @param services    the list of services to monitor
      */
-    public void startMonitorServices(Activity activity, LockAccess exitOnce,
+    public void startMonitorServices(Activity activity, IRcsActivityFinishable iFinishable,
                                      RcsServiceName... services) {
-        mClientsToNotify.put(activity, new ClientConnectionNotifier(activity, exitOnce, services));
+        mClientsToNotify.put(activity, new ClientConnectionNotifier(iFinishable, services));
     }
 
     /**
@@ -561,15 +448,6 @@ public class ConnectionManager {
     }
 
     /**
-     * Get the instance of HistoryService
-     *
-     * @return the instance
-     */
-    public HistoryService getHistoryApi() {
-        return (HistoryService) mApis.get(RcsServiceName.HISTORY);
-    }
-
-    /**
      * Get the instance of MultimediaSessionService
      *
      * @return the instance
@@ -579,37 +457,128 @@ public class ConnectionManager {
     }
 
     /**
-     * Show a message and exit activity
-     *
-     * @param activity Activity
-     * @param msg Message to be displayed
-     * @param locker a locker to only execute once
+     * Enumerated type for RCS service name
      */
-    private void showMessageAndExit(final Activity activity, String msg, LockAccess locker) {
-        // Do not execute if activity is Fishing
-        if (activity.isFinishing()) {
-            return;
-        }
-        // Do not execute if already executed once
-        if (locker != null && !locker.tryLock()) {
-            return;
-        }
-        if (LogUtils.isActive) {
-            Log.w(LOGTAG, new StringBuilder("Exit activity ").append(activity.getLocalClassName())
-                    .append(" <").append(msg).append(">").toString());
+    @SuppressWarnings("javadoc")
+    public enum RcsServiceName {
+        CAPABILITY, CONTACT, CHAT, FILE_TRANSFER, IMAGE_SHARING, VIDEO_SHARING, GEOLOC_SHARING, FILE_UPLOAD, MULTIMEDIA, HISTORY
+    }
+
+    /**
+     * Client connection listener
+     */
+    private class ClientConnectionNotifier {
+        /**
+         * The set of monitored services
+         */
+        private final Set<RcsServiceName> mMonitoredServices;
+
+        private RcsServiceListener mListener;
+
+        private IRcsActivityFinishable mIFinishable;
+
+        /**
+         * Constructor
+         *
+         * @param iFinishable Callback called when exception is thrown
+         * @param services    the list of services to monitor
+         */
+        public ClientConnectionNotifier(IRcsActivityFinishable iFinishable,
+                                        RcsServiceName... services) {
+            mIFinishable = iFinishable;
+            mMonitoredServices = new HashSet<>();
+            Collections.addAll(mMonitoredServices, services);
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setMessage(msg);
-        builder.setTitle("Information");
-        builder.setCancelable(false);
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                activity.finish();
+        /**
+         * Constructor
+         *
+         * @param listener Listener to execute if a connection event occurs
+         * @param services services to notify
+         */
+        public ClientConnectionNotifier(RcsServiceListener listener, RcsServiceName... services) {
+            mListener = listener;
+            mMonitoredServices = new HashSet<>();
+            for (RcsServiceName service : services) {
+                if (!mManagedServices.contains(service)) {
+                    throw new IllegalArgumentException("Service " + service
+                            + " does not belong to set of managed services!");
+                }
+                mMonitoredServices.add(service);
             }
-        });
-        AlertDialog alert = builder.create();
-        alert.show();
+        }
+
+        public void notifyConnection() {
+            if (mListener == null) {
+                return;
+            }
+            if (mConnectedServices.containsAll(mMonitoredServices)) {
+                /* All monitored services are connected -> notify connection */
+                mListener.onServiceConnected();
+                mRetryCount = 0;
+            }
+        }
+
+        public void notifyDisconnection(ReasonCode error) {
+            if (mIFinishable != null) {
+                String msg;
+                if (ReasonCode.SERVICE_DISABLED == error) {
+                    msg = "RCS service disabled";
+                } else {
+                    msg = "RCS service disconnected";
+                }
+                mIFinishable.showMessageThenExit(msg);
+                return;
+            }
+            if (mListener != null) {
+                mListener.onServiceDisconnected(error);
+            }
+        }
+
+        public Set<RcsServiceName> getMonitoredServices() {
+            return mMonitoredServices;
+        }
+
+    }
+
+    /**
+     * A broadcast receiver to catch ACTION_SERVICE_UP from the RCS stack
+     */
+    private class RcsServiceReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!RcsService.ACTION_SERVICE_UP.equals(intent.getAction())) {
+                return;
+            }
+            if (LogUtils.isActive) {
+                Log.i(LOGTAG, "RCS service is UP");
+            }
+            /* Connect all APIs with delay */
+            mRetryCount = 0;
+            TimerUtils.setExactTimer(mAlarmManager, System.currentTimeMillis()
+                    + API_DELAY_TO_CONNECT, mCnxIntent);
+        }
+    }
+
+    private class ReceiveTimerToReConnectApi extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            new Thread() {
+                public void run() {
+                    try {
+                        connectApis();
+
+                    } catch (RuntimeException e) {
+                        /*
+                         * Intentionally catch runtime exceptions as else it will abruptly end the
+                         * thread and eventually bring the whole system down, which is not intended.
+                         */
+                        Log.e(LOGTAG, "Failed to pool connection to RCS service!", e);
+                    }
+                }
+            }.start();
+        }
     }
 
 }

@@ -93,7 +93,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
      * @param rcsSettings RCS settings
      * @param timestamp Local timestamp for the session
      * @param timestampSent the remote timestamp sent in payload for the file sharing
-     * @param contactManager
+     * @param contactManager The contact manager accessor
      * @throws PayloadException
      * @throws FileAccessException
      */
@@ -238,7 +238,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
                         setSessionAccepted();
 
                         for (ImsSessionListener listener : listeners) {
-                            ((FileSharingSessionListener) listener).onSessionAccepting(contact);
+                             listener.onSessionAccepting(contact);
                         }
                         break;
 
@@ -250,9 +250,9 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
                         return;
 
                     default:
-                        throw new IllegalArgumentException(
-                                "Unknown invitation answer in run; answer=".concat(String
-                                        .valueOf(answer)));
+                        throw new IllegalArgumentException(new StringBuilder(
+                                "Unknown invitation answer in run; answer=").append(answer)
+                                .toString());
                 }
             }
 
@@ -405,6 +405,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
             }
 
         } catch (PayloadException e) {
+            sLogger.error("Unable to send 200OK response!", e);
             handleError(new FileSharingError(FileSharingError.SEND_RESPONSE_FAILED, e));
 
         } catch (NetworkException e) {
@@ -415,12 +416,13 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
+            sLogger.error("Failed to initiate chat session as terminating!", e);
             handleError(new FileSharingError(FileSharingError.SEND_RESPONSE_FAILED, e));
         }
     }
 
     @Override
-    public void msrpDataTransfered(String msgId) {
+    public void msrpDataTransferred(String msgId) {
         // Not used in terminating side
     }
 
@@ -437,7 +439,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
             file.writeData2File(data);
             file.closeFile();
             for (ImsSessionListener listener : listeners) {
-                ((FileSharingSessionListener) listener).onFileTransfered(file, contact,
+                ((FileSharingSessionListener) listener).onFileTransferred(file, contact,
                         FileTransferData.UNKNOWN_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION,
                         FileTransferProtocol.MSRP);
             }
@@ -483,7 +485,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
         if (sLogger.isActivated()) {
             sLogger.info("Data transfer aborted");
         }
-        if (!isFileTransfered()) {
+        if (!isFileTransferred()) {
             deleteFile();
         }
     }
@@ -511,7 +513,7 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
                 sLogger.debug("MSRP session has been closed");
             }
         }
-        if (!isFileTransfered()) {
+        if (!isFileTransferred()) {
             deleteFile();
         }
     }

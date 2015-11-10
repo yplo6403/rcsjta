@@ -96,10 +96,10 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
      * @param imService InstantMessagingService
      * @param content Content to be shared
      * @param contact Remote contact identifier
-     * @param fileIcon Content of fileicon
-     * @param rcsSettings RCS settings
+     * @param fileIcon Content of file icon
+     * @param rcsSettings The RCS settings accessor
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager The contact manager accessor
      */
     public OriginatingMsrpFileSharingSession(InstantMessagingService imService,
             String fileTransferId, MmContent content, ContactId contact, MmContent fileIcon,
@@ -127,13 +127,14 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
                     .getContentResolver().openInputStream(file);
             byte[] data = new byte[size];
             if (size != fileInputStream.read(data, 0, size)) {
-                throw new NetworkException("Unable to retrive data from ".concat(file.toString()));
+                throw new NetworkException(new StringBuilder("Unable to retrive data from ")
+                        .append(file).toString());
             }
             return data;
 
         } catch (IOException e) {
-            throw new NetworkException(
-                    "Failed to get file data for uri : ".concat(file.toString()), e);
+            throw new NetworkException(new StringBuilder("Failed to get file data for uri : ")
+                    .append(file).toString(), e);
 
         } finally {
             CloseableUtils.tryToClose(fileInputStream);
@@ -244,16 +245,12 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
             /* Send INVITE request */
             sendInvite(invite);
 
-        } catch (InvalidArgumentException e) {
+        } catch (InvalidArgumentException | ParseException e) {
+            sLogger.error("Unable to set authorization header!", e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
-        } catch (ParseException e) {
-            handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (FileAccessException e) {
-            handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (PayloadException e) {
+        } catch (FileAccessException | PayloadException e) {
+            sLogger.error("Unable to set and send initial invite!", e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (NetworkException e) {
@@ -264,23 +261,21 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
+            sLogger.error("Failed to initiate a file transfer session!", e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
         }
     }
 
     @Override
     public void prepareMediaSession() {
-        // Changed by Deutsche Telekom
         // Get the remote SDP part
         byte[] sdp = getDialogPath().getRemoteContent().getBytes(UTF8);
 
-        // Changed by Deutsche Telekom
         // Create the MSRP session
         MsrpSession session = msrpMgr.createMsrpSession(sdp, this);
 
         session.setFailureReportOption(true);
         session.setSuccessReportOption(false);
-        // Changed by Deutsche Telekom
         // Do not use right now the mapping to do not increase memory and cpu consumption
         session.setMapMsgIdFromTransationId(false);
     }
@@ -298,10 +293,10 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
                     .openInputStream(getContent().getUri());
             msrpMgr.sendChunks(stream, IdGenerator.generateMessageID(), getContent().getEncoding(),
                     getContent().getSize(), TypeMsrpChunk.FileSharing);
+
         } catch (FileNotFoundException e) {
-            throw new FileAccessException(
-                    "Failed to initiate media transfer for uri : ".concat(getContent().getUri()
-                            .toString()), e);
+            throw new FileAccessException("Failed to initiate media transfer!", e);
+
         } catch (SecurityException e) {
             sLogger.error("Session initiation has failed due to that the file is not accessible!",
                     e);
@@ -313,10 +308,10 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
     }
 
     @Override
-    public void msrpDataTransfered(String msgId) {
+    public void msrpDataTransferred(String msgId) {
         try {
             if (sLogger.isActivated()) {
-                sLogger.info("Data transfered");
+                sLogger.info("Data transferred");
             }
             long timestamp = System.currentTimeMillis();
             fileTransfered();
@@ -326,15 +321,17 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
             ContactId contact = getRemoteContact();
             MmContent content = getContent();
             for (ImsSessionListener listener : getListeners()) {
-                ((FileSharingSessionListener) listener).onFileTransfered(content, contact,
+                ((FileSharingSessionListener) listener).onFileTransferred(content, contact,
                         FileTransferData.UNKNOWN_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION,
                         FileTransferProtocol.MSRP);
             }
             mImService.receiveOneToOneFileDeliveryStatus(contact, new ImdnDocument(
                     getFileTransferId(), ImdnDocument.DISPLAY,
                     ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp));
+
         } catch (PayloadException e) {
-            sLogger.error("Failed to notify msrp data transfered for msgId : ".concat(msgId), e);
+            sLogger.error(new StringBuilder("Failed to notify MSRP data transferred for msgId : ")
+                    .append(msgId).toString(), e);
 
         } catch (NetworkException e) {
             if (sLogger.isActivated()) {
@@ -348,7 +345,8 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
              * executing operations on a thread unhandling such exceptions will eventually lead to
              * exit the system and thus can bring the whole system down, which is not intended.
              */
-            sLogger.error("Failed to notify msrp data transfered for msgId : ".concat(msgId), e);
+            sLogger.error(new StringBuilder("Failed to notify msrp data transfered for msgId : ")
+                    .append(msgId).toString(), e);
         }
     }
 

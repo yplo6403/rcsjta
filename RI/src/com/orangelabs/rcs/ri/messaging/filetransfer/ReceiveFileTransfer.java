@@ -18,11 +18,10 @@
 
 package com.orangelabs.rcs.ri.messaging.filetransfer;
 
+import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
-import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -30,17 +29,19 @@ import com.gsma.services.rcs.filetransfer.GroupFileTransferListener;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.LockAccess;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatDAO;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
 import com.orangelabs.rcs.ri.utils.Utils;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
@@ -63,15 +64,16 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
  * Received file transfer
  * 
  * @author Jean-Marc AUFFRET
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
-public class ReceiveFileTransfer extends Activity {
+public class ReceiveFileTransfer extends RcsActivity {
     /**
      * UI mHandler
      */
@@ -79,23 +81,9 @@ public class ReceiveFileTransfer extends Activity {
 
     private FileTransfer mFileTransfer;
 
-    private boolean mResuming = false;
-
     private FileTransferDAO mFtDao;
 
-    private boolean mGgroupFileTransfer = false;
-
-    /**
-     * A locker to exit only once
-     */
-    private LockAccess mExitOnce = new LockAccess();
-
-    /**
-     * API connection manager
-     */
-    private ConnectionManager mCnxManager;
-
-    private boolean mTransferred = false;
+    private boolean mGroupFileTransfer = false;
 
     private String mTransferId;
 
@@ -103,47 +91,60 @@ public class ReceiveFileTransfer extends Activity {
 
     private Button mResumeBtn;
 
+    private OnClickListener mDeclineBtnListener;
+
+    private OnClickListener mAcceptBtnListener;
+
+    private android.view.View.OnClickListener mBtnPauseListener;
+
+    private android.view.View.OnClickListener mBtnResumeListener;
+
+    private OneToOneFileTransferListener mFileTransferListener;
+
+    private GroupFileTransferListener mGroupFtListener;
+
+    private FileTransferService mFileTransferService;
+
+    private ProgressBar mProgressBar;
+
     private static final String LOGTAG = LogUtils.getTag(ReceiveFileTransfer.class.getSimpleName());
 
     private static final String VCARD_MIME_TYPE = "text/x-vcard";
 
+    private static final String BUNDLE_FTDAO_ID = "ftdao";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.filetransfer_receive);
-
+        initialize();
         /* Set pause and resume button */
         mPauseBtn = (Button) findViewById(R.id.pause_btn);
-        mPauseBtn.setOnClickListener(btnPauseListener);
+        mPauseBtn.setOnClickListener(mBtnPauseListener);
         mPauseBtn.setEnabled(false);
         mResumeBtn = (Button) findViewById(R.id.resume_btn);
-        mResumeBtn.setOnClickListener(btnResumeListener);
+        mResumeBtn.setOnClickListener(mBtnResumeListener);
         mResumeBtn.setEnabled(false);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         /* Register to API connection manager */
-        mCnxManager = ConnectionManager.getInstance();
-        if (!mCnxManager.isServiceConnected(RcsServiceName.FILE_TRANSFER, RcsServiceName.CONTACT)) {
-            Utils.showMessageAndExit(this, getString(R.string.label_service_not_available),
-                    mExitOnce);
+        if (!isServiceConnected(RcsServiceName.FILE_TRANSFER, RcsServiceName.CONTACT)) {
+            showMessageThenExit(R.string.label_service_not_available);
         } else {
-            mCnxManager.startMonitorServices(this, mExitOnce, RcsServiceName.FILE_TRANSFER,
-                    RcsServiceName.CONTACT);
-            processIntent(getIntent(), false);
-            if (mFileTransfer == null) {
+            startMonitorServices(RcsServiceName.FILE_TRANSFER, RcsServiceName.CONTACT);
+            mFileTransferService = getFileTransferApi();
+            if (!processIntent(getIntent(), false)) {
                 return;
             }
-            FileTransferService fileTransferService = mCnxManager.getFileTransferApi();
             try {
-                if (mGgroupFileTransfer) {
-                    fileTransferService.addEventListener(groupFtListener);
+                if (mGroupFileTransfer) {
+                    mFileTransferService.addEventListener(mGroupFtListener);
                 } else {
-                    fileTransferService.addEventListener(ftListener);
+                    mFileTransferService.addEventListener(mFileTransferListener);
                 }
             } catch (RcsServiceException e) {
-                Utils.showMessageAndExit(this, getString(R.string.label_api_failed, mExitOnce),
-                        mExitOnce);
+                showExceptionThenExit(e);
             }
         }
     }
@@ -157,46 +158,41 @@ public class ReceiveFileTransfer extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mCnxManager.stopMonitorServices(this);
-        if (mCnxManager.isServiceConnected(RcsServiceName.FILE_TRANSFER)) {
+        if (mFileTransferService != null && isServiceConnected(RcsServiceName.FILE_TRANSFER)) {
             /* Remove service listener */
             try {
-                if (mGgroupFileTransfer) {
-                    mCnxManager.getFileTransferApi().removeEventListener(groupFtListener);
+                if (mGroupFileTransfer) {
+                    mFileTransferService.removeEventListener(mGroupFtListener);
                 } else {
-                    mCnxManager.getFileTransferApi().removeEventListener(ftListener);
+                    mFileTransferService.removeEventListener(mFileTransferListener);
                 }
-            } catch (Exception e) {
-                if (LogUtils.isActive) {
-                    Log.e(LOGTAG, "Failed to remove listener", e);
-                }
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
             }
         }
     }
 
-    void processIntent(Intent intent, boolean newIntent) {
-        mFtDao = (FileTransferDAO) (intent.getExtras()
-                .getParcelable(FileTransferIntentService.BUNDLE_FTDAO_ID));
+    boolean processIntent(Intent intent, boolean newIntent) {
+        mFtDao = intent.getExtras().getParcelable(BUNDLE_FTDAO_ID);
         if (mFtDao == null) {
             if (LogUtils.isActive) {
                 Log.e(LOGTAG, "processIntent cannot read File Transfer invitation (newIntent="
                         + newIntent + ")");
             }
             finish();
-            return;
+            return false;
         }
         /* Get the file transfer session */
         mTransferId = mFtDao.getTransferId();
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "processIntent (newIntent=" + newIntent + ") " + mFtDao);
         }
+        ContactId contact = mFtDao.getContact();
+        /* Get invitation info */
+        boolean resuming = FileTransferIntent.ACTION_RESUME.equals(intent.getAction());
+        mGroupFileTransfer = GroupChatDAO.isGroupChat(mFtDao.getChatId(), contact);
 
-        // Get invitation info
-        mResuming = FileTransferIntent.ACTION_RESUME.equals(intent.getAction());
-        mGgroupFileTransfer = (intent.getBooleanExtra(FileTransferIntentService.EXTRA_GROUP_FILE,
-                false));
-
-        String from = RcsContactUtil.getInstance(this).getDisplayName(mFtDao.getContact());
+        String from = RcsContactUtil.getInstance(this).getDisplayName(contact);
         TextView fromTextView = (TextView) findViewById(R.id.from);
         fromTextView.setText(getString(R.string.label_from_args, from));
 
@@ -216,13 +212,12 @@ public class ReceiveFileTransfer extends Activity {
         } else {
             expirationView.setVisibility(View.GONE);
         }
-        FileTransferService ftApi = mCnxManager.getFileTransferApi();
         try {
-            mFileTransfer = ftApi.getFileTransfer(mTransferId);
+            mFileTransfer = mFileTransferService.getFileTransfer(mTransferId);
             if (mFileTransfer == null) {
                 if (FileTransfer.State.TRANSFERRED == mFtDao.getState()) {
                     displayTransferredFile();
-                    return;
+                    return false;
 
                 } else {
                     String reasonCode = RiApplication.sFileTransferReasonCodes[mFtDao
@@ -232,28 +227,23 @@ public class ReceiveFileTransfer extends Activity {
                                 "Transfer ID=" + mTransferId + " failed state=" + mFtDao.getState()
                                         + " reason=" + reasonCode);
                     }
-                    // Transfer failed
-                    Utils.showMessageAndExit(this,
-                            getString(R.string.label_transfer_failed, reasonCode), mExitOnce);
-                    return;
+                    showMessageThenExit(getString(R.string.label_transfer_failed, reasonCode));
+                    return false;
 
                 }
 
             }
-
-            // Do not consider acceptance if mResuming
-            if (mResuming) {
+            /* Do not consider acceptance if resuming */
+            if (resuming) {
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "processIntent resuming ".concat(mTransferId));
                 }
-                return;
+                return true;
             }
-
             FileTransfer.State state = mFileTransfer.getState();
-
-            // Check if not already accepted by the stack
+            /* Check if not already accepted by the stack */
             if (FileTransfer.State.INVITED != state) {
-                // File Transfer is auto accepted by the stack. Check capacity
+                /* File Transfer is auto accepted by the stack. Check capacity */
                 isCapacityOk(mFtDao.getSize());
 
                 if (FileTransfer.State.TRANSFERRED == state) {
@@ -261,10 +251,11 @@ public class ReceiveFileTransfer extends Activity {
                         Log.d(LOGTAG, "processIntent file is transferred ".concat(mTransferId));
                     }
                     displayTransferredFile();
+                    return false;
                 }
 
             } else {
-                // File Transfer must be accepted/rejected by user
+                /* File Transfer must be accepted/rejected by user */
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "Wait for user acceptance (transferId=" + mTransferId + ")");
                 }
@@ -280,7 +271,7 @@ public class ReceiveFileTransfer extends Activity {
 
                 // @formatter:on
 
-                // Manual accept
+                /* Manual accept */
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 View titleView = getLayoutInflater().inflate(R.layout.filetransfer_custom_title,
                         null);
@@ -288,9 +279,8 @@ public class ReceiveFileTransfer extends Activity {
                 builder.setMessage(getString(R.string.label_ft_from_size, from,
                         mFtDao.getSize() / 1024));
                 builder.setCancelable(false);
-                // Make sure progress bar is at the beginning
-                ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-                progressBar.setProgress(0);
+                /* Make sure progress bar is at the beginning */
+                mProgressBar.setProgress(0);
                 ImageView iconView = (ImageView) titleView
                         .findViewById(R.id.filetransfer_alert_title_icon);
                 if (mFtDao.getThumbnail() != null) {
@@ -298,10 +288,9 @@ public class ReceiveFileTransfer extends Activity {
                         Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(),
                                 mFtDao.getThumbnail());
                         iconView.setImageBitmap(bitmap);
-                    } catch (Exception e) {
-                        if (LogUtils.isActive) {
-                            Log.e(LOGTAG, "Failed to load thumbnail", e);
-                        }
+
+                    } catch (IOException e) {
+                        showException(e);
                     }
                 } else {
                     if (VCARD_MIME_TYPE.equals(mFtDao.getMimeType())) {
@@ -310,116 +299,92 @@ public class ReceiveFileTransfer extends Activity {
                         iconView.setImageResource(R.drawable.ri_notif_file_transfer_icon);
                     }
                 }
-                builder.setPositiveButton(getString(R.string.label_accept), acceptBtnListener);
-                builder.setNegativeButton(getString(R.string.label_decline), declineBtnListener);
-                builder.show();
+                builder.setPositiveButton(R.string.label_accept, mAcceptBtnListener);
+                builder.setNegativeButton(R.string.label_decline, mDeclineBtnListener);
+                registerDialog(builder.show());
             }
-        } catch (RcsServiceNotAvailableException e) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, e.getMessage(), e);
-            }
-            Utils.showMessageAndExit(this, getString(R.string.label_api_unavailable), mExitOnce);
+            return true;
+
         } catch (RcsServiceException e) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, e.getMessage(), e);
-            }
-            Utils.showMessageAndExit(this, getString(R.string.label_api_failed), mExitOnce);
+            showExceptionThenExit(e);
         }
+        return false;
     }
 
-    /**
-     * Accept invitation
-     */
     private void acceptInvitation() {
         try {
             if (LogUtils.isActive) {
                 Log.d(LOGTAG, "Accept invitation (transferId=" + mTransferId + ")");
             }
             mFileTransfer.acceptInvitation();
-        } catch (Exception e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_invitation_failed), mExitOnce,
-                    e);
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
         }
     }
 
-    /**
-     * Reject invitation
-     */
     private void rejectInvitation() {
         try {
             if (LogUtils.isActive) {
                 Log.d(LOGTAG, "Reject invitation (transferId=" + mTransferId + ")");
             }
             mFileTransfer.rejectInvitation();
-        } catch (Exception e) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, e.getMessage(), e);
-            }
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
         }
     }
 
-    /**
-     * Accept button listener
-     */
-    private OnClickListener acceptBtnListener = new OnClickListener() {
-        public void onClick(DialogInterface dialog, int which) {
-            acceptInvitation();
-        }
-    };
-
-    /**
-     * Reject button listener
-     */
-    private OnClickListener declineBtnListener = new OnClickListener() {
-        public void onClick(DialogInterface dialog, int which) {
-            rejectInvitation();
-            /* Exit activity */
-            finish();
-        }
-    };
-
-    /**
-     * Show the transfer progress
-     * 
-     * @param currentSize Current size transferred
-     * @param totalSize Total size to be transferred
-     */
     private void updateProgressBar(long currentSize, long totalSize) {
         TextView statusView = (TextView) findViewById(R.id.progress_status);
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
         statusView.setText(Utils.getProgressLabel(currentSize, totalSize));
         double position = ((double) currentSize / (double) totalSize) * 100.0;
-        progressBar.setProgress((int) position);
+        mProgressBar.setProgress((int) position);
     }
 
-    /**
-     * Quit the session
-     */
     private void quitSession() {
-        /* Stop session */
         try {
-            if (mFileTransfer != null && !mTransferred) {
+            if (mFileTransfer != null
+                    && RcsSessionUtil.isAllowedToAbortFileTransferSession(mFileTransfer)) {
                 mFileTransfer.abortTransfer();
             }
-        } catch (Exception e) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, e.getMessage(), e);
-            }
-        }
-        mFileTransfer = null;
+        } catch (RcsServiceException e) {
+            showException(e);
 
-        /* Exit activity */
-        finish();
+        } finally {
+            mFileTransfer = null;
+            finish();
+        }
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_BACK:
-                quitSession();
+        try {
+            if (KeyEvent.KEYCODE_BACK == keyCode) {
+                if (mFileTransfer == null
+                        || !RcsSessionUtil.isAllowedToAbortFileTransferSession(mFileTransfer)) {
+                    finish();
+                    return true;
+                }
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.label_confirm_close);
+                builder.setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        quitSession();
+                    }
+                });
+                builder.setNegativeButton(R.string.label_cancel,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                /* Exit activity */
+                                finish();
+                            }
+                        });
+                builder.setCancelable(true);
+                registerDialog(builder.show());
                 return true;
+            }
+        } catch (RcsServiceException e) {
+            showException(e);
         }
-
         return super.onKeyDown(keyCode, event);
     }
 
@@ -441,49 +406,6 @@ public class ReceiveFileTransfer extends Activity {
     }
 
     /**
-     * Pause button listener
-     */
-    private android.view.View.OnClickListener btnPauseListener = new android.view.View.OnClickListener() {
-        @Override
-        public void onClick(View arg0) {
-            try {
-                if (mFileTransfer.isAllowedToPauseTransfer()) {
-                    mFileTransfer.pauseTransfer();
-                } else {
-                    mPauseBtn.setEnabled(false);
-                    Utils.showMessage(ReceiveFileTransfer.this,
-                            getString(R.string.label_pause_ft_not_allowed));
-                }
-            } catch (RcsServiceException e) {
-                Utils.showMessageAndExit(ReceiveFileTransfer.this,
-                        getString(R.string.label_pause_failed), mExitOnce, e);
-            }
-        }
-    };
-
-    /**
-     * Resume button listener
-     */
-    private android.view.View.OnClickListener btnResumeListener = new android.view.View.OnClickListener() {
-        @Override
-        public void onClick(View arg0) {
-            mResumeBtn.setEnabled(false);
-            try {
-                if (mFileTransfer.isAllowedToResumeTransfer()) {
-                    mFileTransfer.resumeTransfer();
-                } else {
-                    mResumeBtn.setEnabled(false);
-                    Utils.showMessage(ReceiveFileTransfer.this,
-                            getString(R.string.label_resume_ft_not_allowed));
-                }
-            } catch (RcsServiceException e) {
-                Utils.showMessageAndExit(ReceiveFileTransfer.this,
-                        getString(R.string.label_resume_failed), mExitOnce, e);
-            }
-        }
-    };
-
-    /**
      * Check whether file size exceeds the limit
      * 
      * @param size Size of file
@@ -491,12 +413,11 @@ public class ReceiveFileTransfer extends Activity {
      */
     private boolean isFileSizeExceeded(long size) {
         try {
-            long maxSize = mCnxManager.getFileTransferApi().getConfiguration().getMaxSize() * 1024;
+            long maxSize = mFileTransferService.getConfiguration().getMaxSize() * 1024;
             return (maxSize > 0 && size > maxSize);
-        } catch (Exception e) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, e.getMessage(), e);
-            }
+
+        } catch (RcsServiceException e) {
+            showException(e);
             return false;
         }
     }
@@ -518,14 +439,14 @@ public class ReceiveFileTransfer extends Activity {
         return freeSpace;
     }
 
-    private static enum FileCapacity {
-        OK, FILE_TOO_BIG, STORAGE_TOO_SMALL;
+    private enum FileCapacity {
+        OK, FILE_TOO_BIG, STORAGE_TOO_SMALL
     }
 
     /**
      * Check if file capacity is acceptable
      * 
-     * @param fileSize
+     * @param fileSize file size in bytes
      * @return FileSharingError or null if file capacity is acceptable
      */
     private FileCapacity isFileCapacityAcceptable(long fileSize) {
@@ -533,7 +454,7 @@ public class ReceiveFileTransfer extends Activity {
             return FileCapacity.FILE_TOO_BIG;
         }
         long freeSpage = getExternalStorageFreeSpace();
-        boolean storageIsTooSmall = (freeSpage > 0) ? fileSize > freeSpage : false;
+        boolean storageIsTooSmall = (freeSpage > 0) && fileSize > freeSpage;
         if (storageIsTooSmall) {
             return FileCapacity.STORAGE_TOO_SMALL;
         }
@@ -543,26 +464,20 @@ public class ReceiveFileTransfer extends Activity {
     /**
      * Check if file size is less than maximum or then free space on disk
      * 
-     * @param fileSize
+     * @param fileSize file size in bytes
      * @return boolean
      */
     private boolean isCapacityOk(long fileSize) {
         FileCapacity capacity = isFileCapacityAcceptable(fileSize);
         switch (capacity) {
             case FILE_TOO_BIG:
-                if (LogUtils.isActive) {
-                    Log.w(LOGTAG, "File is too big, reject the File Transfer");
-                }
-                Utils.showMessageAndExit(this, getString(R.string.label_transfer_failed_too_big),
-                        mExitOnce);
+                showMessageThenExit(R.string.label_transfer_failed_too_big);
                 return false;
+
             case STORAGE_TOO_SMALL:
-                if (LogUtils.isActive) {
-                    Log.w(LOGTAG, "Not enough storage capacity, reject the File Transfer");
-                }
-                Utils.showMessageAndExit(this,
-                        getString(R.string.label_transfer_failed_capacity_too_small), mExitOnce);
+                showMessageThenExit(R.string.label_transfer_failed_capacity_too_small);
                 return false;
+
             default:
                 return true;
         }
@@ -571,56 +486,47 @@ public class ReceiveFileTransfer extends Activity {
     /**
      * Update UI on file transfer state change
      * 
-     * @param transferId
+     * @param transferId transfer ID
      * @param state new FT state
-     * @param reasonCode
+     * @param reasonCode reason code
      */
     private void onTransferStateChangedUpdateUI(String transferId, final FileTransfer.State state,
             final FileTransfer.ReasonCode reasonCode) {
         final String _reasonCode = RiApplication.sFileTransferReasonCodes[reasonCode.toInt()];
         final String _state = RiApplication.sFileTransferStates[state.toInt()];
-
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "TransferStateChanged transferId=" + transferId + " state=" + state
                     + " reason=" + reasonCode);
         }
-
         mHandler.post(new Runnable() {
 
             public void run() {
+                if (mFileTransfer != null) {
+                    try {
+                        mResumeBtn.setEnabled(mFileTransfer.isAllowedToResumeTransfer());
+                    } catch (RcsServiceException e) {
+                        mResumeBtn.setEnabled(false);
+                        showException(e);
+                    }
+                    try {
+                        mPauseBtn.setEnabled(mFileTransfer.isAllowedToPauseTransfer());
+                    } catch (RcsServiceException e) {
+                        mPauseBtn.setEnabled(false);
+                        showException(e);
+                    }
+                }
                 TextView statusView = (TextView) findViewById(R.id.progress_status);
                 switch (state) {
-                    case STARTED:
-                        /* Session is well established display session status */
-                        statusView.setText(_state);
-                        mPauseBtn.setEnabled(true);
-                        mResumeBtn.setEnabled(false);
-                        break;
-
-                    case PAUSED:
-                        statusView.setText(_state);
-                        mPauseBtn.setEnabled(false);
-                        if (ReasonCode.PAUSED_BY_USER == reasonCode) {
-                            mResumeBtn.setEnabled(true);
-                        }
-                        break;
-
                     case ABORTED:
-                        // Session is aborted: display message then exit
-                        Utils.showMessageAndExit(ReceiveFileTransfer.this,
-                                getString(R.string.label_transfer_aborted, _reasonCode), mExitOnce);
+                        showMessageThenExit(getString(R.string.label_transfer_aborted, _reasonCode));
                         break;
 
                     case FAILED:
-                        // Session is failed: ReceiveFileTransfer
-                        Utils.showMessageAndExit(ReceiveFileTransfer.this,
-                                getString(R.string.label_transfer_failed, _reasonCode), mExitOnce);
+                        showMessageThenExit(getString(R.string.label_transfer_failed, _reasonCode));
                         break;
 
                     case REJECTED:
-                        // Session is rejected: display message then exit
-                        Utils.showMessageAndExit(ReceiveFileTransfer.this,
-                                getString(R.string.label_transfer_rejected, _reasonCode), mExitOnce);
+                        showMessageThenExit(getString(R.string.label_transfer_rejected, _reasonCode));
                         break;
 
                     case TRANSFERRED:
@@ -635,36 +541,32 @@ public class ReceiveFileTransfer extends Activity {
     }
 
     private void displayTransferredFile() {
-        mTransferred = true;
         TextView statusView = (TextView) findViewById(R.id.progress_status);
         statusView
                 .setText(RiApplication.sFileTransferStates[FileTransfer.State.TRANSFERRED.toInt()]);
-        // Make sure progress bar is at the end
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        progressBar.setProgress(progressBar.getMax());
+        /* Make sure progress bar is at the end */
+        mProgressBar.setProgress(mProgressBar.getMax());
 
-        mPauseBtn.setEnabled(false);
-        mResumeBtn.setEnabled(false);
+        try {
+            mFileTransferService.markFileTransferAsRead(mTransferId);
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
+        }
 
         if (VCARD_MIME_TYPE.equals(mFtDao.getMimeType())) {
             // Show the transferred vCard
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(mFtDao.getFile(), VCARD_MIME_TYPE);
             startActivity(intent);
+
         } else {
             if (mFtDao.getMimeType().startsWith("image/")) {
-                // Show the transferred image
+                /* Show the transferred image */
                 Utils.showPictureAndExit(this, mFtDao.getFile());
             }
         }
     }
 
-    /**
-     * Update UI on FT progress
-     * 
-     * @param currentSize current size
-     * @param totalSize total size
-     */
     private void onTransferProgressUpdateUI(final long currentSize, final long totalSize) {
         mHandler.post(new Runnable() {
             public void run() {
@@ -673,84 +575,169 @@ public class ReceiveFileTransfer extends Activity {
         });
     }
 
+    private void initialize() {
+        mGroupFtListener = new GroupFileTransferListener() {
+
+            @Override
+            public void onDeliveryInfoChanged(String chatId, ContactId contact, String transferId,
+                    GroupDeliveryInfo.Status status, GroupDeliveryInfo.ReasonCode reasonCode) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onDeliveryInfoChanged contact=" + contact + " transferId="
+                            + transferId + " state=" + status + " reason=" + reasonCode);
+                }
+            }
+
+            @Override
+            public void onProgressUpdate(String chatId, String transferId, long currentSize,
+                    long totalSize) {
+                /* Discard event if not for current transferId */
+                if (!mFtDao.getTransferId().equals(transferId)) {
+                    return;
+                }
+                onTransferProgressUpdateUI(currentSize, totalSize);
+            }
+
+            @Override
+            public void onStateChanged(String chatId, String transferId, FileTransfer.State state,
+                    FileTransfer.ReasonCode reasonCode) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onStateChanged chatId=" + chatId + " transferId=" + transferId);
+                }
+                /* Discard event if not for current transferId */
+                if (!mFtDao.getTransferId().equals(transferId)) {
+                    return;
+                }
+                onTransferStateChangedUpdateUI(transferId, state, reasonCode);
+            }
+
+            @Override
+            public void onDeleted(String chatId, Set<String> transferIds) {
+                if (LogUtils.isActive) {
+                    Log.w(LOGTAG, "onDeleted chatId=" + chatId + " transferIds=" + transferIds);
+                }
+            }
+        };
+        mAcceptBtnListener = new OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                acceptInvitation();
+            }
+        };
+
+        mDeclineBtnListener = new OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                rejectInvitation();
+                /* Exit activity */
+                finish();
+            }
+        };
+
+        mBtnPauseListener = new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                try {
+                    if (mFileTransfer.isAllowedToPauseTransfer()) {
+                        mFileTransfer.pauseTransfer();
+                    } else {
+                        mPauseBtn.setEnabled(false);
+                        showMessage(R.string.label_pause_ft_not_allowed);
+                    }
+                } catch (RcsPermissionDeniedException e) {
+                    Utils.displayToast(ReceiveFileTransfer.this,
+                            getString(R.string.label_pause_failed));
+
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                }
+            }
+        };
+
+        mBtnResumeListener = new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                try {
+                    if (mFileTransfer.isAllowedToResumeTransfer()) {
+                        mFileTransfer.resumeTransfer();
+                    } else {
+                        mResumeBtn.setEnabled(false);
+                        showMessage(R.string.label_resume_ft_not_allowed);
+                    }
+                } catch (RcsPermissionDeniedException e) {
+                    Utils.displayToast(ReceiveFileTransfer.this,
+                            getString(R.string.label_resume_failed));
+
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                }
+            }
+        };
+        mFileTransferListener = new OneToOneFileTransferListener() {
+
+            @Override
+            public void onProgressUpdate(ContactId contact, String transferId,
+                    final long currentSize, final long totalSize) {
+                /* Discard event if not for current transferId */
+                if (!mFtDao.getTransferId().equals(transferId)) {
+                    return;
+                }
+                onTransferProgressUpdateUI(currentSize, totalSize);
+            }
+
+            @Override
+            public void onStateChanged(ContactId contact, String transferId,
+                    final FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onStateChanged contact=" + contact + " transferId=" + transferId);
+                }
+                /* Discard event if not for current transferId */
+                if (!mFtDao.getTransferId().equals(transferId)) {
+                    return;
+                }
+                onTransferStateChangedUpdateUI(transferId, state, reasonCode);
+            }
+
+            @Override
+            public void onDeleted(ContactId contact, Set<String> transferIds) {
+                if (LogUtils.isActive) {
+                    Log.w(LOGTAG, "onDeleted contact=" + contact + " transferIds=" + transferIds);
+                }
+            }
+        };
+    }
+
     /**
-     * Group File transfer listener
+     * Forge invitation intent to start ReceiveFileTransfer activity
+     * 
+     * @param ctx The context
+     * @param ftDao The FileTransfer DAO
+     * @param invitation intent
+     * @return intent
      */
-    private GroupFileTransferListener groupFtListener = new GroupFileTransferListener() {
-
-        @Override
-        public void onDeliveryInfoChanged(String chatId, ContactId contact, String transferId,
-                GroupDeliveryInfo.Status status, GroupDeliveryInfo.ReasonCode reasonCode) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG, "onDeliveryInfoChanged contact=" + contact + " transferId="
-                        + transferId + " state=" + status + " reason=" + reasonCode);
-            }
-        }
-
-        @Override
-        public void onProgressUpdate(String chatId, String transferId, long currentSize,
-                long totalSize) {
-            // Discard event if not for current transferId
-            if (!mFtDao.getTransferId().equals(transferId)) {
-                return;
-            }
-            onTransferProgressUpdateUI(currentSize, totalSize);
-        }
-
-        @Override
-        public void onStateChanged(String chatId, String transferId, FileTransfer.State state,
-                FileTransfer.ReasonCode reasonCode) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG, "onStateChanged chatId=" + chatId + " transferId=" + transferId);
-            }
-            // Discard event if not for current transferId
-            if (!mFtDao.getTransferId().equals(transferId)) {
-                return;
-            }
-            onTransferStateChangedUpdateUI(transferId, state, reasonCode);
-        }
-
-        @Override
-        public void onDeleted(String chatId, Set<String> transferIds) {
-            if (LogUtils.isActive) {
-                Log.w(LOGTAG, "onDeleted chatId=" + chatId + " transferIds=" + transferIds);
-            }
-        }
-    };
+    public static Intent forgeInvitationIntent(Context ctx, FileTransferDAO ftDao, Intent invitation) {
+        invitation.setClass(ctx, ReceiveFileTransfer.class);
+        invitation.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        /* Save FileTransferDAO into intent */
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(BUNDLE_FTDAO_ID, ftDao);
+        invitation.putExtras(bundle);
+        return invitation;
+    }
 
     /**
-     * File transfer listener
+     * Forge resume intent to start ReceiveFileTransfer activity
+     * 
+     * @param ctx The context
+     * @param ftDao The FileTransfer DAO
+     * @param resume intent
+     * @return intent
      */
-    private OneToOneFileTransferListener ftListener = new OneToOneFileTransferListener() {
+    public static Intent forgeResumeIntent(Context ctx, FileTransferDAO ftDao, Intent resume) {
+        resume.setClass(ctx, ReceiveFileTransfer.class);
+        resume.addFlags(Intent.FLAG_FROM_BACKGROUND | Intent.FLAG_ACTIVITY_NEW_TASK);
+        /* Save FileTransferDAO into intent */
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(BUNDLE_FTDAO_ID, ftDao);
+        resume.putExtras(bundle);
+        return resume;
+    }
 
-        @Override
-        public void onProgressUpdate(ContactId contact, String transferId, final long currentSize,
-                final long totalSize) {
-            // Discard event if not for current transferId
-            if (!mFtDao.getTransferId().equals(transferId)) {
-                return;
-            }
-            onTransferProgressUpdateUI(currentSize, totalSize);
-        }
-
-        @Override
-        public void onStateChanged(ContactId contact, String transferId,
-                final FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG, "onStateChanged contact=" + contact + " transferId=" + transferId);
-            }
-            // Discard event if not for current transferId
-            if (!mFtDao.getTransferId().equals(transferId)) {
-                return;
-            }
-            onTransferStateChangedUpdateUI(transferId, state, reasonCode);
-        }
-
-        @Override
-        public void onDeleted(ContactId contact, Set<String> transferIds) {
-            if (LogUtils.isActive) {
-                Log.w(LOGTAG, "onDeleted contact=" + contact + " transferIds=" + transferIds);
-            }
-        }
-    };
 }

@@ -22,7 +22,7 @@ import com.gsma.services.rcs.Geoloc;
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.RcsServiceNotAvailableException;
+import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatLog.Message;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content;
 import com.gsma.services.rcs.chat.ChatMessage;
@@ -37,7 +37,9 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.contact.RcsContact;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
+import com.gsma.services.rcs.history.HistoryLog;
 
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.messaging.GroupDeliveryInfoList;
@@ -93,7 +95,7 @@ public class GroupChatView extends ChatView {
 
     private enum GroupChatMode {
         INCOMING, OUTGOING, OPEN
-    };
+    }
 
     /**
      * List of items for contextual menu
@@ -102,12 +104,7 @@ public class GroupChatView extends ChatView {
 
     private final static int GROUPCHAT_MENU_ITEM_VIEW_GC_INFO = 1;
 
-    private static final String WHERE_CLAUSE = new StringBuilder(Message.CHAT_ID)
-            .append("=? AND (").append(Message.MIME_TYPE).append("='")
-            .append(Message.MimeType.GEOLOC_MESSAGE).append("' OR ").append(Message.MIME_TYPE)
-            .append("='").append(Message.MimeType.TEXT_MESSAGE).append("' OR ")
-            .append(Message.MIME_TYPE).append("='").append(Message.MimeType.GROUPCHAT_EVENT)
-            .append("')").toString();
+    private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=?";
 
     private String mSubject;
 
@@ -117,12 +114,7 @@ public class GroupChatView extends ChatView {
 
     private Dialog mProgressDialog;
 
-    private Set<ContactId> mParticipants = new HashSet<ContactId>();
-
-    /**
-     * Chat ID of the displayed conversation
-     */
-    /* package private */static String chatIdOnForeground;
+    private Set<ContactId> mParticipants = new HashSet<>();
 
     private static final String LOGTAG = LogUtils.getTag(GroupChatView.class.getSimpleName());
 
@@ -135,7 +127,7 @@ public class GroupChatView extends ChatView {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (mExitOnce.isLocked()) {
+        if (isExiting()) {
             return;
         }
         try {
@@ -152,11 +144,8 @@ public class GroupChatView extends ChatView {
             mComposingManager = new IsComposingManager(configuration.getIsComposingTimeout(),
                     getNotifyComposing());
 
-        } catch (RcsServiceNotAvailableException e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_api_unavailable), mExitOnce);
-
         } catch (RcsServiceException e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_api_failed), mExitOnce, e);
+            showExceptionThenExit(e);
         }
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "onCreate");
@@ -172,23 +161,22 @@ public class GroupChatView extends ChatView {
             try {
                 mGroupChat.setComposingStatus(false);
             } catch (RcsServiceException e) {
-                Utils.displayToast(this, e);
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
             }
         }
         super.onDestroy();
-        chatIdOnForeground = null;
     }
 
-    void setCursorLoader(boolean firstLoad) {
-        if (firstLoad) {
-            /*
-             * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
-             */
-            getSupportLoaderManager().initLoader(LOADER_ID, null, this);
-        } else {
-            /* We switched from one contact to another: reload history since */
-            getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        sChatIdOnForeground = mChatId;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sChatIdOnForeground = null;
     }
 
     @Override
@@ -209,16 +197,14 @@ public class GroupChatView extends ChatView {
                     List<String> contacts = intent
                             .getStringArrayListExtra(GroupChatView.EXTRA_PARTICIPANTS);
                     if (contacts == null || contacts.isEmpty()) {
-                        Utils.showMessageAndExit(this, getString(R.string.label_invalid_contacts),
-                                mExitOnce);
+                        showMessageThenExit(R.string.label_invalid_contacts);
                         return false;
                     }
                     for (String contact : contacts) {
                         mParticipants.add(contactUtil.formatContact(contact));
                     }
                     if (mParticipants.isEmpty()) {
-                        Utils.showMessageAndExit(this, getString(R.string.label_invalid_contacts),
-                                mExitOnce);
+                        showMessageThenExit(R.string.label_invalid_contacts);
                         return false;
                     }
                     return initiateGroupChat(oldChatId == null);
@@ -231,21 +217,18 @@ public class GroupChatView extends ChatView {
                         if (LogUtils.isActive) {
                             Log.e(LOGTAG, "Groupchat not found for Id=".concat(mChatId));
                         }
-                        Utils.showMessageAndExit(this, getString(R.string.label_session_not_found),
-                                mExitOnce);
+                        showMessageThenExit(R.string.label_session_not_found);
                         return false;
                     }
                     setCursorLoader(oldChatId == null);
-                    chatIdOnForeground = mChatId;
+                    sChatIdOnForeground = mChatId;
                     mSubject = mGroupChat.getSubject();
                     updateGroupChatViewTitle(mSubject);
                     /* Set list of participants */
                     mParticipants = mGroupChat.getParticipants().keySet();
                     if (LogUtils.isActive) {
-                        if (mParticipants == null) {
-                            Log.e(LOGTAG, "processIntent chatId=" + mChatId + " subject='"
-                                    + mSubject + "'");
-                        }
+                        Log.i(LOGTAG, "processIntent chatId=" + mChatId + " subject='" + mSubject
+                                + "'");
                     }
                     return true;
 
@@ -258,12 +241,11 @@ public class GroupChatView extends ChatView {
                     mChatId = rxChatId;
                     mGroupChat = mChatService.getGroupChat(mChatId);
                     if (mGroupChat == null) {
-                        Utils.showMessageAndExit(this, getString(R.string.label_session_not_found),
-                                mExitOnce);
+                        showMessageThenExit(R.string.label_session_not_found);
                         return false;
                     }
                     setCursorLoader(oldChatId == null);
-                    chatIdOnForeground = mChatId;
+                    sChatIdOnForeground = mChatId;
                     ContactId contact = mGroupChat.getRemoteContact();
                     mSubject = mGroupChat.getSubject();
                     updateGroupChatViewTitle(mSubject);
@@ -277,11 +259,9 @@ public class GroupChatView extends ChatView {
                     }
                     return true;
             }
-        } catch (RcsServiceNotAvailableException e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_api_unavailable), mExitOnce, e);
 
         } catch (RcsServiceException e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_api_failed), mExitOnce, e);
+            showExceptionThenExit(e);
         }
         return false;
     }
@@ -297,6 +277,7 @@ public class GroupChatView extends ChatView {
                 .getColumnIndexOrThrow(Message.DIRECTION)));
         if (Direction.OUTGOING == direction) {
             menu.add(0, GROUPCHAT_MENU_ITEM_VIEW_GC_INFO, 1, R.string.menu_view_groupdelivery);
+            // TODO depending on mime-type and provider ID, allow user to view file image
         }
     }
 
@@ -304,10 +285,11 @@ public class GroupChatView extends ChatView {
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
-        String messageId = cursor.getString(cursor.getColumnIndexOrThrow(Message.MESSAGE_ID));
+        String messageId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
         if (LogUtils.isActive) {
-            Log.d(LOGTAG, "onContextItemSelected msgId=".concat(messageId));
+            Log.d(LOGTAG, "onContextItemSelected Id=".concat(messageId));
         }
+        int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
         switch (item.getItemId()) {
             case GROUPCHAT_MENU_ITEM_VIEW_GC_INFO:
                 GroupDeliveryInfoList.startActivity(this, messageId);
@@ -315,9 +297,13 @@ public class GroupChatView extends ChatView {
 
             case GROUPCHAT_MENU_ITEM_DELETE:
                 try {
-                    mChatService.deleteMessage(messageId);
+                    if (ChatLog.Message.HISTORYLOG_MEMBER_ID == providerId) {
+                        mChatService.deleteMessage(messageId);
+                    } else {
+                        mFileTransferService.deleteFileTransfer(messageId);
+                    }
                 } catch (RcsServiceException e) {
-                    Utils.displayToast(this, "Fail to delete message", e);
+                    showException(e);
                 }
                 return true;
 
@@ -340,11 +326,10 @@ public class GroupChatView extends ChatView {
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle arg) {
         /* Create a new CursorLoader with the following query parameters. */
-        CursorLoader loader = new CursorLoader(this, Message.CONTENT_URI, PROJ_CHAT_MSG,
-                WHERE_CLAUSE, new String[] {
+        return new CursorLoader(this, mUriHistoryProvider, PROJ_CHAT_MSG, WHERE_CLAUSE,
+                new String[] {
                     mChatId
                 }, ORDER_CHAT_MSG);
-        return loader;
     }
 
     /**
@@ -363,19 +348,18 @@ public class GroupChatView extends ChatView {
         builder.setMessage(msg);
         builder.setCancelable(false);
         builder.setIcon(R.drawable.ri_notif_chat_icon);
-        builder.setPositiveButton(getString(R.string.label_accept),
+        builder.setPositiveButton(R.string.label_accept,
                 new android.content.DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         try {
                             /* Accept the invitation */
                             mGroupChat.openChat();
                         } catch (RcsServiceException e) {
-                            Utils.showMessageAndExit(GroupChatView.this,
-                                    getString(R.string.label_invitation_failed), mExitOnce, e);
+                            showExceptionThenExit(e);
                         }
                     }
                 });
-        builder.setNegativeButton(getString(R.string.label_decline),
+        builder.setNegativeButton(R.string.label_decline,
                 new android.content.DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         /*
@@ -384,7 +368,7 @@ public class GroupChatView extends ChatView {
                         finish();
                     }
                 });
-        builder.show();
+        registerDialog(builder.show());
     }
 
     /**
@@ -394,7 +378,7 @@ public class GroupChatView extends ChatView {
      * @return a set of contact
      */
     private Set<String> getSetOfParticipants(Map<ContactId, ParticipantStatus> setOfParticipant) {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         if (setOfParticipant.size() != 0) {
             for (ContactId contact : setOfParticipant.keySet()) {
                 // TODO consider status ?
@@ -412,20 +396,16 @@ public class GroupChatView extends ChatView {
     private boolean initiateGroupChat(boolean firstLoad) {
         /* Initiate the group chat session in background */
         try {
-            mGroupChat = mChatService.initiateGroupChat(new HashSet<ContactId>(mParticipants),
-                    mSubject);
+            mGroupChat = mChatService.initiateGroupChat(new HashSet<>(mParticipants), mSubject);
             mChatId = mGroupChat.getChatId();
             setCursorLoader(firstLoad);
-            chatIdOnForeground = mChatId;
+            sChatIdOnForeground = mChatId;
         } catch (RcsServiceException e) {
-            Utils.showMessageAndExit(this, getString(R.string.label_invitation_failed), mExitOnce,
-                    e);
+            showExceptionThenExit(e);
             return false;
         }
         /* Display a progress dialog waiting for the session to start */
-        mProgressDialog = Utils.showProgressDialog(this,
-                getString(R.string.label_command_in_progress));
-
+        mProgressDialog = showProgressDialog(getString(R.string.label_command_in_progress));
         mProgressDialog.setOnCancelListener(new OnCancelListener() {
             public void onCancel(DialogInterface dialog) {
                 Utils.displayToast(GroupChatView.this,
@@ -436,9 +416,6 @@ public class GroupChatView extends ChatView {
         return true;
     }
 
-    /**
-     * Quit the group chat session
-     */
     private void quitSession() {
         try {
             /* check if the session is not already stopped */
@@ -446,10 +423,12 @@ public class GroupChatView extends ChatView {
                 mGroupChat.leave();
             }
         } catch (RcsServiceException e) {
-            Utils.displayToast(this, "Fail to leave group chat", e);
+            showException(e);
+
+        } finally {
+            mGroupChat = null;
+            finish();
         }
-        mGroupChat = null;
-        finish();
     }
 
     /**
@@ -457,9 +436,9 @@ public class GroupChatView extends ChatView {
      */
     private void addParticipants() {
         /* Build list of available contacts not already in the conference */
-        Set<ContactId> availableParticipants = new HashSet<ContactId>();
+        Set<ContactId> availableParticipants = new HashSet<>();
         try {
-            Set<RcsContact> contacts = mCnxManager.getContactApi().getRcsContacts();
+            Set<RcsContact> contacts = getContactApi().getRcsContacts();
             for (RcsContact rcsContact : contacts) {
                 ContactId contact = rcsContact.getContactId();
                 if (mGroupChat.isAllowedToInviteParticipant(contact)) {
@@ -467,16 +446,16 @@ public class GroupChatView extends ChatView {
                 }
             }
         } catch (RcsServiceException e) {
-            Utils.displayToast(this, "Failed to check permission for group chat participants", e);
+            showException(e);
             return;
         }
         /* Check if some participants are available */
         if (availableParticipants.size() == 0) {
-            Utils.showMessage(this, getString(R.string.label_no_participant_found));
+            showMessage(R.string.label_no_participant_found);
             return;
         }
         /* Display contacts */
-        final List<String> selectedParticipants = new ArrayList<String>();
+        final List<String> selectedParticipants = new ArrayList<>();
         final CharSequence[] items = new CharSequence[availableParticipants.size()];
         int i = 0;
         for (ContactId contact : availableParticipants) {
@@ -495,50 +474,32 @@ public class GroupChatView extends ChatView {
                 }
             }
         });
-        builder.setNegativeButton(getString(R.string.label_cancel), null);
-        builder.setPositiveButton(getString(R.string.label_ok),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int position) {
-                        // Add new participants in the session in background
-                        try {
-                            int max = mGroupChat.getMaxParticipants() - 1;
-                            int connected = mGroupChat.getParticipants().size();
-                            int limit = max - connected;
-                            if (selectedParticipants.size() > limit) {
-                                Utils.showMessage(GroupChatView.this,
-                                        getString(R.string.label_max_participants));
-                                return;
-                            }
-
-                            // Display a progress dialog
-                            mProgressDialog = Utils.showProgressDialog(GroupChatView.this,
-                                    getString(R.string.label_command_in_progress));
-
-                            Set<ContactId> contacts = new HashSet<ContactId>();
-                            ContactUtil contactUtils = ContactUtil.getInstance(GroupChatView.this);
-                            for (String participant : selectedParticipants) {
-                                contacts.add(contactUtils.formatContact(participant));
-                            }
-                            // Add participants
-                            mGroupChat.inviteParticipants(contacts);
-
-                            // Hide progress dialog
-                            if (mProgressDialog != null && mProgressDialog.isShowing()) {
-                                mProgressDialog.dismiss();
-                            }
-                        } catch (RcsServiceException e) {
-                            if (mProgressDialog != null && mProgressDialog.isShowing()) {
-                                mProgressDialog.dismiss();
-                            }
-                            Utils.displayToast(GroupChatView.this,
-                                    "Fail to add participants to group chat", e);
-                            Utils.showMessage(GroupChatView.this,
-                                    getString(R.string.label_add_participant_failed));
-                        }
+        builder.setNegativeButton(R.string.label_cancel, null);
+        builder.setPositiveButton(R.string.label_ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int position) {
+                /* Add new participants in the session in background */
+                try {
+                    int max = mGroupChat.getMaxParticipants() - 1;
+                    int connected = mGroupChat.getParticipants().size();
+                    int limit = max - connected;
+                    if (selectedParticipants.size() > limit) {
+                        showMessage(R.string.label_max_participants);
+                        return;
                     }
-                });
-        AlertDialog alert = builder.create();
-        alert.show();
+                    Set<ContactId> contacts = new HashSet<>();
+                    ContactUtil contactUtils = ContactUtil.getInstance(GroupChatView.this);
+                    for (String participant : selectedParticipants) {
+                        contacts.add(contactUtils.formatContact(participant));
+                    }
+                    /* Add participants */
+                    mGroupChat.inviteParticipants(contacts);
+
+                } catch (RcsServiceException e) {
+                    showException(e);
+                }
+            }
+        });
+        registerDialog(builder.show());
     }
 
     @Override
@@ -557,7 +518,7 @@ public class GroupChatView extends ChatView {
             if (mGroupChat != null) {
                 menuItemParticipants.setEnabled(mGroupChat.isAllowedToInviteParticipants());
                 menuItemLeave.setEnabled(mGroupChat.isAllowedToLeave());
-                FileTransferService fileTransferService = mCnxManager.getFileTransferApi();
+                FileTransferService fileTransferService = getFileTransferApi();
                 menuItemSendFile.setEnabled(fileTransferService
                         .isAllowedToTransferFileToGroupChat(mChatId));
             } else {
@@ -566,81 +527,75 @@ public class GroupChatView extends ChatView {
                 menuItemLeave.setEnabled(false);
             }
         } catch (RcsServiceException e) {
-            Utils.displayToast(this, "Fail to query permission for group chat", e);
+            showException(e);
         }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_insert_smiley:
-                Smileys.showSmileyDialog(this, mComposeText, getResources(),
-                        getString(R.string.menu_insert_smiley));
-                break;
+        try {
+            switch (item.getItemId()) {
+                case R.id.menu_insert_smiley:
+                    AlertDialog alert = Smileys.showSmileyDialog(this, mComposeText,
+                            getResources(), getString(R.string.menu_insert_smiley));
+                    registerDialog(alert);
+                    break;
 
-            case R.id.menu_participants:
-                try {
-                    Utils.showList(this, getString(R.string.menu_participants),
+                case R.id.menu_participants:
+                    alert = Utils.showList(this, getString(R.string.menu_participants),
                             getSetOfParticipants(mGroupChat.getParticipants()));
-                } catch (RcsServiceException e) {
-                    Utils.displayToast(this, "Fail to query for participants", e);
-                }
-                break;
+                    registerDialog(alert);
+                    break;
 
-            case R.id.menu_add_participant:
-                addParticipants();
-                break;
+                case R.id.menu_add_participant:
+                    addParticipants();
+                    break;
 
-            case R.id.menu_quicktext:
-                addQuickText();
-                break;
+                case R.id.menu_quicktext:
+                    addQuickText();
+                    break;
 
-            case R.id.menu_send_file:
-                SendGroupFile.startActivity(this, mChatId);
-                break;
+                case R.id.menu_send_file:
+                    SendGroupFile.startActivity(this, mChatId);
+                    break;
 
-            case R.id.menu_send_geoloc:
-                getGeoLoc();
-                break;
+                case R.id.menu_send_geoloc:
+                    getGeoLoc();
+                    break;
 
-            case R.id.menu_showus_map:
-                try {
+                case R.id.menu_showus_map:
                     DisplayGeoloc.showContactsOnMap(this, mGroupChat.getParticipants().keySet());
-                } catch (RcsServiceException e) {
-                    Utils.displayToast(this, "Fail to query for participants", e);
-                }
-                break;
+                    break;
 
-            case R.id.menu_close_session:
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(getString(R.string.title_chat_exit));
-                builder.setPositiveButton(getString(R.string.label_ok),
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                if (mGroupChat != null) {
-                                    try {
-                                        mGroupChat.leave();
-                                    } catch (RcsServiceException e) {
-                                        Utils.showMessageAndExit(GroupChatView.this,
-                                                getString(R.string.label_chat_leave_failed),
-                                                mExitOnce, e);
+                case R.id.menu_close_session:
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle(R.string.title_chat_exit);
+                    builder.setPositiveButton(R.string.label_ok,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    if (mGroupChat != null) {
+                                        try {
+                                            mGroupChat.leave();
+                                        } catch (RcsServiceException e) {
+                                            showExceptionThenExit(e);
+                                        }
                                     }
+                                    GroupChatView.this.finish();
                                 }
-                                GroupChatView.this.finish();
-                            }
-                        });
-                builder.setNegativeButton(getString(R.string.label_cancel), null);
-                builder.setCancelable(true);
-                builder.show();
-                break;
+                            });
+                    builder.setNegativeButton(R.string.label_cancel, null);
+                    builder.setCancelable(true);
+                    registerDialog(builder.show());
+                    break;
+            }
+
+        } catch (RcsServiceException e) {
+            showException(e);
         }
         return true;
     }
 
-    /**
-     * Hide progress dialog
-     */
     private void hideProgressDialog() {
         if (mProgressDialog != null && mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();
@@ -685,7 +640,7 @@ public class GroupChatView extends ChatView {
      *
      * @param ctx The context.
      * @param newgroupChatMessage The original intent.
-     * @param chatId
+     * @param chatId the chat ID
      * @return intent
      */
     public static Intent forgeIntentNewMessage(Context ctx, Intent newgroupChatMessage,
@@ -713,31 +668,19 @@ public class GroupChatView extends ChatView {
     }
 
     @Override
-    public ChatMessage sendMessage(String message) {
+    public ChatMessage sendMessage(String message) throws RcsServiceException {
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "sendTextMessage: ".concat(message));
         }
-        try {
-            // Send the text to Group Chat
-            return mGroupChat.sendMessage(message);
-        } catch (RcsServiceException e) {
-            Utils.displayToast(this, "Fail to send message to group chat", e);
-            return null;
-        }
+        return mGroupChat.sendMessage(message);
     }
 
     @Override
-    public ChatMessage sendMessage(Geoloc geoloc) {
+    public ChatMessage sendMessage(Geoloc geoloc) throws RcsServiceException {
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "sendGeolocMessage: ".concat(geoloc.toString()));
         }
-        try {
-            // Send the geoloc to Group Chat
-            return mGroupChat.sendMessage(geoloc);
-        } catch (RcsServiceException e) {
-            Utils.displayToast(this, "Fail to send geoloc to group chat", e);
-            return null;
-        }
+        return mGroupChat.sendMessage(geoloc);
     }
 
     @Override
@@ -757,7 +700,7 @@ public class GroupChatView extends ChatView {
 
     @Override
     public INotifyComposing getNotifyComposing() {
-        INotifyComposing notifyComposing = new IsComposingManager.INotifyComposing() {
+        return new INotifyComposing() {
             public void setTypingStatus(boolean isTyping) {
                 try {
                     if (mGroupChat != null) {
@@ -767,12 +710,10 @@ public class GroupChatView extends ChatView {
                         }
                     }
                 } catch (RcsGenericException e) {
-                    Utils.displayToast(GroupChatView.this,
-                            "Fail to send is composing event to group chat", e);
+                    showException(e);
                 }
             }
         };
-        return notifyComposing;
     }
 
     @Override
@@ -841,27 +782,18 @@ public class GroupChatView extends ChatView {
                                 break;
 
                             case ABORTED:
-                                /* Session is aborted: hide progress dialog then exit. */
-                                hideProgressDialog();
-                                Utils.showMessageAndExit(GroupChatView.this,
-                                        getString(R.string.label_chat_aborted, _reasonCode),
-                                        mExitOnce);
+                                showMessageThenExit(getString(R.string.label_chat_aborted,
+                                        _reasonCode));
                                 break;
 
                             case REJECTED:
-                                /* Session is rejected: hide progress dialog then exit. */
-                                hideProgressDialog();
-                                Utils.showMessageAndExit(GroupChatView.this,
-                                        getString(R.string.label_chat_rejected, _reasonCode),
-                                        mExitOnce);
+                                showMessageThenExit(getString(R.string.label_chat_rejected,
+                                        _reasonCode));
                                 break;
 
                             case FAILED:
-                                /* Session is failed: hide progress dialog then exit. */
-                                hideProgressDialog();
-                                Utils.showMessageAndExit(GroupChatView.this,
-                                        getString(R.string.label_chat_failed, _reasonCode),
-                                        mExitOnce);
+                                showMessageThenExit(getString(R.string.label_chat_failed,
+                                        _reasonCode));
                                 break;
 
                             default:

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.orangelabs.rcs.ri"
     android:versionCode="1"
-    android:versionName="3.1.1" >
+    android:versionName="1.5.1" >
 
     <uses-sdk
         android:minSdkVersion="12"
@@ -13,7 +13,6 @@
         android:protectionLevel="signature" />
 
     <uses-permission android:name="com.orangelabs.rcs.ri.permission.MAPS_RECEIVE" />
-    <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
@@ -77,7 +76,7 @@
 
         <service
             android:name="com.orangelabs.rcs.ri.RcsServiceNotifManager"
-            android:exported="true" >
+            android:exported="false">
         </service>
 
         <!-- Intents API -->
@@ -254,7 +253,8 @@
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.SingleChatView"
             android:icon="@drawable/ri_quick_chat_icon"
             android:label="@string/label_quick_chat"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop" >
+        </activity>
         <activity
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.SingleChatList"
             android:icon="@drawable/ri_quick_chat_icon"
@@ -311,14 +311,14 @@
             android:label="@string/menu_send_geoloc"
             android:windowSoftInputMode="stateHidden" />
         <activity
+            android:name=".messaging.geoloc.ShowGeoloc"
+            android:label="@string/title_display_geoloc" />
+        <activity
             android:name=".messaging.geoloc.SelectGeoloc"
             android:label="@string/label_select_geoloc" />
         <activity
             android:name=".messaging.geoloc.DisplayGeoloc"
             android:label="@string/title_display_geoloc" />
-        <activity
-            android:name=".messaging.geoloc.ShowUsInMap"
-            android:label="@string/menu_showus_map" />
         <activity
             android:name="com.orangelabs.rcs.ri.messaging.chat.group.SendGroupFile"
             android:icon="@drawable/ri_quick_ft_icon"
@@ -366,8 +366,9 @@
 
         <activity
             android:name=".sharing.image.ReceiveImageSharing"
-            android:exported="true"
-            android:label="@string/title_image_sharing" />
+            android:label="@string/title_image_sharing"
+            android:launchMode="singleTop" >
+        </activity>
         <activity
             android:name=".sharing.image.ImageSharingList"
             android:label="@string/menu_image_sharing_log" />
@@ -395,8 +396,9 @@
 
         <activity
             android:name=".sharing.geoloc.ReceiveGeolocSharing"
-            android:exported="true"
-            android:label="@string/title_geoloc_sharing" />
+            android:launchMode="singleTop"
+            android:label="@string/title_geoloc_sharing" >
+        </activity>
 
         <service
             android:name=".sharing.geoloc.GeolocSharingIntentService"
@@ -528,17 +530,16 @@
         <activity
             android:name="com.orangelabs.rcs.ri.history.sharing.SharingDetailView"
             android:label="@string/title_history_log_item" />
-        
-         <receiver
+
+        <receiver
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.UndeliveredMessageReceiver"
             android:exported="true" >
             <intent-filter>
                 <action android:name="com.gsma.services.rcs.chat.action.MESSAGE_DELIVERY_EXPIRED" />
             </intent-filter>
         </receiver>
-        
-         <receiver
-            android:name="com.orangelabs.rcs.ri.messaging.messaging.filetransfer.UndeliveredFileReceiver"
+        <receiver
+            android:name="com.orangelabs.rcs.ri.messaging.filetransfer.UndeliveredFileReceiver"
             android:exported="true" >
             <intent-filter>
                 <action android:name="com.gsma.services.rcs.filetransfer.action.FILE_TRANSFER_DELIVERY_EXPIRED" />

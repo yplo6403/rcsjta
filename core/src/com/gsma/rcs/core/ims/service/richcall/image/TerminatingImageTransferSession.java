@@ -81,10 +81,10 @@ public class TerminatingImageTransferSession extends ImageTransferSession implem
      * @param parent Richcall service
      * @param invite Initial INVITE request
      * @param contact Contact ID
-     * @param rcsSettings
+     * @param rcsSettings The RCS settings accessor
      * @param timestamp Local timestamp for the session
-     * @param contactManager
-     * @param capabilityService
+     * @param contactManager The contact manager accessor
+     * @param capabilityService The capability service
      * @throws PayloadException
      * @throws FileAccessException
      */
@@ -192,9 +192,8 @@ public class TerminatingImageTransferSession extends ImageTransferSession implem
                     return;
 
                 default:
-                    throw new IllegalArgumentException(
-                            "Unknown invitation answer in run; answer=".concat(String
-                                    .valueOf(answer)));
+                    throw new IllegalArgumentException(new StringBuilder(
+                            "Unknown invitation answer in run; answer=").append(answer).toString());
             }
             final SipRequest invite = dialogPath.getInvite();
             String remoteSdp = invite.getSdpContent();
@@ -313,9 +312,6 @@ public class TerminatingImageTransferSession extends ImageTransferSession implem
             handleError(new ContentSharingError(ContentSharingError.SEND_RESPONSE_FAILED, e));
 
         } catch (NetworkException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-            }
             handleError(new ContentSharingError(ContentSharingError.SEND_RESPONSE_FAILED, e));
 
         } catch (RuntimeException e) {
@@ -342,7 +338,7 @@ public class TerminatingImageTransferSession extends ImageTransferSession implem
     }
 
     @Override
-    public void msrpDataTransfered(String msgId) {
+    public void msrpDataTransferred(String msgId) {
         // Not used in terminating side
     }
 

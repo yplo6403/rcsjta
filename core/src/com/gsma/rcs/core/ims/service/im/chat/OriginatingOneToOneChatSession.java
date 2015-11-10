@@ -38,6 +38,7 @@ import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.chat.ChatLog.Message.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.text.ParseException;
@@ -123,17 +124,24 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
                 String to = ChatUtils.ANONYMOUS_URI;
 
                 String cpim;
+                String mimeType = chatMessage.getMimeType();
+                String networkMimeType = ChatUtils.apiMimeTypeToNetworkMimeType(mimeType);
+                String networkContent = chatMessage.getContent();
+                String msgId = chatMessage.getMessageId();
+                long timestampSent = chatMessage.getTimestampSent();
+                if (MimeType.GEOLOC_MESSAGE.equals(mimeType)) {
+                    networkContent = ChatUtils.persistedGeolocContentToNetworkGeolocContent(
+                            networkContent, msgId, timestampSent);
+                }
                 if (mImdnManager.isRequestOneToOneDeliveryDisplayedReportsEnabled()) {
-                    cpim = ChatUtils.buildCpimMessageWithImdn(from, to, chatMessage.getMessageId(),
-                            chatMessage.getContent(), chatMessage.getMimeType(),
-                            chatMessage.getTimestampSent());
+                    cpim = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, networkContent,
+                            networkMimeType, timestampSent);
                 } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-                    cpim = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to,
-                            chatMessage.getMessageId(), chatMessage.getContent(),
-                            chatMessage.getMimeType(), chatMessage.getTimestampSent());
+                    cpim = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId,
+                            networkContent, networkMimeType, timestampSent);
                 } else {
-                    cpim = ChatUtils.buildCpimMessage(from, to, chatMessage.getContent(),
-                            chatMessage.getMimeType(), chatMessage.getTimestampSent());
+                    cpim = ChatUtils.buildCpimMessage(from, to, networkContent, networkMimeType,
+                            timestampSent);
                 }
 
                 String multipart = new StringBuilder(Multipart.BOUNDARY_DELIMITER)
@@ -168,20 +176,22 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
         } catch (InvalidArgumentException e) {
             mLogger.error("Unable to set authorization header for chat invite!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
+
         } catch (ParseException e) {
             mLogger.error("Unable to set authorization header for chat invite!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
+
         } catch (FileAccessException e) {
             mLogger.error("Unable to send 200OK response!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
+
         } catch (PayloadException e) {
             mLogger.error("Unable to send 200OK response!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
+
         } catch (NetworkException e) {
-            if (mLogger.isActivated()) {
-                mLogger.debug(e.getMessage());
-            }
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
+
         } catch (RuntimeException e) {
             /*
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and

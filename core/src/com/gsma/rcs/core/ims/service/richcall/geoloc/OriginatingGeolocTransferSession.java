@@ -75,10 +75,10 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
      * @param content Content to be shared
      * @param contact Remote contact Id
      * @param geoloc Geoloc info
-     * @param rcsSettings
+     * @param rcsSettings The RCS settings accessor
      * @param timestamp Local timestamp for the session
-     * @param contactManager
-     * @param capabilityService
+     * @param contactManager The contact manager accessor
+     * @param capabilityService The capability service
      */
     public OriginatingGeolocTransferSession(RichcallService parent, MmContent content,
             ContactId contact, Geoloc geoloc, RcsSettings rcsSettings, long timestamp,
@@ -151,26 +151,11 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
             // Send INVITE request
             sendInvite(invite);
 
-        } catch (InvalidArgumentException e) {
-            sLogger.error("Failed initiate a new sharing session as originating!", e);
-            handleError(new ContentSharingError(ContentSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (ParseException e) {
-            sLogger.error("Failed initiate a new sharing session as originating!", e);
-            handleError(new ContentSharingError(ContentSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (FileAccessException e) {
-            sLogger.error("Failed initiate a new sharing session as originating!", e);
-            handleError(new ContentSharingError(ContentSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (PayloadException e) {
+        } catch (InvalidArgumentException | ParseException | FileAccessException | PayloadException e) {
             sLogger.error("Failed initiate a new sharing session as originating!", e);
             handleError(new ContentSharingError(ContentSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (NetworkException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-            }
             handleError(new ContentSharingError(ContentSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (RuntimeException e) {
@@ -187,9 +172,7 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
         }
     }
 
-    /**
-     * Prepare media session
-     */
+    @Override
     public void prepareMediaSession() {
         // Changed by Deutsche Telekom
         // Get the remote SDP part
@@ -228,7 +211,7 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
     }
 
     @Override
-    public void msrpDataTransfered(String msgId) {
+    public void msrpDataTransferred(String msgId) {
         try {
             if (sLogger.isActivated()) {
                 sLogger.info("Data transferred");
@@ -245,7 +228,9 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
                         initiatedByRemote);
             }
         } catch (PayloadException e) {
-            sLogger.error("Failed to notify msrp data transfered for msgId : ".concat(msgId), e);
+            sLogger.error(new StringBuilder("Failed to notify msrp data transfered for msgId : ")
+                    .append(msgId).toString(), e);
+
         } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.debug(e.getMessage());
@@ -257,7 +242,8 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
              * executing operations on a thread unhandling such exceptions will eventually lead to
              * exit the system and thus can bring the whole system down, which is not intended.
              */
-            sLogger.error("Failed to notify msrp data transfered for msgId : ".concat(msgId), e);
+            sLogger.error(new StringBuilder("Failed to notify msrp data transfered for msgId : ")
+                    .append(msgId).toString(), e);
         }
     }
 

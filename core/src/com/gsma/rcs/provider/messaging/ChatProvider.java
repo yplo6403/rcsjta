@@ -430,9 +430,9 @@ public class ChatProvider extends ContentProvider {
             }
 
         } /*
-         * TODO: Do not catch, close cursor, and then throw same exception. Callers should handle
-         * exception.
-         */
+           * TODO: Do not catch, close cursor, and then throw same exception. Callers should handle
+           * exception.
+           */
         catch (RuntimeException e) {
             if (cursor != null) {
                 cursor.close();

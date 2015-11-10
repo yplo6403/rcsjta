@@ -52,9 +52,9 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
      * @param imService InstantMessagingService
      * @param content the content (url, mime-type and size)
      * @param resumeUpload the data object in DB
-     * @param rcsSettings
-     * @param messagingLog
-     * @param contactManager
+     * @param rcsSettings The RCS settings accessor
+     * @param messagingLog The messaging log accessor
+     * @param contactManager The contact manager accessor
      */
     public ResumeUploadFileSharingSession(InstantMessagingService imService, MmContent content,
             FtHttpResumeUpload resumeUpload, RcsSettings rcsSettings, MessagingLog messagingLog,
@@ -68,7 +68,6 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
                 messagingLog, 
                 rcsSettings,
                 resumeUpload.getTimestamp(), 
-                resumeUpload.getTimestampSent(), 
                 contactManager);
         // @formatter:on
     }
@@ -82,17 +81,24 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
         try {
             onHttpTransferStarted();
             /* Resume the file upload to the HTTP server */
-            byte[] result = mUploadManager.resumeUpload();
-            sendResultToContact(result);
+            processHttpUploadResponse(mUploadManager.resumeUpload());
 
         } catch (IOException e) {
             /* Don't call handleError in case of Pause or Cancel */
             if (mUploadManager.isCancelled() || mUploadManager.isPaused()) {
                 return;
             }
+            sLogger.error(
+                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
+                            .append(getSessionID()).append(" with fileTransferId : ")
+                            .append(getFileTransferId()).toString(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (PayloadException e) {
+            sLogger.error(
+                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
+                            .append(getSessionID()).append(" with fileTransferId : ")
+                            .append(getFileTransferId()).toString(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (NetworkException e) {
@@ -103,6 +109,10 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
+            sLogger.error(
+                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
+                            .append(getSessionID()).append(" with fileTransferId : ")
+                            .append(getFileTransferId()).toString(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
         }
     }

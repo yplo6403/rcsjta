@@ -18,8 +18,8 @@
 package com.gsma.rcs.provider.history;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.content.MmContent;
-import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.SessionNotEstablishedException;
@@ -37,8 +37,6 @@ import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.service.api.GroupChatImpl;
 import com.gsma.rcs.service.api.GroupFileTransferImpl;
-import com.gsma.services.rcs.Geoloc;
-import com.gsma.services.rcs.chat.ChatLog.Message.MimeType;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 
 import android.content.Context;
@@ -146,12 +144,6 @@ public class GroupChatDequeueTask extends DequeueTask {
                             }
                             long timestamp = System.currentTimeMillis();
                             String content = cursor.getString(contentIdx);
-                            if (MimeType.GEOLOC_MESSAGE.equals(mimeType)) {
-                                Geoloc geoloc = new Geoloc(content);
-                                content = ChatUtils.buildGeolocDocument(geoloc, ImsModule
-                                        .getImsUserProfile().getPublicUri(), id, timestamp);
-                            }
-
                             /* For outgoing message, timestampSent = timestamp */
                             ChatMessage message = ChatUtils.createChatMessage(id, mimeType,
                                     content, null, null, timestamp, timestamp);
@@ -197,7 +189,7 @@ public class GroupChatDequeueTask extends DequeueTask {
                                             .getOrCreateGroupFileTransfer(mChatId, id);
                                     String fileInfo = FileTransferUtils
                                             .createHttpFileTransferXml(mMessagingLog
-                                                    .getGroupFileDownloadInfo(id));
+                                                    .getFileDownloadInfo(id));
                                     groupChat.dequeueGroupFileInfo(id, fileInfo,
                                             displayedReportEnabled, deliveryReportEnabled,
                                             groupFileTransfer);
@@ -211,14 +203,7 @@ public class GroupChatDequeueTask extends DequeueTask {
                             break;
                     }
 
-                } catch (SessionNotEstablishedException e) {
-                    if (logActivated) {
-                        mLogger.debug(new StringBuilder(
-                                "Failed to dequeue group chat entry with id '").append(id)
-                                .append("' on group chat '").append(mChatId).append("' due to: ")
-                                .append(e.getMessage()).toString());
-                    }
-                } catch (NetworkException e) {
+                } catch (SessionNotEstablishedException | FileAccessException | NetworkException e) {
                     if (logActivated) {
                         mLogger.debug(new StringBuilder(
                                 "Failed to dequeue group chat entry with id '").append(id)
@@ -254,7 +239,7 @@ public class GroupChatDequeueTask extends DequeueTask {
              */
             mLogger.error(
                     new StringBuilder(
-                            "Exception occured while dequeueing group chat message and group file transfer with id '")
+                            "Exception occurred while dequeueing group chat message and group file transfer with id '")
                             .append(id).append("' and chatId '").append(mChatId).append("'")
                             .toString(), e);
             if (id == null) {

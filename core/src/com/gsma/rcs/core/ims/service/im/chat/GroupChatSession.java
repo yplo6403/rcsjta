@@ -374,30 +374,35 @@ public abstract class GroupChatSession extends ChatSession {
         String from = ImsModule.getImsUserProfile().getPublicAddress();
         String to = ChatUtils.ANONYMOUS_URI;
         String msgId = msg.getMessageId();
-        String networkContent;
         String mimeType = msg.getMimeType();
-
+        String networkMimeType = ChatUtils.apiMimeTypeToNetworkMimeType(mimeType);
+        long timestampSent = msg.getTimestampSent();
+        String networkContent = msg.getContent();
+        String data;
+        if (MimeType.GEOLOC_MESSAGE.equals(mimeType)) {
+            networkContent = ChatUtils.persistedGeolocContentToNetworkGeolocContent(networkContent,
+                    msgId, timestampSent);
+        }
         if (mImdnManager.isRequestGroupDeliveryDisplayedReportsEnabled()) {
-            networkContent = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, msg.getContent(),
-                    mimeType, msg.getTimestampSent());
+            data = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, networkContent,
+                    networkMimeType, timestampSent);
         } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-            networkContent = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId,
-                    msg.getContent(), mimeType, msg.getTimestampSent());
+            data = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId, networkContent,
+                    networkMimeType, timestampSent);
         } else {
-            networkContent = ChatUtils.buildCpimMessage(from, to, msg.getContent(), mimeType,
-                    msg.getTimestampSent());
+            data = ChatUtils.buildCpimMessage(from, to, networkContent, networkMimeType,
+                    timestampSent);
         }
 
-        if (ChatUtils.isGeolocType(mimeType)) {
-            sendDataChunks(IdGenerator.generateMessageID(), networkContent, CpimMessage.MIME_TYPE,
+        if (ChatUtils.isGeolocType(networkMimeType)) {
+            sendDataChunks(IdGenerator.generateMessageID(), data, CpimMessage.MIME_TYPE,
                     TypeMsrpChunk.GeoLocation);
         } else {
-            sendDataChunks(IdGenerator.generateMessageID(), networkContent, CpimMessage.MIME_TYPE,
+            sendDataChunks(IdGenerator.generateMessageID(), data, CpimMessage.MIME_TYPE,
                     TypeMsrpChunk.TextMessage);
         }
-        String apiMimeType = ChatUtils.networkMimeTypeToApiMimeType(msg);
         for (ImsSessionListener listener : getListeners()) {
-            ((ChatSessionListener) listener).onMessageSent(msgId, apiMimeType);
+            ((ChatSessionListener) listener).onMessageSent(msgId, mimeType);
         }
     }
 
@@ -686,7 +691,9 @@ public abstract class GroupChatSession extends ChatSession {
              */
             ChatMessage msg = new ChatMessage(msgId, getRemoteContact(), new String(data, UTF8),
                     MimeType.TEXT_MESSAGE, timestamp, timestamp, null);
-            receive(msg, false);
+            boolean imdnDisplayedRequested = false;
+            boolean msgSupportsImdnReport = false;
+            receive(msg, null, msgSupportsImdnReport, imdnDisplayedRequested, null, timestamp);
             return;
 
         } else if (!ChatUtils.isMessageCpimType(mimeType)) {
@@ -737,6 +744,7 @@ public abstract class GroupChatSession extends ChatSession {
         }
 
         String dispositionNotification = cpimMsg.getHeader(ImdnUtils.HEADER_IMDN_DISPO_NOTIF);
+        boolean msgSupportsImdnReport = true;
 
         /**
          * Set message's timestamp to the System.currentTimeMillis, not the session's itself
@@ -759,15 +767,13 @@ public abstract class GroupChatSession extends ChatSession {
                 // TODO : else return error to Originating side
             }
 
-            if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-                sendMsrpMessageDeliveryStatus(remoteId, cpimMsgId,
-                        ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
-            }
+
         } else {
             if (ChatUtils.isTextPlainType(contentType)) {
                 ChatMessage msg = new ChatMessage(cpimMsgId, remoteId, cpimMsg.getMessageContent(),
                         MimeType.TEXT_MESSAGE, timestamp, timestampSent, pseudo);
-                receive(msg, shouldSendDisplayReport(dispositionNotification));
+                receive(msg, remoteId, msgSupportsImdnReport,
+                        shouldSendDisplayReport(dispositionNotification), cpimMsgId, timestamp);
             } else {
                 if (ChatUtils.isApplicationIsComposingType(contentType)) {
                     // Is composing event
@@ -795,16 +801,15 @@ public abstract class GroupChatSession extends ChatSession {
                     } else {
                         if (ChatUtils.isGeolocType(contentType)) {
                             ChatMessage msg = new ChatMessage(cpimMsgId, remoteId,
-                                    cpimMsg.getMessageContent(), GeolocInfoDocument.MIME_TYPE,
+                                    ChatUtils.networkGeolocContentToPersistedGeolocContent(cpimMsg
+                                            .getMessageContent()), MimeType.GEOLOC_MESSAGE,
                                     timestamp, timestampSent, pseudo);
-                            receive(msg, shouldSendDisplayReport(dispositionNotification));
+                            receive(msg, remoteId, msgSupportsImdnReport,
+                                    shouldSendDisplayReport(dispositionNotification), cpimMsgId,
+                                    timestamp);
                         }
                     }
                 }
-            }
-            if (dispositionNotification != null) {
-                sendMsrpMessageDeliveryStatus(remoteId, cpimMsgId,
-                        ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
             }
         }
     }

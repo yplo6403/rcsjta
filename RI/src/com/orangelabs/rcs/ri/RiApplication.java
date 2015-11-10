@@ -23,6 +23,7 @@ import com.gsma.services.rcs.RcsServiceControl;
 
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.ri.utils.LogUtils;
 
 import android.app.Application;
 import android.content.Context;
@@ -30,6 +31,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -41,9 +43,14 @@ import java.util.Map;
 /**
  * This subclass of Application allows to get a resource content from a static context
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class RiApplication extends Application {
+
+    /**
+     * Delay (ms) before starting connection manager.
+     */
+    /* package private */static final long DELAY_FOR_STARTING_CNX_MANAGER = 2000;
 
     private static Context mContext;
 
@@ -141,6 +148,8 @@ public class RiApplication extends Application {
 
     private static RcsServiceControl mRcsServiceControl;
 
+    private static final String LOGTAG = LogUtils.getTag(RiApplication.class.getSimpleName());
+
     /**
      * Gets direction
      * 
@@ -150,6 +159,8 @@ public class RiApplication extends Application {
     public static String getDirection(Direction direction) {
         return sDirectionToString.get(direction);
     }
+
+    /* package private */static boolean sCnxManagerStarted = false;
 
     @Override
     public void onCreate() {
@@ -177,7 +188,7 @@ public class RiApplication extends Application {
         sMultimediaReasonCodes = convertForUI(resources.getStringArray(R.array.mms_reason_codes));
         sGroupChatEvents = convertForUI(resources.getStringArray(R.array.group_chat_event));
 
-        sDirectionToString = new HashMap<Direction, String>();
+        sDirectionToString = new HashMap<>();
         sDirectionToString.put(Direction.INCOMING, resources.getString(R.string.label_incoming));
         sDirectionToString.put(Direction.OUTGOING, resources.getString(R.string.label_outgoing));
         sDirectionToString.put(Direction.IRRELEVANT,
@@ -192,15 +203,26 @@ public class RiApplication extends Application {
         Handler mainThreadHandler = new Handler(Looper.getMainLooper());
         final ConnectionManager cnxManager = ConnectionManager.createInstance(mContext,
                 mRcsServiceControl, EnumSet.allOf(RcsServiceName.class));
-        mainThreadHandler.post(new Runnable() {
+        mainThreadHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                cnxManager.start();
-            }
-        });
+                try {
+                    cnxManager.start();
+                    sCnxManagerStarted = true;
 
+                } catch (RuntimeException e) {
+                    Log.e(LOGTAG, "Failed to start connection manager!", e);
+                }
+            }
+        }, DELAY_FOR_STARTING_CNX_MANAGER);
     }
 
+    /**
+     * Convert to lower case and readable strings
+     * 
+     * @param strings array of strings to be converted
+     * @return converted strings
+     */
     private String[] convertForUI(String[] strings) {
         List<String> stringList = Arrays.asList(strings);
         for (int i = 0, l = stringList.size(); i < l; ++i) {

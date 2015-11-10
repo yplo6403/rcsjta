@@ -142,6 +142,8 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Download of file has failed for mRemoteInstanceId : ")
+                    .append(mRemoteInstanceId).toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (FileNotDownloadedException e) {
@@ -149,6 +151,8 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Download of file has failed for mRemoteInstanceId : ")
+                    .append(mRemoteInstanceId).toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (IOException e) {
@@ -156,9 +160,13 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Download of file has failed for mRemoteInstanceId : ")
+                    .append(mRemoteInstanceId).toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (PayloadException e) {
+            sLogger.error(new StringBuilder("Download of file has failed for mRemoteInstanceId : ")
+                    .append(mRemoteInstanceId).toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (RuntimeException e) {
@@ -166,6 +174,8 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
+            sLogger.error(new StringBuilder("Download of file has failed for mRemoteInstanceId : ")
+                    .append(mRemoteInstanceId).toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
         }
     }
@@ -218,6 +228,9 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
+                    sLogger.error(new StringBuilder(
+                            "Pause of download of file has failed for mRemoteInstanceId : ")
+                            .append(mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
                 }
             }
@@ -254,6 +267,10 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                     if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                         return;
                     }
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Download of file has failed for mRemoteInstanceId : ").append(
+                                    mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (FileNotDownloadedException e) {
@@ -261,6 +278,10 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                     if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                         return;
                     }
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Download of file has failed for mRemoteInstanceId : ").append(
+                                    mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (IOException e) {
@@ -268,9 +289,17 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                     if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                         return;
                     }
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Download of file has failed for mRemoteInstanceId : ").append(
+                                    mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (PayloadException e) {
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Download of file has failed for mRemoteInstanceId : ").append(
+                                    mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (RuntimeException e) {
@@ -278,6 +307,10 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Download of file has failed for mRemoteInstanceId : ").append(
+                                    mRemoteInstanceId).toString(), e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
                 }
             }

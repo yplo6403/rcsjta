@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.im.chat;
 
+import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
@@ -45,7 +46,6 @@ import com.gsma.rcs.core.ims.service.capability.Capabilities.CapabilitiesBuilder
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimParser;
-import com.gsma.rcs.core.ims.service.im.chat.geoloc.GeolocInfoDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnManager;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnUtils;
@@ -53,7 +53,6 @@ import com.gsma.rcs.core.ims.service.im.chat.iscomposing.IsComposingManager;
 import com.gsma.rcs.core.ims.service.im.chat.standfw.TerminatingStoreAndForwardOneToOneChatMessageSession;
 import com.gsma.rcs.core.ims.service.im.chat.standfw.TerminatingStoreAndForwardOneToOneChatNotificationSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingError;
-import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.DownloadFromInviteFileSharingSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
@@ -86,14 +85,9 @@ import javax.xml.parsers.ParserConfigurationException;
  * @author jexa7410
  */
 public abstract class ChatSession extends ImsServiceSession implements MsrpEventListener {
-    /**
-     * Subject
-     */
+
     private String mSubject;
 
-    /**
-     * MSRP manager
-     */
     private final MsrpManager mMsrpMgr;
 
     /**
@@ -106,20 +100,17 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      */
     private final SessionActivityManager mActivityMgr;
 
-    /**
-     * Contribution ID
-     */
     private String mContributionId;
 
     /**
      * Feature tags
      */
-    private List<String> mFeatureTags = new ArrayList<String>();
+    private List<String> mFeatureTags = new ArrayList<>();
 
     /**
      * Feature tags
      */
-    private List<String> mAcceptContactTags = new ArrayList<String>();
+    private List<String> mAcceptContactTags = new ArrayList<>();
 
     /**
      * Accept types
@@ -143,9 +134,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
 
     private static final Logger sLogger = Logger.getLogger(ChatSession.class.getSimpleName());
 
-    /**
-     * Messaging log
-     */
     protected final MessagingLog mMessagingLog;
 
     /**
@@ -161,12 +149,13 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * Receive chat message
      * 
      * @param msg Chat message
+     * @param msgSupportsImdnReport True if the message type supports imdn reports
      * @param imdnDisplayedRequested Indicates whether display report was requested
-     * @throws PayloadException
-     * @throws NetworkException
+     * @param cpimMsgId Cpim message Id
+     * @param timestamp Message receive time
      */
-    protected void receive(ChatMessage msg, boolean imdnDisplayedRequested)
-            throws PayloadException, NetworkException {
+    protected void receive(ChatMessage msg, ContactId remoteId, boolean msgSupportsImdnReport,
+            boolean imdnDisplayedRequested, String cpimMsgId, long timestamp) {
         if (mMessagingLog.isMessagePersisted(msg.getMessageId())) {
             // Message already received
             return;
@@ -175,8 +164,21 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         // Is composing event is reset
         mIsComposingMgr.receiveIsComposingEvent(msg.getRemoteContact(), false);
 
-        for (ImsSessionListener listener : getListeners()) {
-            ((ChatSessionListener) listener).onMessageReceived(msg, imdnDisplayedRequested);
+        if (msgSupportsImdnReport && mImdnManager.isDeliveryDeliveredReportsEnabled()) {
+            try {
+                sendMsrpMessageDeliveryStatus(remoteId, cpimMsgId,
+                        ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
+                for (ImsSessionListener listener : getListeners()) {
+                    ((ChatSessionListener) listener).onMessageReceived(msg, imdnDisplayedRequested,
+                            true);
+                }
+
+            } catch (NetworkException e) {
+                for (ImsSessionListener listener : getListeners()) {
+                    ((ChatSessionListener) listener).onMessageReceived(msg, imdnDisplayedRequested,
+                            false);
+                }
+            }
         }
     }
 
@@ -190,7 +192,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param messagingLog Messaging log
      * @param firstMsg First message in session
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager The contact manager accessor
      */
     public ChatSession(InstantMessagingService imService, ContactId contact, Uri remoteContact,
             RcsSettings rcsSettings, MessagingLog messagingLog, ChatMessage firstMsg,
@@ -237,7 +239,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param tags Feature tags
      */
     public void setFeatureTags(List<String> tags) {
-        this.mFeatureTags = tags;
+        mFeatureTags = tags;
     }
 
     /**
@@ -246,7 +248,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param tags Feature tags
      */
     public void setAcceptContactTags(List<String> tags) {
-        this.mAcceptContactTags = tags;
+        mAcceptContactTags = tags;
     }
 
     /**
@@ -264,7 +266,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param types Accept types
      */
     public void setAcceptTypes(String types) {
-        this.mAcceptTypes = types;
+        mAcceptTypes = types;
     }
 
     /**
@@ -282,7 +284,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param types Wrapped types
      */
     public void setWrappedTypes(String types) {
-        this.mWrappedTypes = types;
+        mWrappedTypes = types;
     }
 
     /**
@@ -327,7 +329,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param id Contribution ID
      */
     public void setContributionID(String id) {
-        this.mContributionId = id;
+        mContributionId = id;
     }
 
     /**
@@ -366,7 +368,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param supported Supported
      */
     public void setGeolocSupportedByRemote(boolean supported) {
-        this.mGeolocSupportedByRemote = supported;
+        mGeolocSupportedByRemote = supported;
     }
 
     /**
@@ -384,7 +386,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param supported Supported
      */
     public void setFileTransferSupportedByRemote(boolean supported) {
-        this.mFtSupportedByRemote = supported;
     }
 
     /**
@@ -440,7 +441,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * 
      * @param msgId Message ID
      */
-    public void msrpDataTransfered(String msgId) {
+    public void msrpDataTransferred(String msgId) {
         if (sLogger.isActivated()) {
             sLogger.info("Data transfered");
         }
@@ -506,7 +507,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             ChatMessage msg = new ChatMessage(msgId, getRemoteContact(), new String(data, UTF8),
                     MimeType.TEXT_MESSAGE, timestamp, timestamp, null);
             boolean imdnDisplayedRequested = false;
-            receive(msg, imdnDisplayedRequested);
+            boolean msgSupportsImdnReport = false;
+            receive(msg, null, msgSupportsImdnReport, imdnDisplayedRequested, null, timestamp);
             return;
         }
         if (ChatUtils.isMessageCpimType(mimeType)) {
@@ -525,6 +527,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                  */
 
                 boolean imdnDisplayedRequested = false;
+                boolean msgSupportsImdnReport = true;
 
                 String dispositionNotification = cpimMsg
                         .getHeader(ImdnUtils.HEADER_IMDN_DISPO_NOTIF);
@@ -557,35 +560,25 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                     } else {
                         // TODO : else return error to Originating side
                     }
+
                 } else {
                     if (ChatUtils.isTextPlainType(contentType)) {
                         ChatMessage msg = new ChatMessage(cpimMsgId, contact,
                                 cpimMsg.getMessageContent(), MimeType.TEXT_MESSAGE, timestamp,
                                 timestampSent, null);
-                        receive(msg, imdnDisplayedRequested);
+                        receive(msg, null, msgSupportsImdnReport, imdnDisplayedRequested,
+                                cpimMsgId, timestamp);
                     } else if (ChatUtils.isApplicationIsComposingType(contentType)) {
                         receiveIsComposing(contact, cpimMsg.getMessageContent().getBytes(UTF8));
                     } else if (ChatUtils.isMessageImdnType(contentType)) {
                         onDeliveryStatusReceived(contact, cpimMsg.getMessageContent());
                     } else if (ChatUtils.isGeolocType(contentType)) {
                         ChatMessage msg = new ChatMessage(cpimMsgId, contact,
-                                cpimMsg.getMessageContent(), GeolocInfoDocument.MIME_TYPE,
-                                timestamp, timestampSent, null);
-                        receive(msg, imdnDisplayedRequested);
-                    }
-                }
-
-                if (!mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-                    return;
-                }
-
-                if (isFToHTTP) {
-                    sendMsrpMessageDeliveryStatus(null, cpimMsgId,
-                            ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
-                } else {
-                    if (dispositionNotification != null) {
-                        sendMsrpMessageDeliveryStatus(null, cpimMsgId,
-                                ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
+                                ChatUtils.networkGeolocContentToPersistedGeolocContent(cpimMsg
+                                        .getMessageContent()), MimeType.GEOLOC_MESSAGE, timestamp,
+                                timestampSent, null);
+                        receive(msg, null, msgSupportsImdnReport, imdnDisplayedRequested,
+                                cpimMsgId, timestamp);
                     }
                 }
             }
@@ -672,10 +665,11 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param timestampSent Remote timestamp sent in payload for receiving a HttpFileTransfer
      * @throws PayloadException
      * @throws ContactManagerException
+     * @throws NetworkException
      */
     protected void receiveHttpFileTransfer(ContactId contact, String displayName,
             FileTransferHttpInfoDocument fileTransferInfo, String msgId, long timestamp,
-            long timestampSent) throws PayloadException, ContactManagerException {
+            long timestampSent) throws PayloadException, ContactManagerException, NetworkException {
         try {
             /*
              * Update the remote contact's capabilities to include at least HTTP FT and IM session
@@ -717,8 +711,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             }
 
             /* Auto reject if file too big or size exceeds device storage capacity. */
-            FileSharingError error = FileSharingSession.isFileCapacityAcceptable(
-                    fileTransferInfo.getSize(), mRcsSettings);
+            FileSharingError error = isFileCapacityAcceptable(fileTransferInfo.getSize(),
+                    mRcsSettings);
             if (error != null) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("File is too big or exceeds storage capacity, "
@@ -783,7 +777,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                     fileSession.downloadFileIcon();
                 } catch (NetworkException e) {
                     if (sLogger.isActivated()) {
-                        sLogger.error("Failed to download file icon", e);
+                        sLogger.debug(new StringBuilder("Failed to download file icon! (")
+                                .append(e.getMessage()).append(")").toString());
                     }
                     MmContent fileIconContent = fileTransferHttpThumbnail.getLocalMmContent(msgId);
                     if (fileResent) {
@@ -803,6 +798,12 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                 mImService.receiveFileTransferInvitation(fileSession, isGroupChat(), contact,
                         displayName, fileTransferInfo.getExpiration());
             }
+
+            if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
+                sendMsrpMessageDeliveryStatus(contact, msgId,
+                        ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp);
+            }
+
             fileSession.startSession();
 
         } catch (FileAccessException e) {
@@ -842,11 +843,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @return Boolean
      */
     public boolean isStoreAndForward() {
-        if (this instanceof TerminatingStoreAndForwardOneToOneChatMessageSession
-                || this instanceof TerminatingStoreAndForwardOneToOneChatNotificationSession) {
-            return true;
-        }
-        return false;
+        return this instanceof TerminatingStoreAndForwardOneToOneChatMessageSession
+                || this instanceof TerminatingStoreAndForwardOneToOneChatNotificationSession;
     }
 
     /**
@@ -935,20 +933,11 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     public void onDeliveryStatusReceived(ContactId contact, String xml) throws PayloadException {
         try {
             ImdnDocument imdn = ChatUtils.parseDeliveryReport(xml);
-
             for (ImsSessionListener listener : getListeners()) {
                 ((ChatSessionListener) listener).onDeliveryStatusReceived(mContributionId, contact,
                         imdn);
             }
-        } catch (SAXException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Failed to parse IMDN document for contact : ").append(contact).toString(), e);
-
-        } catch (ParserConfigurationException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Failed to parse IMDN document for contact : ").append(contact).toString(), e);
-
-        } catch (ParseFailureException e) {
+        } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
             throw new PayloadException(new StringBuilder(
                     "Failed to parse IMDN document for contact : ").append(contact).toString(), e);
         }
