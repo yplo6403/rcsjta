@@ -107,7 +107,17 @@ public class CmsSettingsProvider extends ContentProvider {
                     CmsSettingsData.DEFAULT_CMS_RCS_MESSAGE_FOLDER);            
             addParameter(db, CmsSettingsData.CMS_MY_NUMBER,
                     CmsSettingsData.DEFAULT_CMS_MY_NUMBER);
-            
+            addParameter(db, CmsSettingsData.CMS_PUSH_SMS,
+                    CmsSettingsData.DEFAULT_CMS_PUSH_SMS);
+            addParameter(db, CmsSettingsData.CMS_PUSH_MMS,
+                    CmsSettingsData.DEFAULT_CMS_PUSH_MMS);
+            addParameter(db, CmsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS,
+                    CmsSettingsData.DEFAULT_CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+            addParameter(db, CmsSettingsData.CMS_DEFAULT_DIRECTORY,
+                    CmsSettingsData.DEFAULT_CMS_DEFAULT_DIRECTORY);
+            addParameter(db, CmsSettingsData.CMS_DIRECTORY_SEPARATOR,
+                    CmsSettingsData.DEFAULT_CMS_DIRECTORY_SEPARATOR);
+
         }
 
         @Override

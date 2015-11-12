@@ -30,8 +30,10 @@
     <string name="cms_toolkit_settings_my_number_label">My number</string>
     <string name="cms_toolkit_settings_push_sms_label">Push SMS</string>
     <string name="cms_toolkit_settings_push_mms_label">Push MMS</string>
-    <string name="cms_toolkit_settings_update_flag_imap_sms_label">Update SMS flags with IMAP</string>
-    <string name="cms_toolkit_settings_update_flag_imap_mms_label">Update MMS flags with IMAP</string>
+    <string name="cms_toolkit_settings_update_flag_imap_xms_label">Update flags for XMS with IMAP</string>
+    <string name="cms_toolkit_settings_default_directory_label">CMS default directory</string>
+    <string name="cms_toolkit_settings_directory_separator_label">CMS directory separator</string>
+
 
     <!-- Remote Operation -->
     <string name="cms_toolkit_remote_operations_delete_messages">Delete existing messages</string>

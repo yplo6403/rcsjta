@@ -9,6 +9,7 @@ import com.gsma.rcs.cms.provider.imap.FolderData;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
+import com.gsma.rcs.cms.provider.xms.model.XmsData;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISynchronizer;
@@ -86,7 +87,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                 }
                 
                 // sync CMS with local change
-                Set<FlagChange> flagChanges = mLocalStorageHandler.getLocalFlagChanges(remoteFolderName);
+                List<FlagChange> flagChanges = mLocalStorageHandler.getLocalFlagChanges(remoteFolderName);
                 mSynchronizer.syncLocalFlags(flagChanges);            
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);                
             }
@@ -98,11 +99,12 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             XmsLog xmsLog = XmsLog.getInstance(null);
             PartLog partLog = PartLog.getInstance(null);
             if(xmsLog!=null){
-                PushMessageTask task = new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), null);
-                task.pushMessages(xmsLog.getMessages(PushStatus.PUSH_REQUESTED));                
+                List<XmsData> messagesToPush = xmsLog.getMessages(PushStatus.PUSH_REQUESTED);
+                if(!messagesToPush.isEmpty()){
+                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), null).pushMessages(messagesToPush);
+                }
             }
-            
-            
+
             mExecutionResult = true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -136,7 +138,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         mSynchronizer.selectFolder(folderName);
 
         if (localFolder.hasMessages()) {
-            Set<FlagChange> flagChanges = mSynchronizer.syncRemoteFlags(localFolder, remoteFolder);
+            List<FlagChange> flagChanges = mSynchronizer.syncRemoteFlags(localFolder, remoteFolder);
             mLocalStorageHandler.applyFlagChange(flagChanges);
         }
 
@@ -151,7 +153,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
     private boolean shouldStartRemoteSynchronization(FolderData local, ImapFolder remote) {
         boolean sync = false;
         if (local.isNewFolder()) {
-            sync = true;
+            sync = !remote.isEmpty();
         } else if (!local.getUidValidity().equals(remote.getUidValidity())) {
             mLocalStorageHandler.removeLocalFolder(remote.getName());
             sync = true;

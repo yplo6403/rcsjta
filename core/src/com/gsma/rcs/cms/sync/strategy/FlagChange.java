@@ -1,10 +1,13 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
+import com.gsma.rcs.cms.utils.ListUtils;
+import com.gsma.rcs.utils.StringUtils;
 import com.sonymobile.rcs.imap.Flag;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
@@ -13,33 +16,47 @@ public class FlagChange {
     public enum Operation {ADD_FLAG, REMOVE_FLAG};
     
     private String mFolder;
-    private Integer mUid;
+    private List<Integer> mUids;
     private Set<Flag> mFlags;
     private Operation mOperation = Operation.ADD_FLAG;
     
     /**
      * @param folder 
-     * @param uid
-     * @param seen
-     * @param deleted
+     * @param uids
+     * @param flags
      */
-    public FlagChange(String folder, Integer uid, Set<Flag> flags) {
+    public FlagChange(String folder, List<Integer> uids, Set<Flag> flags) {
         super();
         mFolder = folder;
-        mUid = uid;
+        mUids = uids;
         mFlags = flags;
+    }
+
+    /**
+     * @param folder
+     * @param uids
+     * @param flag
+     */
+    public FlagChange(String folder, List<Integer> uids, Flag flag) {
+        super();
+        mFolder = folder;
+        mUids = uids;
+        mFlags = new HashSet<>(Arrays.asList(flag));
     }
 
     public FlagChange(String folder, Integer uid, Flag flag, Operation operation) {
         super();
         mFolder = folder;
-        mUid = uid;
-        mFlags = new HashSet<Flag>(Arrays.asList(flag));
+        mUids = Arrays.asList(new Integer[]{uid});
+        mFlags = new HashSet<>(Arrays.asList(flag));
         mOperation = operation;
     }
     
-    public Integer getUid() {
-        return mUid;
+    public String getJoinedUids() {return ListUtils.join(mUids, ",");
+    }
+
+    public List<Integer> getUids() {
+        return mUids;
     }
 
     public Boolean addSeenFlag() {

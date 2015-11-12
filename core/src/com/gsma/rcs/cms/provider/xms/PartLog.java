@@ -100,10 +100,12 @@ public class PartLog {
             partValues.put(PartData.KEY_TEXT, mmsPart.getText());
             String contentType = mmsPart.getContentType();
             partValues.put(PartData.KEY_CONTENT_TYPE, contentType);
-            if(MmsUtils.CONTENT_TYPE_IMAGE.contains(contentType)){
-                byte[] thumb = MmsUtils.createThumb(mmsPart);
-                partValues.put(PartData.KEY_THUMB, thumb);
+            byte[] thumb = mmsPart.getThumb();
+            if(thumb==null &&
+                    MmsUtils.CONTENT_TYPE_IMAGE.contains(contentType)){
+                thumb = MmsUtils.createThumb(mmsPart);
             }
+            partValues.put(PartData.KEY_THUMB, thumb);
             mLocalContentResolver.insert(PartData.CONTENT_URI, partValues);
         }
     }

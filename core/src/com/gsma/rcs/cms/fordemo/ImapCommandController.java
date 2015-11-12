@@ -43,14 +43,14 @@ import java.util.Map;
 public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEventListener, PushMessageTaskListener, UpdateFlagTaskListener {
 
     private static final Logger sLogger = Logger.getLogger(ImapCommandController.class.getSimpleName());
-    
+
     private static ImapCommandController sInstance = null;
 
     private CmsSettings mSettings;
     private XmsLog mXmsLog;
     private PartLog mPartLog;
     private ImapLog mImapLog;
-    
+
     // key base id, value uid from cms server
     private Map<String,Integer> mUids = new HashMap<String,Integer>();
 
@@ -77,32 +77,17 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
 
     private ImapCommandController(CmsSettings settings, ImapLog imapLog, XmsLog xmsLog, PartLog partLog){
-        mSettings = settings; 
+        mSettings = settings;
         mImapLog = imapLog;
         mXmsLog = xmsLog;
         mPartLog = partLog;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void onIncomingSms(SmsData message) {
         if(sLogger.isActivated()){
-            sLogger.info("onIncomingSms");    
-        }       
-        
-        try {            
-            new PushMessageTask(ImapServiceManager.getService(mSettings), mXmsLog, mPartLog, mSettings.getMyNumber(), this).execute();
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
-        }
-                
-    }
-       
-    @SuppressWarnings("unchecked")
-    @Override
-    public void onOutgoingSms(SmsData message) {
-        if(sLogger.isActivated()){
-            sLogger.info("onOutgoingSms");    
+            sLogger.info("onIncomingSms");
         }
         try {
             new PushMessageTask(ImapServiceManager.getService(mSettings), mXmsLog, mPartLog, mSettings.getMyNumber(), this).execute();
@@ -111,29 +96,51 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
         }
 
     }
-    
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void onOutgoingSms(SmsData message) {
+        if(sLogger.isActivated()){
+            sLogger.info("onOutgoingSms");
+        }
+        try {
+            new PushMessageTask(ImapServiceManager.getService(mSettings), mXmsLog, mPartLog, mSettings.getMyNumber(), this).execute();
+        } catch (ImapServiceNotAvailableException e) {
+            sLogger.warn(e.getMessage());
+        }
+    }
+
     @Override
     public void onDeliverNativeSms(long nativeProviderId, long sentDate) {
-        
+
     }
 
     @Override
     public void onDeleteNativeSms(long nativeProviderId) {
-        if(sLogger.isActivated()){
-            sLogger.info("onDeleteNativeSms");    
+        boolean isLogActivated = sLogger.isActivated();
+        if(isLogActivated){
+            sLogger.info("onDeleteNativeSms");
         }
+
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
+
         XmsData xmsData = mXmsLog.getMessageByNativeProviderId(XmsData.MimeType.SMS, nativeProviderId);
         if(xmsData==null){
             return;
         }
         String folderName = Constants.TEL_PREFIX.concat(xmsData.getContact());
         Integer uid = mUids.get(xmsData.getBaseId());
-        if(uid==null){   
+        if(uid==null){
             uid = mImapLog.getUid(folderName, xmsData.getBaseId());
             if(uid==null){
                 return;
-            }                
-        }       
+            }
+        }
         updateFlag(new FlagChange(folderName, uid, Flag.Deleted,  Operation.ADD_FLAG));
     }
 
@@ -163,14 +170,47 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onDeleteNativeMms(String mmsId) {
+        boolean isLogActivated = sLogger.isActivated();
+        if(isLogActivated){
+            sLogger.info("onDeleteNativeMms");
+        }
 
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
+
+        XmsData xmsData = mXmsLog.getMessage(mmsId);
+        if(xmsData==null){
+            return;
+        }
+        String folderName = Constants.TEL_PREFIX.concat(xmsData.getContact());
+        Integer uid = mUids.get(xmsData.getBaseId());
+        if(uid==null){
+            uid = mImapLog.getUid(folderName, xmsData.getBaseId());
+            if(uid==null){
+                return;
+            }
+        }
+        updateFlag(new FlagChange(folderName, uid, Flag.Deleted,  Operation.ADD_FLAG));
     }
 
     @Override
     public void onReadNativeConversation(long nativeThreadId) {
-        if (sLogger.isActivated()) {
+        boolean isLogActivated = sLogger.isActivated();
+        if (isLogActivated) {
             sLogger.info("onReadNativeConversation");
         }
+
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
+
         List<FlagChange> flagChanges = new ArrayList<FlagChange>();
         for (XmsData xmsData : mXmsLog.getMessages(nativeThreadId, ReadStatus.READ_REQUESTED)) {
             Integer uid = mUids.get(xmsData.getBaseId());
@@ -188,9 +228,18 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onDeleteNativeConversation(long nativeThreadId) {
-        if(sLogger.isActivated()){
+        boolean isLogActivated = sLogger.isActivated();
+        if (isLogActivated) {
             sLogger.info("onDeleteNativeConversation : " + nativeThreadId);
         }
+
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
+
         List<FlagChange> flagChanges = new ArrayList<FlagChange>();
         for(XmsData xmsData : mXmsLog.getMessages(nativeThreadId, DeleteStatus.DELETED_REQUESTED)){
             String folderName = Constants.TEL_PREFIX.concat(xmsData.getContact());
@@ -210,15 +259,15 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
     private void updateFlag(FlagChange flagChange){
         updateFlag(Arrays.asList(flagChange));
     }
-    
+
     @SuppressWarnings("unchecked")
-    private void updateFlag(List<FlagChange> flagChanges){  
+    private void updateFlag(List<FlagChange> flagChanges){
         if(flagChanges.isEmpty()){
             return;
         }
-        
+
         try {
-            new UpdateFlagTask(ImapServiceManager.getService(mSettings), flagChanges, this).execute();            
+            new UpdateFlagTask(ImapServiceManager.getService(mSettings), flagChanges, this).execute();
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }
@@ -226,10 +275,17 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onReadRcsConversation(String contact) {
-        if(sLogger.isActivated()){
-            sLogger.info("onReadRcsConversation : ".concat(contact));    
+        boolean isLogActivated = sLogger.isActivated();
+        if(isLogActivated){
+            sLogger.info("onReadRcsConversation : ".concat(contact));
         }
-        
+
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
        List<FlagChange> flagChanges = new ArrayList<FlagChange>();
        for(XmsData xmsData : mXmsLog.getMessages(contact, ReadStatus.READ_REQUESTED)){
            Integer uid = mUids.get(xmsData.getBaseId());
@@ -239,7 +295,7 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
                if(uid==null){
                    continue;
                }
-           }           
+           }
            flagChanges.add(new FlagChange(folderName, uid, Flag.Seen,  Operation.ADD_FLAG));
        }
        updateFlag(flagChanges);
@@ -247,8 +303,15 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onDeleteRcsSms(String contact, String baseId) {
+        boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
-            sLogger.info(new StringBuilder("onDeleteRcsSms :").append(contact).append(",").append(baseId).toString());    
+            sLogger.info(new StringBuilder("onDeleteRcsSms :").append(contact).append(",").append(baseId).toString());
+        }
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
         }
         Integer uid = mUids.get(baseId);
         String folderName = Constants.TEL_PREFIX.concat(contact);
@@ -257,14 +320,21 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
             if(uid==null){
                 return;
             }
-        }        
+        }
         updateFlag(new FlagChange(folderName, uid, Flag.Deleted,  Operation.ADD_FLAG));
     }
 
     @Override
     public void onDeleteRcsMms(String contact, String baseId, String mms_id) {
+        boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
             sLogger.info(new StringBuilder("onDeleteRcsMms :").append(contact).append(",").append(mms_id).toString());
+        }
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
         }
         Integer uid = mUids.get(baseId);
         String folderName = Constants.TEL_PREFIX.concat(contact);
@@ -279,8 +349,15 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onDeleteRcsConversation(String contact) {
+        boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
-            sLogger.info("onDeleteRcsConversation :".concat(contact));    
+        sLogger.info("onDeleteRcsConversation :".concat(contact));
+        }
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
         }
         List<FlagChange> flagChanges = new ArrayList<FlagChange>();
         for(XmsData xmsData : mXmsLog.getMessages(contact, DeleteStatus.DELETED_REQUESTED)){
@@ -291,7 +368,7 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
                 if(uid==null){
                     continue;
                 }
-            }                        
+            }
             flagChanges.add(new FlagChange(folderName, uid, Flag.Deleted,  Operation.ADD_FLAG));
         }
         updateFlag(flagChanges);
@@ -299,33 +376,31 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
 
     @Override
     public void onReadRcsMessage(String contact, String baseId) {
-        
-        new AsyncTask<String,String,Boolean>(){
-            @Override
-            protected Boolean doInBackground(String... params) {                
-                String contact = params[0]; 
-                String baseId = params[1];                
-                if(sLogger.isActivated()){
-                    sLogger.info(new StringBuilder("onReadRcsMessage : ").append(contact).append(",").append(baseId).toString());
-                }
-                String folderName = Constants.TEL_PREFIX.concat(contact);
-                Integer uid = mUids.get(baseId);
-                if(uid == null){
-                    uid = mImapLog.getUid(folderName, baseId);
-                    if(uid==null){
-                        return false;
-                    }
-                }        
-                updateFlag(new FlagChange(folderName, uid, Flag.Seen, Operation.ADD_FLAG));
-                return true;
-            }            
-        }.execute(contact, baseId);
+        boolean isLogActivated = sLogger.isActivated();
+        if(isLogActivated){
+            sLogger.info(new StringBuilder("onReadRcsMessage : ").append(contact).append(",").append(baseId).toString());
+        }
+        if(!mSettings.getUpdateFlagsWithImapXms()){
+            if(isLogActivated){
+                sLogger.info("Update flags with IMAP command not enabled for XMS");
+            }
+            return;
+        }
+        String folderName = Constants.TEL_PREFIX.concat(contact);
+        Integer uid = mUids.get(baseId);
+        if (uid == null) {
+            uid = mImapLog.getUid(folderName, baseId);
+            if(uid==null){
+                return;
+            }
+        }
+        updateFlag(new FlagChange(folderName, uid, Flag.Seen, Operation.ADD_FLAG));
     }
 
     @Override
     public void onPushMessageTaskCallbackExecuted(PushMessageTask.PushMessageResult result) {
         if(sLogger.isActivated()){
-            sLogger.info("onPushMessageTaskCallbackExecuted");    
+            sLogger.info("onPushMessageTaskCallbackExecuted");
         }
         if(result!=null){
             mUids.putAll(result.mUids);
@@ -335,7 +410,7 @@ public class ImapCommandController  implements INativeXmsEventListener, RcsXmsEv
     @Override
     public void onUpdateFlagTaskExecuted(String[] params, Boolean result) {
         if(sLogger.isActivated()){
-            sLogger.info("onUpdateFlagTaskExecuted");    
+            sLogger.info("onUpdateFlagTaskExecuted");
         }
     }
 }

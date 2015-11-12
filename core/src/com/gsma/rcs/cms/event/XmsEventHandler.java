@@ -314,22 +314,27 @@ public class XmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
         String contact = folder;
         if(folder.startsWith(Constants.TEL_PREFIX)){
             contact = folder.substring(Constants.TEL_PREFIX.length());
-        }            
-        messages = mXmsLog.getMessages(contact, ReadStatus.READ_REQUESTED, DeleteStatus.DELETED_REQUESTED);
-         
+        }
         Set<FlagChange> changes = new HashSet<FlagChange>();
+        List<Integer> readUids = new ArrayList<>();
+        List<Integer> deletedUids = new ArrayList<>();
+        messages = mXmsLog.getMessages(contact, ReadStatus.READ_REQUESTED, DeleteStatus.DELETED_REQUESTED);
         for (XmsData xms :  messages) {
             Integer uid = mImapLog.getUid(folder,xms.getBaseId());
             if(uid!=null){
-                Set<Flag> flags = new HashSet<Flag>();
                 if(ReadStatus.READ_REQUESTED == xms.getReadStatus()){
-                    flags.add(Flag.Seen);
+                    readUids.add(uid);
                 }
                 if(DeleteStatus.DELETED_REQUESTED == xms.getDeleteStatus()){
-                    flags.add(Flag.Deleted);
+                    deletedUids.add(uid);
                 }
-                changes.add(new FlagChange(folder,uid,flags));
             }
+        }
+        if(!readUids.isEmpty()){
+            changes.add(new FlagChange(folder,readUids,Flag.Seen));
+        }
+        if(!deletedUids.isEmpty()){
+            changes.add(new FlagChange(folder,deletedUids,Flag.Deleted));
         }
         return changes;
     }

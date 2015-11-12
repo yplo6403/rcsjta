@@ -48,7 +48,8 @@ public class XmsLogTest extends AndroidTestCase {
     public void testSetMessageAsDeliveredWithNativeProviderId() {
         mXmsLog.addSms(sms[0]);
         mXmsLog.setMessageAsDeliveredWithNativeProviderId(XmsData.MimeType.SMS, String.valueOf(sms[0].getNativeProviderId()), now);
-        assertTrue(now == mXmsLog.getMessages(sms[0].getContact(), sms[0].getReadStatus()).get(0).getDeliveryDate());
+
+        assertTrue(now == mXmsLogEnvIntegration.getMessages(sms[0].getContact()).get(0).getDeliveryDate());
     }
     
     public void testUpdateReadStatusWithNativeProviderId(){

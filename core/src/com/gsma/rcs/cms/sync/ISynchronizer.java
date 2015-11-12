@@ -29,7 +29,7 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public Set<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
+    public List<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException;
 
     /**
@@ -57,6 +57,6 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public void syncLocalFlags(Set<FlagChange> flagChanges);
+    public void syncLocalFlags(List<FlagChange> flagChanges);
 
 }

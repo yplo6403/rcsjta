@@ -412,8 +412,18 @@ public class XmsLog {
         ContentValues values = new ContentValues();
         values.put(XmsLogData.KEY_PUSH_STATUS, pushStatus.toInt());
        return mLocalContentResolver.update(XmsLogData.CONTENT_URI, values, SELECTION_BASE_ID, new String[]{baseId});
-    } 
-    
+    }
+
+    /**
+     * @param pushStatus
+     * @return number of updated rows
+     */
+    public int updatePushStatus(MimeType mimeType, PushStatus pushStatus){
+        ContentValues values = new ContentValues();
+        values.put(XmsLogData.KEY_PUSH_STATUS, pushStatus.toInt());
+        return mLocalContentResolver.update(XmsLogData.CONTENT_URI, values, SELECTION_MIME_TYPE, new String[]{String.valueOf(mimeType.toInt())});
+    }
+
     /**
      * @param contact
      * @param readStatus

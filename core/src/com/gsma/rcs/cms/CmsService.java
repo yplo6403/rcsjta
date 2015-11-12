@@ -63,7 +63,7 @@ public class CmsService implements RcsXmsEventListener {
         mXmsEventHandler = new XmsEventHandler(imapLog, xmsLog, partLog);
 
         // start content observer on native SMS/MMS content provider
-        mXmsObserver = XmsObserver.createInstance(mContext);
+        mXmsObserver = XmsObserver.createInstance(mContext, cmsSettings);
         mXmsObserver.registerListener(mXmsEventHandler);
         mXmsObserver.start();
 

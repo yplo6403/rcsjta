@@ -25,7 +25,7 @@ public interface ISynchronizationHandler {
      * Apply flag changes from a remote folder
      * @param flagchanges
      */
-    public void applyFlagChange(Set<FlagChange> flagchanges);
+    public void applyFlagChange(List<FlagChange> flagchanges);
     
     /**
      * Delete local IMAP folder when it is no more valid
@@ -53,5 +53,5 @@ public interface ISynchronizationHandler {
      * @param folder 
      * @return flagChanges
      */
-    public Set<FlagChange> getLocalFlagChanges(String folder);
+    public List<FlagChange> getLocalFlagChanges(String folder);
 }

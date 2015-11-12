@@ -1,6 +1,7 @@
 package com.gsma.rcs.cms.imap.message.sms;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.imap.message.mime.SmsMimeMessage;
 
 import android.test.AndroidTestCase;
 
@@ -30,10 +31,10 @@ public class SmsPartTest extends AndroidTestCase {
                 .append("Content-Type: text/plain; charset=utf-8").append(Constants.CRLF)
                 .append(Constants.CRLF)
                 .append("1").toString();
-                
-        SmsPart smsPart = new SmsPart(payload);
-        
-        Assert.assertEquals("1",smsPart.getContent());
+
+        SmsMimeMessage smsMimeMessage = new SmsMimeMessage(payload);
+
+        Assert.assertEquals("1",smsMimeMessage.getBodyPart());
         
         }
 

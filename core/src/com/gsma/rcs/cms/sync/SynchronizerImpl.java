@@ -30,7 +30,7 @@ public class SynchronizerImpl implements ISynchronizer {
     }
 
     @Override
-    public Set<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
+    public List<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException {
         return mImapService.fetchFlags(remoteFolder.getName(), localFolder.getMaxUid(), localFolder.getModseq());
     }
@@ -64,7 +64,7 @@ public class SynchronizerImpl implements ISynchronizer {
     }
 
     @Override
-    public void syncLocalFlags(Set<FlagChange> flagChanges) {
+    public void syncLocalFlags(List<FlagChange> flagChanges) {
         String prevFolder = null;
         List<String> deletedMailboxes = new ArrayList<String>();
         Set<FlagChange> flagChangesToKeep = new HashSet<FlagChange>();
@@ -90,12 +90,12 @@ public class SynchronizerImpl implements ISynchronizer {
                 }
 
                 try {   
-                    sLogger.warn(new StringBuilder(flagChange.getFolder()).append("/").append(flagChange.getUid()).toString());
-                    mImapService.addFlags(flagChange.getUid(), flagChange.getFlags());
+                    sLogger.warn(new StringBuilder(flagChange.getFolder()).append("/").append(flagChange.getJoinedUids()).toString());
+                    mImapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                 } catch (ImapException e) {
                     // It does not matter if the message does not exist anymore on CMS
                     if(sLogger.isActivated()){
-                        sLogger.debug(new StringBuilder("The message has been deleted on CMS : ").append(folder).append(",").append(flagChange.getUid()).toString());
+                        sLogger.debug(new StringBuilder("The message has been deleted on CMS : ").append(folder).append(",").append(flagChange.getJoinedUids()).toString());
                     }
 
                 }

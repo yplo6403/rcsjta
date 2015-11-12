@@ -90,7 +90,6 @@ public class SmsTest extends AndroidTestCase{
       */
     public void test1()  {
 
-    
         try {
         Map<Integer, MessageData> imapData;
                 
@@ -105,8 +104,9 @@ public class SmsTest extends AndroidTestCase{
 
         // check that messages are present in local storage
         assertFalse(mImapLog.getFolders().isEmpty());
-        assertEquals(2,mImapLog.getFolders().size());        
-        
+        int nbFolders = mImapLog.getFolders().size();
+        assertTrue(nbFolders>0);
+
         imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);        
         assertEquals(SmsIntegrationUtils.Test1.conversation.length,imapData.size());
         
@@ -122,7 +122,7 @@ public class SmsTest extends AndroidTestCase{
 
         // check that messages are present in local storage   
         assertFalse(mImapLog.getFolders().isEmpty());
-        assertEquals(2,mImapLog.getFolders().size());        
+        assertEquals(nbFolders,mImapLog.getFolders().size());
         
         imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);        
         assertEquals(SmsIntegrationUtils.Test1.conversation.length,imapData.size());
@@ -157,7 +157,8 @@ public class SmsTest extends AndroidTestCase{
            
            //check that messages are marked as 'Seen' in local storage   
            assertFalse(mImapLog.getFolders().isEmpty());
-           assertEquals(2,mImapLog.getFolders().size());                   
+           int nbFolders = mImapLog.getFolders().size();
+           assertTrue(nbFolders>0);
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
            List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(SmsIntegrationUtils.Test1.conversation.length, messages.size());
@@ -174,7 +175,7 @@ public class SmsTest extends AndroidTestCase{
            
            //check that messages are marked as 'Deleted' in local storage   
            assertFalse(mImapLog.getFolders().isEmpty());
-           assertEquals(2,mImapLog.getFolders().size());                   
+           assertEquals(nbFolders,mImapLog.getFolders().size());
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
            messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(0, messages.size());                      

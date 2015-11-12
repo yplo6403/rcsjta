@@ -16,9 +16,9 @@ import java.util.Map.Entry;
 public class ListStatusCmdHandler extends CmdHandler {
 
     static final String sCommand = Constants.CMD_LIST_STATUS;
-    private static final String sPattern = "^STATUS \"(.*)\" \\(UIDNEXT ([0-9]+) UIDVALIDITY ([0-9]+) HIGHESTMODSEQ ([0-9]+)\\)$";
+    private static final String sPattern = "^STATUS \"(.*)\" \\(MESSAGES ([0-9]+) UIDNEXT ([0-9]+) UIDVALIDITY ([0-9]+) HIGHESTMODSEQ ([0-9]+)\\)$";
 
-    private static final int sExpectedValues = 4;
+    private static final int sExpectedValues = 5;
 
     final Map<String, Map<String, String>> mData = new HashMap<String, Map<String, String>>();
 
@@ -45,9 +45,10 @@ public class ListStatusCmdHandler extends CmdHandler {
             }
 
             Map<String, String> data = new HashMap<String, String>();
-            data.put(Constants.METADATA_UIDNEXT, values[1]);
-            data.put(Constants.METADATA_UIDVALIDITY, values[2]);
-            data.put(Constants.METADATA_HIGHESTMODSEQ, values[3]);
+            data.put(Constants.METADATA_MESSAGES, values[1]);
+            data.put(Constants.METADATA_UIDNEXT, values[2]);
+            data.put(Constants.METADATA_UIDVALIDITY, values[3]);
+            data.put(Constants.METADATA_HIGHESTMODSEQ, values[4]);
             mData.put(values[0], data);
         }
     }

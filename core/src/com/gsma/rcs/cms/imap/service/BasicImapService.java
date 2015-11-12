@@ -61,7 +61,7 @@ public class BasicImapService extends DefaultImapService {
      * @throws IOException
      * @throws ImapException
      */
-    public Set<FlagChange> fetchFlags(String folderName, Integer uid, Integer changedSince)
+    public List<FlagChange> fetchFlags(String folderName, Integer uid, Integer changedSince)
             throws IOException, ImapException {
 
         FetchFlagCmdHandler handler = (FetchFlagCmdHandler) CmdHandler

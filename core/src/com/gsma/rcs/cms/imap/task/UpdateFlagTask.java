@@ -71,10 +71,10 @@ public class UpdateFlagTask extends AsyncTask<String, String, Boolean> {
                 }
                 switch (flagChange.getOperation()) {
                     case ADD_FLAG:
-                        mImapService.addFlags(flagChange.getUid(), flagChange.getFlags());
+                        mImapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                         break;
                     case REMOVE_FLAG:
-                        mImapService.removeFlags(flagChange.getUid(), flagChange.getFlags());
+                        mImapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                         break;
                 }
                 flagChangeSent.add(flagChange);
