@@ -3,6 +3,7 @@ package com.gsma.rcs.cms.toolkit.operations.remote;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.fordemo.ImapCommandController;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.ShowMessagesTask;
@@ -131,6 +132,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
             new UpdateFlagTask(
                     ImapServiceManager.getService(mSettings),
                      Arrays.asList(flagChange),
+                    ImapCommandController.getInstance().getContext(),
                      this
                      ).execute();
             mInProgressDialog.show();
@@ -198,7 +200,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     }
 
     @Override
-    public void onUpdateFlagTaskExecuted(String[] params, Boolean result) {
+    public void onUpdateFlagTaskExecuted(String[] params, List<FlagChange> changes) {
         try {
             new ShowMessagesTask(ImapServiceManager.getService(mSettings),this).execute(new String[]{});
         } catch (ImapServiceNotAvailableException e) {

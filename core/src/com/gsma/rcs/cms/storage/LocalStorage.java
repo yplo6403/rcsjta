@@ -149,6 +149,9 @@ public class LocalStorage implements ISynchronizationHandler{
         for(ImapMessage msg : messages){
             MessageType messageType = mMessageResolver.resolveType(msg);
             IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
+            if(resolvedMessage == null){
+                continue;
+            }
             IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType); 
             String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
             if(messageId == null){ // message not present in local storage
@@ -176,11 +179,13 @@ public class LocalStorage implements ISynchronizationHandler{
 
     @Override
     public void createMessages(List<ImapMessage> messages) {
-        for (ImapMessage msg : messages) {            
-            
+        for (ImapMessage msg : messages) {
+
             MessageType messageType = mMessageResolver.resolveType(msg);
             IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
-            
+            if(resolvedMessage == null){
+                continue;
+            }
             String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(messageType, resolvedMessage);
             
             MessageData messageData = new MessageData(resolvedMessage.getFolder(), 0, resolvedMessage.getUid(),

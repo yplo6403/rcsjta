@@ -75,7 +75,7 @@ public class CmsService implements RcsXmsEventListener {
         // TODO FGI : register listener for each type of messages
 
         // ---*** begin : should be removed
-        mImapCommandController = ImapCommandController.createInstance(mContext, cmsSettings,
+        mImapCommandController = ImapCommandController.createInstance(mContext, cmsSettings,localStorage,
                 imapLog, xmsLog, partLog);
         mXmsObserver.registerListener(mImapCommandController);
         // ---*** end :

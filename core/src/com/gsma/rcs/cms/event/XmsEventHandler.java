@@ -21,6 +21,7 @@ import com.gsma.rcs.cms.provider.xms.model.MmsData;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.storage.MessageDataConverter;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
+import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.logger.Logger;
@@ -96,7 +97,7 @@ public class XmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
 
             // take the first message which s not synchronized with CMS server (have no uid)
             for(String id : ids){
-                Integer uid = mImapLog.getUid(Constants.TEL_PREFIX.concat(smsData.getContact()), id);
+                Integer uid = mImapLog.getUidForXmsMessage(id);
                 if(uid==null){
                     return id;
                 }
@@ -309,18 +310,15 @@ public class XmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
     }
 
     @Override
-    public Set<FlagChange> getLocalEvents(String folder) {        
+    public Set<FlagChange> getLocalEvents(String cmsRemoteFolder) {
+        String contact = CmsUtils.convertCmsRemoteFolderToContact(MessageType.SMS, cmsRemoteFolder);
         List<XmsData> messages;
-        String contact = folder;
-        if(folder.startsWith(Constants.TEL_PREFIX)){
-            contact = folder.substring(Constants.TEL_PREFIX.length());
-        }
         Set<FlagChange> changes = new HashSet<FlagChange>();
         List<Integer> readUids = new ArrayList<>();
         List<Integer> deletedUids = new ArrayList<>();
         messages = mXmsLog.getMessages(contact, ReadStatus.READ_REQUESTED, DeleteStatus.DELETED_REQUESTED);
         for (XmsData xms :  messages) {
-            Integer uid = mImapLog.getUid(folder,xms.getBaseId());
+            Integer uid = mImapLog.getUidForXmsMessage(xms.getBaseId());
             if(uid!=null){
                 if(ReadStatus.READ_REQUESTED == xms.getReadStatus()){
                     readUids.add(uid);
@@ -331,10 +329,10 @@ public class XmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
             }
         }
         if(!readUids.isEmpty()){
-            changes.add(new FlagChange(folder,readUids,Flag.Seen));
+            changes.add(new FlagChange(cmsRemoteFolder,readUids,Flag.Seen));
         }
         if(!deletedUids.isEmpty()){
-            changes.add(new FlagChange(folder,deletedUids,Flag.Deleted));
+            changes.add(new FlagChange(cmsRemoteFolder,deletedUids,Flag.Deleted));
         }
         return changes;
     }

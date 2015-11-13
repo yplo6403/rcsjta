@@ -16,6 +16,8 @@
 
 package com.sonymobile.rcs.imap;
 
+import com.gsma.rcs.utils.StringUtils;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -420,6 +422,9 @@ public class DefaultImapService implements ImapService {
                 && folderName.equals(mSelectedFolderStatus.getFolderName())) {
             return mSelectedFolderStatus;
         }
+        if(!folderName.startsWith("\"")){
+            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+        }
         writeCommand("SELECT " + folderName);
         List<String> li = readToEndOfResponse();
         if (li == null || li.size() == 0) {
@@ -638,6 +643,10 @@ public class DefaultImapService implements ImapService {
         // append INBOX (\Seen) {310}
         String payload = part.toPayload();
         int length = payload.getBytes().length;
+
+        if(!folderName.startsWith("\"")){
+            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+        }
         writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length
                 + "}");
         String ok = ioReadLine();

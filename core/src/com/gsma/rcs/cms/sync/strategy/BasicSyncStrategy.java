@@ -1,6 +1,8 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
+import com.gsma.rcs.cms.fordemo.ImapCommandController;
+import com.gsma.rcs.cms.fordemo.ImapContext;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
@@ -101,7 +103,12 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             if(xmsLog!=null){
                 List<XmsData> messagesToPush = xmsLog.getMessages(PushStatus.PUSH_REQUESTED);
                 if(!messagesToPush.isEmpty()){
-                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), null).pushMessages(messagesToPush);
+                    ImapContext context = ImapCommandController.getInstance().getContext();
+                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(),context, null).pushMessages(messagesToPush);
+                    for(String baseId : context.getNewUids().keySet()){
+                        xmsLog.updatePushStatus(baseId, XmsData.PushStatus.PUSHED);
+                    }
+                    context.saveNewEntries();
                 }
             }
 

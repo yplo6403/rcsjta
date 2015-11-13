@@ -6,7 +6,8 @@ import java.util.Calendar;
 
 public class DateUtils {
 
-    private static final String CMS_DATE_FORMAT = "E, dd MM yyyy HH:mm:ss.S Z";
+    //private static final String CMS_DATE_FORMAT = "E, dd MM yyyy HH:mm:ss.S Z";
+    private static final String CMS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
     private static final String MMS_FILE_DATE_FORMAT = "yyyyMMdd_HHmmss";
 
@@ -29,7 +30,6 @@ public class DateUtils {
     }
     
     public static void main(String[] args){
-        
         Long now = Calendar.getInstance().getTimeInMillis();
         String dateStr = getDateAsString(now);
         Long now2 = parseDate(dateStr);
