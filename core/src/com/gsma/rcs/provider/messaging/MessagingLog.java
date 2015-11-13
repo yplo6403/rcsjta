@@ -22,8 +22,8 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.content.MmContent;
-import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.GroupChatInfo;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
@@ -75,9 +75,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     /**
      * Create instance
      * 
-     * @param context Context
      * @param localContentResolver Local content resolver
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return singleton instance
      */
     public static MessagingLog createInstance(LocalContentResolver localContentResolver,
@@ -96,9 +95,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     /**
      * Constructor
      * 
-     * @param context Application context
      * @param localContentResolver Local content provider
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     private MessagingLog(LocalContentResolver localContentResolver, RcsSettings rcsSettings) {
         mLocalContentResolver = localContentResolver;
@@ -134,8 +132,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setGroupChatRejoinId(String chatId, String rejoinId) {
-        return mGroupChatLog.setGroupChatRejoinId(chatId, rejoinId);
+    public boolean setGroupChatRejoinId(String chatId, String rejoinId, boolean updateStateToStarted) {
+        return mGroupChatLog.setGroupChatRejoinId(chatId, rejoinId, updateStateToStarted);
     }
 
     @Override
@@ -144,32 +142,30 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public void addOneToOneSpamMessage(ChatMessage msg) throws PayloadException {
+    public void addOneToOneSpamMessage(ChatMessage msg) {
         mMessageLog.addOneToOneSpamMessage(msg);
     }
 
     @Override
-    public void addIncomingOneToOneChatMessage(ChatMessage msg, boolean imdnDisplayedRequested)
-            throws PayloadException {
+    public void addIncomingOneToOneChatMessage(ChatMessage msg, boolean imdnDisplayedRequested) {
         mMessageLog.addIncomingOneToOneChatMessage(msg, imdnDisplayedRequested);
     }
 
     @Override
     public void addOutgoingOneToOneChatMessage(ChatMessage msg, Status status,
-            Content.ReasonCode reasonCode, long deliveryExpiration) throws PayloadException {
+            Content.ReasonCode reasonCode, long deliveryExpiration) {
         mMessageLog.addOutgoingOneToOneChatMessage(msg, status, reasonCode, deliveryExpiration);
     }
 
     @Override
     public void addIncomingGroupChatMessage(String chatId, ChatMessage msg,
-            boolean imdnDisplayedRequested) throws PayloadException {
+            boolean imdnDisplayedRequested) {
         mMessageLog.addIncomingGroupChatMessage(chatId, msg, imdnDisplayedRequested);
     }
 
     @Override
     public void addOutgoingGroupChatMessage(String chatId, ChatMessage msg,
-            Set<ContactId> recipients, Status status, Content.ReasonCode reasonCode)
-            throws PayloadException {
+            Set<ContactId> recipients, Status status, Content.ReasonCode reasonCode) {
         mMessageLog.addOutgoingGroupChatMessage(chatId, msg, recipients, status, reasonCode);
     }
 
@@ -184,17 +180,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
         mMessageLog.markMessageAsRead(msgId);
     }
 
-    /**
-     * Set chat message status and reason code. Note that this method should not be used for
-     * Status.DELIVERED and Status.DISPLAYED. These states require timestamps and should be set
-     * through setChatMessageStatusDelivered and setChatMessageStatusDisplayed respectively.
-     * 
-     * @param msgId Message ID
-     * @param status Message status (See restriction above)
-     * @param reasonCode Message status reason code
-     * @return true if the entry has been updated
-     */
-    @Override
     public boolean setChatMessageStatusAndReasonCode(String msgId, Status status,
             Content.ReasonCode reasonCode) {
         return mMessageLog.setChatMessageStatusAndReasonCode(msgId, status, reasonCode);
@@ -234,16 +219,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
                 fileIconExpiration);
     }
 
-    /**
-     * Set file transfer state and reason code. Note that this method should not be used for
-     * State.DELIVERED and State.DISPLAYED. These states require timestamps and should be set
-     * through setFileTransferDelivered and setFileTransferDisplayed respectively.
-     * 
-     * @param fileTransferId File transfer ID
-     * @param state File transfer state (see restriction above)
-     * @param reasonCode File transfer state reason code
-     * @return the number of updated rows
-     */
     @Override
     public boolean setFileTransferStateAndReasonCode(String fileTransferId,
             FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
@@ -265,8 +240,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     public boolean setFileTransferStateAndTimestamp(String fileTransferId,
             FileTransfer.State state, FileTransfer.ReasonCode reasonCode, long timestamp,
             long timestampSent) {
-        return mFileTransferLog.setFileTransferStateAndTimestamp(fileTransferId, state,
-                reasonCode, timestamp, timestampSent);
+        return mFileTransferLog.setFileTransferStateAndTimestamp(fileTransferId, state, reasonCode,
+                timestamp, timestampSent);
     }
 
     @Override
@@ -599,8 +574,15 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public FileTransferHttpInfoDocument getGroupFileDownloadInfo(String fileTransferId) {
-        return mFileTransferLog.getGroupFileDownloadInfo(fileTransferId);
+    public FileTransferHttpInfoDocument getFileDownloadInfo(String fileTransferId)
+            throws FileAccessException {
+        return mFileTransferLog.getFileDownloadInfo(fileTransferId);
+    }
+
+    @Override
+    public FileTransferHttpInfoDocument getFileDownloadInfo(Cursor cursor)
+            throws FileAccessException {
+        return mFileTransferLog.getFileDownloadInfo(cursor);
     }
 
     @Override
@@ -618,5 +600,20 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
             Content.ReasonCode reasonCode, long timestamp, long timestampSent) {
         return mMessageLog.setChatMessageStatusAndTimestamp(msgId, status, reasonCode, timestamp,
                 timestampSent);
+    }
+
+    @Override
+    public Long getFileTransferProgress(String fileTransferId) {
+        return mFileTransferLog.getFileTransferProgress(fileTransferId);
+    }
+
+    @Override
+    public void addOneToOneFailedDeliveryMessage(ChatMessage msg) {
+        mMessageLog.addOneToOneFailedDeliveryMessage(msg);
+    }
+
+    @Override
+    public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg) {
+        mMessageLog.addGroupChatFailedDeliveryMessage(chatId, msg);
     }
 }

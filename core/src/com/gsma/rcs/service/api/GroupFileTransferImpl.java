@@ -88,10 +88,9 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
      * @param imService InstantMessagingService
      * @param persistedStorage FileTransferPersistedStorageAccessor
      * @param fileTransferService FileTransferServiceImpl
-     * @param rcsSettings RcsSettings
-     * @param core Core
-     * @param messagingLog
-     * @param contactManager
+     * @param rcsSettings The RCS settings accessor
+     * @param messagingLog The messaging log accessor
+     * @param contactManager The contact manager accessor
      * @param chatId Chat Id
      */
     public GroupFileTransferImpl(InstantMessagingService imService, String transferId,
@@ -159,19 +158,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public String getTransferId() throws RemoteException {
-        try {
-            return mFileTransferId;
-
-        } catch (ServerApiBaseException e) {
-            if (!e.shouldNotBeLogged()) {
-                sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            }
-            throw e;
-
-        } catch (Exception e) {
-            sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            throw new ServerApiGenericException(e);
-        }
+        return mFileTransferId;
     }
 
     @Override
@@ -473,14 +460,14 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                                     "Cannot accept transfer with fileTransferId '")
                                     .append(mFileTransferId).append("': wrong direction")
                                     .toString());
-
+                            return;
                         }
                         if (ongoingSession.isSessionAccepted()) {
                             sLogger.error(new StringBuilder(
                                     "Cannot accept transfer with fileTransferId '")
                                     .append(mFileTransferId).append("': already accepted")
                                     .toString());
-
+                            return;
                         }
                         ongoingSession.acceptSession();
                         return;
@@ -490,22 +477,26 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                     if (resume == null) {
                         sLogger.error("Cannot find session with file transfer ID= "
                                 .concat(mFileTransferId));
+                        return;
                     }
                     if (!(resume instanceof FtHttpResumeDownload)) {
                         sLogger.error(new StringBuilder(
                                 "Cannot accept transfer with fileTransferId '")
                                 .append(mFileTransferId).append("': wrong direction").toString());
+                        return;
                     }
                     FtHttpResumeDownload download = (FtHttpResumeDownload) resume;
                     if (download.isAccepted()) {
                         sLogger.error(new StringBuilder(
                                 "Cannot accept transfer with fileTransferId '")
                                 .append(mFileTransferId).append("': already accepted").toString());
+                        return;
                     }
                     if (download.getFileExpiration() < System.currentTimeMillis()) {
                         sLogger.error(new StringBuilder(
                                 "Cannot accept transfer with fileTransferId '")
                                 .append(mFileTransferId).append("': file has expired").toString());
+                        return;
                     }
                     FileSharingSession session = new DownloadFromAcceptFileSharingSession(
                             mImService, ContentManager.createMmContent(resume.getFile(),
@@ -519,8 +510,10 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
-                    sLogger.error("Failed to accept file transfer with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Failed to accept file transfer with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
                 }
             }
         });
@@ -537,18 +530,43 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                     final FileSharingSession session = mImService
                             .getFileSharingSession(mFileTransferId);
                     if (session == null) {
-                        throw new ServerApiGenericException(new StringBuilder(
-                                "Session with file transfer ID '").append(mFileTransferId)
-                                .append("' not available!").toString());
+                        if (Direction.INCOMING != mPersistedStorage.getDirection()) {
+                            sLogger.error(new StringBuilder(
+                                    "Cannot reject transfer with fileTransferId '")
+                                    .append(mFileTransferId).append("': wrong direction")
+                                    .toString());
+                            return;
+                        }
+                        State state = mPersistedStorage.getState();
+                        switch (state) {
+                            case INVITED:
+                                handleSessionRejected(ReasonCode.REJECTED_BY_USER);
+                                return;
+
+                            case REJECTED:
+                                if (sLogger.isActivated()) {
+                                    sLogger.info("Transfer already rejected for ID="
+                                            .concat(mFileTransferId));
+                                }
+                                return;
+
+                            default:
+                                sLogger.error("Illegal state to reject file transfer with ID="
+                                        .concat(mFileTransferId));
+                                return;
+                        }
                     }
                     session.rejectSession(InvitationStatus.INVITATION_REJECTED_DECLINE);
+
                 } catch (RuntimeException e) {
                     /*
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
-                    sLogger.error("Failed to reject file transfer with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Failed to reject file transfer with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
                 }
             }
         });
@@ -582,7 +600,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                                 return;
                         }
                     }
-                    if (session.isFileTransfered()) {
+                    if (session.isFileTransferred()) {
                         /* File already transferred and session automatically closed after transfer */
                         sLogger.error("Cannot abort as file is already transferred!");
                         return;
@@ -594,8 +612,9 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                         sLogger.debug(e.getMessage());
                     }
                 } catch (PayloadException e) {
-                    sLogger.error("Failed to terminate session with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder("Failed to terminate session with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
                 } catch (RuntimeException e) {
                     /*
                      * Normally we are not allowed to catch runtime exceptions as these are genuine
@@ -604,8 +623,9 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                      * eventually lead to exit the system and thus can bring the whole system down,
                      * which is not intended.
                      */
-                    sLogger.error("Failed to terminate session with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder("Failed to terminate session with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
                 }
             }
         });
@@ -623,10 +643,14 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public boolean isAllowedToPauseTransfer() throws RemoteException {
+        return isAllowedToPauseTransfer(false);
+    }
+
+    private boolean isAllowedToPauseTransfer(boolean internalRequest) throws RemoteException {
         try {
             FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
             if (session == null) {
-                if (sLogger.isActivated()) {
+                if (internalRequest && sLogger.isActivated()) {
                     sLogger.debug(new StringBuilder("Cannot pause transfer with file transfer Id '")
                             .append(mFileTransferId)
                             .append("' as there is no ongoing session corresponding to the fileTransferId.")
@@ -636,15 +660,21 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
             }
             State state = getRcsState(session);
             if (State.STARTED != state) {
-                if (sLogger.isActivated()) {
+                if (internalRequest && sLogger.isActivated()) {
                     sLogger.debug(new StringBuilder("Cannot pause transfer with file transfer Id '")
                             .append(mFileTransferId).append("' as it is in state ").append(state)
                             .toString());
                 }
                 return false;
             }
-            // TODO it should not be possible to pause file transfer if file size equals transferred
-            // size
+            if (mPersistedStorage.getFileTransferProgress() == mPersistedStorage.getFileSize()) {
+                if (internalRequest && sLogger.isActivated()) {
+                    sLogger.debug(new StringBuilder("Cannot pause transfer with file transfer Id '")
+                            .append(mFileTransferId).append("' as full content is transferred")
+                            .toString());
+                }
+                return false;
+            }
             return true;
 
         } catch (ServerApiBaseException e) {
@@ -661,7 +691,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public void pauseTransfer() throws RemoteException {
-        if (!isAllowedToPauseTransfer()) {
+        if (!isAllowedToPauseTransfer(true)) {
             throw new ServerApiPermissionDeniedException("Not allowed to pause transfer.");
         }
         mImService.scheduleImOperation(new Runnable() {
@@ -684,8 +714,10 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
-                    sLogger.error("Failed to pause file transfer with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Failed to pause file transfer with fileTransferId : ").append(
+                                    mFileTransferId).toString(), e);
                 }
             }
         });
@@ -705,6 +737,10 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public boolean isAllowedToResumeTransfer() throws RemoteException {
+        return isAllowedToResumeTransfer(false);
+    }
+
+    private boolean isAllowedToResumeTransfer(boolean internalRequest) throws RemoteException {
         try {
             ReasonCode reasonCode;
             FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
@@ -714,7 +750,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                 reasonCode = mPersistedStorage.getReasonCode();
             }
             if (ReasonCode.PAUSED_BY_USER != reasonCode) {
-                if (sLogger.isActivated()) {
+                if (internalRequest && sLogger.isActivated()) {
                     sLogger.debug(new StringBuilder(
                             "Cannot resume transfer with file transfer Id '")
                             .append(mFileTransferId).append("' as it is ").append(reasonCode)
@@ -723,7 +759,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                 return false;
             }
             if (!ServerApiUtils.isImsConnected()) {
-                if (sLogger.isActivated()) {
+                if (internalRequest && sLogger.isActivated()) {
                     sLogger.debug(new StringBuilder(
                             "Cannot resume transfer with file transfer Id '")
                             .append(mFileTransferId)
@@ -733,7 +769,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
             }
             if (session == null) {
                 if (!mImService.isFileTransferSessionAvailable()) {
-                    if (sLogger.isActivated()) {
+                    if (internalRequest && sLogger.isActivated()) {
                         sLogger.debug(new StringBuilder(
                                 "Cannot resume transfer with file transfer Id '")
                                 .append(mFileTransferId)
@@ -744,7 +780,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                 }
                 if (Direction.OUTGOING == mPersistedStorage.getDirection()) {
                     if (mImService.isMaxConcurrentOutgoingFileTransfersReached()) {
-                        if (sLogger.isActivated()) {
+                        if (internalRequest && sLogger.isActivated()) {
                             sLogger.debug(new StringBuilder(
                                     "Cannot resume transfer with file transfer Id '")
                                     .append(mFileTransferId)
@@ -771,7 +807,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public void resumeTransfer() throws RemoteException {
-        if (!isAllowedToResumeTransfer()) {
+        if (!isAllowedToResumeTransfer(true)) {
             throw new ServerApiPermissionDeniedException("Not allowed to resume transfer.");
         }
         mImService.scheduleImOperation(new Runnable() {
@@ -812,8 +848,10 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
                      * Intentionally catch runtime exceptions as else it will abruptly end the
                      * thread and eventually bring the whole system down, which is not intended.
                      */
-                    sLogger.error("Failed to resume file transfer with fileTransferId : "
-                            .concat(mFileTransferId), e);
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Failed to resume file transfer with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
                 }
             }
         });
@@ -844,9 +882,9 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
 
     @Override
     public void resendTransfer() throws RemoteException {
-        throw new ServerApiUnsupportedOperationException(
-                "Resend operation not supported for group file transfer with file transfer ID "
-                        .concat(mFileTransferId));
+        throw new ServerApiUnsupportedOperationException(new StringBuilder(
+                "Resend operation not supported for group file transfer with file transfer ID ")
+                .append(mFileTransferId).toString());
     }
 
     /*------------------------------- SESSION EVENTS ----------------------------------*/
@@ -971,7 +1009,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
     /**
      * Session has been terminated by remote
      * 
-     * @param contact
+     * @param contact The contact
      */
     public void onSessionTerminatedByRemote(ContactId contact) {
         if (sLogger.isActivated()) {
@@ -1025,7 +1063,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
     }
 
     @Override
-    public void onFileTransfered(MmContent content, ContactId contact, long fileExpiration,
+    public void onFileTransferred(MmContent content, ContactId contact, long fileExpiration,
             long fileIconExpiration, FileTransferProtocol ftProtocol) {
         if (sLogger.isActivated()) {
             sLogger.info("Content transferred");
@@ -1182,5 +1220,10 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements FileSha
     public boolean isExpiredDelivery() throws RemoteException {
         /* Delivery expiration is not applicable for group file transfers. */
         return false;
+    }
+
+    @Override
+    public void onHttpDownloadInfoAvailable() {
+        mImService.tryToDequeueFileTransfers();
     }
 }

@@ -23,6 +23,9 @@ import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.GroupChat;
 import com.gsma.services.rcs.chat.GroupChat.ReasonCode;
 import com.gsma.services.rcs.chat.GroupChat.State;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.ri.utils.ContactUtil;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -40,6 +43,8 @@ public class GroupChatDAO {
 
     private final Direction mDirection;
 
+    private final ContactId mContact;
+
     private final String mParticipants;
 
     private final GroupChat.State mState;
@@ -51,10 +56,6 @@ public class GroupChatDAO {
     private static ContentResolver sContentResolver;
 
     private final GroupChat.ReasonCode mReasonCode;
-
-    private static final String[] PROJECTION_CHAT_ID = new String[] {
-        ChatLog.GroupChat.CHAT_ID
-    };
 
     public GroupChat.State getState() {
         return mState;
@@ -84,9 +85,14 @@ public class GroupChatDAO {
         return mReasonCode;
     }
 
-    private GroupChatDAO(String chatId, Direction direction, String participants, State state,
-            String subject, long timestamp, ReasonCode reasonCode) {
+    public ContactId getContact() {
+        return mContact;
+    }
+
+    private GroupChatDAO(String chatId, ContactId contact, Direction direction,
+            String participants, State state, String subject, long timestamp, ReasonCode reasonCode) {
         mChatId = chatId;
+        mContact = contact;
         mDirection = direction;
         mParticipants = participants;
         mState = state;
@@ -104,8 +110,8 @@ public class GroupChatDAO {
     /**
      * Gets instance of Group Chat from RCS provider
      * 
-     * @param ctx
-     * @param chatId
+     * @param ctx The context
+     * @param chatId The chat ID
      * @return instance or null if entry not found
      */
     public static GroupChatDAO getGroupChatDao(Context ctx, String chatId) {
@@ -132,8 +138,14 @@ public class GroupChatDAO {
                     .getColumnIndexOrThrow(ChatLog.GroupChat.PARTICIPANTS));
             ReasonCode reasonCode = GroupChat.ReasonCode.valueOf(cursor.getInt(cursor
                     .getColumnIndexOrThrow(ChatLog.GroupChat.REASON_CODE)));
-            return new GroupChatDAO(chatId, dir, participants, state, subject, timestamp,
-                    reasonCode);
+            String contact = cursor.getString(cursor
+                    .getColumnIndexOrThrow(ChatLog.GroupChat.CONTACT));
+            ContactId contactId = null;
+            if (contact != null) {
+                contactId = ContactUtil.formatContact(contact);
+            }
+            return new GroupChatDAO(chatId, contactId, dir, participants, state, subject,
+                    timestamp, reasonCode);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -142,26 +154,13 @@ public class GroupChatDAO {
     }
 
     /**
-     * Checks if group chat exists for chat ID
+     * Checks if chatId is a group chat Id
      * 
-     * @param context
-     * @param chatId
-     * @return true if group chat exists for chat ID
+     * @param chatId the chat ID
+     * @param contact The contact
+     * @return True chatId is a group chat Id
      */
-    public static boolean isGroupChat(Context context, String chatId) {
-        if (sContentResolver == null) {
-            sContentResolver = context.getContentResolver();
-        }
-        Cursor cursor = null;
-        try {
-            cursor = sContentResolver.query(
-                    Uri.withAppendedPath(ChatLog.GroupChat.CONTENT_URI, chatId),
-                    PROJECTION_CHAT_ID, null, null, null);
-            return cursor.moveToFirst();
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
+    public static boolean isGroupChat(String chatId, ContactId contact) {
+        return (contact == null) || !chatId.equals(contact.toString());
     }
 }

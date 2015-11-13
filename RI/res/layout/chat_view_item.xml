@@ -2,8 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:textAppearance="?android:attr/textAppearanceSmall"
-    android:padding="2dip" >
+    android:orientation="vertical"
+    android:textAppearance="?android:attr/textAppearanceSmall" >
 
     <RelativeLayout
         android:id="@+id/msg_item"
@@ -19,8 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@+id/contact_text"
             android:text="@string/label_uninitialized_text"
-            android:textColor="@android:color/black" 
-             />
+            android:textColor="@android:color/black" />
 
         <TextView
             android:id="@id/contact_text"
@@ -38,7 +37,6 @@
         android:orientation="horizontal" >
 
         <LinearLayout
-            android:id="@+id/status_bloc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"

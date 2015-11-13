@@ -112,6 +112,8 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Resume Download file has failed for ").append(mResume)
+                    .toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (FileNotDownloadedException e) {
@@ -119,6 +121,8 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Resume Download file has failed for ").append(mResume)
+                    .toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (IOException e) {
@@ -126,9 +130,13 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
+            sLogger.error(new StringBuilder("Resume Download file has failed for ").append(mResume)
+                    .toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (PayloadException e) {
+            sLogger.error(new StringBuilder("Resume Download file has failed for ").append(mResume)
+                    .toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (NetworkException e) {
@@ -139,6 +147,8 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
+            sLogger.error(new StringBuilder("Resume Download file has failed for ").append(mResume)
+                    .toString(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
         }
     }

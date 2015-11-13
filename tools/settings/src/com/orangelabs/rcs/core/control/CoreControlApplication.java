@@ -31,9 +31,16 @@ import android.os.Looper;
 /**
  * This subclass of Application allows to get a resource content from a static context
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class CoreControlApplication extends Application {
+
+    /**
+     * Delay (ms) before starting connection manager.
+     */
+    public static final long DELAY_FOR_STARTING_CNX_MANAGER = 2000;
+
+    public static boolean sCnxManagerStarted = false;
 
     private static RcsServiceControl mRcsServiceControl;
 
@@ -50,13 +57,13 @@ public class CoreControlApplication extends Application {
         /* Do not execute the ConnectionManager on the main thread */
         Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
-        mainThreadHandler.post(new Runnable() {
+        mainThreadHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 cnxManager.start();
+                sCnxManagerStarted = true;
             }
-        });
-
+        }, DELAY_FOR_STARTING_CNX_MANAGER);
     }
 
     /**

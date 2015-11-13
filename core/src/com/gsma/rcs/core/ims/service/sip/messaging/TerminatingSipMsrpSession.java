@@ -167,9 +167,8 @@ public class TerminatingSipMsrpSession extends GenericSipMsrpSession {
                     return;
 
                 default:
-                    throw new IllegalArgumentException(
-                            "Unknown invitation answer in run; answer=".concat(String
-                                    .valueOf(answer)));
+                    throw new IllegalArgumentException(new StringBuilder(
+                            "Unknown invitation answer in run; answer=").append(answer).toString());
             }
 
             /* Parse the remote SDP part */
@@ -291,9 +290,6 @@ public class TerminatingSipMsrpSession extends GenericSipMsrpSession {
             handleError(new SipSessionError(SipSessionError.MEDIA_FAILED, e));
 
         } catch (NetworkException e) {
-            if (logActivated) {
-                sLogger.debug(e.getMessage());
-            }
             handleError(new SipSessionError(SipSessionError.MEDIA_FAILED, e));
 
         } catch (RuntimeException e) {

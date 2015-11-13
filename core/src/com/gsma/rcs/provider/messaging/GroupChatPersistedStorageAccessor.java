@@ -16,7 +16,6 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
@@ -79,8 +78,8 @@ public class GroupChatPersistedStorageAccessor {
         try {
             cursor = mMessagingLog.getGroupChatData(mChatId);
             if (!cursor.moveToNext()) {
-                throw new ServerApiPersistentStorageException(
-                        "Data not found for group chat ".concat(mChatId));
+                throw new ServerApiPersistentStorageException(new StringBuilder(
+                        "Data not found for group chat ").append(mChatId).toString());
             }
             mSubject = cursor.getString(cursor.getColumnIndexOrThrow(GroupChatData.KEY_SUBJECT));
             mDirection = Direction.valueOf(cursor.getInt(cursor
@@ -112,8 +111,8 @@ public class GroupChatPersistedStorageAccessor {
     public State getState() {
         State state = mMessagingLog.getGroupChatState(mChatId);
         if (state == null) {
-            throw new ServerApiPersistentStorageException(
-                    "State not found for group chat ".concat(mChatId));
+            throw new ServerApiPersistentStorageException(new StringBuilder(
+                    "State not found for group chat ").append(mChatId).toString());
         }
         return state;
     }
@@ -121,8 +120,8 @@ public class GroupChatPersistedStorageAccessor {
     public ReasonCode getReasonCode() {
         ReasonCode reasonCode = mMessagingLog.getGroupChatReasonCode(mChatId);
         if (reasonCode == null) {
-            throw new ServerApiPersistentStorageException(
-                    "Reason code not found for group chat ".concat(mChatId));
+            throw new ServerApiPersistentStorageException(new StringBuilder(
+                    "Reason code not found for group chat ").append(mChatId).toString());
         }
         return reasonCode;
     }
@@ -207,8 +206,8 @@ public class GroupChatPersistedStorageAccessor {
         return mMessagingLog.isDisplayedByAllRecipients(msgId);
     }
 
-    public boolean setRejoinId(String rejoinId) {
-        return mMessagingLog.setGroupChatRejoinId(mChatId, rejoinId);
+    public boolean setRejoinId(String rejoinId, boolean updateStateToStarted) {
+        return mMessagingLog.setGroupChatRejoinId(mChatId, rejoinId, updateStateToStarted);
     }
 
     public void addGroupChat(ContactId contact, String subject,
@@ -228,13 +227,12 @@ public class GroupChatPersistedStorageAccessor {
         mMessagingLog.addGroupChatEvent(mChatId, contact, status, timestamp);
     }
 
-    public void addIncomingGroupChatMessage(ChatMessage msg, boolean imdnDisplayedRequested)
-            throws PayloadException {
+    public void addIncomingGroupChatMessage(ChatMessage msg, boolean imdnDisplayedRequested) {
         mMessagingLog.addIncomingGroupChatMessage(mChatId, msg, imdnDisplayedRequested);
     }
 
     public void addOutgoingGroupChatMessage(ChatMessage msg, Set<ContactId> recipients,
-            Status status, Content.ReasonCode reasonCode) throws PayloadException {
+            Status status, Content.ReasonCode reasonCode) {
         mMessagingLog.addOutgoingGroupChatMessage(mChatId, msg, recipients, status, reasonCode);
     }
 
@@ -258,5 +256,9 @@ public class GroupChatPersistedStorageAccessor {
             long timestampDisplayed) {
         return mMessagingLog.setGroupChatDeliveryInfoDisplayed(chatId, contact, msgId,
                 timestampDisplayed);
+    }
+
+    public void addGroupChatFailedDeliveryMessage(ChatMessage msg) {
+        mMessagingLog.addGroupChatFailedDeliveryMessage(mChatId, msg);
     }
 }
