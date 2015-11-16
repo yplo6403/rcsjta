@@ -35,14 +35,15 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
     private ImapLog mImapLog;
     private List<FlagChange> mFlagChanges;
 
-    private ImapContext mImapContext;
+    private ImapContext mGlobalImapContext;
+    private ImapContext mLocalImapContext = new ImapContext();
 
     public UpdateFlagTask(BasicImapService imapService, List<FlagChange> flagChanges, ImapContext imapContext, UpdateFlagTaskListener listener
     ) throws ImapServiceNotAvailableException {
         mImapService = imapService;
         mListener = listener;
         mFlagChanges = flagChanges;
-        mImapContext = imapContext;
+        mGlobalImapContext = imapContext;
     }
         /**
          * @param imapService
@@ -57,7 +58,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
-        mImapContext = imapContext;
+        mGlobalImapContext = imapContext;
     }
 
     @Override
@@ -82,7 +83,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
         Map<String, List<Integer>>  folderUidsMap = new HashMap<>();
         for (XmsData xmsData : mXmsLog.getMessages(XmsData.ReadStatus.READ_REQUESTED)) {
             String baseId = xmsData.getBaseId();
-            Integer uid = mImapContext.getUid(baseId);
+            Integer uid = mGlobalImapContext.getUid(baseId);
             if (uid == null) {
                 uid = mImapLog.getUidForXmsMessage(baseId);
                 if (uid == null) {
@@ -96,7 +97,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                 uids = new ArrayList<>();
                 folderUidsMap.put(folderName, uids);
             }
-            mImapContext.addNewEntry(folderName, uid, xmsData.getBaseId());
+            mLocalImapContext.addNewEntry(folderName, uid, xmsData.getBaseId());
             uids.add(uid);
         }
 
@@ -114,7 +115,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
     private List<FlagChange> getDeleteChanges(){
         Map<String, List<Integer>>  folderUidsMap = new HashMap<>();
         for (XmsData xmsData : mXmsLog.getMessages(XmsData.DeleteStatus.DELETED_REQUESTED)) {
-            Integer uid =  mImapContext.getUid(xmsData.getBaseId());
+            Integer uid =  mGlobalImapContext.getUid(xmsData.getBaseId());
             if (uid == null) {
                 uid = mImapLog.getUidForXmsMessage(xmsData.getBaseId());
                 if (uid == null) {
@@ -128,7 +129,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                 uids = new ArrayList<>();
                 folderUidsMap.put(folderName, uids);
             }
-            mImapContext.addNewEntry(folderName, uid, xmsData.getBaseId());
+            mLocalImapContext.addNewEntry(folderName, uid, xmsData.getBaseId());
             uids.add(uid);
         }
 
@@ -148,15 +149,15 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
      * @throws ImapException
      */
     public List<FlagChange> updateFlags() {
+        List<FlagChange> successFullFlagChanges = new ArrayList<>();
         if(mFlagChanges==null){
-            return null;
+            return successFullFlagChanges;
         }
 
         Thread currentThread = Thread.currentThread();
         String currentName = currentThread.getName();
         currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
 
-        List<FlagChange> successFullFlagChanges = new ArrayList<>();
         String previousFolder = null;
         try {
             for (FlagChange flagChange : mFlagChanges) {
@@ -185,7 +186,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
     @Override
     protected void onPostExecute(List<FlagChange> successFullFlagChanges) {
         if (mListener != null) {
-            mListener.onUpdateFlagTaskExecuted(mParams, successFullFlagChanges);
+            mListener.onUpdateFlagTaskExecuted(mLocalImapContext, successFullFlagChanges);
         }
     }
 
@@ -197,10 +198,10 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
     public interface UpdateFlagTaskListener {
 
         /**
-         * @param params
+         * @param imapContext
          * @param successFullFlagChanges
          */
-        void onUpdateFlagTaskExecuted(String[] params, List<FlagChange> successFullFlagChanges);
+        void onUpdateFlagTaskExecuted(ImapContext imapContext, List<FlagChange> successFullFlagChanges);
     }
 
 }

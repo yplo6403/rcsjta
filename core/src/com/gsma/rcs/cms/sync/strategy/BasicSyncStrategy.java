@@ -103,12 +103,13 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             if(xmsLog!=null){
                 List<XmsData> messagesToPush = xmsLog.getMessages(PushStatus.PUSH_REQUESTED);
                 if(!messagesToPush.isEmpty()){
-                    ImapContext context = ImapCommandController.getInstance().getContext();
-                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(),context, null).pushMessages(messagesToPush);
-                    for(String baseId : context.getNewUids().keySet()){
+                    ImapContext localContext = new ImapContext();
+                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), localContext, null).pushMessages(messagesToPush);
+                    for(String baseId : localContext.getUids().keySet()){
                         xmsLog.updatePushStatus(baseId, XmsData.PushStatus.PUSHED);
                     }
-                    context.saveNewEntries();
+                    ImapContext globalContext = ImapCommandController.getInstance().getContext();
+                    globalContext.importLocalContext(localContext);
                 }
             }
 

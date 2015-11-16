@@ -171,7 +171,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
     @Override
     protected void onPostExecute(Boolean result) {
         if (mListener != null) {
-            mListener.onPushMessageTaskCallbackExecuted(result);
+            mListener.onPushMessageTaskCallbackExecuted(mImapContext, result);
         }
     }
 
@@ -181,8 +181,9 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
     public interface PushMessageTaskListener {
 
         /**
+         * @param imapContext
          * @param result
          */
-        public void onPushMessageTaskCallbackExecuted(Boolean result);
+        void onPushMessageTaskCallbackExecuted(ImapContext imapContext, Boolean result);
     }
 }
