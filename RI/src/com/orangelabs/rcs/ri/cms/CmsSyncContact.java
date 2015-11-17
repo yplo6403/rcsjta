@@ -180,7 +180,7 @@ public class CmsSyncContact extends RcsActivity {
             Uri uri = data.getData();
             try {
                 List<Uri> files = new ArrayList<>();
-                 /* Only take persistable permission for content Uris */
+                /* Only take persistable permission for content Uris */
                 FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(), uri);
                 files.add(uri);
                 XmsMessage msg = mCmsService.sendMultimediaMessage(mContact, files, "First MMS");

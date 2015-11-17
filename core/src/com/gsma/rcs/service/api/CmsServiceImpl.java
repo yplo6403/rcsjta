@@ -43,9 +43,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteException;
+import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +80,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            ContentResolver contentResolver) {
+                          ContentResolver contentResolver) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -259,8 +261,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     @Override
-    public IXmsMessage sendMultimediaMessage(final ContactId contact, final List<Uri> files,
-            final String text) throws RemoteException {
+    public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
+                                             final String text) throws RemoteException {
 
         if (sLogger.isActivated()) {
             sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + text);
@@ -271,11 +273,13 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (files == null || files.isEmpty()) {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
         }
+        final ArrayList<Uri> _files = new ArrayList<>();
         for (Uri file : files) {
             if (!FileUtils.isReadFromUriPossible(mContext, file)) {
                 throw new ServerApiIllegalArgumentException("file '" + file.toString()
                         + "' must refer to a file that exists and that is readable by stack!");
             }
+            _files.add(file);
         }
         long timestamp = System.currentTimeMillis();
         try {
@@ -289,7 +293,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
                 @Override
                 public void run() {
                     try {
-                        sendMms(contact, text, files);
+                        sendMms(contact, text, _files);
 
                     } catch (RuntimeException e) {
                         /*
@@ -317,18 +321,32 @@ public class CmsServiceImpl extends ICmsService.Stub {
         }
     }
 
-    private void sendMms(ContactId contact, String text, List<Uri> files) {
+    private void sendMms(ContactId contact, String text, ArrayList<Uri> files) {
         Intent intent = new Intent();
-        intent.setAction(Intent.ACTION_SEND_MULTIPLE);
+        Uri file = files.get(0);
+        if (files.size() == 1) {
+            intent.setAction(Intent.ACTION_SEND);
+            intent.putExtra(Intent.EXTRA_STREAM, file);
+        } else {
+            intent.setAction(Intent.ACTION_SEND_MULTIPLE);
+            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
+        }
+
+        String mimeType = mContentResolver.getType(file);
+        intent.setType(mimeType);
         intent.putExtra("address", contact.toString());
         if (text != null) {
             intent.putExtra("sms_body", text);
         }
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setPackage("com.android.mms");
-        intent.setType("image/jpeg"); /* TODO */
-        intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM,
-                (java.util.ArrayList<? extends android.os.Parcelable>) files);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(mContext);
+            intent.setPackage(defaultSmsPackageName);
+        }
+        if (sLogger.isActivated()) {
+            sLogger.debug("sendMms " + intent + " to contact=" + contact + " text='" + text + "'");
+            sLogger.debug("sendMms file URIs= " + files + " of mime-type=" + mimeType);
+        }
         mContext.startActivity(intent);
     }
 
@@ -442,7 +460,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     public void broadcastMessageStateChanged(ContactId contact, String mimeType, String msgId,
-            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+                                             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
         mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, msgId, state,
                 reasonCode);
     }

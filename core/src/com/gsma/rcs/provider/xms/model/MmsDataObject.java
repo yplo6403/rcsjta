@@ -41,14 +41,13 @@ public class MmsDataObject extends XmsDataObject {
     private String mMmsId;
 
     public MmsDataObject(Context context, ContentResolver contentResolver, String messageId,
-            ContactId contact, String body, RcsService.Direction dir, long timestamp,
-            List<Uri> files) throws IOException {
+                         ContactId contact, String body, RcsService.Direction dir, long timestamp,
+                         List<Uri> files) throws IOException {
         super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp);
         mMmsPart = new ArrayList<>();
         for (Uri file : files) {
             String filename = FileUtils.getFileName(context, file);
-            String extension = MimeManager.getFileExtension(filename);
-            String mimeType = MimeManager.getMimeExtension(extension);
+            String mimeType = contentResolver.getType(file);
             byte[] content = getBytes(contentResolver.openInputStream(file));
             byte[] fileIcon = MmsUtils.createThumb(contentResolver, file);
             mMmsPart.add(new MmsPart(messageId, mimeType, filename, content.length, content,
@@ -93,7 +92,7 @@ public class MmsDataObject extends XmsDataObject {
         private final long mFileSize;
 
         public MmsPart(String messageId, String mimeType, String fileName, long fileSize,
-                byte[] content, byte[] fileIcon) {
+                       byte[] content, byte[] fileIcon) {
             mMimeType = mimeType;
             mFileName = fileName;
             mFileSize = fileSize;
