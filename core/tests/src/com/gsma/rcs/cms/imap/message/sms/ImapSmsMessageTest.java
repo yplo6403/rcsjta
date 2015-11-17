@@ -3,6 +3,7 @@ package com.gsma.rcs.cms.imap.message.sms;
 import com.gsma.rcs.cms.Constants;
 
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
+import com.gsma.rcs.cms.imap.message.mime.SmsMimeMessage;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapMessageMetadata;
@@ -51,7 +52,7 @@ public class ImapSmsMessageTest extends AndroidTestCase {
         ImapSmsMessage imapSmsMessage = new ImapSmsMessage(imapMessage);
         Assert.assertEquals(folderName,imapSmsMessage.getFolder());
         Assert.assertEquals(uid,imapSmsMessage.getUid());
-        Assert.assertEquals("1",((SmsPart)imapSmsMessage.getPart()).getContent());
+        Assert.assertEquals("1", ((SmsMimeMessage) imapSmsMessage.getPart()).getBodyPart());
         Assert.assertTrue(imapSmsMessage.isSeen());
         Assert.assertFalse(imapSmsMessage.isDeleted());
     }

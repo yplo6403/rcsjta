@@ -6,6 +6,7 @@ import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.MmsPart;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
@@ -49,6 +50,7 @@ public class XmsObserver implements INativeXmsEventListener {
     private Context mContext;
     private ContentResolver mContentResolver;
     private XmsContentObserver mXmsContentObserver;
+    private CmsSettings mCmsSettings;
 
     private static XmsObserver sInstance;
 
@@ -431,18 +433,19 @@ public class XmsObserver implements INativeXmsEventListener {
 //        }
 //    }
 
-    private XmsObserver(Context context) {
+    private XmsObserver(Context context, CmsSettings cmsSettings) {
         mContext = context;
         mContentResolver = mContext.getContentResolver();
+        mCmsSettings = cmsSettings;
     }
 
-    public static XmsObserver createInstance(Context context) {
+    public static XmsObserver createInstance(Context context, CmsSettings cmsSettings) {
         if (sInstance != null) {
             return sInstance;
         }
         synchronized (XmsObserver.class) {
             if (sInstance == null) {
-                sInstance = new XmsObserver(context);
+                sInstance = new XmsObserver(context, cmsSettings);
             }
         }
         return sInstance;
@@ -487,7 +490,8 @@ public class XmsObserver implements INativeXmsEventListener {
             sLogger.info("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
             sLogger.info("listeners size : ".concat(String.valueOf(sXmsEventListeners.size())));
         }
-        message.setPushStatus(PushStatus.PUSH_REQUESTED);
+        PushStatus pushStatus = mCmsSettings.getPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+        message.setPushStatus(pushStatus);
         synchronized (sXmsEventListeners) {
             for (INativeXmsEventListener listener : sXmsEventListeners) {
                 listener.onIncomingSms(message);
@@ -500,7 +504,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingSms : ".concat(String.valueOf(message.getNativeProviderId())));
         }
-        message.setPushStatus(PushStatus.PUSH_REQUESTED);
+        PushStatus pushStatus = mCmsSettings.getPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+        message.setPushStatus(pushStatus);
         synchronized (sXmsEventListeners) {
             for (INativeXmsEventListener listener : sXmsEventListeners) {
                 listener.onOutgoingSms(message);
@@ -537,7 +542,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onIncomingMms : ".concat(message.toString()));
         }
-        message.setPushStatus(PushStatus.PUSH_REQUESTED);
+        PushStatus pushStatus = mCmsSettings.getPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+        message.setPushStatus(pushStatus);
         synchronized (sXmsEventListeners) {
             for (INativeXmsEventListener listener : sXmsEventListeners) {
                 listener.onIncomingMms(message);
@@ -550,7 +556,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingMms : ".concat(message.toString()));
         }
-        message.setPushStatus(PushStatus.PUSH_REQUESTED);
+        PushStatus pushStatus = mCmsSettings.getPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+        message.setPushStatus(pushStatus);
         synchronized (sXmsEventListeners) {
             for (INativeXmsEventListener listener : sXmsEventListeners) {
                 listener.onOutgoingMms(message);

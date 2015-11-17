@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.net.Uri;
+import android.os.Environment;
 
 import com.gsma.rcs.cms.CmsService;
 import com.gsma.rcs.cms.Constants;
@@ -34,7 +35,7 @@ import java.util.List;
 
 public class MmsUtils {
 
-    public static final String MMS_DIRECTORY_PATH = "/storage/emulated/0/rcs/mms";
+    public static final String MMS_DIRECTORY_PATH = Environment.getExternalStorageDirectory() + "/rcs/mms";
 
     public static final List<String> CONTENT_TYPE_IMAGE= Arrays.asList(new String[]{
             Constants.CONTENT_TYPE_IMAGE_JPG,

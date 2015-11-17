@@ -63,7 +63,7 @@ public class CmsService implements RcsXmsEventListener {
         mXmsEventHandler = new XmsEventHandler(imapLog, xmsLog, partLog);
 
         // start content observer on native SMS/MMS content provider
-        mXmsObserver = XmsObserver.createInstance(mContext);
+        mXmsObserver = XmsObserver.createInstance(mContext, cmsSettings);
         mXmsObserver.registerListener(mXmsEventHandler);
         mXmsObserver.start();
 
@@ -75,7 +75,7 @@ public class CmsService implements RcsXmsEventListener {
         // TODO FGI : register listener for each type of messages
 
         // ---*** begin : should be removed
-        mImapCommandController = ImapCommandController.createInstance(mContext, cmsSettings,
+        mImapCommandController = ImapCommandController.createInstance(mContext, cmsSettings,localStorage,
                 imapLog, xmsLog, partLog);
         mXmsObserver.registerListener(mImapCommandController);
         // ---*** end :

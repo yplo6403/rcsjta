@@ -2,6 +2,7 @@ package com.gsma.rcs.cms.toolkit.xms;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.observer.XmsObserverUtils;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.MmsData;
@@ -55,6 +56,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
     private ContentResolver mContentResolver;
     private XmsLog mXmsLog;
     private PartLog mPartLog;
+    private CmsSettings mSettings;
 
     private ImportTaskListener mListener;
     
@@ -63,11 +65,12 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
      * @param xmsLog
      * @param listener 
      */
-    public SmsImportAsyncTask(Context context, XmsLog xmsLog, PartLog partLog, ImportTaskListener listener ){
+    public SmsImportAsyncTask(Context context,CmsSettings settings, XmsLog xmsLog, PartLog partLog, ImportTaskListener listener ){
         mContentResolver = context.getContentResolver();
         mXmsLog = xmsLog;
         mPartLog = partLog;
         mListener = listener;
+        mSettings = settings;
     }
     
     private void importSms(){
@@ -173,8 +176,8 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                     readStatus = ReadStatus.UNREAD;
                 }
                 smsData = new SmsData(_id, threadId, address,body, date, direction, readStatus);
-                //TODO FGI conditionnal push : check settings
-                smsData.setPushStatus(PushStatus.PUSH_REQUESTED);
+                PushStatus pushStatus = mSettings.getPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+                smsData.setPushStatus(pushStatus);
                 smsData.setDeliveryDate(date_sent);
             }  
             return smsData;
@@ -265,8 +268,8 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
             readStatus = ReadStatus.READ;
         }
         MmsData mmsData = new MmsData(id, threadId, messageId, contacts, subject, textContent, date*1000, direction, readStatus);
-        //TODO FGI conditionnal push : check settings
-        mmsData.setPushStatus(PushStatus.PUSH_REQUESTED);
+        PushStatus pushStatus = mSettings.getPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
+        mmsData.setPushStatus(pushStatus);
         mmsData.setParts(parts);
         return mmsData;
     }

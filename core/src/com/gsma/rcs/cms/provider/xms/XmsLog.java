@@ -412,8 +412,18 @@ public class XmsLog {
         ContentValues values = new ContentValues();
         values.put(XmsLogData.KEY_PUSH_STATUS, pushStatus.toInt());
        return mLocalContentResolver.update(XmsLogData.CONTENT_URI, values, SELECTION_BASE_ID, new String[]{baseId});
-    } 
-    
+    }
+
+    /**
+     * @param pushStatus
+     * @return number of updated rows
+     */
+    public int updatePushStatus(MimeType mimeType, PushStatus pushStatus){
+        ContentValues values = new ContentValues();
+        values.put(XmsLogData.KEY_PUSH_STATUS, pushStatus.toInt());
+        return mLocalContentResolver.update(XmsLogData.CONTENT_URI, values, SELECTION_MIME_TYPE, new String[]{String.valueOf(mimeType.toInt())});
+    }
+
     /**
      * @param contact
      * @param readStatus
@@ -577,16 +587,72 @@ public class XmsLog {
 
     }
 
+    /**
+     * @param readStatus
+     * @return SmsData
+     */
+    public List<XmsData> getMessages(ReadStatus readStatus) {
+
+        List<XmsData> messages = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(XmsLogData.CONTENT_URI, PROJECTION_BASE_ID_CONTACT,
+                    SELECTION_READ_STATUS, new String[] {String.valueOf(readStatus.toInt())
+                    }, null);
+            CursorUtil.assertCursorIsNotNull(cursor, XmsLogData.CONTENT_URI);
+            int baseIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_BASECOLUMN_ID);
+            int contactIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTACT);
+            while (cursor.moveToNext()) {
+                XmsData xmsData = new XmsData();
+                xmsData.setBaseId(cursor.getString(baseIdIdx));
+                xmsData.setContact(cursor.getString(contactIdx));
+                messages.add(xmsData);
+            }
+            return messages;
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    /**
+     * @param deleteStatus
+     * @return SmsData
+     */
+    public List<XmsData> getMessages(DeleteStatus deleteStatus) {
+
+        List<XmsData> messages = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(XmsLogData.CONTENT_URI, PROJECTION_BASE_ID_CONTACT,
+                    SELECTION_DELETE_STATUS, new String[] {String.valueOf(deleteStatus.toInt())
+                    }, null);
+            CursorUtil.assertCursorIsNotNull(cursor, XmsLogData.CONTENT_URI);
+            int baseIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_BASECOLUMN_ID);
+            int contactIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTACT);
+            while (cursor.moveToNext()) {
+                XmsData xmsData = new XmsData();
+                xmsData.setBaseId(cursor.getString(baseIdIdx));
+                xmsData.setContact(cursor.getString(contactIdx));
+                messages.add(xmsData);
+            }
+            return messages;
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
     public MmsData getMessage(String mmsId) {
         Cursor cursor = null;
         try {
-            cursor = mLocalContentResolver.query(XmsLogData.CONTENT_URI, PROJECTION_BASE_ID,
+            cursor = mLocalContentResolver.query(XmsLogData.CONTENT_URI, PROJECTION_BASE_ID_CONTACT,
                     SELECTION_MMS_ID, new String[] {mmsId}, null);
             CursorUtil.assertCursorIsNotNull(cursor, XmsLogData.CONTENT_URI);
             int baseIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_BASECOLUMN_ID);
+            int contactIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTACT);
             if(cursor.moveToNext()){
                 MmsData mmsData = new MmsData();
                 mmsData.setBaseId(cursor.getString(baseIdIdx));
+                mmsData.setContact(cursor.getString(contactIdx));
                 return mmsData;
             }
             return null;

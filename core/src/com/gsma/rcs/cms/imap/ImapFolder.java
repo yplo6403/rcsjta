@@ -60,13 +60,24 @@ public class ImapFolder {
         return getValueAsInteger(Constants.METADATA_UIDNEXT);
     }
 
+    /**
+     * @return messages
+     */
+    public Integer getMessages() {
+        return getValueAsInteger(Constants.METADATA_MESSAGES);
+    }
+
+    public boolean isEmpty() {
+        return 0 == getValueAsInteger(Constants.METADATA_MESSAGES);
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("ImapFolder [mName=").append(mName).append(", ")
-                .append(Constants.METADATA_UIDVALIDITY).append("=").append(getUidValidity())
-                .append(", ").append(Constants.METADATA_HIGHESTMODSEQ).append("=")
-                .append(getHighestModseq()).append(", ").append(Constants.METADATA_UIDNEXT)
-                .append("=").append(getUidNext()).append(", ").append("]").toString();
+                .append(Constants.METADATA_MESSAGES).append("=").append(getMessages()).append(", ")
+                .append(Constants.METADATA_UIDVALIDITY).append("=").append(getUidValidity()).append(", ")
+                .append(Constants.METADATA_HIGHESTMODSEQ).append("=").append(getHighestModseq()).append(", ")
+                .append(Constants.METADATA_UIDNEXT).append("=").append(getUidNext()).append(", ").append("]").toString();
 
     }
 

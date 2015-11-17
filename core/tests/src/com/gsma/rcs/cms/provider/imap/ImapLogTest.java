@@ -180,7 +180,7 @@ public class ImapLogTest extends AndroidTestCase {
         } 
 
         for(int i=0; i< mMessages.length; i++){
-            assertEquals(mMessages[i].getUid(),mImapLog.getUid(mMessages[i].getFolder(),mMessages[i].getMessageId()));         
+            assertEquals(mMessages[i].getUid(),mImapLog.getUidForXmsMessage(mMessages[i].getMessageId()));
         } 
         
     }

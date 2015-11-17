@@ -1,6 +1,7 @@
 package com.gsma.rcs.cms.observer;
 
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.MmsData;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class SmsObserverTest extends AndroidTestCase {
     
     private Context mContext;
+    private CmsSettings mSettings;
     
     private SmsData incomingSms = new SmsData(1l,1l, "myContact1", "myContent1", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.UNREAD);
     private SmsData outgoingSms = new SmsData(2l,1l, "myContact2", "myContent2", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
@@ -28,12 +30,13 @@ public class SmsObserverTest extends AndroidTestCase {
     
     protected void setUp() throws Exception {
         super.setUp();                        
-        mContext = getContext();        
+        mContext = getContext();
+        mSettings = CmsSettings.createInstance(mContext);
     }
   
     public void test1(){
         
-        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext, mSettings);
         NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
         xmsObserver.registerListener(nativeSmsListenerMock);
         
@@ -63,7 +66,7 @@ public class SmsObserverTest extends AndroidTestCase {
     
     public void test2(){
         
-        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext, mSettings);
         NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
         xmsObserver.registerListener(nativeSmsListenerMock);
                 
@@ -106,7 +109,7 @@ public class SmsObserverTest extends AndroidTestCase {
             
             List<SmsData> sms = smsByThreadId.get(message.getContact());
             if(sms==null){
-                sms = new ArrayList<SmsData>();
+                sms = new ArrayList<>();
                 smsByThreadId.put(message.getNativeThreadId(), sms);
             }
             sms.add(message);

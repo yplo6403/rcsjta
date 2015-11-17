@@ -25,7 +25,8 @@ package com.gsma.rcs.cms.toolkit.settings;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.settings.CmsSettingsData;
-import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.cms.provider.xms.XmsLog;
+import com.gsma.rcs.cms.provider.xms.model.XmsData;
 
 import android.app.Activity;
 import android.content.Context;
@@ -33,6 +34,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -92,6 +94,12 @@ public class CmsSettingsView extends Activity {
         saveEditTextParam(R.id.cms_imap_user_login, CmsSettingsData.CMS_IMAP_USER_LOGIN);
         saveEditTextParam(R.id.cms_imap_user_pwd, CmsSettingsData.CMS_IMAP_USER_PWD);
         saveEditTextParam(R.id.cms_toolkit_settings_myNumber, CmsSettingsData.CMS_MY_NUMBER);
+
+        saveCheckBoxParam(R.id.cms_toolkit_settings_push_sms, CmsSettingsData.CMS_PUSH_SMS);
+        saveCheckBoxParam(R.id.cms_toolkit_settings_push_mms, CmsSettingsData.CMS_PUSH_MMS);
+        saveCheckBoxParam(R.id.cms_toolkit_settings_update_flag_imap_xms, CmsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+        saveEditTextParam(R.id.cms_toolkit_settings_default_directory, CmsSettingsData.CMS_DEFAULT_DIRECTORY);
+        saveEditTextParam(R.id.cms_toolkit_settings_directory_separator, CmsSettingsData.CMS_DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -106,6 +114,13 @@ public class CmsSettingsView extends Activity {
         setEditTextParam(R.id.cms_imap_user_login, CmsSettingsData.CMS_IMAP_USER_LOGIN);
         setEditTextParam(R.id.cms_imap_user_pwd, CmsSettingsData.CMS_IMAP_USER_PWD);
         setEditTextParam(R.id.cms_toolkit_settings_myNumber, CmsSettingsData.CMS_MY_NUMBER);
+
+        setCheckBoxParam(R.id.cms_toolkit_settings_push_sms, CmsSettingsData.CMS_PUSH_SMS);
+        setCheckBoxParam(R.id.cms_toolkit_settings_push_mms, CmsSettingsData.CMS_PUSH_MMS);
+        setCheckBoxParam(R.id.cms_toolkit_settings_update_flag_imap_xms, CmsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+
+        setEditTextParam(R.id.cms_toolkit_settings_default_directory, CmsSettingsData.CMS_DEFAULT_DIRECTORY);
+        setEditTextParam(R.id.cms_toolkit_settings_directory_separator, CmsSettingsData.CMS_DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -130,11 +145,35 @@ public class CmsSettingsView extends Activity {
      * 
      * @param viewID the view ID for the text edit
      * @param settingsKey the key of the RCS parameter
-     * @param helper
      */
     /* package private */ void setEditTextParam(int viewID, String settingsKey) {
         String parameter = mSettings.readParameter(settingsKey);
         EditText editText = (EditText) findViewById(viewID);
         editText.setText(parameter);
     }
+
+    /* package private */void saveCheckBoxParam(int viewID, String settingsKey) {
+        CheckBox checkBox = (CheckBox) findViewById(viewID);
+        boolean isChecked = checkBox.isChecked();
+        mSettings.writeParameter(settingsKey, String.valueOf(isChecked));
+
+        if(isChecked){
+            return;
+        }
+
+        XmsLog xmsLog = XmsLog.getInstance(getApplicationContext());
+        if(CmsSettingsData.CMS_PUSH_SMS.equals(settingsKey)){ // cancel all sms marked as PUSH_REQUESTED in db
+            xmsLog.updatePushStatus(XmsData.MimeType.SMS, XmsData.PushStatus.PUSHED);
+        }
+        else if(CmsSettingsData.CMS_PUSH_MMS.equals(settingsKey)){ // cancel all mms marked as PUSH_REQUESTED in db
+            xmsLog.updatePushStatus(XmsData.MimeType.MMS, XmsData.PushStatus.PUSHED);
+        }
+    }
+
+    /* package private */ void setCheckBoxParam(int viewID, String settingsKey) {
+        String parameter = mSettings.readParameter(settingsKey);
+        CheckBox checkBox = (CheckBox) findViewById(viewID);
+        checkBox.setChecked(Boolean.parseBoolean(parameter));
+    }
+
 }

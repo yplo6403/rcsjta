@@ -20,7 +20,7 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public void selectFolder(String folderName) throws IOException, ImapException;
+    void selectFolder(String folderName) throws IOException, ImapException;
 
     /**
      * @param localFolder
@@ -29,7 +29,7 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public Set<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
+    List<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException;
 
     /**
@@ -39,7 +39,7 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public List<ImapMessage> syncRemoteHeaders(FolderData localFolder, ImapFolder remoteFolder)
+    List<ImapMessage> syncRemoteHeaders(FolderData localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException;
 
     /**
@@ -49,7 +49,7 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
+    List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
             throws IOException, ImapException;
     
     /**
@@ -57,6 +57,6 @@ public interface ISynchronizer {
      * @throws IOException
      * @throws ImapException
      */
-    public void syncLocalFlags(Set<FlagChange> flagChanges);
+    void syncLocalFlags(List<FlagChange> flagChanges);
 
 }

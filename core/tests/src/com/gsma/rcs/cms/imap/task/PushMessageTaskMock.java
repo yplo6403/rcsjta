@@ -1,38 +1,37 @@
 package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.fordemo.ImapContext;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
+import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.provider.xms.model.XmsData;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 
+import com.gsma.rcs.cms.utils.CmsUtils;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PushMessageTaskMock extends PushMessageTask {
 
-    public PushMessageTaskMock(BasicImapService imapService, XmsLog xmsLog, PartLog partLog, String myNumber,
+    public PushMessageTaskMock(BasicImapService imapService, XmsLog xmsLog, PartLog partLog, String myNumber, ImapContext imapContext,
             PushMessageTaskListener callback) {
-        super(imapService, xmsLog, partLog, myNumber, callback);
+        super(imapService, xmsLog, partLog, myNumber, imapContext, callback);
         // TODO Auto-generated constructor stub
     }
     
     @Override
-    public PushMessageResult pushMessages(List<XmsData> messages) {
+    public Boolean pushMessages(List<XmsData> messages) {
         String from, to, direction;
         from = to = direction = null;
 
-        Map<String, Integer> createdUids = new HashMap<>();
         try {
             List<String> existingFolders = new ArrayList<String>();
             for (ImapFolder imapFolder : mImapService.listStatus()) {
@@ -63,7 +62,7 @@ public class PushMessageTaskMock extends PushMessageTask {
                         message.getDate(), message.getContent(), "" + message.getDate(),
                         "" + message.getDate(), "" + message.getDate());
 
-                String remoteFolder = Constants.TEL_PREFIX.concat(message.getContact());
+                String remoteFolder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
                     mImapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
@@ -71,11 +70,11 @@ public class PushMessageTaskMock extends PushMessageTask {
                 mImapService.selectCondstore(remoteFolder);
                 int uid = mImapService.append(remoteFolder, flags,
                         imapSmsMessage.getPart());
-                createdUids.put(message.getBaseId(), uid);
+                mImapContext.addNewEntry(remoteFolder, uid, message.getBaseId());
             }            
         } catch (IOException | ImapException e) {
             e.printStackTrace();
         }
-        return new PushMessageResult(createdUids);
+        return true ;
     }
 }

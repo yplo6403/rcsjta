@@ -6,9 +6,11 @@ import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
+import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 
+import com.gsma.rcs.cms.utils.CmsUtils;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
@@ -98,7 +100,7 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
                         message.getDate(), message.getContent(), "" + message.getDate(),
                         "" + message.getDate(), "" + message.getDate());
                 
-                String folder = Constants.TEL_PREFIX.concat(message.getContact());
+                String folder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
                 if (!existingFolders.contains(folder)) {
                     mImapService.create(folder);
                     existingFolders.add(folder);

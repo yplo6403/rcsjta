@@ -101,7 +101,7 @@ public class Toolkit extends ListActivity implements ImportTaskListener {
                 mInProgressDialog = AlertDialogUtils.displayInfo(Toolkit.this,
                         getString(R.string.cms_toolkit_in_progress));
                 Context context = getApplicationContext();
-                new SmsImportAsyncTask(context, XmsLog.getInstance(context), PartLog.getInstance(context), this).execute();
+                new SmsImportAsyncTask(context, CmsSettings.getInstance(), XmsLog.getInstance(context), PartLog.getInstance(context), this).execute();
                 break;                
         }
     }

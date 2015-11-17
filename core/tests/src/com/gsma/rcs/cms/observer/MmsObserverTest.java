@@ -4,6 +4,7 @@ import android.content.Context;
 import android.test.AndroidTestCase;
 
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.MmsData;
@@ -21,19 +22,21 @@ import java.util.TreeSet;
 public class MmsObserverTest extends AndroidTestCase {
     
     private Context mContext;
+    private CmsSettings mSettings;
 
     private TreeSet<String> contact1 = new TreeSet<>();
     private TreeSet<String> contact3 = new TreeSet<>();
 
-    private MmsData incomingMms = new MmsData(1l,1l,"1",contact1 ,null,"textContent", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
-    private MmsData outgoingMms = new MmsData(2l,1l,"2",contact1 ,null,"textContent", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
+    private MmsData incomingMms = new MmsData(null,1l,"1",contact1 ,null,"textContent", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
+    private MmsData outgoingMms = new MmsData(null,1l,"2",contact1 ,null,"textContent", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
 
-    private MmsData mms = new MmsData(3l,1l,"3", contact1, null, "myContent3", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
-    private MmsData mms2 = new MmsData(4l,1l,"4", contact1, null, "myContent3", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
+    private MmsData mms = new MmsData(null,1l,"3", contact1, null, "myContent3", System.currentTimeMillis(), Direction.INCOMING, ReadStatus.READ);
+    private MmsData mms2 = new MmsData(null,1l,"4", contact1, null, "myContent3", System.currentTimeMillis(), Direction.OUTGOING, ReadStatus.READ);
     
     protected void setUp() throws Exception {
         super.setUp();                        
         mContext = getContext();
+        mSettings = CmsSettings.createInstance(mContext);
 
         contact1 = new TreeSet<>();
         contact1.add("myContact1");
@@ -45,7 +48,7 @@ public class MmsObserverTest extends AndroidTestCase {
   
     public void test1(){
         
-        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext, mSettings);
         NativeMmsListenerMock nativeSmsListenerMock = new NativeMmsListenerMock();
         xmsObserver.registerListener(nativeSmsListenerMock);
         
@@ -53,18 +56,14 @@ public class MmsObserverTest extends AndroidTestCase {
         xmsObserver.onOutgoingMms(outgoingMms);
                         
         Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());        
-        Assert.assertEquals(incomingMms, nativeSmsListenerMock.getMessage().get(1l));
-        Assert.assertEquals(outgoingMms, nativeSmsListenerMock.getMessage().get(2l));
-        
-        Long deliveryDate = System.currentTimeMillis();
-        xmsObserver.onDeliverNativeSms(1l, deliveryDate);
-        Assert.assertTrue(deliveryDate == nativeSmsListenerMock.getMessage().get(1l).getDeliveryDate());
-        
-        xmsObserver.onReadNativeConversation(1l);
-        Assert.assertEquals(ReadStatus.READ_REQUESTED, nativeSmsListenerMock.getMessage().get(1l).getReadStatus());
+        Assert.assertEquals(incomingMms, nativeSmsListenerMock.getMessage().get("1"));
+        Assert.assertEquals(outgoingMms, nativeSmsListenerMock.getMessage().get("2"));
 
-        xmsObserver.onDeleteNativeSms(2l);
-        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeSmsListenerMock.getMessage().get(2l).getDeleteStatus());
+        xmsObserver.onReadNativeConversation(1l);
+        Assert.assertEquals(ReadStatus.READ_REQUESTED, nativeSmsListenerMock.getMessage().get("1").getReadStatus());
+
+        xmsObserver.onDeleteNativeMms("1");
+        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeSmsListenerMock.getMessage().get("1").getDeleteStatus());
 
         xmsObserver.unregisterListener(nativeSmsListenerMock);
         
@@ -75,7 +74,7 @@ public class MmsObserverTest extends AndroidTestCase {
     
     public void test2(){
         
-        XmsObserver xmsObserver = XmsObserver.createInstance(mContext);
+        XmsObserver xmsObserver = XmsObserver.createInstance(mContext, mSettings);
         NativeMmsListenerMock nativeMmsListenerMock = new NativeMmsListenerMock();
         xmsObserver.registerListener(nativeMmsListenerMock);
                 
@@ -85,8 +84,8 @@ public class MmsObserverTest extends AndroidTestCase {
         Assert.assertEquals(2, nativeMmsListenerMock.getMessages(1l).size());
 
         xmsObserver.onDeleteNativeConversation(1l);
-        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeMmsListenerMock.getMessage().get(3l).getDeleteStatus());
-        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeMmsListenerMock.getMessage().get(4l).getDeleteStatus());
+        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeMmsListenerMock.getMessage().get("3").getDeleteStatus());
+        Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, nativeMmsListenerMock.getMessage().get("4").getDeleteStatus());
 
         xmsObserver.unregisterListener(nativeMmsListenerMock);
         
@@ -96,15 +95,15 @@ public class MmsObserverTest extends AndroidTestCase {
     
     private class NativeMmsListenerMock implements INativeXmsEventListener {
 
-        private Map<Long,MmsData> messagesById = new HashMap<Long,MmsData>();
+        private Map<String,MmsData> messagesByMmsId = new HashMap<String,MmsData>();
         private Map<Long,List<MmsData>> messagesByThreadId = new HashMap<Long,List<MmsData>>();
                 
         public NativeMmsListenerMock(){
             
         }
         
-        public Map<Long,MmsData> getMessage(){
-            return messagesById;
+        public Map<String,MmsData> getMessage(){
+            return messagesByMmsId;
         }
         
         public List<MmsData> getMessages(Long threadId){
@@ -125,22 +124,22 @@ public class MmsObserverTest extends AndroidTestCase {
         public void onDeleteNativeSms(long nativeProviderId) {}
 
         @Override
-        public void onIncomingMms(MmsData message) {
+        public void onIncomingMms(MmsData mms) {
 
-            messagesById.put(message.getNativeProviderId(), message);
+            messagesByMmsId.put(mms.getMmsId(), mms);
 
-            List<MmsData> sms = messagesByThreadId.get(message.getContact());
-            if(sms==null){
-                sms = new ArrayList<MmsData>();
-                messagesByThreadId.put(message.getNativeThreadId(), sms);
+            List<MmsData> messages = messagesByThreadId.get(mms.getNativeThreadId());
+            if(messages==null){
+                messages = new ArrayList<MmsData>();
+                messagesByThreadId.put(mms.getNativeThreadId(), messages);
             }
-            sms.add(message);
+            messages.add(mms);
         }
 
         @Override
         public void onOutgoingMms(MmsData message) {
 
-            messagesById.put(message.getNativeProviderId(), message);
+            messagesByMmsId.put(message.getMmsId(), message);
 
             List<MmsData> sms = messagesByThreadId.get(message.getNativeThreadId());
             if(sms==null){
@@ -153,7 +152,7 @@ public class MmsObserverTest extends AndroidTestCase {
 
         @Override
         public void onDeleteNativeMms(String mmsId) {
-
+            messagesByMmsId.get(mmsId).setDeleteStatus(DeleteStatus.DELETED_REQUESTED);
         }
 
         @Override

@@ -7,6 +7,7 @@ import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.Part;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class FetchFlagCmdHandler extends CmdHandler {
 
@@ -62,16 +64,28 @@ public class FetchFlagCmdHandler extends CmdHandler {
     }
 
     @Override
-    public Set<FlagChange> getResult() {
-        Set<FlagChange> flagChanges = new HashSet<FlagChange>();
+    public List<FlagChange> getResult() {
         Iterator<Entry<Integer, Map<String, String>>> iter = mData.entrySet().iterator();
+        List<Integer> readUids = new ArrayList<>();
+        List<Integer> deletedUids = new ArrayList<>();
         while (iter.hasNext()) {
             Entry<Integer, Map<String, String>> entry = iter.next();
             Integer uid = entry.getKey();
             Map<String, String> data = entry.getValue();
-
             Set<Flag> flags = CmdUtils.parseFlags(data.get(Constants.METADATA_FLAGS));
-            flagChanges.add(new FlagChange(mFolderName, uid, flags));
+            if(flags.contains(Flag.Seen)){
+                readUids.add(uid);
+            }
+            if(flags.contains(Flag.Deleted)){
+                deletedUids.add(uid);
+            }
+        }
+        List<FlagChange> flagChanges = new ArrayList<>();
+        if(!deletedUids.isEmpty()){
+            flagChanges.add(new FlagChange(mFolderName, deletedUids, Flag.Deleted));
+        }
+        if(!readUids.isEmpty()){
+            flagChanges.add(new FlagChange(mFolderName, readUids, Flag.Seen));
         }
         return flagChanges;
     }

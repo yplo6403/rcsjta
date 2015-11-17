@@ -91,7 +91,7 @@ public class CmsSettings {
     
     public String getUserLogin(){
         return readParameter(CmsSettingsData.CMS_IMAP_USER_LOGIN);
-        }
+    }
     
     public void setUserLogin(String userLogin){
         if(!userLogin.isEmpty()){
@@ -115,11 +115,50 @@ public class CmsSettings {
     
     public void setMyNumber(String myNumber){
         if(!myNumber.isEmpty()){
-            writeParameter(CmsSettingsData.CMS_MY_NUMBER, myNumber);    
+            writeParameter(CmsSettingsData.CMS_MY_NUMBER, myNumber);
         }
     }
-    
-    
+
+    public Boolean getPushSms(){
+        return Boolean.parseBoolean(readParameter(CmsSettingsData.CMS_PUSH_SMS));
+    }
+
+    public void setPushSms(boolean enable){
+        writeParameter(CmsSettingsData.CMS_PUSH_SMS, String.valueOf(enable));
+    }
+
+    public Boolean getPushMms(){
+        return Boolean.parseBoolean(readParameter(CmsSettingsData.CMS_PUSH_MMS));
+    }
+
+    public void setPushMms(boolean enable){
+        writeParameter(CmsSettingsData.CMS_PUSH_MMS, String.valueOf(enable));
+    }
+
+    public Boolean getUpdateFlagsWithImapXms(){
+        return Boolean.parseBoolean(readParameter(CmsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS));
+    }
+
+    public void setUpdateFlagsWithImapXms(boolean update){
+        writeParameter(CmsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS, String.valueOf(update));
+    }
+
+    public String getCmsDefaultDirectory(){
+        return readParameter(CmsSettingsData.CMS_DEFAULT_DIRECTORY);
+    }
+
+    public void setCmsDefaultDirectory(String defaultDirectory){
+        writeParameter(CmsSettingsData.CMS_DEFAULT_DIRECTORY, defaultDirectory);
+    }
+
+    public String getCmsDirectorySeparator(){
+        return readParameter(CmsSettingsData.CMS_DIRECTORY_SEPARATOR);
+    }
+
+    public void setCmsDirectorySeparator(String directorySeparator){
+        writeParameter(CmsSettingsData.CMS_DIRECTORY_SEPARATOR, directorySeparator);
+    }
+
     public boolean isEmpty(){
         return getServerAddress().isEmpty() || CmsSettingsData.DEFAULT_CMS_IMAP_SERVER_ADDRESS.equals(getServerAddress()) ||
         getUserLogin().isEmpty() || CmsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN.equals(getUserLogin()) ||

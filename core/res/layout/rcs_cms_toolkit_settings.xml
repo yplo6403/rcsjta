@@ -102,26 +102,52 @@
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@+id/cms_toolkit_settings_push_sms_label"
-                android:id="@+id/cms_toolkit_settings_push_sms" />
+                android:id="@+id/cms_toolkit_settings_push_sms"
+                android:text="@string/cms_toolkit_settings_push_sms_label"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@+id/cms_toolkit_settings_push_mms_label"
-                android:id="@+id/cms_toolkit_settings_push_mms" />
+                android:id="@+id/cms_toolkit_settings_push_mms"
+                android:text="@string/cms_toolkit_settings_push_mms_label"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@+id/cms_toolkit_settings_update_flag_imap_sms_label"
-                android:id="@+id/cms_toolkit_settings_update_flag_imap_sms" />
+                android:id="@+id/cms_toolkit_settings_update_flag_imap_xms"
+                android:text="@string/cms_toolkit_settings_update_flag_imap_xms_label" />
 
-            <CheckBox
-                android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="@+id/cms_toolkit_settings_update_flag_imap_mms_label"
-                android:id="@+id/cms_toolkit_settings_update_flag_imap_mms" />
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_default_directory_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_settings_default_directory"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/cms_toolkit_settings_directory_separator_label" />
+
+            <EditText
+                android:id="@+id/cms_toolkit_settings_directory_separator"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
 
         </LinearLayout>
     </ScrollView>

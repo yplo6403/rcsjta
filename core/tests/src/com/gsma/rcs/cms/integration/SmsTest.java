@@ -2,6 +2,7 @@ package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.event.XmsEventHandler;
+import com.gsma.rcs.cms.fordemo.ImapContext;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
@@ -28,6 +29,7 @@ import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.cms.toolkit.operations.Message;
 
+import com.gsma.rcs.cms.utils.CmsUtils;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapMessageMetadata;
 import com.sonymobile.rcs.imap.Part;
@@ -58,6 +60,8 @@ public class SmsTest extends AndroidTestCase{
     private XmsLog mXmsLog;
     private PartLog mPartLog;
     private XmsLogEnvIntegration mXmsLogEnvIntegration;
+    private ImapContext mImapContext;
+
     
     protected void setUp() throws Exception {
         super.setUp();                        
@@ -74,6 +78,7 @@ public class SmsTest extends AndroidTestCase{
         mBasicImapService = ImapServiceManager.getService(mSettings);        
         mSyncStrategy = new BasicSyncStrategy(mBasicImapService, mLocalStorage);
         mBasicImapService.init();
+        mImapContext = new ImapContext();
     }
 
     protected void tearDown() throws Exception {
@@ -90,7 +95,6 @@ public class SmsTest extends AndroidTestCase{
       */
     public void test1()  {
 
-    
         try {
         Map<Integer, MessageData> imapData;
                 
@@ -105,8 +109,9 @@ public class SmsTest extends AndroidTestCase{
 
         // check that messages are present in local storage
         assertFalse(mImapLog.getFolders().isEmpty());
-        assertEquals(2,mImapLog.getFolders().size());        
-        
+        int nbFolders = mImapLog.getFolders().size();
+        assertTrue(nbFolders>0);
+
         imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);        
         assertEquals(SmsIntegrationUtils.Test1.conversation.length,imapData.size());
         
@@ -122,7 +127,7 @@ public class SmsTest extends AndroidTestCase{
 
         // check that messages are present in local storage   
         assertFalse(mImapLog.getFolders().isEmpty());
-        assertEquals(2,mImapLog.getFolders().size());        
+        assertEquals(nbFolders,mImapLog.getFolders().size());
         
         imapData = mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName);        
         assertEquals(SmsIntegrationUtils.Test1.conversation.length,imapData.size());
@@ -157,7 +162,8 @@ public class SmsTest extends AndroidTestCase{
            
            //check that messages are marked as 'Seen' in local storage   
            assertFalse(mImapLog.getFolders().isEmpty());
-           assertEquals(2,mImapLog.getFolders().size());                   
+           int nbFolders = mImapLog.getFolders().size();
+           assertTrue(nbFolders>0);
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
            List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(SmsIntegrationUtils.Test1.conversation.length, messages.size());
@@ -174,7 +180,7 @@ public class SmsTest extends AndroidTestCase{
            
            //check that messages are marked as 'Deleted' in local storage   
            assertFalse(mImapLog.getFolders().isEmpty());
-           assertEquals(2,mImapLog.getFolders().size());                   
+           assertEquals(nbFolders,mImapLog.getFolders().size());
            assertEquals(SmsIntegrationUtils.Test1.conversation.length,mImapLog.getMessages(SmsIntegrationUtils.Test1.folderName).size());           
            messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
            assertEquals(0, messages.size());                      
@@ -244,7 +250,7 @@ public class SmsTest extends AndroidTestCase{
             test1();
              // delete mailbox on CMS
              try {
-                 deleteRemoteMailbox(Constants.TEL_PREFIX.concat(SmsIntegrationUtils.Test1.contact));
+                 deleteRemoteMailbox(CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, SmsIntegrationUtils.Test1.contact));
             } catch (ImapServiceNotAvailableException e) {
                 e.printStackTrace();
                 Assert.fail();
@@ -282,7 +288,7 @@ public class SmsTest extends AndroidTestCase{
             // mark messages as deleted on server and expunge them.
             try {
                 updateRemoteFlags(Arrays.asList(SmsIntegrationUtils.Test5.flagChangesDeleted));
-                deleteRemoteMessages(Constants.TEL_PREFIX.concat(SmsIntegrationUtils.Test1.contact));
+                deleteRemoteMessages(CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, SmsIntegrationUtils.Test1.contact));
             } catch (Exception e) {
                 Assert.fail();
             }
@@ -536,7 +542,7 @@ public class SmsTest extends AndroidTestCase{
    }
    
    private void createRemoteMessages(XmsData[] messages) throws ImapServiceNotAvailableException {
-       PushMessageTaskMock task = new PushMessageTaskMock(mBasicImapService, mXmsLog, mPartLog,  mSettings.getMyNumber(), null);
+       PushMessageTaskMock task = new PushMessageTaskMock(mBasicImapService, mXmsLog, mPartLog,  mSettings.getMyNumber(), mImapContext, null);
        task.pushMessages(Arrays.asList(messages));
    }
    
@@ -556,7 +562,7 @@ public class SmsTest extends AndroidTestCase{
    }
 
    private void updateRemoteFlags(List<FlagChange> changes) throws ImapServiceNotAvailableException {       
-       UpdateFlagTask task = new UpdateFlagTask(mBasicImapService, changes, null);
+       UpdateFlagTask task = new UpdateFlagTask(mBasicImapService, changes, mImapContext, null);
        task.updateFlags();
    }
    

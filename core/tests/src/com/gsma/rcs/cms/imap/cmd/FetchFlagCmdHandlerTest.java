@@ -8,6 +8,8 @@ import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 public class FetchFlagCmdHandlerTest extends AndroidTestCase {
@@ -27,12 +29,20 @@ public class FetchFlagCmdHandlerTest extends AndroidTestCase {
         Assert.assertEquals("\\Seen \\Deleted",handler.mData.get(19).get(Constants.METADATA_FLAGS));
         Assert.assertEquals("92566",handler.mData.get(19).get(Constants.METADATA_MODSEQ));
         
-        Set<FlagChange> flagChanges = handler.getResult();
-        Assert.assertEquals(1,flagChanges.size());
-        FlagChange fg = flagChanges.iterator().next();
+        List<FlagChange> flagChanges = handler.getResult();
+        Assert.assertEquals(2, flagChanges.size());
+
+        // Delete flagchange first
+        FlagChange fg = flagChanges.get(0);
         Assert.assertEquals("myFolder",fg.getFolder());
-        Assert.assertTrue(19==fg.getUid());
-        Assert.assertTrue(fg.addSeenFlag());
+        Assert.assertTrue(19==fg.getUids().get(0));
         Assert.assertTrue(fg.addDeletedFlag());
+
+        // Read flagchange in second
+        fg = flagChanges.get(1);
+        Assert.assertEquals("myFolder",fg.getFolder());
+        Assert.assertTrue(19==fg.getUids().get(0));
+        Assert.assertTrue(fg.addSeenFlag());
+
     }
 }
