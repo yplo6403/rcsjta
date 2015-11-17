@@ -24,6 +24,7 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
 import com.orangelabs.rcs.ri.capabilities.TestCapabilitiesApi;
+import com.orangelabs.rcs.ri.cms.TestCmsApi;
 import com.orangelabs.rcs.ri.contacts.TestContactsApi;
 import com.orangelabs.rcs.ri.extension.TestMultimediaSessionApi;
 import com.orangelabs.rcs.ri.history.TestHistoryLogApi;
@@ -78,7 +79,7 @@ public class RI extends RcsListActivity {
         String[] items = {
                 getString(R.string.menu_contacts), getString(R.string.menu_capabilities),
                 getString(R.string.menu_messaging), getString(R.string.menu_sharing),
-                getString(R.string.menu_mm_session), getString(R.string.menu_intents),
+                getString(R.string.menu_mm_session), getString(R.string.menu_cms), getString(R.string.menu_intents),
                 getString(R.string.menu_service), getString(R.string.menu_upload),
                 getString(R.string.menu_history_log), getString(R.string.menu_about)
         };
@@ -134,22 +135,26 @@ public class RI extends RcsListActivity {
                 break;
 
             case 5:
-                startActivity(new Intent(this, TestIntentApps.class));
+                startActivity(new Intent(this, TestCmsApi.class));
                 break;
 
             case 6:
-                startActivity(new Intent(this, TestServiceApi.class));
+                startActivity(new Intent(this, TestIntentApps.class));
                 break;
 
             case 7:
-                startActivity(new Intent(this, InitiateFileUpload.class));
+                startActivity(new Intent(this, TestServiceApi.class));
                 break;
 
             case 8:
-                startActivity(new Intent(this, TestHistoryLogApi.class));
+                startActivity(new Intent(this, InitiateFileUpload.class));
                 break;
 
             case 9:
+                startActivity(new Intent(this, TestHistoryLogApi.class));
+                break;
+
+            case 10:
                 startActivity(new Intent(this, AboutRI.class));
                 break;
         }

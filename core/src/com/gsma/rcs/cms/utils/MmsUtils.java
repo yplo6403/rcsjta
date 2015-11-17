@@ -70,7 +70,7 @@ public class MmsUtils {
         return baos.toByteArray();
     }
 
-    private static byte[] createThumb(ContentResolver contentResolver, Uri uri){
+    public static byte[] createThumb(ContentResolver contentResolver, Uri uri){
 
         InputStream is = null;
         try{
@@ -80,6 +80,7 @@ public class MmsUtils {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
             return baos.toByteArray();
         } catch (FileNotFoundException e) {
+            // TODO do not catch
             e.printStackTrace();
             return null;
         }

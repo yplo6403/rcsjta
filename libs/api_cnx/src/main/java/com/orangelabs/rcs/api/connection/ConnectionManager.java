@@ -34,6 +34,7 @@ import com.gsma.services.rcs.RcsServiceListener;
 import com.gsma.services.rcs.RcsServiceListener.ReasonCode;
 import com.gsma.services.rcs.capability.CapabilityService;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactService;
 import com.gsma.services.rcs.extension.MultimediaSessionService;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -61,41 +62,30 @@ public class ConnectionManager {
     private static final String LOGTAG = LogUtils.getTag(ConnectionManager.class.getSimpleName());
 
     private static final long API_DELAY_TO_CONNECT = 5000;
-
+    private static final int MAX_RETRY_API_CNX = 4;
+    private static final String ACTION_CONNECT = "com.orangelabs.rcs.ri.api.ACTION_CONNECT";
     private static volatile ConnectionManager sInstance;
     /**
      * Set of connected services
      */
     private final Set<RcsServiceName> mConnectedServices;
-
     /**
      * Map of Activity / Client Connection notifier
      */
     private final Map<Activity, ClientConnectionNotifier> mClientsToNotify;
-
     /**
      * Map of RCS services and listeners
      */
     private final Map<RcsServiceName, RcsService> mApis;
-
     private final Context mCtx;
-
     private final RcsServiceControl mRcsServiceControl;
-
     /**
      * The set of managed services
      */
     private final Set<RcsServiceName> mManagedServices;
-
     private final AlarmManager mAlarmManager;
-
     private PendingIntent mCnxIntent;
-
     private int mRetryCount;
-
-    private static final int MAX_RETRY_API_CNX = 4;
-
-    private static final String ACTION_CONNECT = "com.orangelabs.rcs.ri.api.ACTION_CONNECT";
 
     /**
      * Constructor
@@ -165,8 +155,59 @@ public class ConnectionManager {
                     mApis.put(RcsServiceName.VIDEO_SHARING, new VideoSharingService(context,
                             newRcsServiceListener(RcsServiceName.VIDEO_SHARING)));
                     break;
+                case CMS:
+                    mApis.put(RcsServiceName.CMS, new CmsService(context, newRcsServiceListener(RcsServiceName.CMS)));
+                    break;
             }
         }
+    }
+
+    /**
+     * Get an instance of ConnectionManager.
+     *
+     * @param context           the context
+     * @param rcsServiceControl instance of RcsServiceControl
+     * @param services          list of managed services
+     * @return the singleton instance.
+     */
+    public static ConnectionManager createInstance(Context context,
+                                                   RcsServiceControl rcsServiceControl, RcsServiceName... services) {
+        Set<RcsServiceName> managedServices = new HashSet<>();
+        Collections.addAll(managedServices, services);
+        return createInstance(context, rcsServiceControl, managedServices);
+    }
+
+    /**
+     * Get an instance of ConnectionManager.
+     *
+     * @param ctx               the context
+     * @param rcsServiceControl instance of RcsServiceControl
+     * @param managedServices   Set of managed services
+     * @return the singleton instance.
+     */
+    public static ConnectionManager createInstance(Context ctx,
+                                                   RcsServiceControl rcsServiceControl, Set<RcsServiceName> managedServices) {
+        if (sInstance != null) {
+            return sInstance;
+        }
+        synchronized (ConnectionManager.class) {
+            if (sInstance == null) {
+                if (ctx == null) {
+                    throw new IllegalArgumentException("Context is null");
+                }
+                sInstance = new ConnectionManager(ctx, managedServices, rcsServiceControl);
+            }
+        }
+        return sInstance;
+    }
+
+    /**
+     * Gets the singleton instance of ConnectionManager.
+     *
+     * @return the singleton instance.
+     */
+    public static ConnectionManager getInstance() {
+        return sInstance;
     }
 
     /**
@@ -217,54 +258,6 @@ public class ConnectionManager {
         for (ClientConnectionNotifier clienttoNotify : mClientsToNotify.values()) {
             clienttoNotify.notifyConnection();
         }
-    }
-
-    /**
-     * Get an instance of ConnectionManager.
-     *
-     * @param context           the context
-     * @param rcsServiceControl instance of RcsServiceControl
-     * @param services          list of managed services
-     * @return the singleton instance.
-     */
-    public static ConnectionManager createInstance(Context context,
-                                                   RcsServiceControl rcsServiceControl, RcsServiceName... services) {
-        Set<RcsServiceName> managedServices = new HashSet<>();
-        Collections.addAll(managedServices, services);
-        return createInstance(context, rcsServiceControl, managedServices);
-    }
-
-    /**
-     * Get an instance of ConnectionManager.
-     *
-     * @param ctx               the context
-     * @param rcsServiceControl instance of RcsServiceControl
-     * @param managedServices   Set of managed services
-     * @return the singleton instance.
-     */
-    public static ConnectionManager createInstance(Context ctx,
-                                                   RcsServiceControl rcsServiceControl, Set<RcsServiceName> managedServices) {
-        if (sInstance != null) {
-            return sInstance;
-        }
-        synchronized (ConnectionManager.class) {
-            if (sInstance == null) {
-                if (ctx == null) {
-                    throw new IllegalArgumentException("Context is null");
-                }
-                sInstance = new ConnectionManager(ctx, managedServices, rcsServiceControl);
-            }
-        }
-        return sInstance;
-    }
-
-    /**
-     * Gets the singleton instance of ConnectionManager.
-     *
-     * @return the singleton instance.
-     */
-    public static ConnectionManager getInstance() {
-        return sInstance;
     }
 
     /**
@@ -457,11 +450,32 @@ public class ConnectionManager {
     }
 
     /**
+     * Get the instance of CmsService
+     *
+     * @return the instance
+     */
+    public CmsService getCmsApi() {
+        return (CmsService) mApis.get(RcsServiceName.CMS);
+    }
+
+    /**
      * Enumerated type for RCS service name
      */
     @SuppressWarnings("javadoc")
     public enum RcsServiceName {
-        CAPABILITY, CONTACT, CHAT, FILE_TRANSFER, IMAGE_SHARING, VIDEO_SHARING, GEOLOC_SHARING, FILE_UPLOAD, MULTIMEDIA, HISTORY
+        // @formatter:off
+        CAPABILITY,
+        CONTACT,
+        CHAT,
+        FILE_TRANSFER,
+        IMAGE_SHARING,
+        VIDEO_SHARING,
+        GEOLOC_SHARING,
+        FILE_UPLOAD,
+        MULTIMEDIA,
+        HISTORY,
+        CMS
+        // @formatter:on
     }
 
     /**

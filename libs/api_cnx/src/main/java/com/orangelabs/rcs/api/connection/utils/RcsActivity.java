@@ -29,6 +29,7 @@ import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.RcsServiceNotRegisteredException;
 import com.gsma.services.rcs.capability.CapabilityService;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactService;
 import com.gsma.services.rcs.extension.MultimediaSessionService;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -200,6 +201,12 @@ public abstract class RcsActivity extends Activity implements DialogUtil.IRegist
     public MultimediaSessionService getMultimediaSessionApi() {
         return mCnxManager.getMultimediaSessionApi();
     }
+
+    @Override
+    public CmsService getCmsApi() {
+        return mCnxManager.getCmsApi();
+    }
+
 
     public boolean isExiting() {
         return mLockAcces.isLocked();

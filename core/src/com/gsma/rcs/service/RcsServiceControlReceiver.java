@@ -23,6 +23,7 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData.TermsAndConditionsResponse;
@@ -99,6 +100,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
         sServiceCompatibilityMap.put(MultimediaSessionService.class.getSimpleName(),
                 sRcsCompatibility);
         sServiceCompatibilityMap.put(VideoSharingService.class.getSimpleName(), sRcsCompatibility);
+        sServiceCompatibilityMap.put(CmsService.class.getSimpleName(), sRcsCompatibility);
     }
 
     private boolean getActivationModeChangeable(Context ctx) {

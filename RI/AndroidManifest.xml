@@ -530,6 +530,15 @@
         <activity
             android:name="com.orangelabs.rcs.ri.history.sharing.SharingDetailView"
             android:label="@string/title_history_log_item" />
+        <activity
+            android:name=".cms.TestCmsApi"
+            android:label="@string/menu_cms_title" />
+        <activity
+            android:name=".cms.CmsSyncContact"
+            android:label="@string/menu_cms_title" />
+        <activity
+            android:name=".cms.CmsSyncGroup"
+            android:label="@string/menu_cms_title" />
 
         <receiver
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.UndeliveredMessageReceiver"

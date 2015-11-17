@@ -21,6 +21,7 @@ package com.orangelabs.rcs.api.connection.utils;
 import com.gsma.services.rcs.RcsServiceListener;
 import com.gsma.services.rcs.capability.CapabilityService;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactService;
 import com.gsma.services.rcs.extension.MultimediaSessionService;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -122,4 +123,11 @@ public interface IConnectionManager {
      * @return the instance
      */
     MultimediaSessionService getMultimediaSessionApi();
+
+    /**
+     * Get the instance of CmsService
+     *
+     * @return the instance
+     */
+    CmsService getCmsApi();
 }

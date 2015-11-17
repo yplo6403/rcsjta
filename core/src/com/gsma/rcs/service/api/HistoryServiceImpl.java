@@ -24,6 +24,7 @@ import com.gsma.rcs.provider.messaging.MessageData;
 import com.gsma.rcs.provider.sharing.GeolocSharingData;
 import com.gsma.rcs.provider.sharing.ImageSharingData;
 import com.gsma.rcs.provider.sharing.VideoSharingData;
+import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.history.IHistoryService;
 
@@ -45,7 +46,8 @@ public class HistoryServiceImpl extends IHistoryService.Stub {
     private static final Set<Integer> INTERNAL_MEMBER_IDS = new HashSet<Integer>(Arrays.asList(
             MessageData.HISTORYLOG_MEMBER_ID, FileTransferData.HISTORYLOG_MEMBER_ID,
             ImageSharingData.HISTORYLOG_MEMBER_ID, VideoSharingData.HISTORYLOG_MEMBER_ID,
-            GeolocSharingData.HISTORYLOG_MEMBER_ID));
+            GeolocSharingData.HISTORYLOG_MEMBER_ID,
+            XmsData.HISTORYLOG_MEMBER_ID));
 
     private static final Logger sLogger = Logger
             .getLogger(HistoryServiceImpl.class.getSimpleName());

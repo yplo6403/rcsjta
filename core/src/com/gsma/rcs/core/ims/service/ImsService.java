@@ -71,6 +71,10 @@ public abstract class ImsService {
          */
         PRESENCE,
         /**
+         * Common Message Store Service
+        */
+        CMS,
+        /**
          * SIP service
          */
         SIP

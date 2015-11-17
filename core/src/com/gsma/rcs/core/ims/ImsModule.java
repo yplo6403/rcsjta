@@ -39,6 +39,7 @@ import com.gsma.rcs.core.ims.service.ImsService.ImsServiceType;
 import com.gsma.rcs.core.ims.service.ImsServiceDispatcher;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
+import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.core.ims.service.extension.ServiceExtensionManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.HttpTransferManager;
@@ -133,6 +134,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
+        mServices.put(ImsServiceType.CMS, new CmsService(this));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {
@@ -348,6 +350,15 @@ public class ImsModule implements SipEventListener {
      */
     public RichcallService getRichcallService() {
         return (RichcallService) mServices.get(ImsServiceType.RICHCALL);
+    }
+
+    /**
+     * Returns the CMS service
+     *
+     * @return CMS service
+     */
+    public CmsService getCmsService() {
+        return (CmsService) mServices.get(ImsServiceType.CMS);
     }
 
     /**

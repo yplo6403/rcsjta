@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <TableLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="10dip"
+        android:stretchColumns="1" >
+
+        <Spinner
+            android:id="@+id/contact"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip" />
+
+        <Button
+            android:id="@+id/sync_btn"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:text="@string/menu_cms_sync_one_to_one" />
+
+        <TableRow>
+
+            <TextView
+                android:layout_marginLeft="5dip"
+                android:gravity="right"
+                android:text="@string/cms_sync_timestamp" />
+
+            <TextView
+                android:id="@+id/timestamp"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:textStyle="bold" />
+        </TableRow>
+    </TableLayout>
+
+</ScrollView>

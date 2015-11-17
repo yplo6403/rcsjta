@@ -29,6 +29,7 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.security.cert.KeyStoreManager;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
+import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.presence.PresenceService;
 import com.gsma.rcs.core.ims.service.richcall.RichcallService;
@@ -319,6 +320,15 @@ public class Core {
      */
     public RichcallService getRichcallService() {
         return getImsModule().getRichcallService();
+    }
+
+    /**
+     * Returns the CMS service
+     *
+     * @return CMS service
+     */
+    public CmsService getCmsService() {
+        return getImsModule().getCmsService();
     }
 
     /**

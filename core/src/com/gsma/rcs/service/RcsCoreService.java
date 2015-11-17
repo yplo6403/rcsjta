@@ -22,6 +22,15 @@
 
 package com.gsma.rcs.service;
 
+import android.app.Service;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
@@ -42,8 +51,10 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.CapabilityServiceImpl;
 import com.gsma.rcs.service.api.ChatServiceImpl;
+import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.ContactServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.service.api.FileUploadServiceImpl;
@@ -58,6 +69,7 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceRegistration;
 import com.gsma.services.rcs.capability.ICapabilityService;
 import com.gsma.services.rcs.chat.IChatService;
+import com.gsma.services.rcs.cms.ICmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.IContactService;
 import com.gsma.services.rcs.extension.IMultimediaSessionService;
@@ -67,15 +79,6 @@ import com.gsma.services.rcs.sharing.geoloc.IGeolocSharingService;
 import com.gsma.services.rcs.sharing.image.IImageSharingService;
 import com.gsma.services.rcs.sharing.video.IVideoSharingService;
 import com.gsma.services.rcs.upload.IFileUploadService;
-
-import android.app.Service;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -117,6 +120,8 @@ public class RcsCoreService extends Service implements CoreListener {
 
     private FileUploadServiceImpl mUploadApi;
 
+    private CmsServiceImpl mCmsApi;
+
     /**
      * Need to start the core after stop if a StartService is called before the end of stopCore
      */
@@ -138,6 +143,8 @@ public class RcsCoreService extends Service implements CoreListener {
 
     private ContactManager mContactManager;
 
+    private XmsLog mXmsLog;
+
     private CountDownLatch mLatch;
 
     /**
@@ -158,6 +165,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mMessagingLog = MessagingLog.createInstance(mLocalContentResolver, mRcsSettings);
         mContactManager = ContactManager.createInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
+        mXmsLog = XmsLog.createInstance(mLocalContentResolver);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -300,6 +308,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings,
                     mContactManager);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver);
 
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
@@ -404,6 +413,18 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi.close();
             mHistoryApi = null;
         }
+        if (mMmSessionApi != null) {
+            mMmSessionApi.close();
+            mMmSessionApi = null;
+        }
+        if (mUploadApi != null) {
+            mUploadApi.close();
+            mUploadApi = null;
+        }
+        if (mCmsApi != null) {
+            mCmsApi.close();
+            mCmsApi = null;
+        }
 
         // Terminate the core in background
         Core.terminateCore();
@@ -471,6 +492,11 @@ public class RcsCoreService extends Service implements CoreListener {
                 sLogger.debug("File upload service API binding");
             }
             return mUploadApi;
+        } else if (ICmsService.class.getName().equals(intent.getAction())) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("CMS service API binding");
+            }
+            return mCmsApi;
         } else {
             return null;
         }

@@ -30,7 +30,11 @@ import com.gsma.rcs.provider.sharing.ImageSharingData;
 import com.gsma.rcs.provider.sharing.ImageSharingProvider;
 import com.gsma.rcs.provider.sharing.VideoSharingData;
 import com.gsma.rcs.provider.sharing.VideoSharingProvider;
+import com.gsma.rcs.provider.xms.XmsData;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.XmsProvider;
 import com.gsma.services.rcs.chat.ChatLog;
+import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.sharing.geoloc.GeolocSharingLog;
 import com.gsma.services.rcs.sharing.image.ImageSharingLog;
@@ -78,6 +82,7 @@ import java.util.Set;
         internalMemberIds.add(ImageSharingData.HISTORYLOG_MEMBER_ID);
         internalMemberIds.add(VideoSharingData.HISTORYLOG_MEMBER_ID);
         internalMemberIds.add(GeolocSharingData.HISTORYLOG_MEMBER_ID);
+        internalMemberIds.add(XmsData.HISTORYLOG_MEMBER_ID);
         return internalMemberIds;
     }
 
@@ -101,6 +106,9 @@ import java.util.Set;
         internalMembers.add(new HistoryMemberDatabase(GeolocSharingData.HISTORYLOG_MEMBER_ID,
                 GeolocSharingData.CONTENT_URI, GeolocSharingProvider.DATABASE_NAME, null,
                 GeolocSharingProvider.TABLE, getGeolocSharingProviderColumnMapping()));
+        internalMembers.add(new HistoryMemberDatabase(XmsData.HISTORYLOG_MEMBER_ID,
+                XmsData.CONTENT_URI, XmsProvider.DATABASE_NAME, null,
+                XmsProvider.TABLE_XMS, getXmsProviderColumnMapping()));
         return internalMembers;
     }
 
@@ -220,4 +228,22 @@ import java.util.Set;
         return columnMapping;
     }
 
+    public static Map<String, String> getXmsProviderColumnMapping() {
+        Map<String, String> columnMapping = new HashMap<String, String>();
+        columnMapping.put(HistoryLogData.KEY_PROVIDER_ID,
+                String.valueOf(XmsMessageLog.HISTORYLOG_MEMBER_ID));
+        columnMapping.put(HistoryLogData.KEY_BASECOLUMN_ID, XmsMessageLog.BASECOLUMN_ID);
+        columnMapping.put(HistoryLogData.KEY_ID, XmsMessageLog.MESSAGE_ID);
+        columnMapping.put(HistoryLogData.KEY_DIRECTION, XmsMessageLog.DIRECTION);
+        columnMapping.put(HistoryLogData.KEY_CONTACT, XmsMessageLog.CONTACT);
+        columnMapping.put(HistoryLogData.KEY_TIMESTAMP, XmsMessageLog.TIMESTAMP);
+        columnMapping.put(HistoryLogData.KEY_STATUS, XmsMessageLog.STATE);
+        columnMapping.put(HistoryLogData.KEY_REASON_CODE, XmsMessageLog.REASON_CODE);
+        columnMapping.put(HistoryLogData.KEY_MIME_TYPE, XmsMessageLog.MIME_TYPE);
+        columnMapping.put(HistoryLogData.KEY_TIMESTAMP_SENT, XmsMessageLog.TIMESTAMP_SENT);
+        columnMapping.put(HistoryLogData.KEY_TIMESTAMP_DELIVERED, XmsMessageLog.TIMESTAMP_DELIVERED);
+        columnMapping.put(HistoryLogData.KEY_READ_STATUS, XmsMessageLog.READ_STATUS);
+        columnMapping.put(HistoryLogData.KEY_CONTENT, XmsMessageLog.BODY);
+        return columnMapping;
+    }
 }
