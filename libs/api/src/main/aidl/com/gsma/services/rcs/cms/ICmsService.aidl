@@ -25,9 +25,9 @@ interface ICmsService {
 
 	IXmsMessage getXmsMessage(in String messageId);
 
-	IXmsMessage sendTextMessage(in ContactId contact, String text);
+	void sendTextMessage(in ContactId contact, String text);
 
-	IXmsMessage sendMultimediaMessage(in ContactId contact, in List<Uri> files, in String text);
+	void sendMultimediaMessage(in ContactId contact, in List<Uri> files, in String text);
 
     void markXmsMessageAsRead(in String messageId);
 

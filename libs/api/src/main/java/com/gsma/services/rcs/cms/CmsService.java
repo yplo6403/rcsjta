@@ -2,7 +2,6 @@
  * Software Name : RCS IMS Stack
  *
  * Copyright (C) 2010 France Telecom S.A.
- * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * NOTE: This file has been modified by Sony Mobile Communications Inc.
- * Modifications are licensed under the License.
  ******************************************************************************/
 
 package com.gsma.services.rcs.cms;
@@ -280,12 +277,12 @@ public final class CmsService extends RcsService {
         }
     }
 
-    public XmsMessage sendTextMessage(ContactId contact, String message) throws RcsGenericException, RcsServiceNotAvailableException {
+    public void sendTextMessage(ContactId contact, String message) throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return new XmsMessage(mApi.sendTextMessage(contact, message));
+            mApi.sendTextMessage(contact, message);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -293,7 +290,7 @@ public final class CmsService extends RcsService {
         }
     }
 
-    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String message) throws RcsGenericException, RcsServiceNotAvailableException {
+    public void sendMultimediaMessage(ContactId contact, List<Uri> files, String message) throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -301,7 +298,7 @@ public final class CmsService extends RcsService {
             for (Uri file : files) {
                 tryToGrantUriPermissionToStackServices(file);
             }
-            return new XmsMessage(mApi.sendMultimediaMessage(contact, files, message));
+            mApi.sendMultimediaMessage(contact, files, message);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);

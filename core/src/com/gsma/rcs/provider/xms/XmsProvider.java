@@ -300,6 +300,7 @@ public class XmsProvider extends ContentProvider {
                 return count;
 
             case UriType.InternalPart.PART_WITH_ID:
+                // TODO check if update is required
                 String partId = uri.getLastPathSegment();
                 selection = getSelectionWithPartId(selection);
                 selectionArgs = getSelectionArgsWithPartId(selectionArgs, partId);
@@ -312,6 +313,7 @@ public class XmsProvider extends ContentProvider {
                 return count;
 
             case UriType.InternalPart.PART:
+                // TODO check if update is required
                 db = mOpenHelper.getWritableDatabase();
                 count = db.update(TABLE_PART, values, selection, selectionArgs);
                 if (count > 0) {
@@ -533,8 +535,8 @@ public class XmsProvider extends ContentProvider {
                     + PartData.KEY_MESSAGE_ID + " TEXT NOT NULL,"
                     + PartData.KEY_MIME_TYPE + " TEXT NOT NULL,"
                     + PartData.KEY_FILENAME + " TEXT,"
-                    + PartData.KEY_FILESIZE + " TEXT,"
-                    + PartData.KEY_CONTENT + " BYTES BLOB,"
+                    + PartData.KEY_FILESIZE + " INTEGER,"
+                    + PartData.KEY_CONTENT + " BYTES BLOB NOT NULL,"
                     + PartData.KEY_FILEICON + " BYTES BLOB)");
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +

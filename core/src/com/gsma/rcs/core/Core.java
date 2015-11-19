@@ -181,8 +181,8 @@ public class Core {
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
 
         /* Create the IMS module */
-        mImsModule = new ImsModule(this, ctx, localContentResolver, mRcsSettings, contactManager,
-                messagingLog, historyLog, richCallHistory, mAddressBookManager);
+        mImsModule = new ImsModule(this, ctx, contentResolver, localContentResolver, mRcsSettings,
+                contactManager, messagingLog, historyLog, richCallHistory, mAddressBookManager);
 
         if (logActivated) {
             sLogger.info("Terminal core is created with success");

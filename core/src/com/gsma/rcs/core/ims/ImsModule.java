@@ -57,6 +57,7 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
 import com.gsma.rcs.utils.logger.Logger;
 
+import android.content.ContentResolver;
 import android.content.Context;
 
 import java.util.Collection;
@@ -98,6 +99,7 @@ public class ImsModule implements SipEventListener {
      * 
      * @param core Core
      * @param ctx The context this module is part of
+     * @param contentResolver The content resolver
      * @param localContentResolver The local content resolver
      * @param rcsSettings RCSsettings instance
      * @param contactManager Contact manager accessor
@@ -106,7 +108,7 @@ public class ImsModule implements SipEventListener {
      * @param richCallHistory The rich call accessor
      * @param addressBookManager The address book manager instance
      */
-    public ImsModule(Core core, Context ctx, LocalContentResolver localContentResolver,
+    public ImsModule(Core core, Context ctx, ContentResolver contentResolver, LocalContentResolver localContentResolver,
             RcsSettings rcsSettings, ContactManager contactManager, MessagingLog messagingLog,
             HistoryLog historyLog, RichCallHistory richCallHistory,
             AddressBookManager addressBookManager) {
@@ -134,7 +136,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(this));
+        mServices.put(ImsServiceType.CMS, new CmsService(ctx, this, contentResolver));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {
@@ -216,6 +218,7 @@ public class ImsModule implements SipEventListener {
         mExtensionManager.start();
         mServiceDispatcher.start();
         mCallManager.start();
+        getCmsService().start();
         if (sLogger.isActivated()) {
             sLogger.info("IMS module is started");
         }
@@ -236,6 +239,7 @@ public class ImsModule implements SipEventListener {
         mCnxManager.terminate();
         mServiceDispatcher.terminate();
         mExtensionManager.stop();
+        getCmsService().stop();
         if (sLogger.isActivated()) {
             sLogger.info("IMS module has been stopped");
         }

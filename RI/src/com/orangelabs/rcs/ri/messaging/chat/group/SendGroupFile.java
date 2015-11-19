@@ -40,6 +40,8 @@ import android.widget.TextView;
 
 import java.util.Set;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 /**
  * Send file to group
  * 
@@ -82,7 +84,7 @@ public class SendGroupFile extends SendFile {
                         + " chatId=" + mChatId);
             }
             /* Only take persistable permission for content Uris */
-            FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(), file);
+            takePersistableContentUriPermission(this, file);
             /* Initiate transfer */
             mFileTransfer = mFileTransferService.transferFileToGroupChat(mChatId, file, fileIcon);
             mTransferId = mFileTransfer.getTransferId();

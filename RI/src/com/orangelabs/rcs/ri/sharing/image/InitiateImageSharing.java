@@ -61,6 +61,8 @@ import android.widget.Toast;
 
 import java.util.Set;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 /**
  * Initiate image sharing
  * 
@@ -298,8 +300,7 @@ public class InitiateImageSharing extends RcsActivity {
                 }
                 try {
                     /* Only take persistable permission for content Uris */
-                    FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(),
-                            mFile);
+                    takePersistableContentUriPermission(InitiateImageSharing.this, mFile);
 
                     // Initiate sharing
                     mImageSharing = getImageSharingApi().shareImage(remote, mFile);

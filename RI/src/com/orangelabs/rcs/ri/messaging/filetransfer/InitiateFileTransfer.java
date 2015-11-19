@@ -67,6 +67,8 @@ import android.widget.Toast;
 
 import java.util.Set;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 /**
  * Initiate file transfer
  * 
@@ -243,7 +245,7 @@ public class InitiateFileTransfer extends RcsActivity {
         }
         try {
             /* Only take persistable permission for content Uris */
-            FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(), mFile);
+            takePersistableContentUriPermission(this, mFile);
             /* Initiate transfer */
             mFileTransfer = mFileTransferService.transferFile(remote, mFile, tryToSendFileicon);
             mFileTransferId = mFileTransfer.getTransferId();

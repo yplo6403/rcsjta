@@ -28,8 +28,8 @@ public class SmsDataObject extends XmsDataObject {
     private final String mCorrelator;
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, long timestamp) {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp);
+            RcsService.Direction dir, long timestamp, long nativeId) {
+        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId);
         mCorrelator = HeaderCorrelatorUtils.buildHeader(mBody);
     }
 

@@ -47,6 +47,8 @@ import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 /**
  * Initiate file upload
  * 
@@ -292,8 +294,7 @@ public class InitiateFileUpload extends RcsActivity {
                     mUploadThumbnail = ftThumb.isChecked();
 
                     /* Only take persistable permission for content Uris */
-                    FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(),
-                            mFile);
+                    takePersistableContentUriPermission(InitiateFileUpload.this, mFile);
 
                     // Initiate upload
                     mUpload = getFileUploadApi().uploadFile(mFile, mUploadThumbnail);

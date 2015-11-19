@@ -165,7 +165,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mMessagingLog = MessagingLog.createInstance(mLocalContentResolver, mRcsSettings);
         mContactManager = ContactManager.createInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
-        mXmsLog = XmsLog.createInstance(mLocalContentResolver);
+        mXmsLog = XmsLog.createInstance(mContentResolver, mLocalContentResolver);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();

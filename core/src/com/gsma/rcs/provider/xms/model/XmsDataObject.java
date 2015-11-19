@@ -25,6 +25,9 @@ import com.gsma.services.rcs.contact.ContactId;
 
 public abstract class XmsDataObject {
 
+    /**
+     * The message identifier created by the local CMS service.
+     */
     private final String mMessageId;
     private final ContactId mContact;
     protected final String mBody;
@@ -36,16 +39,17 @@ public abstract class XmsDataObject {
     private XmsMessage.State mState = XmsMessage.State.QUEUED;
     private XmsMessage.ReasonCode mReasonCode = XmsMessage.ReasonCode.UNSPECIFIED;
     private RcsService.ReadStatus mReadStatus = RcsService.ReadStatus.UNREAD;
-    private long mNativeProviderId = -1;
+    private final long mNativeProviderId;
 
     public XmsDataObject(String messageId, ContactId contact, String body, String mimeType,
-            Direction dir, long timestamp) {
+            Direction dir, long timestamp, long nativeId) {
         mMessageId = messageId;
         mContact = contact;
         mBody = body;
         mMimeType = mimeType;
         mDirection = dir;
         mTimestamp = timestamp;
+        mNativeProviderId = nativeId;
     }
 
     public String getMessageId() {
@@ -106,10 +110,6 @@ public abstract class XmsDataObject {
 
     public Long getNativeProviderId() {
         return mNativeProviderId;
-    }
-
-    public void setNativeProviderId(long nativeProviderId) {
-        mNativeProviderId = nativeProviderId;
     }
 
     public RcsService.ReadStatus getReadStatus() {

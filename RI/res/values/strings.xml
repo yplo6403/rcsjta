@@ -393,6 +393,7 @@
     <string name="cms_sync_completed">End of CMS synchronization</string>
     <string name="cms_sync_contact_completed">CMS synchronized for contact %1$s</string>
     <string name="cms_sync_timestamp">Synchronized at</string>
+    <string name="err_select_file">Select at least one image or video file</string>
 
     <!-- States -->
 

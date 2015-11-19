@@ -17,9 +17,11 @@
  ******************************************************************************/
 package com.orangelabs.rcs.ri.cms;
 
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -31,7 +33,6 @@ import android.widget.TextView;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.CmsSynchronizationListener;
-import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
@@ -47,6 +48,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
 /**
  * Created by yplo6403 on 12/11/2015.
@@ -67,6 +70,7 @@ public class CmsSyncContact extends RcsActivity {
 
     private int PICK_IMAGE_REQUEST = 1;
     private ContactId mContact;
+    private boolean testSendMms = true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -158,15 +162,20 @@ public class CmsSyncContact extends RcsActivity {
                 ContactId contact = getSelectedContact();
                 if (contact != null) {
                     mContact = contact;
-                    FileUtils.openFile(CmsSyncContact.this, "image/*", PICK_IMAGE_REQUEST);
-                    //mCmsService.syncOneToOneConversation(contact);
-                        /*XmsMessage msg = mCmsService.sendTextMessage(contact, "This is my first SMS");
-                        if (LogUtils.isActive) {
-                            Log.d(LOGTAG, "sendTextMessage to " + msg.getRemoteContact() +
-                                    " Body='" + msg.getBody() +"'"+
-                                    " State=" + msg.getState() +
-                                    " Reason=" + msg.getReasonCode());
-                        }*/
+                    try {
+                        //mCmsService.syncOneToOneConversation(contact);
+                        if (testSendMms) {
+                            String[] mimeTypes = {"image/*", "video/*"};
+                            FileUtils.openFiles(CmsSyncContact.this, mimeTypes, PICK_IMAGE_REQUEST);
+                        } else {
+                            mCmsService.sendTextMessage(contact, "This is my first SMS");
+                            if (LogUtils.isActive) {
+                                Log.d(LOGTAG, "sendTextMessage to " + contact);
+                            }
+                        }
+                    } catch (RcsServiceException e) {
+                        showExceptionThenExit(e);
+                    }
                 }
             }
         };
@@ -176,20 +185,37 @@ public class CmsSyncContact extends RcsActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            Uri uri = data.getData();
-            try {
-                List<Uri> files = new ArrayList<>();
-                /* Only take persistable permission for content Uris */
-                FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(), uri);
-                files.add(uri);
-                XmsMessage msg = mCmsService.sendMultimediaMessage(mContact, files, "First MMS");
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "sendMmsMessage to " + msg.getRemoteContact() +
-                            " Body='" + msg.getBody() + "'" +
-                            " State=" + msg.getState() +
-                            " Reason=" + msg.getReasonCode());
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK) {
+            List<Uri> files = new ArrayList<>();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                ClipData clipData = data.getClipData();
+                if (clipData != null) {
+                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                        ClipData.Item item = clipData.getItemAt(i);
+                        Uri uri = item.getUri();
+                        takePersistableContentUriPermission(this, uri);
+                        files.add(uri);
+                    }
+                } else {
+                    Uri uri = data.getData();
+                    takePersistableContentUriPermission(this, uri);
+                    files.add(uri);
                 }
+            } else {
+                Uri uri = data.getData();
+                takePersistableContentUriPermission(this, uri);
+                files.add(uri);
+            }
+            if (files.isEmpty()) {
+                showMessage(R.string.err_select_file);
+                return;
+            }
+            try {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "sendMultimediaMessage to " + mContact +
+                            " Files='" + files);
+                }
+                mCmsService.sendMultimediaMessage(mContact, files, "First MMS");
             } catch (RcsServiceException e) {
                 showExceptionThenExit(e);
             }

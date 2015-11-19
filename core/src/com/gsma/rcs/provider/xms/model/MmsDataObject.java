@@ -38,23 +38,33 @@ import java.util.List;
 public class MmsDataObject extends XmsDataObject {
 
     private final List<MmsPart> mMmsPart;
-    private String mMmsId;
+    /**
+     * The MMS Identifier created by the native SMS/MMS application.
+     */
+    private final String mMmsId;
 
-    public MmsDataObject(Context context, ContentResolver contentResolver, String messageId,
+    public MmsDataObject(Context ctx, String mmsId, String messageId,
                          ContactId contact, String body, RcsService.Direction dir, long timestamp,
-                         List<Uri> files) throws IOException {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp);
+                         List<Uri> files, long nativeId) throws IOException {
+        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId);
+        mMmsId = mmsId;
         mMmsPart = new ArrayList<>();
-        for (Uri file : files) {
-            String filename = FileUtils.getFileName(context, file);
-            String mimeType = contentResolver.getType(file);
-            byte[] content = getBytes(contentResolver.openInputStream(file));
-            byte[] fileIcon = MmsUtils.createThumb(contentResolver, file);
-            mMmsPart.add(new MmsPart(messageId, mimeType, filename, content.length, content,
-                    fileIcon));
+        ContentResolver contentResolver = ctx.getContentResolver();
+        if (files != null) { // TODO to be removed; (just for test purpose)
+            for (Uri file : files) {
+                String filename = FileUtils.getFileName(ctx, file);
+                String mimeType = contentResolver.getType(file);
+                byte[] content = getBytes(contentResolver.openInputStream(file));
+                byte[] fileIcon = null;
+                if (MimeManager.isImageType(mimeType)) {
+                    fileIcon = MmsUtils.createThumb(contentResolver, file);
+                }
+                mMmsPart.add(new MmsPart(messageId, mimeType, filename, (long) content.length, content,
+                        fileIcon));
+            }
         }
         if (body != null) {
-            mMmsPart.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, null, 0, body
+            mMmsPart.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, null, null, body
                     .getBytes(), null));
         }
     }
@@ -74,10 +84,6 @@ public class MmsDataObject extends XmsDataObject {
         return mMmsId;
     }
 
-    public void setMmsId(String mmsId) {
-        mMmsId = mmsId;
-    }
-
     public List<MmsPart> getMmsPart() {
         return mMmsPart;
     }
@@ -89,9 +95,9 @@ public class MmsDataObject extends XmsDataObject {
         private final byte[] mFileIcon;
 
         private final String mFileName;
-        private final long mFileSize;
+        private final Long mFileSize;
 
-        public MmsPart(String messageId, String mimeType, String fileName, long fileSize,
+        public MmsPart(String messageId, String mimeType, String fileName, Long fileSize,
                        byte[] content, byte[] fileIcon) {
             mMimeType = mimeType;
             mFileName = fileName;
@@ -121,7 +127,7 @@ public class MmsDataObject extends XmsDataObject {
             return mFileName;
         }
 
-        public long getFileSize() {
+        public Long getFileSize() {
             return mFileSize;
         }
     }

@@ -18,15 +18,19 @@
 
 package com.gsma.rcs.service.api;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+import android.os.RemoteException;
+import android.text.TextUtils;
+
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.service.broadcaster.CmsEventBroadcaster;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.FileUtils;
-import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.cms.ICmsService;
@@ -35,17 +39,6 @@ import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
-import android.os.RemoteException;
-import android.provider.Telephony;
-import android.telephony.SmsManager;
-import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -210,22 +203,10 @@ public class CmsServiceImpl extends ICmsService.Stub {
             sLogger.error(ExceptionUtil.getFullStackTrace(e));
             throw new ServerApiGenericException(e);
         }
-
-    }
-
-    private void sendSms(ContactId contact, String text) {
-        SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage(contact.toString(), null, text, null, null);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            ContentValues values = new ContentValues();
-            values.put("address", contact.toString());
-            values.put("body", text);
-            mContentResolver.insert(Uri.parse("content://sms/sent"), values);
-        }
     }
 
     @Override
-    public IXmsMessage sendTextMessage(final ContactId contact, final String text)
+    public void sendTextMessage(final ContactId contact, final String text)
             throws RemoteException {
         if (TextUtils.isEmpty(text)) {
             throw new ServerApiIllegalArgumentException("message must not be null or empty!");
@@ -233,17 +214,11 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        long timestamp = System.currentTimeMillis();
-        String msgId = IdGenerator.generateMessageID();
-        SmsDataObject sms = new SmsDataObject(msgId, contact, text, RcsService.Direction.OUTGOING,
-                timestamp);
-        XmsPersistedStorageAccessor persistedStorage = new XmsPersistedStorageAccessor(mXmsLog, sms);
-        mXmsLog.addSms(sms);
         mCmsService.scheduleOperation(new Runnable() {
             @Override
             public void run() {
                 try {
-                    sendSms(contact, text);
+                    mCmsService.sendSms(contact, text);
 
                 } catch (RuntimeException e) {
                     /*
@@ -257,13 +232,30 @@ public class CmsServiceImpl extends ICmsService.Stub {
                 }
             }
         });
-        return new XmsMessageImpl(msgId, persistedStorage);
+    }
+
+    private ArrayList<Uri> getValidatedUris(List<Uri> files) {
+        ArrayList<Uri> uris = new ArrayList<>();
+        for (Uri file : files) {
+            if (!FileUtils.isReadFromUriPossible(mContext, file)) {
+                throw new ServerApiIllegalArgumentException("file '" + file.toString()
+                        + "' must refer to a file that exists and that is readable by stack!");
+            }
+            String mimeType = mContentResolver.getType(file);
+            if (!MimeManager.isImageType(mimeType)) {
+                if (!MimeManager.isVideoType(mimeType)) {
+                    throw new ServerApiIllegalArgumentException("file '" + file.toString()
+                            + "' has invalid mime-type: '" + mimeType + "'!");
+                }
+            }
+            uris.add(file);
+        }
+        return uris;
     }
 
     @Override
-    public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
-                                             final String text) throws RemoteException {
-
+    public void sendMultimediaMessage(final ContactId contact, List<Uri> files,
+                                      final String text) throws RemoteException {
         if (sLogger.isActivated()) {
             sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + text);
         }
@@ -273,29 +265,14 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (files == null || files.isEmpty()) {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
         }
-        final ArrayList<Uri> _files = new ArrayList<>();
-        for (Uri file : files) {
-            if (!FileUtils.isReadFromUriPossible(mContext, file)) {
-                throw new ServerApiIllegalArgumentException("file '" + file.toString()
-                        + "' must refer to a file that exists and that is readable by stack!");
-            }
-            _files.add(file);
-        }
-        long timestamp = System.currentTimeMillis();
-        try {
-            String msgId = IdGenerator.generateMessageID();
-            MmsDataObject mms = new MmsDataObject(mContext, mContentResolver, msgId, contact, text,
-                    RcsService.Direction.OUTGOING, timestamp, files);
-            XmsPersistedStorageAccessor persistedStorage = new XmsPersistedStorageAccessor(mXmsLog,
-                    mms);
-            mXmsLog.addMms(mms);
-            mCmsService.scheduleOperation(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        sendMms(contact, text, _files);
+        final ArrayList<Uri> uris = getValidatedUris(files);
+        mCmsService.scheduleOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mCmsService.sendMms(contact, text, uris);
 
-                    } catch (RuntimeException e) {
+                } catch (RuntimeException e) {
                         /*
                          * Normally we are not allowed to catch runtime exceptions as these are
                          * genuine bugs which should be handled/fixed within the code. However the
@@ -303,51 +280,10 @@ public class CmsServiceImpl extends ICmsService.Stub {
                          * exceptions will eventually lead to exit the system and thus can bring the
                          * whole system down, which is not intended.
                          */
-                        sLogger.error("Failed to send MMS!", e);
-                    }
+                    sLogger.error("Failed to send MMS!", e);
                 }
-            });
-            return new XmsMessageImpl(msgId, persistedStorage);
-
-        } catch (ServerApiBaseException e) {
-            if (!e.shouldNotBeLogged()) {
-                sLogger.error(ExceptionUtil.getFullStackTrace(e));
             }
-            throw e;
-
-        } catch (Exception e) {
-            sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            throw new ServerApiGenericException(e);
-        }
-    }
-
-    private void sendMms(ContactId contact, String text, ArrayList<Uri> files) {
-        Intent intent = new Intent();
-        Uri file = files.get(0);
-        if (files.size() == 1) {
-            intent.setAction(Intent.ACTION_SEND);
-            intent.putExtra(Intent.EXTRA_STREAM, file);
-        } else {
-            intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
-        }
-
-        String mimeType = mContentResolver.getType(file);
-        intent.setType(mimeType);
-        intent.putExtra("address", contact.toString());
-        if (text != null) {
-            intent.putExtra("sms_body", text);
-        }
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(mContext);
-            intent.setPackage(defaultSmsPackageName);
-        }
-        if (sLogger.isActivated()) {
-            sLogger.debug("sendMms " + intent + " to contact=" + contact + " text='" + text + "'");
-            sLogger.debug("sendMms file URIs= " + files + " of mime-type=" + mimeType);
-        }
-        mContext.startActivity(intent);
+        });
     }
 
     @Override

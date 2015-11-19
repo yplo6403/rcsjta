@@ -40,6 +40,8 @@ import android.widget.TextView;
 
 import java.util.Set;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 /**
  * Send file to contact
  * 
@@ -81,7 +83,7 @@ public class SendSingleFile extends SendFile {
                 Log.d(LOGTAG, "initiateTransfer mFilename=" + mFilename + " size=" + mFilesize);
             }
             /* Only take persistable permission for content Uris */
-            FileUtils.tryToTakePersistableContentUriPermission(getApplicationContext(), file);
+            takePersistableContentUriPermission(this, file);
             /* Initiate transfer */
             mFileTransfer = mFileTransferService.transferFile(mContact, file, fileicon);
             mTransferId = mFileTransfer.getTransferId();
