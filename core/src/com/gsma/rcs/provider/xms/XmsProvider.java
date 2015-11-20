@@ -83,14 +83,6 @@ public class XmsProvider extends ContentProvider {
     private static final Set<String> XMS_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS = new HashSet<>(
             Arrays.asList(XMS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS));
 
-    private static final String[] PART_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS = new String[] {
-            PartData.KEY_PART_ID, PartData.KEY_MESSAGE_ID, PartData.KEY_MIME_TYPE,
-            PartData.KEY_CONTENT, PartData.KEY_FILEICON
-    };
-
-    private static final Set<String> PART_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS = new HashSet<>(
-            Arrays.asList(PART_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS));
-
     private SQLiteOpenHelper mOpenHelper;
 
     @Override
@@ -175,20 +167,6 @@ public class XmsProvider extends ContentProvider {
         return projection;
     }
 
-    private String[] restrictPartProjectionToExternallyDefinedColumns(String[] projection)
-            throws UnsupportedOperationException {
-        if (projection == null || projection.length == 0) {
-            return PART_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS;
-        }
-        for (String projectedColumn : projection) {
-            if (!PART_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS.contains(projectedColumn)) {
-                throw new UnsupportedOperationException("No visibility to the accessed column "
-                        + projectedColumn + "!");
-            }
-        }
-        return projection;
-    }
-
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
             String sort) {
@@ -258,8 +236,7 @@ public class XmsProvider extends ContentProvider {
                     //$FALL-THROUGH$
                 case UriType.Part.PART:
                     db = mOpenHelper.getReadableDatabase();
-                    cursor = db.query(TABLE_PART,
-                            restrictPartProjectionToExternallyDefinedColumns(projection),
+                    cursor = db.query(TABLE_PART, projection,
                             selection, selectionArgs, null, null, sort);
                     CursorUtil.assertCursorIsNotNull(cursor, uri);
                     cursor.setNotificationUri(getContext().getContentResolver(), uri);
@@ -300,27 +277,9 @@ public class XmsProvider extends ContentProvider {
                 return count;
 
             case UriType.InternalPart.PART_WITH_ID:
-                // TODO check if update is required
-                String partId = uri.getLastPathSegment();
-                selection = getSelectionWithPartId(selection);
-                selectionArgs = getSelectionArgsWithPartId(selectionArgs, partId);
-                db = mOpenHelper.getWritableDatabase();
-                count = db.update(TABLE_PART, values, selection, selectionArgs);
-                if (count > 0) {
-                    getContext().getContentResolver().notifyChange(
-                            Uri.withAppendedPath(MmsPartLog.CONTENT_URI, partId), null);
-                }
-                return count;
-
+                //$FALL-THROUGH$
             case UriType.InternalPart.PART:
-                // TODO check if update is required
-                db = mOpenHelper.getWritableDatabase();
-                count = db.update(TABLE_PART, values, selection, selectionArgs);
-                if (count > 0) {
-                    getContext().getContentResolver().notifyChange(MmsPartLog.CONTENT_URI, null);
-                }
-                return count;
-
+                //$FALL-THROUGH$
             case UriType.Xms.XMS:
                 //$FALL-THROUGH$
             case UriType.Xms.XMS_WITH_ID:
