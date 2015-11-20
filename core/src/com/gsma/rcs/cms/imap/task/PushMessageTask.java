@@ -19,6 +19,7 @@ import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.provider.xms.model.XmsData;
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.cms.utils.SipUtils;
 import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.Flag;
@@ -119,7 +120,9 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                     default:
                         break;
                 }
-                
+
+                from = SipUtils.asSipContact(from);
+                to = SipUtils.asSipContact(to);
                 if (message.getReadStatus() != ReadStatus.UNREAD) {
                     flags.add(Flag.Seen);
                 }

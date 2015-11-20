@@ -11,6 +11,7 @@ import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.cms.utils.SipUtils;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
@@ -95,7 +96,10 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
                     default:
                         break;
                 }
-                
+
+                from = SipUtils.asSipContact(from);
+                to = SipUtils.asSipContact(to);
+
                 ImapSmsMessage imapSmsMessage = new ImapSmsMessage(from, to, direction,
                         message.getDate(), message.getContent(), "" + message.getDate(),
                         "" + message.getDate(), "" + message.getDate());

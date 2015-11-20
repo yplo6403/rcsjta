@@ -52,8 +52,8 @@ public class Constants {
     public static final String BOUDARY_SEP = "--";
 
     public static final String CONTENT_TYPE_CPIM = "Message/CPIM";
-    public static final String PAGER_MESSAGE = "\"pager-message\"";
-    public static final String MULTIMEDIA_MESSAGE = "\"multimedia-message\"";
+    public static final String PAGER_MESSAGE = "pager-message";
+    public static final String MULTIMEDIA_MESSAGE = "multimedia-message";
     public static final String DIRECTION_SENT = "sent";
     public static final String DIRECTION_RECEIVED = "received";
 

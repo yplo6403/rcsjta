@@ -148,11 +148,11 @@ public class LocalStorage implements ISynchronizationHandler{
         Set<Integer> uids = new TreeSet<Integer>();        
         for(ImapMessage msg : messages){
             MessageType messageType = mMessageResolver.resolveType(msg);
-            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
-            if(resolvedMessage == null){
+            if(messageType == null){
                 continue;
             }
-            IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType); 
+            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
+            IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType);
             String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
             if(messageId == null){ // message not present in local storage
                 uids.add(msg.getUid());    

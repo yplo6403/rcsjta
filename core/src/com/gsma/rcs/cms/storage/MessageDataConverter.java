@@ -13,6 +13,7 @@ import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.cms.utils.SipUtils;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.services.rcs.RcsService.Direction;
 
@@ -37,11 +38,7 @@ public class MessageDataConverter {
             direction = Direction.OUTGOING;
             contact =  body.getHeader(Constants.HEADER_TO);
         }
-        
-        if(contact.toLowerCase().startsWith(Constants.TEL_PREFIX)){
-            contact = contact.substring(Constants.TEL_PREFIX.length());
-        }
-        
+        contact = SipUtils.asContact(contact);
         return new SmsData(
                 null,
                 null,
@@ -67,11 +64,7 @@ public class MessageDataConverter {
             direction = Direction.OUTGOING;
             contact =  body.getHeader(Constants.HEADER_TO);
         }
-
-        if(contact.toLowerCase().startsWith(Constants.TEL_PREFIX)){
-            contact = contact.substring(Constants.TEL_PREFIX.length());
-        }
-
+        contact = SipUtils.asContact(contact);
         MmsData mmsData = new MmsData(
                 null,
                 null,
