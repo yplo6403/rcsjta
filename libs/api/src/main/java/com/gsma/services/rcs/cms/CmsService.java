@@ -150,7 +150,7 @@ public final class CmsService extends RcsService {
     /**
      * Adds a listener on CMS synchronization events
      *
-     * @param listener CMS synchronization listener
+     * @param listener The CMS synchronization listener
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
@@ -175,7 +175,7 @@ public final class CmsService extends RcsService {
     /**
      * Removes a listener on CMS synchronization events
      *
-     * @param listener File transfer listener
+     * @param listener The CMS synchronization listener
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
@@ -221,6 +221,7 @@ public final class CmsService extends RcsService {
     /**
      * Synchronizes local CMS messages with network CMS repository for a given contact.
      *
+	 * @param contact The remote contact
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
@@ -239,7 +240,7 @@ public final class CmsService extends RcsService {
     /**
      * Synchronizes local CMS messages with network CMS repository for a given chat ID.
      *
-     * @param chatId the chat ID
+     * @param chatId The chat ID
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
@@ -259,7 +260,7 @@ public final class CmsService extends RcsService {
     /**
      * Gets current XMS message from its unique ID
      *
-     * @param messageId message ID
+     * @param messageId The message ID
      * @return XMS message or null if not found
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
@@ -277,6 +278,14 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Sends a text based SMS message
+     *
+     * @param contact The remote contact
+     * @param message The text message
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void sendTextMessage(ContactId contact, String message) throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
@@ -290,6 +299,15 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Sends a MMS message
+     *
+     * @param contact The remote contact
+	 * @param files The list of file URIs (image or video)
+	 * @param message The text message 
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void sendMultimediaMessage(ContactId contact, List<Uri> files, String message) throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
@@ -307,9 +325,9 @@ public final class CmsService extends RcsService {
     }
 
     /**
-     * Mark a received message as read (ie. displayed in the UI)
+     * Marks a received message as read (ie. displayed in the UI)
      *
-     * @param msgId Message id
+     * @param msgId The message ID.
      * @throws RcsServiceNotAvailableException
      * @throws RcsPersistentStorageException
      * @throws RcsGenericException
@@ -329,6 +347,13 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Adds a XMS message event listener.
+     *
+     * @param listener The XMS message event listener.
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void addEventListener(XmsMessageListener listener)
             throws RcsServiceNotAvailableException, RcsGenericException {
         if (listener == null) {
@@ -348,6 +373,13 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Removes a XMS message event listener.
+     *
+     * @param listener The XMS message event listener.
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void removeEventListener(XmsMessageListener listener)
             throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
@@ -370,6 +402,12 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Deletes all XMS messages from history.
+     *
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void deleteXmsMessages() throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
@@ -381,6 +419,13 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Deletes all XMS messages for a given contact from history.
+     *
+     * @param contact The remote contact.
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void deleteXmsMessages(ContactId contact) throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
@@ -392,6 +437,13 @@ public final class CmsService extends RcsService {
         }
     }
 
+	/**
+     * Deletes a XMS message specified by its unique ID from history.
+     *
+     * @param msgId The message ID.
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
     public void deleteXmsMessage(String msgId) throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
