@@ -152,6 +152,9 @@ public class LocalStorage implements ISynchronizationHandler{
                 continue;
             }
             IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
+            if(resolvedMessage==null){
+                continue;
+            }
             IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType);
             String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
             if(messageId == null){ // message not present in local storage
