@@ -18,6 +18,8 @@
 
 package com.orangelabs.rcs.ri.upload;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.upload.FileUpload;

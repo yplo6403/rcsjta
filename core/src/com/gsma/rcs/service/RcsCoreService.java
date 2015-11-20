@@ -305,8 +305,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mIshApi = new ImageSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mGshApi = new GeolocSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mHistoryApi = new HistoryServiceImpl(mCtx);
-            mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings,
-                    mContactManager);
+            mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
             mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver);
 
