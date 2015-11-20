@@ -18,12 +18,6 @@
 
 package com.gsma.rcs.service.api;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-import android.os.RemoteException;
-import android.text.TextUtils;
-
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
@@ -40,6 +34,12 @@ import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+import android.os.RemoteException;
+import android.text.TextUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +55,6 @@ public class CmsServiceImpl extends ICmsService.Stub {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
     private final CmsEventBroadcaster mCmsBroadcaster = new CmsEventBroadcaster();
-
     private final XmsMessageEventBroadcaster mXmsMessageBroadcaster = new XmsMessageEventBroadcaster();
 
     /**
@@ -73,7 +72,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-                          ContentResolver contentResolver) {
+            ContentResolver contentResolver) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -177,7 +176,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
     @Override
     public IXmsMessage getXmsMessage(String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
-            throw new ServerApiIllegalArgumentException("messageId must not be null or empty!");
+            throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
         if (sLogger.isActivated()) {
             sLogger.info("Get XMS message ".concat(messageId));
@@ -206,32 +205,30 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     @Override
-    public void sendTextMessage(final ContactId contact, final String text)
-            throws RemoteException {
+    public void sendTextMessage(final ContactId contact, final String text) throws RemoteException {
         if (TextUtils.isEmpty(text)) {
-            throw new ServerApiIllegalArgumentException("message must not be null or empty!");
+            throw new ServerApiIllegalArgumentException("Text must not be null or empty!");
         }
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        mCmsService.scheduleOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mCmsService.sendSms(contact, text);
+        mCmsService.sendSms(contact, text);
+    }
 
-                } catch (RuntimeException e) {
-                    /*
-                     * Normally we are not allowed to catch runtime exceptions as these are genuine
-                     * bugs which should be handled/fixed within the code. However the cases when we
-                     * are executing operations on a thread unhandling such exceptions will
-                     * eventually lead to exit the system and thus can bring the whole system down,
-                     * which is not intended.
-                     */
-                    sLogger.error("Failed to send SMS!", e);
-                }
-            }
-        });
+    @Override
+    public void sendMultimediaMessage(final ContactId contact, List<Uri> files, final String text)
+            throws RemoteException {
+        if (sLogger.isActivated()) {
+            sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + text);
+        }
+        if (contact == null) {
+            throw new ServerApiIllegalArgumentException("contact must not be null!");
+        }
+        if (files == null || files.isEmpty()) {
+            throw new ServerApiIllegalArgumentException("files must not be null or empty!");
+        }
+        final ArrayList<Uri> uris = getValidatedUris(files);
+        mCmsService.sendMms(contact, text, uris);
     }
 
     private ArrayList<Uri> getValidatedUris(List<Uri> files) {
@@ -254,61 +251,11 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     @Override
-    public void sendMultimediaMessage(final ContactId contact, List<Uri> files,
-                                      final String text) throws RemoteException {
-        if (sLogger.isActivated()) {
-            sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + text);
-        }
-        if (contact == null) {
-            throw new ServerApiIllegalArgumentException("contact must not be null!");
-        }
-        if (files == null || files.isEmpty()) {
-            throw new ServerApiIllegalArgumentException("files must not be null or empty!");
-        }
-        final ArrayList<Uri> uris = getValidatedUris(files);
-        mCmsService.scheduleOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mCmsService.sendMms(contact, text, uris);
-
-                } catch (RuntimeException e) {
-                        /*
-                         * Normally we are not allowed to catch runtime exceptions as these are
-                         * genuine bugs which should be handled/fixed within the code. However the
-                         * cases when we are executing operations on a thread unhandling such
-                         * exceptions will eventually lead to exit the system and thus can bring the
-                         * whole system down, which is not intended.
-                         */
-                    sLogger.error("Failed to send MMS!", e);
-                }
-            }
-        });
-    }
-
-    @Override
     public void markXmsMessageAsRead(final String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
-            throw new ServerApiIllegalArgumentException("msgId must not be null or empty!");
+            throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        mCmsService.scheduleOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    mXmsLog.markMessageAsRead(messageId);
-
-                } catch (RuntimeException e) {
-                    /*
-                     * Normally we are not allowed to catch runtime exceptions as these are genuine
-                     * bugs which should be handled/fixed within the code. However the cases when we
-                     * are executing operations on a thread unhandling such exceptions will
-                     * eventually lead to exit the system and thus can bring the whole system down,
-                     * which is not intended.
-                     */
-                    sLogger.error("Failed to mark message as read!", e);
-                }
-            }
-        });
+        mCmsService.markMessageAsRead(messageId);
     }
 
     @Override
@@ -361,17 +308,23 @@ public class CmsServiceImpl extends ICmsService.Stub {
 
     @Override
     public void deleteXmsMessages() throws RemoteException {
-
+        mCmsService.deleteXmsMessages();
     }
 
     @Override
     public void deleteXmsMessages2(ContactId contact) throws RemoteException {
-
+        if (contact == null) {
+            throw new ServerApiIllegalArgumentException("Contact must not be null!");
+        }
+        mCmsService.deleteXmsMessages(contact);
     }
 
     @Override
     public void deleteXmsMessage(String messageId) throws RemoteException {
-
+        if (TextUtils.isEmpty(messageId)) {
+            throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
+        }
+        mCmsService.deleteXmsMessage(messageId);
     }
 
     /**
@@ -396,7 +349,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     public void broadcastMessageStateChanged(ContactId contact, String mimeType, String msgId,
-                                             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
         mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, msgId, state,
                 reasonCode);
     }

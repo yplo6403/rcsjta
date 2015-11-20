@@ -35,20 +35,24 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by Philippe LEMORDANT on 16/11/2015.
  */
 public class XmsLogTest extends AndroidTestCase {
+    private static final String SELECTION_CONTACT = PartData.KEY_CONTACT + "=?";
     private String mMessageId;
     private XmsLog mXmsLog;
     private ContactId mContact;
+    private LocalContentResolver mLocalContentResolver;
 
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getContext();
         ContentResolver mContentResolver = mContext.getContentResolver();
-        LocalContentResolver mLocalContentResolver = new LocalContentResolver(mContentResolver);
+        mLocalContentResolver = new LocalContentResolver(mContentResolver);
         mXmsLog = XmsLog.createInstance(mContentResolver, mLocalContentResolver);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact = contactUtils.formatContact("+339000000");
@@ -62,7 +66,8 @@ public class XmsLogTest extends AndroidTestCase {
 
     public void testSmsMessage() {
         long timestamp = System.currentTimeMillis();
-        SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message", RcsService.Direction.INCOMING, timestamp, 1234567890);
+        SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
+                RcsService.Direction.INCOMING, timestamp, 1234567890);
         mXmsLog.addSms(sms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -95,13 +100,14 @@ public class XmsLogTest extends AndroidTestCase {
 
         long readStatus = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.READ_STATUS));
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
+        cursor.close();
     }
 
     public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException {
         long timestamp = System.currentTimeMillis();
-        // TODO use robot electric to test list of image URIs
-        MmsDataObject sms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact, "MMS test message",
-                RcsService.Direction.INCOMING, timestamp, null, 1234567890);
+        // TODO use robolectric to test list of image URIs
+        MmsDataObject sms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
+                "MMS test message", RcsService.Direction.INCOMING, timestamp, null, 1234567890);
         mXmsLog.addMms(sms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -134,7 +140,81 @@ public class XmsLogTest extends AndroidTestCase {
 
         long readStatus = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.READ_STATUS));
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
+        cursor.close();
+        /* test parts */
+        Set<PartData> parts = getParts(mContact);
+        assertEquals(parts.size(), 1);
+        PartData part = parts.iterator().next();
+        assertEquals("MMS test message", new String(part.getContent()));
+        assertEquals(XmsMessageLog.MimeType.TEXT_MESSAGE, part.getMimeType());
+        assertEquals(mMessageId, part.getMessageId());
+        assertEquals(null, part.getFilename());
+        assertEquals(null, part.getFileIcon());
+        assertEquals(null, part.getFileSize());
+        assertEquals(mContact, part.getContact());
+    }
 
-        //TODO test parts content
+    private Set<PartData> getParts(ContactId contact) {
+        Set<PartData> parts = new HashSet<>();
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(PartData.CONTENT_URI, null, SELECTION_CONTACT,
+                    new String[] {
+                        contact.toString()
+                    }, null);
+            int idIdx = cursor.getColumnIndexOrThrow(PartData.KEY_PART_ID);
+            int messageIdIdx = cursor.getColumnIndexOrThrow(PartData.KEY_MESSAGE_ID);
+            int contentIdx = cursor.getColumnIndexOrThrow(PartData.KEY_CONTENT);
+            int mimeTypeIdx = cursor.getColumnIndexOrThrow(PartData.KEY_MIME_TYPE);
+            int filenameIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILENAME);
+            int fileSizeIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILESIZE);
+            int fileiconIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILEICON);
+            while (cursor.moveToNext()) {
+                PartData partData = new PartData(cursor.getLong(idIdx),
+                        cursor.getString(messageIdIdx), contact, cursor.getString(mimeTypeIdx),
+                        cursor.getString(filenameIdx), cursor.isNull(fileSizeIdx) ? null
+                                : cursor.getLong(fileSizeIdx), cursor.getBlob(contentIdx),
+                        cursor.getBlob(fileiconIdx));
+                parts.add(partData);
+            }
+            return parts;
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public void testDeleteMmsMessageId() throws RemoteException, OperationApplicationException,
+            IOException {
+        long timestamp = System.currentTimeMillis();
+        MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
+                "MMS test message", RcsService.Direction.INCOMING, timestamp, null, 1234567890);
+        mXmsLog.addMms(mms);
+        Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
+        assertEquals(1, cursor.getCount());
+        cursor.close();
+        Set<PartData> parts = getParts(mContact);
+        assertTrue(parts.size() > 0);
+        mXmsLog.deleteXmsMessage(mMessageId);
+        cursor = mXmsLog.getXmsMessage(mMessageId);
+        assertEquals(0, cursor.getCount());
+        cursor.close();
+        parts = getParts(mContact);
+        assertEquals(0, parts.size());
+    }
+
+    public void testDeleteSmsMessageId() {
+        long timestamp = System.currentTimeMillis();
+        SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
+                RcsService.Direction.INCOMING, timestamp, 1234567890);
+        mXmsLog.addSms(sms);
+        Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
+        assertEquals(cursor.getCount(), 1);
+        cursor.close();
+        mXmsLog.deleteXmsMessage(mMessageId);
+        cursor = mXmsLog.getXmsMessage(mMessageId);
+        assertEquals(cursor.getCount(), 0);
+        cursor.close();
     }
 }

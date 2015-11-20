@@ -48,8 +48,7 @@ public class XmsData {
     public static final String KEY_MESSAGE_ID = XmsMessageLog.MESSAGE_ID;
 
     /**
-     * ContactId formatted number of remote contact or null if the message is an outgoing group chat
-     * message.
+     * ContactId formatted number of remote contact. message.
      */
     public static final String KEY_CONTACT = XmsMessageLog.CONTACT;
 

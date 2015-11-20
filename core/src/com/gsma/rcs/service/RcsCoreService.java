@@ -22,15 +22,6 @@
 
 package com.gsma.rcs.service;
 
-import android.app.Service;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
-
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
@@ -79,6 +70,15 @@ import com.gsma.services.rcs.sharing.geoloc.IGeolocSharingService;
 import com.gsma.services.rcs.sharing.image.IImageSharingService;
 import com.gsma.services.rcs.sharing.video.IVideoSharingService;
 import com.gsma.services.rcs.upload.IFileUploadService;
+
+import android.app.Service;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -287,7 +287,7 @@ public class RcsCoreService extends Service implements CoreListener {
         try {
             core = Core.createCore(mCtx, this, mRcsSettings, mContentResolver,
                     mLocalContentResolver, mContactManager, mMessagingLog, mHistoryLog,
-                    mRichCallHistory);
+                    mRichCallHistory, mXmsLog);
 
             InstantMessagingService imService = core.getImService();
             RichcallService richCallService = core.getRichcallService();

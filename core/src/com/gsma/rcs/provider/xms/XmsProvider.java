@@ -1,6 +1,13 @@
 
 package com.gsma.rcs.provider.xms;
 
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.history.HistoryMemberBaseIdCreator;
+import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
+import com.gsma.rcs.utils.DatabaseUtils;
+import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.cms.XmsMessageLog;
+
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -12,13 +19,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.text.TextUtils;
-
-import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.provider.history.HistoryMemberBaseIdCreator;
-import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
-import com.gsma.rcs.utils.DatabaseUtils;
-import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.cms.XmsMessageLog;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
@@ -533,6 +533,7 @@ public class XmsProvider extends ContentProvider {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_PART + '('
                     + PartData.KEY_PART_ID + " INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                     + PartData.KEY_MESSAGE_ID + " TEXT NOT NULL,"
+                    + PartData.KEY_CONTACT + " TEXT NOT NULL,"
                     + PartData.KEY_MIME_TYPE + " TEXT NOT NULL,"
                     + PartData.KEY_FILENAME + " TEXT,"
                     + PartData.KEY_FILESIZE + " INTEGER,"
@@ -541,6 +542,8 @@ public class XmsProvider extends ContentProvider {
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +
                     " ON " + TABLE_PART + '(' + PartData.KEY_MESSAGE_ID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_CONTACT + "_idx" +
+                    " ON " + TABLE_PART + '(' + PartData.KEY_CONTACT + ')');
             // @formatter:on
         }
 

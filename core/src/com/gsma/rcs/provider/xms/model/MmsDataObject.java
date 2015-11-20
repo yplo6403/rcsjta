@@ -59,12 +59,12 @@ public class MmsDataObject extends XmsDataObject {
                 if (MimeManager.isImageType(mimeType)) {
                     fileIcon = MmsUtils.createThumb(contentResolver, file);
                 }
-                mMmsPart.add(new MmsPart(messageId, mimeType, filename, (long) content.length, content,
+                mMmsPart.add(new MmsPart(messageId, contact, mimeType, filename, (long) content.length, content,
                         fileIcon));
             }
         }
         if (body != null) {
-            mMmsPart.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, null, null, body
+            mMmsPart.add(new MmsPart(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, null, null, body
                     .getBytes(), null));
         }
     }
@@ -96,19 +96,25 @@ public class MmsDataObject extends XmsDataObject {
 
         private final String mFileName;
         private final Long mFileSize;
+        private final ContactId mContact;
 
-        public MmsPart(String messageId, String mimeType, String fileName, Long fileSize,
-                       byte[] content, byte[] fileIcon) {
+        public MmsPart(String messageId, ContactId contact, String mimeType,
+                       String fileName, Long fileSize, byte[] content, byte[] fileIcon) {
             mMimeType = mimeType;
             mFileName = fileName;
             mFileSize = fileSize;
             mContent = content;
             mFileIcon = fileIcon;
             mMessageId = messageId;
+            mContact = contact;
         }
 
         public String getMessageId() {
             return mMessageId;
+        }
+
+        public ContactId getContact() {
+            return mContact;
         }
 
         public String getMimeType() {

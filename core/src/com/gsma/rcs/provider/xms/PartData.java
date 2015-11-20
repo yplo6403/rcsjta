@@ -19,6 +19,7 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.net.Uri;
 
@@ -65,4 +66,62 @@ public class PartData {
      * Byte array of the file icon.
      */
     public static final String KEY_FILEICON = MmsPartLog.FILEICON;
+
+    /**
+     * ContactId formatted number of remote contact.
+     */
+    public static final String KEY_CONTACT = MmsPartLog.CONTACT;
+
+    private final long mId;
+    private final String mMessageId;
+    private final ContactId mContact;
+    private final String mMimeType;
+    private final String mFilename;
+    private final Long mFileSize;
+    private final byte[] mContent;
+    private final byte[] mFileIcon;
+
+    public PartData(long id, String messageId, ContactId contact, String mimeType, String filename,
+            Long fileSize, byte[] content, byte[] fileIcon) {
+        mId = id;
+        mMessageId = messageId;
+        mMimeType = mimeType;
+        mFilename = filename;
+        mFileSize = fileSize;
+        mContent = content;
+        mFileIcon = fileIcon;
+        mContact = contact;
+    }
+
+    public long getId() {
+        return mId;
+    }
+
+    public String getMessageId() {
+        return mMessageId;
+    }
+
+    public String getMimeType() {
+        return mMimeType;
+    }
+
+    public String getFilename() {
+        return mFilename;
+    }
+
+    public Long getFileSize() {
+        return mFileSize;
+    }
+
+    public byte[] getContent() {
+        return mContent;
+    }
+
+    public byte[] getFileIcon() {
+        return mFileIcon;
+    }
+
+    public ContactId getContact() {
+        return mContact;
+    }
 }

@@ -86,4 +86,11 @@ public class MmsPartLog {
      * </P>
      */
     public static final String FILEICON = "fileicon";
+    /**
+     * The name of the column containing the MSISDN of the remote contact.
+     * <p/>
+     * Type: TEXT
+     * </P>
+     */
+    public static final String CONTACT = "contact";
 }

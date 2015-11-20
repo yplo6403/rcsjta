@@ -42,6 +42,7 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
@@ -104,17 +105,21 @@ public class Core {
      * @param ctx The application context
      * @param listener Listener
      * @param rcsSettings RcsSettings instance
-     * @param contentResolver
-     * @param contactsManager
-     * @param messagingLog
+     * @param contentResolver The content resolver
+     * @param localContentResolver The local content resolver
+     * @param contactManager The contact manager
+     * @param messagingLog The messaging log accessor
+     * @param historyLog The history log accessor
+     * @param richCallHistory The richcall log accessor
+     * @param xmsLog The XMS log accessor
      * @return Core instance
      * @throws IOException
      * @throws KeyStoreException
      */
     public static Core createCore(Context ctx, CoreListener listener, RcsSettings rcsSettings,
             ContentResolver contentResolver, LocalContentResolver localContentResolver,
-            ContactManager contactsManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory) throws IOException, KeyStoreException {
+            ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
+            RichCallHistory richCallHistory, XmsLog xmsLog) throws IOException, KeyStoreException {
         if (sInstance != null) {
             return sInstance;
         }
@@ -122,7 +127,8 @@ public class Core {
             if (sInstance == null) {
                 KeyStoreManager.loadKeyStore(rcsSettings);
                 sInstance = new Core(ctx, listener, contentResolver, localContentResolver,
-                        rcsSettings, contactsManager, messagingLog, historyLog, richCallHistory);
+                        rcsSettings, contactManager, messagingLog, historyLog, richCallHistory,
+                        xmsLog);
             }
         }
         return sInstance;
@@ -149,15 +155,19 @@ public class Core {
      * 
      * @param ctx The application context
      * @param listener Listener
-     * @param rcsSettings The RCS settings accessor
      * @param contentResolver The content resolver
+     * @param localContentResolver The local content resolver
+     * @param rcsSettings The RCS settings accessor
      * @param contactManager The contact manager
      * @param messagingLog The messaging log accessor
+     * @param historyLog The history log accessor
+     * @param richCallHistory The richcall log accessor
+     * @param xmsLog The XMS log accessor
      */
     private Core(Context ctx, CoreListener listener, ContentResolver contentResolver,
             LocalContentResolver localContentResolver, RcsSettings rcsSettings,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory) {
+            RichCallHistory richCallHistory, XmsLog xmsLog) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.info("Terminal core initialization");
@@ -182,7 +192,8 @@ public class Core {
 
         /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, contentResolver, localContentResolver, mRcsSettings,
-                contactManager, messagingLog, historyLog, richCallHistory, mAddressBookManager);
+                contactManager, messagingLog, historyLog, richCallHistory, mAddressBookManager,
+                xmsLog);
 
         if (logActivated) {
             sLogger.info("Terminal core is created with success");

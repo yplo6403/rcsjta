@@ -18,14 +18,6 @@
 
 package com.gsma.rcs.provider.xms;
 
-import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.OperationApplicationException;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.RemoteException;
-
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -34,6 +26,15 @@ import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
+import com.gsma.services.rcs.contact.ContactId;
+
+import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.OperationApplicationException;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.RemoteException;
 
 import java.util.ArrayList;
 
@@ -43,8 +44,13 @@ import java.util.ArrayList;
 public class XmsLog {
 
     private static final int FIRST_COLUMN_IDX = 0;
+    private static final String SELECTION_XMS_CONTACT = XmsData.KEY_CONTACT + "=?";
+    private static final String SELECTION_PART_CONTACT = PartData.KEY_CONTACT + "=?";
+    private static final String SELECTION_XMS_MESSAGE_ID = XmsData.KEY_MESSAGE_ID + "=?";
+    private static final String SELECTION_PART_MESSAGE_ID = PartData.KEY_MESSAGE_ID + "=?";
 
     private static final Logger sLogger = Logger.getLogger(XmsLog.class.getSimpleName());
+
     /**
      * Current instance
      */
@@ -55,7 +61,7 @@ public class XmsLog {
     /**
      * Constructor
      *
-     * @param contentResolver      Content resolver
+     * @param contentResolver Content resolver
      * @param localContentResolver Local content resolver
      */
     private XmsLog(ContentResolver contentResolver, LocalContentResolver localContentResolver) {
@@ -64,13 +70,14 @@ public class XmsLog {
     }
 
     /**
-     * Gets the instance of XmsLog singleton
+     * Creates the instance of XmsLog singleton
      *
-     * @param contentResolver      Content resolver
+     * @param contentResolver Content resolver
      * @param localContentResolver Local content resolver
      * @return the instance of XmsLog singleton
      */
-    public static XmsLog createInstance(ContentResolver contentResolver, LocalContentResolver localContentResolver) {
+    public static XmsLog createInstance(ContentResolver contentResolver,
+            LocalContentResolver localContentResolver) {
         if (sInstance != null) {
             return sInstance;
         }
@@ -102,7 +109,7 @@ public class XmsLog {
 
     private Cursor getXmsData(String columnName, String xmsId) {
         String[] projection = {
-                columnName
+            columnName
         };
         Uri contentUri = Uri.withAppendedPath(XmsData.CONTENT_URI, xmsId);
         Cursor cursor = mLocalContentResolver.query(contentUri, projection, null, null, null);
@@ -120,6 +127,15 @@ public class XmsLog {
                 return null;
             }
             return cursor.getLong(FIRST_COLUMN_IDX);
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    private String getDataAsString(Cursor cursor) {
+        try {
+            return cursor.getString(FIRST_COLUMN_IDX);
 
         } finally {
             CursorUtil.close(cursor);
@@ -207,34 +223,34 @@ public class XmsLog {
 
     public void addMms(MmsDataObject mms) throws RemoteException, OperationApplicationException {
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-        ops.add(
-                ContentProviderOperation.newInsert(XmsData.CONTENT_URI)
-                        .withValue(XmsData.KEY_MESSAGE_ID, mms.getMessageId()).withValue(XmsData.KEY_CONTACT,
-                        mms.getContact().toString()).withValue(XmsData.KEY_BODY, mms.getBody())
-                        .withValue(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE)
-                        .withValue(XmsData.KEY_DIRECTION, mms.getDirection().toInt())
-                        .withValue(XmsData.KEY_TIMESTAMP, mms.getTimestamp())
-                        .withValue(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent())
-                        .withValue(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered())
-                        .withValue(XmsData.KEY_STATE, mms.getReadStatus().toInt())
-                        .withValue(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt())
-                        .withValue(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == mms.getReadStatus() ? 1
-                                : 0).withValue(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId())
-                        .withValue(XmsData.KEY_MMS_ID, mms.getMmsId()).build());
-        for (MmsDataObject.MmsPart
-                mmsPart : mms.getMmsPart()) {
-            ops.add(
-                    ContentProviderOperation.newInsert(PartData.CONTENT_URI)
-                            .withValue(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId())
-                            .withValue(PartData.KEY_MIME_TYPE, mmsPart.getMimeType())
-                            .withValue(PartData.KEY_FILENAME, mmsPart.getFileName())
-                            .withValue(PartData.KEY_FILESIZE, mmsPart.getFileSize())
-                            .withValue(PartData.KEY_CONTENT,
-                                    mmsPart.getContent()).withValue(PartData.KEY_FILEICON, mmsPart.getFileIcon()).build());
+        ops.add(ContentProviderOperation
+                .newInsert(XmsData.CONTENT_URI)
+                .withValue(XmsData.KEY_MESSAGE_ID, mms.getMessageId())
+                .withValue(XmsData.KEY_CONTACT, mms.getContact().toString())
+                .withValue(XmsData.KEY_BODY, mms.getBody())
+                .withValue(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE)
+                .withValue(XmsData.KEY_DIRECTION, mms.getDirection().toInt())
+                .withValue(XmsData.KEY_TIMESTAMP, mms.getTimestamp())
+                .withValue(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent())
+                .withValue(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered())
+                .withValue(XmsData.KEY_STATE, mms.getReadStatus().toInt())
+                .withValue(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt())
+                .withValue(XmsData.KEY_READ_STATUS,
+                        RcsService.ReadStatus.READ == mms.getReadStatus() ? 1 : 0)
+                .withValue(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId())
+                .withValue(XmsData.KEY_MMS_ID, mms.getMmsId()).build());
+        for (MmsDataObject.MmsPart mmsPart : mms.getMmsPart()) {
+            ops.add(ContentProviderOperation.newInsert(PartData.CONTENT_URI)
+                    .withValue(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId())
+                    .withValue(PartData.KEY_CONTACT, mmsPart.getContact().toString())
+                    .withValue(PartData.KEY_MIME_TYPE, mmsPart.getMimeType())
+                    .withValue(PartData.KEY_FILENAME, mmsPart.getFileName())
+                    .withValue(PartData.KEY_FILESIZE, mmsPart.getFileSize())
+                    .withValue(PartData.KEY_CONTENT, mmsPart.getContent())
+                    .withValue(PartData.KEY_FILEICON, mmsPart.getFileIcon()).build());
         }
         mContentResolver.applyBatch(XmsData.CONTENT_URI.getAuthority(), ops);
     }
-
 
     /**
      * Delete all entries
@@ -242,5 +258,35 @@ public class XmsLog {
     public void deleteAllEntries() {
         mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
         mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
+    }
+
+    public void deleteXmsMessages(ContactId contact) {
+        int count = mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_CONTACT,
+                new String[] {
+                    contact.toString()
+                });
+        if (count > 0) {
+            mLocalContentResolver.delete(PartData.CONTENT_URI, SELECTION_PART_CONTACT,
+                    new String[] {
+                        contact.toString()
+                    });
+        }
+    }
+
+    public void deleteXmsMessage(String messageId) {
+        Cursor cursor = getXmsData(XmsData.KEY_MIME_TYPE, messageId);
+        if (cursor == null) {
+            return;
+        }
+        String mimeType = getDataAsString(cursor);
+        mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[] {
+            messageId
+        });
+        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
+            mLocalContentResolver.delete(PartData.CONTENT_URI, SELECTION_PART_MESSAGE_ID,
+                    new String[] {
+                        messageId
+                    });
+        }
     }
 }

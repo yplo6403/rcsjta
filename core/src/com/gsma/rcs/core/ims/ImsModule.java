@@ -55,6 +55,7 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.ContentResolver;
@@ -107,11 +108,12 @@ public class ImsModule implements SipEventListener {
      * @param historyLog The history log accessor
      * @param richCallHistory The rich call accessor
      * @param addressBookManager The address book manager instance
+     * @param xmsLog The XMS log accessor
      */
-    public ImsModule(Core core, Context ctx, ContentResolver contentResolver, LocalContentResolver localContentResolver,
-            RcsSettings rcsSettings, ContactManager contactManager, MessagingLog messagingLog,
-            HistoryLog historyLog, RichCallHistory richCallHistory,
-            AddressBookManager addressBookManager) {
+    public ImsModule(Core core, Context ctx, ContentResolver contentResolver,
+            LocalContentResolver localContentResolver, RcsSettings rcsSettings,
+            ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
+            RichCallHistory richCallHistory, AddressBookManager addressBookManager, XmsLog xmsLog) {
         mCore = core;
         mRcsSettings = rcsSettings;
 
@@ -136,7 +138,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(ctx, this, contentResolver));
+        mServices.put(ImsServiceType.CMS, new CmsService(ctx, this, contentResolver, xmsLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {
