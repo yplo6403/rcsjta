@@ -22,6 +22,8 @@
 
 package com.gsma.rcs.core.ims;
 
+import android.content.Context;
+
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
@@ -57,9 +59,6 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
-
-import android.content.ContentResolver;
-import android.content.Context;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -100,7 +99,6 @@ public class ImsModule implements SipEventListener {
      * 
      * @param core Core
      * @param ctx The context this module is part of
-     * @param contentResolver The content resolver
      * @param localContentResolver The local content resolver
      * @param rcsSettings RCSsettings instance
      * @param contactManager Contact manager accessor
@@ -110,7 +108,7 @@ public class ImsModule implements SipEventListener {
      * @param addressBookManager The address book manager instance
      * @param xmsLog The XMS log accessor
      */
-    public ImsModule(Core core, Context ctx, ContentResolver contentResolver,
+    public ImsModule(Core core, Context ctx,
             LocalContentResolver localContentResolver, RcsSettings rcsSettings,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
             RichCallHistory richCallHistory, AddressBookManager addressBookManager, XmsLog xmsLog) {
@@ -138,7 +136,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(ctx, this, contentResolver, xmsLog));
+        mServices.put(ImsServiceType.CMS, new CmsService(this, xmsLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {

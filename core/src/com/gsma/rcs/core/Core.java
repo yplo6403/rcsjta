@@ -31,10 +31,8 @@ import com.gsma.rcs.core.ims.security.cert.KeyStoreManager;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
-import com.gsma.rcs.core.ims.service.presence.PresenceService;
 import com.gsma.rcs.core.ims.service.richcall.RichcallService;
 import com.gsma.rcs.core.ims.service.sip.SipService;
-import com.gsma.rcs.core.ims.service.terms.TermsConditionsService;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
@@ -46,6 +44,7 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.rcs.xms.XmsManager;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -66,6 +65,8 @@ public class Core {
 
     private static volatile Core sInstance;
 
+    private final XmsManager mXmsManager;
+
     private CoreListener mListener;
 
     private boolean mStarted = false;
@@ -75,8 +76,6 @@ public class Core {
     private AddressBookManager mAddressBookManager;
 
     private static final Logger sLogger = Logger.getLogger(BACKGROUND_THREAD_NAME);
-
-    private final RcsSettings mRcsSettings;
 
     /**
      * Handler to process messages & runnable associated with background thread.
@@ -173,17 +172,18 @@ public class Core {
             sLogger.info("Terminal core initialization");
         }
         mListener = listener;
-        mRcsSettings = rcsSettings;
         if (logActivated) {
             sLogger.info("My device UUID is ".concat(String.valueOf(DeviceUtils.getDeviceUUID(ctx))));
         }
 
         // Initialize the phone utils
-        PhoneUtils.initialize(mRcsSettings);
+        PhoneUtils.initialize(rcsSettings);
 
         // Create the address book manager
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
+
+        mXmsManager = new XmsManager(ctx, contentResolver);
 
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -191,7 +191,7 @@ public class Core {
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
 
         /* Create the IMS module */
-        mImsModule = new ImsModule(this, ctx, contentResolver, localContentResolver, mRcsSettings,
+        mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings,
                 contactManager, messagingLog, historyLog, richCallHistory, mAddressBookManager,
                 xmsLog);
 
@@ -233,15 +233,6 @@ public class Core {
     }
 
     /**
-     * Returns the address book manager
-     * 
-     * @return AddressBookManager
-     */
-    public AddressBookManager getAddressBookManager() {
-        return mAddressBookManager;
-    }
-
-    /**
      * Is core started
      * 
      * @return Boolean
@@ -259,6 +250,7 @@ public class Core {
         }
         mImsModule.start();
         mAddressBookManager.start();
+        mXmsManager.start();
         mLocaleManager.start();
         mListener.onCoreLayerStarted();
 
@@ -286,6 +278,7 @@ public class Core {
         }
         mLocaleManager.stop();
         mAddressBookManager.stop();
+        mXmsManager.stop();
         mImsModule.stop();
 
         mStopping = false;
@@ -295,24 +288,6 @@ public class Core {
         }
         sInstance = null;
         mListener.onCoreLayerStopped();
-    }
-
-    /**
-     * Returns the terms service
-     * 
-     * @return Terms service
-     */
-    public TermsConditionsService getTermsConditionsService() {
-        return getImsModule().getTermsConditionsService();
-    }
-
-    /**
-     * Returns the presence service
-     * 
-     * @return Presence service
-     */
-    public PresenceService getPresenceService() {
-        return getImsModule().getPresenceService();
     }
 
     /**
@@ -372,9 +347,18 @@ public class Core {
     /**
      * Sets the listener
      * 
-     * @param listener
+     * @param listener The Core listener
      */
     public void setListener(CoreListener listener) {
         mListener = listener;
+    }
+
+    /**
+     * Gets XMS manager
+     *
+     * @return XmsManager
+     */
+    public XmsManager getXmsManager() {
+        return mXmsManager;
     }
 }

@@ -26,6 +26,7 @@ import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.rcs.xms.XmsManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.cms.ICmsService;
 import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
@@ -67,12 +68,13 @@ public class CmsServiceImpl extends ICmsService.Stub {
     private final XmsLog mXmsLog;
     private final ContentResolver mContentResolver;
     private final Context mContext;
+    private final XmsManager mXmsManager;
 
     /**
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            ContentResolver contentResolver) {
+                          ContentResolver contentResolver, XmsManager xmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -81,6 +83,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
         mCmsService.register(this);
         mXmsLog = xmsLog;
         mContentResolver = contentResolver;
+        mXmsManager = xmsManager;
     }
 
     /**
@@ -147,30 +150,93 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     @Override
-    public void syncOneToOneConversation(ContactId contact) throws RemoteException {
+    public void syncOneToOneConversation(final ContactId contact) throws RemoteException {
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Sync One-to-One conversation for contact " + contact);
+        if (!mCmsService.isServiceStarted()) {
+            throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        mCmsService.syncOneToOneConversation(contact);
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Sync One-to-One conversation for contact " + contact);
+                }
+                try {
+                    mCmsService.syncOneToOneConversation(contact);
+
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to synchronize One-to-One conversation for contact " + contact, e);
+                }
+            }
+        });
     }
 
     @Override
-    public void syncGroupConversation(String chatId) throws RemoteException {
+    public void syncGroupConversation(final String chatId) throws RemoteException {
         if (chatId == null) {
             throw new ServerApiIllegalArgumentException("chat ID must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Sync group conversation for chat ID " + chatId);
+        if (!mCmsService.isServiceStarted()) {
+            throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        mCmsService.syncGroupConversation(chatId);
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Sync group conversation for chat ID " + chatId);
+                }
+                try {
+                    mCmsService.syncGroupConversation(chatId);
+
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to synchronize group conversation for chat ID " + chatId, e);
+                }
+            }
+        });
     }
 
     @Override
     public void syncAll() throws RemoteException {
-        mCmsService.syncAll();
+        if (!mCmsService.isServiceStarted()) {
+            throw new ServerApiServiceNotAvailableException("CMS service is not available!");
+        }
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Synchronize CMS");
+                }
+                try {
+                    mCmsService.syncAll();
+
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to synchronize CMS!", e);
+                }
+            }
+        });
     }
 
     @Override
@@ -212,7 +278,19 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        mCmsService.sendSms(contact, text);
+        try {
+            mXmsManager.sendSms(contact, text);
+
+        } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+            sLogger.error("Failed to send SMS!", e);
+        }
     }
 
     @Override
@@ -228,7 +306,19 @@ public class CmsServiceImpl extends ICmsService.Stub {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
         }
         final ArrayList<Uri> uris = getValidatedUris(files);
-        mCmsService.sendMms(contact, text, uris);
+        try {
+            mXmsManager.sendMms(contact, text, uris);
+
+        } catch (RuntimeException e) {
+                        /*
+                         * Normally we are not allowed to catch runtime exceptions as these are
+                         * genuine bugs which should be handled/fixed within the code. However the
+                         * cases when we are executing operations on a thread unhandling such
+                         * exceptions will eventually lead to exit the system and thus can bring the
+                         * whole system down, which is not intended.
+                         */
+            sLogger.error("Failed to send MMS!", e);
+        }
     }
 
     private ArrayList<Uri> getValidatedUris(List<Uri> files) {
@@ -255,7 +345,31 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        mCmsService.markMessageAsRead(messageId);
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    RcsService.ReadStatus readStatus = mXmsLog.getReadStatus(messageId);
+                    if (readStatus != null) {
+                        if (RcsService.ReadStatus.UNREAD == readStatus) {
+                            mXmsLog.markMessageAsRead(messageId);
+                            if (!mCmsService.isServiceStarted()) {
+                                // TODO synchronize CMS
+                            }
+                        }
+                    } else {
+                        sLogger.warn("Cannot mark as read: message ID'" + messageId + "' not found!");
+                    }
+
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error("Failed to mark message as read!", e);
+                }
+            }
+        });
     }
 
     @Override
@@ -308,23 +422,71 @@ public class CmsServiceImpl extends ICmsService.Stub {
 
     @Override
     public void deleteXmsMessages() throws RemoteException {
-        mCmsService.deleteXmsMessages();
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mXmsLog.deleteAllEntries();
+                    if (mCmsService.isServiceStarted()) {
+                        // TODO synchronize CMS
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error("Failed to delete messages", e);
+                }
+            }
+        });
     }
 
     @Override
-    public void deleteXmsMessages2(ContactId contact) throws RemoteException {
+    public void deleteXmsMessages2(final ContactId contact) throws RemoteException {
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("Contact must not be null!");
         }
-        mCmsService.deleteXmsMessages(contact);
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mXmsLog.deleteXmsMessages(contact);
+                    if (mCmsService.isServiceStarted()) {
+                        // TODO synchronize CMS
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error("Failed to delete messages for contact " + contact, e);
+                }
+            }
+        });
     }
 
     @Override
-    public void deleteXmsMessage(String messageId) throws RemoteException {
+    public void deleteXmsMessage(final String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        mCmsService.deleteXmsMessage(messageId);
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mXmsLog.deleteXmsMessage(messageId);
+                    if (mCmsService.isServiceStarted()) {
+                        // TODO synchronize CMS
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error("Failed to delete message ID " + messageId, e);
+                }
+            }
+        });
     }
 
     /**
@@ -349,7 +511,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
     }
 
     public void broadcastMessageStateChanged(ContactId contact, String mimeType, String msgId,
-            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+                                             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
         mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, msgId, state,
                 reasonCode);
     }

@@ -164,6 +164,17 @@ public class XmsLog {
         return XmsMessage.State.valueOf(getDataAsInteger(cursor));
     }
 
+    public RcsService.ReadStatus getReadStatus(String xmsId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Get XMS read status for ".concat(xmsId));
+        }
+        Cursor cursor = getXmsData(XmsData.KEY_READ_STATUS, xmsId);
+        if (cursor == null) {
+            return null;
+        }
+        return RcsService.ReadStatus.valueOf(getDataAsInteger(cursor));
+    }
+
     private Integer getDataAsInteger(Cursor cursor) {
         try {
             if (cursor.isNull(FIRST_COLUMN_IDX)) {
