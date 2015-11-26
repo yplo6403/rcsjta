@@ -396,8 +396,9 @@
     <string name="menu_cms_messaging_item2">CMS log</string>
     <string name="label_cms_sms_contact">SMS with %s</string>
     <string name="label_cms_mms_contact">MMS with %s</string>
-    <string name="menu_open_xms_conversation">Open</string>
-    <string name="menu_delete_xms_conversation">Delete</string>
+    <string name="menu_open_xms_talk">Open</string>
+    <string name="menu_delete_xms_talk">Delete</string>
+    <string name="menu_send_mms">Send MMS</string>
     <string name="err_continue_xms_failed">Can\'t continue the conversation: RCS service is not available</string>
     <string name="menu_cms_sync_title">CMS synchronize</string>
     <string name="menu_cms_sync_all">Sync all</string>

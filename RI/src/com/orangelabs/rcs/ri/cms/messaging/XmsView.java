@@ -52,7 +52,16 @@ import android.os.Parcelable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -84,6 +93,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     };
     // @formatter:on
 
+    private final static int MENU_ITEM_DELETE = 1;
+
     private final static String EXTRA_CONTACT = "contact";
     /**
      * List of items for contextual menu
@@ -106,6 +117,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     private CmsService mCmsService;
     private XmsMessageListener mXmsMessageListener;
     private ChatCursorObserver mObserver;
+    private EditText mComposeText;
 
     /**
      * Forge intent to start XmsView activity
@@ -137,6 +149,17 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
             return;
         }
 
+        mComposeText = (EditText) findViewById(R.id.messageEdit);
+        /* Set send button listener */
+        Button sendBtn = (Button) findViewById(R.id.SendButton);
+        sendBtn.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                sendText();
+            }
+        });
+
         /* Initialize the adapter. */
         mAdapter = new TalkCursorAdapter(this);
         // Associate the list adapter with the ListView.
@@ -144,8 +167,9 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         listView.setAdapter(mAdapter);
 
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
-        listView = (ListView) findViewById(android.R.id.list);
         listView.setEmptyView(emptyView);
+
+        registerForContextMenu(listView);
 
         startMonitorServices(ConnectionManager.RcsServiceName.CMS,
                 ConnectionManager.RcsServiceName.CONTACT);
@@ -161,6 +185,20 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         processIntent(getIntent());
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "onCreate");
+        }
+    }
+
+    private void sendText() {
+        final String text = mComposeText.getText().toString();
+        if (TextUtils.isEmpty(text)) {
+            return;
+        }
+        try {
+            mCmsService.sendTextMessage(mContact, text);
+            mComposeText.setText(null);
+
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
         }
     }
 
@@ -274,6 +312,55 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         super.onResume();
         if (mContact != null) {
             sIdOnForeground = mContact.toString();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = new MenuInflater(getApplicationContext());
+        inflater.inflate(R.menu.menu_xms, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (R.id.menu_send_mms == item.getItemId()) {
+            // TODO
+            showMessage(R.string.label_todo);
+        }
+        return true;
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        menu.add(0, MENU_ITEM_DELETE, MENU_ITEM_DELETE, R.string.menu_delete_message);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item
+                .getMenuInfo();
+        Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
+        int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
+        String messageId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+        if (LogUtils.isActive) {
+            Log.d(LOGTAG, "onContextItemSelected Id=".concat(messageId));
+        }
+        switch (item.getItemId()) {
+
+            case MENU_ITEM_DELETE:
+                try {
+                    if (XmsMessageLog.HISTORYLOG_MEMBER_ID == providerId) {
+                        mCmsService.deleteXmsMessage(messageId);
+                    }
+                } catch (RcsServiceException e) {
+                    showException(e);
+                }
+                return true;
+
+            default:
+                return super.onContextItemSelected(item);
         }
     }
 

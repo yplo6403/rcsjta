@@ -263,9 +263,9 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             showMessage(R.string.label_service_not_available);
             return;
         }
-        menu.add(0, CMS_MENU_ITEM_OPEN, CMS_MENU_ITEM_OPEN, R.string.menu_open_xms_conversation);
+        menu.add(0, CMS_MENU_ITEM_OPEN, CMS_MENU_ITEM_OPEN, R.string.menu_open_xms_talk);
         menu.add(0, CMS_MENU_ITEM_DELETE, CMS_MENU_ITEM_DELETE,
-                R.string.menu_delete_xms_conversation);
+                R.string.menu_delete_xms_talk);
     }
 
     @Override
