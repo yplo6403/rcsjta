@@ -356,6 +356,8 @@
     <string name="menu_view_groupdelivery">View delivery information</string>
     <string name="menu_delete_message">Delete</string>
     <string name="menu_resend_message">Resend</string>
+    <string name="menu_send_message">Send</string>
+    <string name="hint_type_message">Enter your message ... </string>
 
     <!-- Chat session menu -->
     <string name="menu_delete_chat_session">Delete</string>
@@ -386,7 +388,18 @@
 
     <!-- Common Message Store menu -->
     <string name="menu_cms">Common Message Store</string>
-    <string name="menu_cms_title">CMS synchronize</string>
+    <string name="menu_cms_title">CMS</string>
+    <string name="menu_cms_item1">Synchronization</string>
+    <string name="menu_cms_item2">Messaging</string>
+    <string name="menu_cms_messaging_title">CMS messaging</string>
+    <string name="menu_cms_messaging_item1">Initiate conversation</string>
+    <string name="menu_cms_messaging_item2">CMS log</string>
+    <string name="label_cms_sms_contact">SMS with %s</string>
+    <string name="label_cms_mms_contact">MMS with %s</string>
+    <string name="menu_open_xms_conversation">Open</string>
+    <string name="menu_delete_xms_conversation">Delete</string>
+    <string name="err_continue_xms_failed">Can\'t continue the conversation: RCS service is not available</string>
+    <string name="menu_cms_sync_title">CMS synchronize</string>
     <string name="menu_cms_sync_all">Sync all</string>
     <string name="menu_cms_sync_one_to_one">Sync one-to-one conversation</string>
     <string name="menu_cms_sync_group">Sync group conversation</string>
@@ -394,6 +407,10 @@
     <string name="cms_sync_contact_completed">CMS synchronized for contact %1$s</string>
     <string name="cms_sync_timestamp">Synchronized at</string>
     <string name="err_select_file">Select at least one image or video file</string>
+    <string name="label_xms_list_empty">No XMS message</string>
+    <string name="label_xms_delete_success">XMS with contact %1$s is deleted</string>
+    <string name="label_xms_delete_failed">Delete XMS conversation failed</string>
+
 
     <!-- States -->
 
@@ -617,6 +634,28 @@
         <item>5 %</item>
         <item>10 %</item>
         <item>20 %</item>
+    </string-array>
+
+    <string-array name="xms_states">
+        <item>QUEUED</item>
+        <item>SENT</item>
+        <item>FAILED</item>
+        <item>DELIVERED</item>
+        <item>DELETING</item>
+    </string-array>
+    <string-array name="xms_reason_codes">
+        <item/>
+        <item>GENERIC_FAILURE</item>
+        <item>RADIO_OFF</item>
+        <item>NULL_PDU</item>
+        <item>NO_SERVICE</item>
+        <item>UNSPECIFIED</item>
+        <item>INVALID_APN</item>
+        <item>UNABLE_CONNECT_MMS</item>
+        <item>HTTP_FAILURE</item>
+        <item>IO_ERROR</item>
+        <item>RETRY</item>
+        <item>CONFIGURATION_ERROR</item>
     </string-array>
 
 </resources>

@@ -28,4 +28,6 @@ interface IXmsMessage {
 
     String getBody();
 
+    String getChatId();
+
 }

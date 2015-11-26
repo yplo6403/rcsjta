@@ -1,24 +1,39 @@
-/*
- * ******************************************************************************
- *  * Software Name : RCS IMS Stack
- *  *
- *  * Copyright (C) 2010 France Telecom S.A.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *  *****************************************************************************
- */
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
-package com.orangelabs.rcs.ri.cms;
+package com.orangelabs.rcs.ri.cms.synchronization;
+
+import com.gsma.services.rcs.RcsPermissionDeniedException;
+import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.chat.ChatLog;
+import com.gsma.services.rcs.chat.GroupChat;
+import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
+import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.cms.CmsSynchronizationListener;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -42,24 +57,6 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.gsma.services.rcs.RcsPermissionDeniedException;
-import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.chat.ChatLog;
-import com.gsma.services.rcs.chat.GroupChat;
-import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
-import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
-import com.gsma.services.rcs.contact.ContactId;
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -70,8 +67,6 @@ import java.util.Map;
 public class CmsSyncGroup extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
-    private final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yy-MM-dd HH:mm:ss",
-            Locale.getDefault());
     // @formatter:on
     private static final String SORT_ORDER = ChatLog.GroupChat.TIMESTAMP + " DESC";
     /**
@@ -94,7 +89,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
             ChatLog.GroupChat.PARTICIPANTS
     };
     private ListView mListView;
-    private GroupChatListAdapter mAdapter;
+    private SyncGroupListAdapter mAdapter;
     private Handler mHandler = new Handler();
     private CmsSynchronizationListener mCmsSyncListener;
     private CmsService mCmsService;
@@ -115,7 +110,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
         mListView.setEmptyView(emptyView);
         registerForContextMenu(mListView);
 
-        mAdapter = new GroupChatListAdapter(this);
+        mAdapter = new SyncGroupListAdapter(this);
         mListView.setAdapter(mAdapter);
         /*
          * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
@@ -237,9 +232,9 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
     }
 
     /**
-     * Group chat list adapter
+     * CMS sync group list adapter
      */
-    private class GroupChatListAdapter extends CursorAdapter {
+    private class SyncGroupListAdapter extends CursorAdapter {
 
         private LayoutInflater mInflater;
 
@@ -248,7 +243,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
          *
          * @param context Context
          */
-        public GroupChatListAdapter(Context context) {
+        public SyncGroupListAdapter(Context context) {
             super(context, null, 0);
             mInflater = LayoutInflater.from(context);
         }
@@ -340,7 +335,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
 
         int columnReasonCode;
 
-        GroupChatListItemViewHolder(View base, Cursor cursor) {
+      GroupChatListItemViewHolder(View base, Cursor cursor) {
             columnSubject = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.SUBJECT);
             columnDate = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.TIMESTAMP);
             columnState = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.STATE);

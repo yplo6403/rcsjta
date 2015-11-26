@@ -22,7 +22,7 @@ package com.gsma.services.rcs.cms;
 
 import com.gsma.services.rcs.contact.ContactId;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * XMS message event listener
@@ -51,5 +51,5 @@ public abstract class XmsMessageListener {
      * @param contact    Contact ID
      * @param messageIds ids of those deleted XMS messages
      */
-    public abstract void onDeleted(ContactId contact, List<String> messageIds);
+    public abstract void onDeleted(ContactId contact, Set<String> messageIds);
 }

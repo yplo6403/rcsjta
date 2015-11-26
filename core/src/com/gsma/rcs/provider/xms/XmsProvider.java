@@ -236,8 +236,8 @@ public class XmsProvider extends ContentProvider {
                     //$FALL-THROUGH$
                 case UriType.Part.PART:
                     db = mOpenHelper.getReadableDatabase();
-                    cursor = db.query(TABLE_PART, projection,
-                            selection, selectionArgs, null, null, sort);
+                    cursor = db.query(TABLE_PART, projection, selection, selectionArgs, null, null,
+                            sort);
                     CursorUtil.assertCursorIsNotNull(cursor, uri);
                     cursor.setNotificationUri(getContext().getContentResolver(), uri);
                     return cursor;
@@ -454,6 +454,7 @@ public class XmsProvider extends ContentProvider {
                     + XmsData.KEY_MESSAGE_ID + " TEXT NOT NULL PRIMARY KEY,"
                     + XmsData.KEY_BASECOLUMN_ID + " INTEGER NOT NULL,"
                     + XmsData.KEY_CONTACT + " TEXT NOT NULL,"
+                    + XmsData.KEY_CHAT_ID + " TEXT NOT NULL,"
                     + XmsData.KEY_BODY + " TEXT,"
                     + XmsData.KEY_MIME_TYPE + " INTEGER NOT NULL,"
                     + XmsData.KEY_DIRECTION + " INTEGER NOT NULL,"
@@ -496,7 +497,7 @@ public class XmsProvider extends ContentProvider {
                     + PartData.KEY_MIME_TYPE + " TEXT NOT NULL,"
                     + PartData.KEY_FILENAME + " TEXT,"
                     + PartData.KEY_FILESIZE + " INTEGER,"
-                    + PartData.KEY_CONTENT + " BYTES BLOB NOT NULL,"
+                    + PartData.KEY_CONTENT + " TEXT NOT NULL,"
                     + PartData.KEY_FILEICON + " BYTES BLOB)");
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +

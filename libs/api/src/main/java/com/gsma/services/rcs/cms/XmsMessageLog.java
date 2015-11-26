@@ -53,6 +53,15 @@ public class XmsMessageLog {
      */
     public static final String MESSAGE_ID = "msg_id";
     /**
+     * The name of the column containing the unique ID of the chat conversation.
+     * Used for the aggregation of messaging providers and always set to the contact
+     * in case of XMS messages.
+     * <p/>
+     * Type: TEXT
+     * </P>
+     */
+    public static final String CHAT_ID = "chat_id";
+    /**
      * The name of the column containing the MSISDN of the remote contact.
      * <p/>
      * Type: TEXT

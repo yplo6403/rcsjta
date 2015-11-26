@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ /*******************************************************************************
+  ~  * Software Name : RCS IMS Stack
+  ~  *
+  ~  * Copyright (C) 2010 France Telecom S.A.
+  ~  *
+  ~  * Licensed under the Apache License, Version 2.0 (the "License");
+  ~  * you may not use this file except in compliance with the License.
+  ~  * You may obtain a copy of the License at
+  ~  *
+  ~  *      http://www.apache.org/licenses/LICENSE-2.0
+  ~  *
+  ~  * Unless required by applicable law or agreed to in writing, software
+  ~  * distributed under the License is distributed on an "AS IS" BASIS,
+  ~  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  * See the License for the specific language governing permissions and
+  ~  * limitations under the License.
+  ~  ******************************************************************************/
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:paddingTop="10dip" >
+
+    <ListView
+        android:id="@android:id/list"
+        android:layout_width="fill_parent"
+        android:layout_height="394dp"
+        android:layout_above="@+id/xms_send_message_btn"
+        android:layout_alignParentTop="true"        
+        android:listSelector="@android:drawable/list_selector_background"
+        android:stackFromBottom="true"
+        android:scrollbarStyle="outsideOverlay" />
+
+    <TextView
+        android:id="@android:id/empty"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:text="@string/label_xms_list_empty"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <Button
+        android:id="@+id/xms_send_message_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:text="@string/menu_send_message" >
+    </Button>
+
+    <EditText
+        android:id="@+id/xms_send_content"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@android:id/list"
+        android:layout_toStartOf="@+id/xms_send_message_btn"
+        android:layout_toLeftOf="@+id/xms_send_message_btn"
+        android:ems="10"
+        android:hint="@string/hint_type_message" >
+
+        <requestFocus />
+    </EditText>
+        
+</RelativeLayout>

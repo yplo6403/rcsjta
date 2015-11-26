@@ -191,7 +191,7 @@
             android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
         <provider
             android:name="com.gsma.rcs.provider.xms.XmsProvider"
-            android:authorities="com.gsma.rcs.xms"
+            android:authorities="com.gsma.rcs.xms;com.gsma.services.rcs.provider.xms"
             android:exported="true"
             android:readPermission="com.gsma.services.permission.RCS"
             android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />

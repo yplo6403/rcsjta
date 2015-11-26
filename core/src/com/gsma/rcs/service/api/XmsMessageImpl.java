@@ -214,4 +214,21 @@ public class XmsMessageImpl extends IXmsMessage.Stub {
         }
     }
 
+    @Override
+    public String getChatId() throws RemoteException {
+        try {
+            return mPersistedStorage.getChatId();
+
+        } catch (ServerApiBaseException e) {
+            if (!e.shouldNotBeLogged()) {
+                sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            }
+            throw e;
+
+        } catch (Exception e) {
+            sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            throw new ServerApiGenericException(e);
+        }
+    }
+
 }

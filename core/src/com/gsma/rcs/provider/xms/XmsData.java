@@ -113,4 +113,9 @@ public class XmsData {
      */
     public static final String KEY_MMS_ID = "mms_id";
 
+    /**
+     * Chat Id (column contains the contact Id).
+     */
+    public static final String KEY_CHAT_ID = XmsMessageLog.CHAT_ID;
+
 }

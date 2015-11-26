@@ -15,7 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
-package com.orangelabs.rcs.ri.cms;
+
+package com.orangelabs.rcs.ri.cms.synchronization;
+
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
+import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.cms.CmsSynchronizationListener;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.utils.ContactListAdapter;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.ClipData;
 import android.content.Intent;
@@ -30,26 +48,10 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
-import com.gsma.services.rcs.contact.ContactId;
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.utils.ContactListAdapter;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
 /**
  * Created by yplo6403 on 12/11/2015.
@@ -82,7 +84,8 @@ public class CmsSyncContact extends RcsActivity {
 
         /* Set the contact selector */
         mSpinner = (Spinner) findViewById(R.id.contact);
-        mSpinner.setAdapter(ContactListAdapter.createContactListAdapter(this, getString(R.string.label_history_log_contact_spinner_default_value)));
+        mSpinner.setAdapter(ContactListAdapter.createContactListAdapter(this,
+                getString(R.string.label_history_log_contact_spinner_default_value)));
 
         /* Set button callback */
         Button syncBtn = (Button) findViewById(R.id.sync_btn);
@@ -163,9 +166,11 @@ public class CmsSyncContact extends RcsActivity {
                 if (contact != null) {
                     mContact = contact;
                     try {
-                        //mCmsService.syncOneToOneConversation(contact);
+                        // mCmsService.syncOneToOneConversation(contact);
                         if (testSendMms) {
-                            String[] mimeTypes = {"image/*", "video/*"};
+                            String[] mimeTypes = {
+                                    "image/*", "video/*"
+                            };
                             FileUtils.openFiles(CmsSyncContact.this, mimeTypes, PICK_IMAGE_REQUEST);
                         } else {
                             mCmsService.sendTextMessage(contact, "This is my first SMS");
@@ -212,8 +217,7 @@ public class CmsSyncContact extends RcsActivity {
             }
             try {
                 if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "sendMultimediaMessage to " + mContact +
-                            " Files='" + files);
+                    Log.d(LOGTAG, "sendMultimediaMessage to " + mContact + " Files='" + files);
                 }
                 mCmsService.sendMultimediaMessage(mContact, files, "First MMS");
             } catch (RcsServiceException e) {

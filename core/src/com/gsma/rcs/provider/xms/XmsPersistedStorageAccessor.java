@@ -61,10 +61,7 @@ public class XmsPersistedStorageAccessor {
 
     private String mMmsId;
 
-    public XmsPersistedStorageAccessor(XmsLog xmsLog, String xmsId) {
-        mXmsLog = xmsLog;
-        mXmsId = xmsId;
-    }
+    private String mChatId;
 
     public XmsPersistedStorageAccessor(XmsLog xmsLog, XmsDataObject sms) {
         this(xmsLog, sms.getMessageId());
@@ -74,6 +71,23 @@ public class XmsPersistedStorageAccessor {
         mBody = sms.getBody();
         mTimestamp = sms.getTimestamp();
         mCorrelator = sms.getCorrelator();
+        mChatId = sms.getChatId();
+    }
+
+    public XmsPersistedStorageAccessor(XmsLog xmsLog, String xmsId) {
+        mXmsLog = xmsLog;
+        mXmsId = xmsId;
+    }
+
+    public ContactId getRemoteContact() {
+        /*
+         * Utilizing cache here as contact can't be changed in persistent storage after entry
+         * insertion anyway so no need to query for it multiple times.
+         */
+        if (mContact == null) {
+            cacheData();
+        }
+        return mContact;
     }
 
     private void cacheData() {
@@ -124,20 +138,12 @@ public class XmsPersistedStorageAccessor {
             if (mMmsId == null) {
                 mMmsId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_MMS_ID));
             }
+            if (mChatId == null) {
+                mChatId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CHAT_ID));
+            }
         } finally {
             CursorUtil.close(cursor);
         }
-    }
-
-    public ContactId getRemoteContact() {
-        /*
-         * Utilizing cache here as contact can't be changed in persistent storage after entry
-         * insertion anyway so no need to query for it multiple times.
-         */
-        if (mContact == null) {
-            cacheData();
-        }
-        return mContact;
     }
 
     public RcsService.Direction getDirection() {
@@ -265,5 +271,16 @@ public class XmsPersistedStorageAccessor {
             cacheData();
         }
         return mMmsId;
+    }
+
+    public String getChatId() {
+        /*
+         * Utilizing cache here as chatId can't be changed in persistent storage after entry
+         * insertion anyway so no need to query for it multiple times.
+         */
+        if (mChatId == null) {
+            cacheData();
+        }
+        return mChatId;
     }
 }

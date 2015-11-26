@@ -345,4 +345,20 @@ public class XmsMessage {
         }
     }
 
+    /**
+     * Gets the chat ID
+     *
+     * @return String
+     * @throws RcsPersistentStorageException
+     * @throws RcsGenericException
+     */
+    public String getChatId() throws RcsPersistentStorageException, RcsGenericException {
+        try {
+            return mIXmsMessage.getChatId();
+
+        } catch (Exception e) {
+            RcsPersistentStorageException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
 }

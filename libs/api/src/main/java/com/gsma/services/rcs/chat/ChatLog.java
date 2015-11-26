@@ -69,7 +69,8 @@ public class ChatLog {
         public static final String BASECOLUMN_ID = BaseColumns._ID;
 
         /**
-         * The name of the column containing the unique ID of the group chat.
+         * The name of the column containing the unique ID of the group chat or
+         * the remote contact in case of one to one chat.
          * <P>
          * Type: TEXT
          * </P>

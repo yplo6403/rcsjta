@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.orangelabs.rcs.ri"
     android:versionCode="1"
-    android:versionName="1.5.1" >
+    android:versionName="1.6.1" >
 
     <uses-sdk
         android:minSdkVersion="12"
@@ -534,11 +534,26 @@
             android:name=".cms.TestCmsApi"
             android:label="@string/menu_cms_title" />
         <activity
-            android:name=".cms.CmsSyncContact"
-            android:label="@string/menu_cms_title" />
+            android:name=".cms.synchronization.TestSyncApi"
+            android:label="@string/menu_cms_sync_title" />
         <activity
-            android:name=".cms.CmsSyncGroup"
-            android:label="@string/menu_cms_title" />
+            android:name=".cms.messaging.TestCmsMessagingApi"
+            android:label="@string/menu_cms_messaging_title" />
+        <activity
+            android:name=".cms.synchronization.CmsSyncContact"
+            android:label="@string/menu_cms_sync_title" />
+        <activity
+            android:name=".cms.synchronization.CmsSyncGroup"
+            android:label="@string/menu_cms_sync_title" />
+        <activity
+            android:name=".cms.messaging.XmsMessagingList"
+            android:label="@string/menu_cms_messaging_title" />
+        <activity
+            android:name=".cms.messaging.InitiateXmsConversation"
+            android:label="@string/menu_cms_messaging_title" />
+        <activity
+            android:name=".cms.messaging.XmsView"
+            android:label="@string/menu_cms_messaging_title" />
 
         <receiver
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.UndeliveredMessageReceiver"

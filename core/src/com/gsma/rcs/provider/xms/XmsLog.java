@@ -39,7 +39,7 @@ import android.os.RemoteException;
 import java.util.ArrayList;
 
 /**
- *
+ * XMS log utilities
  */
 public class XmsLog {
 
@@ -199,9 +199,11 @@ public class XmsLog {
     }
 
     public void addSms(SmsDataObject sms) {
+        String contact = sms.getContact().toString();
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_MESSAGE_ID, sms.getMessageId());
-        values.put(XmsData.KEY_CONTACT, sms.getContact().toString());
+        values.put(XmsData.KEY_CONTACT, contact);
+        values.put(XmsData.KEY_CHAT_ID, contact);
         values.put(XmsData.KEY_BODY, sms.getBody());
         values.put(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.TEXT_MESSAGE);
         values.put(XmsData.KEY_DIRECTION, sms.getDirection().toInt());
@@ -234,10 +236,12 @@ public class XmsLog {
 
     public void addMms(MmsDataObject mms) throws RemoteException, OperationApplicationException {
         ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        String contact = mms.getContact().toString();
         ops.add(ContentProviderOperation
                 .newInsert(XmsData.CONTENT_URI)
                 .withValue(XmsData.KEY_MESSAGE_ID, mms.getMessageId())
-                .withValue(XmsData.KEY_CONTACT, mms.getContact().toString())
+                .withValue(XmsData.KEY_CONTACT, contact)
+                .withValue(XmsData.KEY_CHAT_ID, contact)
                 .withValue(XmsData.KEY_BODY, mms.getBody())
                 .withValue(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE)
                 .withValue(XmsData.KEY_DIRECTION, mms.getDirection().toInt())
@@ -251,13 +255,18 @@ public class XmsLog {
                 .withValue(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId())
                 .withValue(XmsData.KEY_MMS_ID, mms.getMmsId()).build());
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsPart()) {
+            String mimeType = mmsPart.getMimeType();
+            String content = mmsPart.getBody();
+            if (content == null) {
+                content = mmsPart.getFile().toString();
+            }
             ops.add(ContentProviderOperation.newInsert(PartData.CONTENT_URI)
                     .withValue(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId())
                     .withValue(PartData.KEY_CONTACT, mmsPart.getContact().toString())
-                    .withValue(PartData.KEY_MIME_TYPE, mmsPart.getMimeType())
+                    .withValue(PartData.KEY_MIME_TYPE, mimeType)
                     .withValue(PartData.KEY_FILENAME, mmsPart.getFileName())
                     .withValue(PartData.KEY_FILESIZE, mmsPart.getFileSize())
-                    .withValue(PartData.KEY_CONTENT, mmsPart.getContent())
+                    .withValue(PartData.KEY_CONTENT, content)
                     .withValue(PartData.KEY_FILEICON, mmsPart.getFileIcon()).build());
         }
         mContentResolver.applyBatch(XmsData.CONTENT_URI.getAuthority(), ops);

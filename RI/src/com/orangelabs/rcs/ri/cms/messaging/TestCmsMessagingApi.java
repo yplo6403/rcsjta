@@ -16,12 +16,10 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.orangelabs.rcs.ri.cms;
+package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
 import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.cms.messaging.TestCmsMessagingApi;
-import com.orangelabs.rcs.ri.cms.synchronization.TestSyncApi;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -31,17 +29,22 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 /**
- * Created by yplo6403 on 10/11/2015.
+ * CMS messaging API
+ * 
+ * @author Philippe LEMORDANT
  */
-public class TestCmsApi extends RcsListActivity {
+public class TestCmsMessagingApi extends RcsListActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        // @formatter:off
         String[] items = {
-                getString(R.string.menu_cms_item1), getString(R.string.menu_cms_item2)
+                getString(R.string.menu_cms_messaging_item1),
+                getString(R.string.menu_cms_messaging_item2),
         };
+        // @formatter:on
         setListAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
     }
 
@@ -49,13 +52,14 @@ public class TestCmsApi extends RcsListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         switch (position) {
             case 0:
-                startActivity(new Intent(this, TestSyncApi.class));
+                startActivity(new Intent(this, InitiateXmsConversation.class));
                 break;
 
             case 1:
-                startActivity(new Intent(this, TestCmsMessagingApi.class));
+                startActivity(new Intent(this, XmsMessagingList.class));
                 break;
 
         }
     }
+
 }

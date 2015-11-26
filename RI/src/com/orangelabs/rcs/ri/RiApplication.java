@@ -144,6 +144,16 @@ public class RiApplication extends Application {
      */
     public static String[] sGroupChatEvents;
 
+    /**
+     * Array of XMS Message states
+     */
+    public static String[] sXmsMessageStates;
+
+    /**
+     * Array of XMS Message reason codes
+     */
+    public static String[] sXmsMessageReasonCodes;
+
     private static Map<Direction, String> sDirectionToString;
 
     private static RcsServiceControl mRcsServiceControl;
@@ -187,6 +197,9 @@ public class RiApplication extends Application {
         sMultimediaStates = convertForUI(resources.getStringArray(R.array.mms_states));
         sMultimediaReasonCodes = convertForUI(resources.getStringArray(R.array.mms_reason_codes));
         sGroupChatEvents = convertForUI(resources.getStringArray(R.array.group_chat_event));
+
+        sXmsMessageStates = convertForUI(resources.getStringArray(R.array.xms_states));
+        sXmsMessageReasonCodes = convertForUI(resources.getStringArray(R.array.xms_reason_codes));
 
         sDirectionToString = new HashMap<>();
         sDirectionToString.put(Direction.INCOMING, resources.getString(R.string.label_incoming));

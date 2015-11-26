@@ -72,10 +72,10 @@ public class MmsPartLog {
      */
     public static final String FILESIZE = "filesize";
     /**
-     * The name of the column containing the byte array of the file or the
+     * The name of the column containing the URI of the file or the
      * body text depending on the mime-type column content.
      * <p/>
-     * Type: BLOB
+     * Type: TEXT
      * </P>
      */
     public static final String CONTENT = "content";

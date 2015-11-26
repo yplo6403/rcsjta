@@ -19,6 +19,7 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.net.Uri;
@@ -58,7 +59,7 @@ public class PartData {
     public static final String KEY_FILESIZE = MmsPartLog.FILESIZE;
 
     /**
-     * Byte array of the content.
+     * URI of the file or body text depending on the mime type.
      */
     public static final String KEY_CONTENT = MmsPartLog.CONTENT;
 
@@ -78,17 +79,24 @@ public class PartData {
     private final String mMimeType;
     private final String mFilename;
     private final Long mFileSize;
-    private final byte[] mContent;
+    private final Uri mFile;
+    private final String mBody;
     private final byte[] mFileIcon;
 
     public PartData(long id, String messageId, ContactId contact, String mimeType, String filename,
-            Long fileSize, byte[] content, byte[] fileIcon) {
+            Long fileSize, String content, byte[] fileIcon) {
         mId = id;
         mMessageId = messageId;
         mMimeType = mimeType;
         mFilename = filename;
         mFileSize = fileSize;
-        mContent = content;
+        if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mMimeType)) {
+            mBody = content;
+            mFile = null;
+        } else {
+            mBody = null;
+            mFile = Uri.parse(content);
+        }
         mFileIcon = fileIcon;
         mContact = contact;
     }
@@ -113,8 +121,8 @@ public class PartData {
         return mFileSize;
     }
 
-    public byte[] getContent() {
-        return mContent;
+    public String getBody() {
+        return mBody;
     }
 
     public byte[] getFileIcon() {
@@ -123,5 +131,9 @@ public class PartData {
 
     public ContactId getContact() {
         return mContact;
+    }
+
+    public Uri getFile() {
+        return mFile;
     }
 }

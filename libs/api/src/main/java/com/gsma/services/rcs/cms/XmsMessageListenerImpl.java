@@ -24,6 +24,7 @@ import android.os.RemoteException;
 
 import com.gsma.services.rcs.contact.ContactId;
 
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -46,6 +47,6 @@ public class XmsMessageListenerImpl extends IXmsMessageListener.Stub {
 
     @Override
     public void onDeleted(ContactId contact, List<String> messageIds) throws RemoteException {
-        mListener.onDeleted(contact, messageIds);
+        mListener.onDeleted(contact, new HashSet<>(messageIds));
     }
 }
