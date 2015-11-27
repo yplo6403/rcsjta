@@ -40,6 +40,10 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.os.RemoteException;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Capability service API implementation
  * 
@@ -75,15 +79,39 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
         }
 
         public void run() {
-            mCapabilityService.requestContactCapabilities(mContact);
+            try {
+                mCapabilityService.requestContactCapabilities(mContact);
+            } catch (RuntimeException e) {
+                /*
+                 * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+                 * which should be handled/fixed within the code. However the cases when we are
+                 * executing operations on a thread unhandling such exceptions will eventually lead
+                 * to exit the system and thus can bring the whole system down, which is not
+                 * intended.
+                 */
+                sLogger.error(new StringBuilder(
+                        "Failed to handle capabilities request for contact: ").append(mContact)
+                        .toString(), e);
+            }
         }
     }
 
     private class AllCapabilitiesRequester implements Runnable {
 
         public void run() {
-            mCapabilityService.requestContactCapabilities(mContactManager
-                    .getAllContactsFromRcsContactProvider());
+            try {
+                mCapabilityService.requestContactCapabilities(mContactManager
+                        .getAllContactsFromRcsContactProvider());
+            } catch (RuntimeException e) {
+                /*
+                 * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+                 * which should be handled/fixed within the code. However the cases when we are
+                 * executing operations on a thread unhandling such exceptions will eventually lead
+                 * to exit the system and thus can bring the whole system down, which is not
+                 * intended.
+                 */
+                sLogger.error("Failed to handle capabilities request for contacts!", e);
+            }
         }
     }
 
@@ -320,6 +348,30 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
         }
         ServerApiUtils.testIms();
         mCapabilityService.scheduleCapabilityOperation(new AllCapabilitiesRequester());
+    }
+
+    @Override
+    public void requestContactCapabilities2(List<ContactId> contacts) throws RemoteException {
+        ServerApiUtils.testIms();
+        if (contacts == null) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Request capabilities for all contacts");
+            }
+            mCapabilityService.scheduleCapabilityOperation(new AllCapabilitiesRequester());
+
+        } else {
+            if (sLogger.isActivated()) {
+                sLogger.info("Request capabilities for contacts: " + contacts);
+            }
+            final Set<ContactId> setOfContacts = new HashSet<ContactId>(contacts);
+            mCapabilityService.scheduleCapabilityOperation(new Runnable() {
+
+                @Override
+                public void run() {
+                    mCapabilityService.requestContactCapabilities(setOfContacts);
+                }
+            });
+        }
     }
 
     /**
