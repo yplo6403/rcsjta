@@ -34,7 +34,7 @@ import android.widget.Spinner;
 /**
  * Created by yplo6403 on 23/11/2015.
  */
-public class InitiateXmsConversation extends RcsActivity {
+public class InitiateXmsTalk extends RcsActivity {
 
     /**
      * Spinner for contact selection
@@ -76,8 +76,7 @@ public class InitiateXmsConversation extends RcsActivity {
                 ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
                 String phoneNumber = adapter.getSelectedNumber(mSpinner.getSelectedView());
                 ContactId contact = ContactUtil.formatContact(phoneNumber);
-                startActivity(XmsView.forgeIntentToOpenConversation(InitiateXmsConversation.this,
-                        contact));
+                startActivity(XmsView.forgeIntentToOpenConversation(InitiateXmsTalk.this, contact));
                 /* Exit activity */
                 finish();
             }

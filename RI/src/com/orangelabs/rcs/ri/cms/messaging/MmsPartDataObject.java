@@ -1,33 +1,36 @@
-/*
- * ******************************************************************************
- *  * Software Name : RCS IMS Stack
- *  *
- *  * Copyright (C) 2010 France Telecom S.A.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *  *****************************************************************************
- */
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessageLog;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
 
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,7 +48,8 @@ public class MmsPartDataObject {
             MmsPartLog.FILENAME,
             MmsPartLog.FILESIZE,
             MmsPartLog.FILEICON,
-            MmsPartLog.CONTENT
+            MmsPartLog.CONTENT,
+            MmsPartLog.CONTACT
     };
     // @formatter:on
 
@@ -59,14 +63,38 @@ public class MmsPartDataObject {
     private final String mBody;
     private final Uri mFile;
     private final byte[] mFileIcon;
+    private final ContactId mContact;
+
+    public static final long INVALID_ID = -1;
+
+    public MmsPartDataObject(Context ctx, Uri file, ContactId contact) throws IOException {
+        mId = INVALID_ID;
+        mMessageId = null;
+        mFilename = FileUtils.getFileName(ctx, file);
+        mMimeType = FileUtils.getMimeType(mFilename);
+        mFileSize = FileUtils.getFileSize(ctx, file);
+        mBody = null;
+        mFile = file;
+        mContact = contact;
+        if (mMimeType != null) {
+            if (FileUtils.isImageType(mMimeType)) {
+                mFileIcon = FileUtils.createThumb(ctx.getContentResolver(), file);
+            } else {
+                mFileIcon = null;
+            }
+        } else {
+            mFileIcon = null;
+        }
+    }
 
     public MmsPartDataObject(long id, String messageId, String mimeType, String filename,
-            Long fileSize, String content, byte[] fileIcon) {
+            Long fileSize, String content, byte[] fileIcon, ContactId contact) {
         mId = id;
         mMessageId = messageId;
         mMimeType = mimeType;
         mFilename = filename;
         mFileSize = fileSize;
+        mContact = contact;
         if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(content)) {
             mBody = content;
             mFile = null;
@@ -104,6 +132,7 @@ public class MmsPartDataObject {
             int fileSizeIdx = cursor.getColumnIndexOrThrow(MmsPartLog.FILESIZE);
             int fileIconIdx = cursor.getColumnIndexOrThrow(MmsPartLog.FILEICON);
             int contentIdx = cursor.getColumnIndexOrThrow(MmsPartLog.CONTENT);
+            int contactIdx = cursor.getColumnIndexOrThrow(MmsPartLog.CONTACT);
             do {
                 long id = cursor.getLong(idColumnIdx);
                 String filename = cursor.getString(filenameIdx);
@@ -111,8 +140,10 @@ public class MmsPartDataObject {
                 Long fileSize = cursor.isNull(fileSizeIdx) ? null : cursor.getLong(fileSizeIdx);
                 byte[] fileIcon = cursor.getBlob(fileIconIdx);
                 String content = cursor.getString(contentIdx);
+                String number = cursor.getString(contactIdx);
+                ContactId contact = ContactUtil.formatContact(number);
                 result.add(new MmsPartDataObject(id, messageId, mimeType, filename, fileSize,
-                        content, fileIcon));
+                        content, fileIcon, contact));
             } while (cursor.moveToNext());
             return result;
 
@@ -153,6 +184,10 @@ public class MmsPartDataObject {
 
     public Uri getFile() {
         return mFile;
+    }
+
+    public ContactId getContact() {
+        return mContact;
     }
 
 }

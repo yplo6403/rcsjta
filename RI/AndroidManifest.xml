@@ -549,11 +549,18 @@
             android:name=".cms.messaging.XmsMessagingList"
             android:label="@string/menu_cms_messaging_title" />
         <activity
-            android:name=".cms.messaging.InitiateXmsConversation"
+            android:name=".cms.messaging.InitiateXmsTalk"
             android:label="@string/menu_cms_messaging_title" />
         <activity
             android:name=".cms.messaging.XmsView"
             android:label="@string/menu_cms_messaging_title" />
+        <activity
+            android:name=".cms.messaging.InitiateMmsTransfer"
+        />
+        <activity
+            android:name=".cms.messaging.XmsImageView"
+        />
+
 
         <receiver
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.UndeliveredMessageReceiver"

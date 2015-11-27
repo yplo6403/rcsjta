@@ -52,7 +52,7 @@ public class TestCmsMessagingApi extends RcsListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         switch (position) {
             case 0:
-                startActivity(new Intent(this, InitiateXmsConversation.class));
+                startActivity(new Intent(this, InitiateXmsTalk.class));
                 break;
 
             case 1:

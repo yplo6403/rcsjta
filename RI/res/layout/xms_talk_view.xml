@@ -55,7 +55,8 @@
             android:layout_marginTop="5dp"
             android:divider="@null"
             android:listSelector="@android:color/transparent"
-            android:transcriptMode="alwaysScroll"/>
+            android:transcriptMode="alwaysScroll"
+            android:stackFromBottom="true"/>
 
         <TextView
             android:id="@android:id/empty"

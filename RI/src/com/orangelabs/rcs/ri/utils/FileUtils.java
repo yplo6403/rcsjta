@@ -23,17 +23,28 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.OpenableColumns;
+import android.webkit.MimeTypeMap;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class FileUtils {
 
+    private static MimeTypeMap sMimeTypeMapSingleton;
+
+    private static final int THUMB_SIZE = 100;
+
     /**
      * Fetch the file name from URI
-     * 
+     *
      * @param context Context
      * @param file URI
      * @return fileName String
@@ -64,7 +75,7 @@ public class FileUtils {
 
     /**
      * Fetch the file size from URI
-     * 
+     *
      * @param context Context
      * @param file URI
      * @return fileSize long
@@ -93,6 +104,86 @@ public class FileUtils {
         }
     }
 
+    /**
+     * Returns URL extension
+     *
+     * @param filename The filename
+     * @return Extension
+     */
+    private static String getFileExtension(String filename) {
+        if (filename.indexOf('.') != -1) {
+            return filename.substring(filename.lastIndexOf('.') + 1);
+        }
+        return null;
+    }
+
+    /**
+     * Returns mime type from filename
+     *
+     * @param filename The filename
+     * @return Extension
+     */
+    public static String getMimeType(String filename) {
+        String extension = getFileExtension(filename);
+        if (extension == null) {
+            return null;
+        }
+        if (sMimeTypeMapSingleton == null) {
+            sMimeTypeMapSingleton = MimeTypeMap.getSingleton();
+        }
+        return sMimeTypeMapSingleton.getMimeTypeFromExtension(extension);
+    }
+
+    /**
+     * Is a image type
+     *
+     * @param mime MIME type
+     * @return Boolean
+     */
+    public static boolean isImageType(String mime) {
+        return mime.toLowerCase().startsWith("image/");
+    }
+
+    public static byte[] createThumb(ContentResolver contentResolver, Uri uri) throws IOException {
+        InputStream is = null;
+        try {
+            is = contentResolver.openInputStream(uri);
+            Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(is),
+                    THUMB_SIZE, THUMB_SIZE);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            return baos.toByteArray();
+
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+        }
+    }
+
+    /**
+     * Is a video type
+     *
+     * @param mime MIME type
+     * @return Boolean
+     */
+    public static boolean isVideoType(String mime) {
+        return mime.toLowerCase().startsWith("video/");
+    }
+
+    /**
+     * Open file
+     *
+     * @param activity the activity
+     * @param mimeType the mime type
+     * @param action the action
+     */
+    public static void openFile(Activity activity, String mimeType, int action) {
+        Intent intent = forgeIntentToOpenFile();
+        intent.setType(mimeType);
+        activity.startActivityForResult(intent, action);
+    }
+
     private static Intent forgeIntentToOpenFile() {
         Intent intent;
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
@@ -102,19 +193,6 @@ public class FileUtils {
         }
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         return intent;
-    }
-
-    /**
-     * Open file
-     * 
-     * @param activity the activity
-     * @param mimeType the mime type
-     * @param action the action
-     */
-    public static void openFile(Activity activity, String mimeType, int action) {
-        Intent intent = forgeIntentToOpenFile();
-        intent.setType(mimeType);
-        activity.startActivityForResult(intent, action);
     }
 
     public static void openFiles(Activity activity, String[] mimeTypes, int action) {
@@ -131,7 +209,7 @@ public class FileUtils {
 
     /**
      * Saves the read/write permission for later use by the stack.
-     * 
+     *
      * @param file Uri of file to transfer
      */
     public static void takePersistableContentUriPermission(Context context, Uri file) {

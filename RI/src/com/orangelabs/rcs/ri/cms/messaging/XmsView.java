@@ -1,22 +1,20 @@
-/*
- * ******************************************************************************
- *  * Software Name : RCS IMS Stack
- *  *
- *  * Copyright (C) 2010 France Telecom S.A.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *  *****************************************************************************
- */
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
@@ -76,10 +74,10 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
      */
-    protected static final int LOADER_ID = 1;
+    private static final int LOADER_ID = 1;
 
     // @formatter:off
-    protected static final String[] PROJECTION = new String[] {
+    private static final String[] PROJECTION = new String[] {
         HistoryLog.BASECOLUMN_ID,
         HistoryLog.ID,
         HistoryLog.PROVIDER_ID,
@@ -112,7 +110,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
      */
     protected TalkCursorAdapter mAdapter;
 
-    protected Uri mUriHistoryProvider;
+    private Uri mUriHistoryProvider;
     private ContactId mContact;
     private CmsService mCmsService;
     private XmsMessageListener mXmsMessageListener;
@@ -202,18 +200,6 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         }
     }
 
-    @Override
-    public void onDestroy() {
-        if (isServiceConnected(ConnectionManager.RcsServiceName.CMS) && mCmsService != null) {
-            try {
-                mCmsService.removeEventListener(mXmsMessageListener);
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-        super.onDestroy();
-    }
-
     private void initialize() {
         mXmsMessageListener = new XmsMessageListener() {
             @Override
@@ -291,6 +277,18 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     }
 
     @Override
+    public void onDestroy() {
+        if (isServiceConnected(ConnectionManager.RcsServiceName.CMS) && mCmsService != null) {
+            try {
+                mCmsService.removeEventListener(mXmsMessageListener);
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+        super.onDestroy();
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         sIdOnForeground = null;
@@ -325,8 +323,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (R.id.menu_send_mms == item.getItemId()) {
-            // TODO
-            showMessage(R.string.label_todo);
+            startActivity(InitiateMmsTransfer.forgeStartIntent(this, mContact));
         }
         return true;
     }
