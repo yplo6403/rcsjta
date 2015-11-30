@@ -22,7 +22,18 @@
 
 package com.gsma.rcs.service;
 
+import android.app.Service;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
@@ -70,15 +81,6 @@ import com.gsma.services.rcs.sharing.geoloc.IGeolocSharingService;
 import com.gsma.services.rcs.sharing.image.IImageSharingService;
 import com.gsma.services.rcs.sharing.video.IVideoSharingService;
 import com.gsma.services.rcs.upload.IFileUploadService;
-
-import android.app.Service;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -145,6 +147,8 @@ public class RcsCoreService extends Service implements CoreListener {
 
     private XmsLog mXmsLog;
 
+    private ImapLog mImapLog;
+
     private CountDownLatch mLatch;
 
     /**
@@ -166,6 +170,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mContactManager = ContactManager.createInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
         mXmsLog = XmsLog.createInstance(mContentResolver, mLocalContentResolver);
+        mImapLog = ImapLog.createInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -287,7 +292,7 @@ public class RcsCoreService extends Service implements CoreListener {
         try {
             core = Core.createCore(mCtx, this, mRcsSettings, mContentResolver,
                     mLocalContentResolver, mContactManager, mMessagingLog, mHistoryLog,
-                    mRichCallHistory, mXmsLog);
+                    mRichCallHistory, mXmsLog, mImapLog);
 
             InstantMessagingService imService = core.getImService();
             RichcallService richCallService = core.getRichcallService();
@@ -307,7 +312,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver, core.getXmsManager());
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver, core.getXmsManager(), core.getCmsManager());
 
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
@@ -324,6 +329,8 @@ public class RcsCoreService extends Service implements CoreListener {
             FileFactory.createDirectory(mRcsSettings.getPhotoRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getVideoRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getFileRootDirectory());
+            // TODO FGI use rcsSettings instead
+            FileFactory.createDirectory(MmsUtils.MMS_DIRECTORY_PATH);
 
             // Init CPU manager
             mCpuManager = new CpuManager(mRcsSettings);

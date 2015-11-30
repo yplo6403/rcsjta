@@ -410,6 +410,12 @@ public class RcsSettings {
      */
     public void setUserProfileImsUserName(ContactId contact) {
         writeContactId(RcsSettingsData.USERPROFILE_IMS_USERNAME, contact);
+        if(getCmsUserLogin().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN)){
+            setCmsUserLogin(contact.toString());
+        }
+        if(getCmsUserPwd().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD)){
+            setCmsUserPwd(contact.toString());
+        }
     }
 
     /**
@@ -2395,5 +2401,72 @@ public class RcsSettings {
      */
     public String getDisplayLanguage() {
         return readString(RcsSettingsData.LOCAL_DISPLAY_LANGUAGE);
+    }
+
+    /**
+     * Cms settings
+     */
+    public void setCmsServerAddress(String serverAddress){
+        writeString(RcsSettingsData.CMS_IMAP_SERVER_ADDRESS, serverAddress);
+    }
+
+    public String getCmsServerAddress(){
+        return readString(RcsSettingsData.CMS_IMAP_SERVER_ADDRESS);
+    }
+
+    public String getCmsUserLogin() {
+        return readString(RcsSettingsData.CMS_IMAP_USER_LOGIN);
+    }
+
+    public void setCmsUserLogin(String userLogin){
+        writeString(RcsSettingsData.CMS_IMAP_USER_LOGIN, userLogin);
+    }
+
+    public String getCmsUserPwd(){
+        return readString(RcsSettingsData.CMS_IMAP_USER_PWD);
+    }
+
+    public void setCmsUserPwd(String userPwd){
+        writeString(RcsSettingsData.CMS_IMAP_USER_PWD, userPwd);
+    }
+
+    public Boolean getCmsPushSms(){
+        return readBoolean(RcsSettingsData.CMS_PUSH_SMS);
+    }
+
+    public void setCmsPushSms(boolean enable){
+        writeBoolean(RcsSettingsData.CMS_PUSH_SMS, enable);
+    }
+
+    public Boolean getCmsPushMms(){
+        return readBoolean(RcsSettingsData.CMS_PUSH_MMS);
+    }
+
+    public void setCmsPushMms(boolean enable){
+        writeBoolean(RcsSettingsData.CMS_PUSH_MMS, enable);
+    }
+
+    public Boolean getCmsUpdateFlagsWithImapXms(){
+        return readBoolean(RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+    }
+
+    public void setCmsUpdateFlagsWithImapXms(boolean update){
+        writeBoolean(RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS, update);
+    }
+
+    public String getCmsDefaultDirectoryName(){
+        return readString(RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME);
+    }
+
+    public void setCmsDefaultDirectoryName(String defaultDirectory){
+        writeString(RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME, defaultDirectory);
+    }
+
+    public String getCmsDirectorySeparator(){
+        return readString(RcsSettingsData.CMS_DIRECTORY_SEPARATOR);
+    }
+
+    public void setCmsDirectorySeparator(String directorySeparator){
+        writeString(RcsSettingsData.CMS_DIRECTORY_SEPARATOR, directorySeparator);
     }
 }

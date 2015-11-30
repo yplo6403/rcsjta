@@ -1,9 +1,6 @@
 
 package com.gsma.rcs.cms.provider.imap;
 
-import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
-import com.gsma.rcs.utils.DatabaseUtils;
-
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
@@ -14,6 +11,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
+
+import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
+import com.gsma.rcs.utils.DatabaseUtils;
 
 public class ImapProvider extends ContentProvider {
 
@@ -101,11 +101,11 @@ public class ImapProvider extends ContentProvider {
             db.execSQL(new StringBuilder("CREATE TABLE IF NOT EXISTS ").append(TABLE_MESSAGE)
                     .append('(').append(BaseColumns._ID)
                     .append(" INTEGER PRIMARY KEY AUTOINCREMENT,")
-                    .append(MessageData.KEY_FOLDER_NAME).append(" TEXT NOT NULL,")
-                    .append(MessageData.KEY_UID).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_MODESQ).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_FLAG_SEEN).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_FLAG_DELETED).append(" INTEGER NOT NULL,")
+                    .append(MessageData.KEY_FOLDER_NAME).append(" TEXT,")
+                    .append(MessageData.KEY_UID).append(" INTEGER,")
+                    .append(MessageData.KEY_READ_STATUS).append(" INTEGER NOT NULL,")
+                    .append(MessageData.KEY_DELETE_STATUS).append(" INTEGER NOT NULL,")
+                    .append(MessageData.KEY_PUSH_STATUS).append(" INTEGER NOT NULL,")
                     .append(MessageData.KEY_MESSAGE_TYPE).append(" TEXT NOT NULL,")
                     .append(MessageData.KEY_MESSAGE_ID).append(" TEXT NOT NULL)").toString());
             db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_MESSAGE).append('_')

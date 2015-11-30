@@ -20,9 +20,11 @@ package com.gsma.rcs.provider.xms;
 
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
@@ -116,7 +118,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     public void testSmsMessage() {
         long timestamp = System.currentTimeMillis();
         SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
-                RcsService.Direction.OUTGOING, timestamp, 1234567890);
+                RcsService.Direction.OUTGOING, ReadStatus.UNREAD, timestamp, 1234567890, 1234567890);
         mXmsLog.addSms(sms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -158,7 +160,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         files.add(mUriCat1);
         files.add(mUriCat2);
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
-                "MMS test message", RcsService.Direction.INCOMING, timestamp, files, 1234567890);
+                "MMS test message", RcsService.Direction.INCOMING, timestamp, files, 1234567890 );
         mXmsLog.addMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -193,26 +195,26 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
         cursor.close();
         /* test parts */
-        Set<PartData> parts = getParts(mMessageId);
+        Set<MmsPart> parts = getParts(mMessageId);
         assertEquals(parts.size(), 3);
-        for (PartData part : parts) {
+        for (MmsPart part : parts) {
             assertEquals(mContact, part.getContact());
 
             assertEquals(mMessageId, part.getMessageId());
             mimeType = part.getMimeType();
             if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)) {
                 assertEquals("MMS test message", part.getBody());
-                assertEquals(null, part.getFilename());
+                assertEquals(null, part.getFileName());
                 assertEquals(null, part.getFileIcon());
                 assertEquals(null, part.getFileSize());
             } else {
                 assertEquals(null, part.getBody());
                 assertNotNull(part.getFileIcon());
-                String fileName = part.getFilename();
+                String fileName = part.getFileName();
                 if (fileName.equals(mFileName1)) {
                     assertEquals(mFileSize1, part.getFileSize());
 
-                } else if (part.getFilename().equals(mFileName2)) {
+                } else if (part.getFileName().equals(mFileName2)) {
                     assertEquals(mFileSize2, part.getFileSize());
 
                 } else {
@@ -223,15 +225,15 @@ public class XmsLogTest extends InstrumentationTestCase {
 
     }
 
-    private Set<PartData> getParts(String messageId) {
+    private Set<MmsPart> getParts(String messageId) {
         return getParts(mLocalContentResolver.query(PartData.CONTENT_URI, null,
                 SELECTION_MESSAGE_ID, new String[] {
                     messageId
                 }, null));
     }
 
-    private Set<PartData> getParts(Cursor cursor) {
-        Set<PartData> parts = new HashSet<>();
+    private Set<MmsPart> getParts(Cursor cursor) {
+        Set<MmsPart> parts = new HashSet<>();
         try {
             if (!cursor.moveToNext()) {
                 return parts;
@@ -248,7 +250,7 @@ public class XmsLogTest extends InstrumentationTestCase {
                 String number = cursor.getString(contactIdx);
                 ContactId contact = com.gsma.rcs.utils.ContactUtil
                         .createContactIdFromTrustedData(number);
-                PartData partData = new PartData(cursor.getLong(idIdx),
+                MmsPart partData = new MmsPart(
                         cursor.getString(messageIdIdx), contact, cursor.getString(mimeTypeIdx),
                         cursor.getString(filenameIdx), cursor.isNull(fileSizeIdx) ? null
                                 : cursor.getLong(fileSizeIdx), cursor.getString(contentIdx),
@@ -272,7 +274,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(1, cursor.getCount());
         cursor.close();
-        Set<PartData> parts = getParts(mContact);
+        Set<MmsPart> parts = getParts(mContact);
         assertTrue(parts.size() > 0);
         mXmsLog.deleteXmsMessage(mMessageId);
         cursor = mXmsLog.getXmsMessage(mMessageId);
@@ -282,7 +284,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertEquals(0, parts.size());
     }
 
-    private Set<PartData> getParts(ContactId contact) {
+    private Set<MmsPart> getParts(ContactId contact) {
         return getParts(mLocalContentResolver.query(PartData.CONTENT_URI, null, SELECTION_CONTACT,
                 new String[] {
                     contact.toString()
@@ -292,7 +294,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     public void testDeleteSmsMessageId() {
         long timestamp = System.currentTimeMillis();
         SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
-                RcsService.Direction.INCOMING, timestamp, 1234567890);
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp, 1234567890, 1234567890);
         mXmsLog.addSms(sms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);

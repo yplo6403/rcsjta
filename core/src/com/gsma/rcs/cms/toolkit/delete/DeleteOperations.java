@@ -8,10 +8,10 @@ import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.DeleteTaskListener;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.PartLog;
-import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsLog;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
@@ -25,21 +25,19 @@ import android.widget.Toast;
 
 public class DeleteOperations extends ListActivity implements DeleteTaskListener {
 
-    private CmsSettings mSettings;
+    private RcsSettings mSettings;
     private ImapLog mImapLog;
     private XmsLog mXmsLog;
-    private PartLog mPartLog;
     private AlertDialog mInProgressDialog;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Context context = getApplicationContext(); 
-        mSettings = CmsSettings.getInstance();
-        mImapLog = ImapLog.getInstance(context);
-        mXmsLog = XmsLog.getInstance(context);
-        mPartLog = PartLog.getInstance(context);
-        
+        mSettings = RcsSettings.createInstance(new LocalContentResolver(context));
+        mImapLog = ImapLog.getInstance();
+        mXmsLog = XmsLog.getInstance();
+
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
@@ -61,8 +59,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
             case 0:
                 try {
                     mImapLog.removeFolders(true);
-                    mXmsLog.deleteMessages();
-                    mPartLog.deleteAll();
+                    mXmsLog.deleteAllEntries();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -82,8 +79,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                 break;  
             case 2:
                 try {
-                    mXmsLog.deleteMessages();
-                    mPartLog.deleteAll();
+                    mXmsLog.deleteAllEntries();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();

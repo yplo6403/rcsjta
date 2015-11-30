@@ -1,31 +1,30 @@
 
 package com.gsma.rcs.cms.imap.task;
 
+import android.content.Context;
+import android.os.AsyncTask;
+
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.fordemo.ImapContext;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
-import com.gsma.rcs.cms.provider.xms.PartLog;
-import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.MmsData;
-import com.gsma.rcs.cms.provider.xms.model.MmsPart;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
-import com.gsma.rcs.cms.provider.xms.model.XmsData;
+import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
 import com.gsma.rcs.utils.logger.Logger;
-
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
-
-import android.content.Context;
-import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,25 +41,25 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
 
     /*package private*/ final PushMessageTaskListener mListener;
     /*package private*/ final BasicImapService mImapService;
+    /*package private*/ final RcsSettings mRcsSettings;
+    /*package private*/ final Context mContext;
     /*package private*/ final XmsLog mXmsLog;
-    /*package private*/ final PartLog mPartLog;
-    /*package private*/ final String mMyNumber;
+    /*package private*/ final ImapLog mImapLog;
 
-    /*package private*/ final ImapContext mImapContext;
+    /*package private*/ final Map<String,Integer> mCreatedUidsMap = new HashMap<>();
 
     /**
      * @param imapService
      * @param xmsLog 
-     * @param myNumber
-     * @param listener 
+     * @param listener
      */
-    public PushMessageTask(BasicImapService imapService, XmsLog xmsLog, PartLog partLog, String myNumber, ImapContext imapContext, PushMessageTaskListener listener) {
-        mImapService = imapService;    
+    public PushMessageTask(Context context, RcsSettings rcsSettings,  BasicImapService imapService, XmsLog xmsLog, ImapLog imapLog, PushMessageTaskListener listener) {
+        mRcsSettings = rcsSettings;
+        mContext = context;
+        mImapService = imapService;
         mXmsLog = xmsLog;
-        mPartLog = partLog;
-        mMyNumber = myNumber;
+        mImapLog = imapLog;
         mListener = listener;
-        mImapContext = imapContext;
     }
 
     @Override
@@ -70,15 +69,22 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
         String currentName = currentThread.getName();
         try {
             currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
-            List<XmsData> messages = mXmsLog.getMessages(PushStatus.PUSH_REQUESTED);
-            if(messages.isEmpty()){
+
+            List<XmsDataObject> messagesToPush = new ArrayList<>();
+            for(MessageData messageData : mImapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)){
+                XmsDataObject xms = XmsDataObjectFactory.createXmsDataObject(mXmsLog, messageData.getMessageId());
+                if(xms != null){
+                    messagesToPush.add(xms);
+                }
+            }
+            if(messagesToPush.isEmpty()){
                 if (sLogger.isActivated()) {
                     sLogger.debug("no message to push");
                 }
                 return null;
             }
                 mImapService.init();
-                return pushMessages(messages);
+                return pushMessages(messagesToPush);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -94,7 +100,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
      * @throws ImapException
      * @throws IOException
      */
-    public Boolean pushMessages(List<XmsData> messages) {
+    public Boolean pushMessages(List<XmsDataObject> messages) {
         String from, to, direction;
         from = to = direction = null;
 
@@ -103,56 +109,53 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
             for (ImapFolder imapFolder : mImapService.listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
-            for (XmsData message : messages) {
+            for (XmsDataObject message : messages) {
                 List<Flag> flags = new ArrayList<Flag>();
                 switch (message.getDirection()) {
                     case INCOMING:
-                        from = message.getContact();
-                        to = mMyNumber;
+                        from = CmsUtils.contactToHeader(message.getContact());
+                        to = CmsUtils.contactToHeader(mRcsSettings.getUserProfileImsUserName());
                         direction = Constants.DIRECTION_RECEIVED;
                         break;
                     case OUTGOING:
-                        from = mMyNumber;
-                        to = message.getContact();
+                        from = CmsUtils.contactToHeader(mRcsSettings.getUserProfileImsUserName());
+                        to = CmsUtils.contactToHeader(message.getContact());
                         direction = Constants.DIRECTION_SENT;
                         break;
                     default:
                         break;
                 }
-                
                 if (message.getReadStatus() != ReadStatus.UNREAD) {
                     flags.add(Flag.Seen);
                 }
 
-                boolean isSms = false;
                 IImapMessage imapMessage = null;
-                if(message instanceof SmsData){
-                    isSms = true;
+                if(message instanceof SmsDataObject){
                     imapMessage = new ImapSmsMessage(
                             from,
                             to,
                             direction,
-                            message.getDate(),
-                            message.getContent(),
-                            "" + message.getDate(),
-                            "" + message.getDate(),
-                            "" + message.getDate());
+                            message.getTimestamp(),
+                            message.getBody(),
+                            "" + message.getTimestamp(),
+                            "" + message.getTimestamp(),
+                            "" + message.getTimestamp());
                 }
-                else if(message instanceof MmsData) {
-                    MmsData mms = (MmsData) message;
+                else if(message instanceof MmsDataObject) {
+                    MmsDataObject mms = (MmsDataObject) message;
                     imapMessage = new ImapMmsMessage(
+                            mContext,
                             from,
                             to,
                             direction,
-                            mms.getDate(),
-                            mms.getSubject(),
-                            "" + mms.getDate(),
-                            "" + mms.getDate(),
-                            "" + message.getDate(),
+                            mms.getTimestamp(),
+                            "" + mms.getTimestamp(),
+                            "" + mms.getTimestamp(),
+                            "" + mms.getTimestamp(),
                             mms.getMmsId(),
-                            mPartLog.getParts(mms.getMmsId(), false));
+                            mms.getMmsPart());
                 }
-                String remoteFolder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
+                String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
                     mImapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
@@ -160,7 +163,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                 mImapService.selectCondstore(remoteFolder);
                 int uid = mImapService.append(remoteFolder, flags,
                         imapMessage.getPart());
-                mImapContext.addNewEntry(remoteFolder, uid, message.getBaseId());
+                mCreatedUidsMap.put(message.getMessageId(), uid);
             }
         } catch (IOException | ImapException e) {
             e.printStackTrace();
@@ -168,10 +171,14 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
         return true;
     }
 
+    public Map<String,Integer> getCreatedUids(){
+        return mCreatedUidsMap;
+    }
+
     @Override
     protected void onPostExecute(Boolean result) {
         if (mListener != null) {
-            mListener.onPushMessageTaskCallbackExecuted(mImapContext, result);
+            mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
         }
     }
 
@@ -181,9 +188,8 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
     public interface PushMessageTaskListener {
 
         /**
-         * @param imapContext
-         * @param result
+         * @param uidsMap
          */
-        void onPushMessageTaskCallbackExecuted(ImapContext imapContext, Boolean result);
+        void onPushMessageTaskCallbackExecuted(Map<String,Integer> uidsMap);
     }
 }

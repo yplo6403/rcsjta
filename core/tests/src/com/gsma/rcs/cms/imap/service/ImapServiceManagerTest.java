@@ -1,22 +1,22 @@
 package com.gsma.rcs.cms.imap.service;
 
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-
 import android.test.AndroidTestCase;
+
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
 
 import junit.framework.Assert;
 
 public class ImapServiceManagerTest extends AndroidTestCase {
     
-    private CmsSettings mSettings; 
+    private RcsSettings mSettings;
     
     protected void setUp() throws Exception {
         super.setUp();                
-        mSettings = CmsSettings.createInstance(getContext());
-        mSettings.setMyNumber("myNumber");
-        mSettings.setServerAddress("imap://myAddress");
-        mSettings.setUserLogin("myLogin");
-        mSettings.setUserPwd("myPwd");
+        mSettings = RcsSettings.createInstance(new LocalContentResolver(getContext()));
+        mSettings.setCmsServerAddress("imap://myAddress");
+        mSettings.setCmsUserLogin("myLogin");
+        mSettings.setCmsUserPwd("myPwd");
     }
     
     public void test(){

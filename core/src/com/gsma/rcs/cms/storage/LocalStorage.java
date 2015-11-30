@@ -7,16 +7,19 @@ import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.provider.imap.FolderData;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-import com.gsma.rcs.cms.sync.ISynchronizationHandler;
+import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
+import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
+import com.gsma.rcs.cms.sync.ISyncProcessorHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 
+import com.gsma.rcs.utils.logger.Logger;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,36 +31,17 @@ import java.util.TreeSet;
  * LocalStorage implementation
  *
  */
-public class LocalStorage implements ISynchronizationHandler{
+public class LocalStorage implements ISyncProcessorHandler {
 
-    private static LocalStorage sInstance;
-    
+    private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
     protected ImapLog mImapLog;
-    //protected XmsLog mXmsLog;
     private ImapMessageResolver mMessageResolver;
 
     /*package private*/ Map<MessageType, IRemoteEventHandler> mRemoteEventHandlers = new HashMap<MessageType, IRemoteEventHandler>();
-    /*package private*/ Map<MessageType, ILocalEventHandler> mLocalEventHandlers = new HashMap<MessageType, ILocalEventHandler>();
-    
-    private LocalStorage(ImapLog imapLog){
+
+    public LocalStorage(ImapLog imapLog){
         mImapLog = imapLog;  
         mMessageResolver = new ImapMessageResolver();         
-    }
-    
-    /**
-     * @param imapLog
-     * @return LocalStorage
-     */
-    public static LocalStorage createInstance(ImapLog imapLog) {
-        if (sInstance != null) {
-            return sInstance;
-        }
-        synchronized (LocalStorage.class) {
-            if (sInstance == null) {
-                sInstance = new LocalStorage(imapLog);
-            }
-        }
-        return sInstance;
     }
     
     /**
@@ -74,13 +58,10 @@ public class LocalStorage implements ISynchronizationHandler{
     public void unregisterRemoteEventHandler(MessageType messageType){
         mRemoteEventHandlers.remove(messageType);
     }
-    
-    /**
-     * @param messageType
-     * @param handler
-     */
-    public void addLocalEventHandler(MessageType messageType, ILocalEventHandler handler){
-        mLocalEventHandlers.put(messageType, handler);
+
+    public void removeListeners(){
+        mRemoteEventHandlers.clear();
+        mRemoteEventHandlers = null;
     }
 
     /**
@@ -118,14 +99,20 @@ public class LocalStorage implements ISynchronizationHandler{
             boolean seenFlag = fg.addSeenFlag();
             for(Integer uid : fg.getUids() ){
                 MessageData msg = mImapLog.getMessage(folder, uid);
+                if(msg == null){
+                    if(sLogger.isActivated()){
+                        sLogger.info(new StringBuilder("Can not find (").append(folder).append(",").append(uid).append(") in imap message provider").toString());
+                        continue;
+                    }
+                }
                 MessageType messageType = msg.getMessageType();
                 IRemoteEventHandler storageHandler = mRemoteEventHandlers.get(messageType);
                 if (deleteFlag) {
-                    msg.setDeleted(true);
+                    msg.setDeleteStatus(DeleteStatus.DELETED);
                     storageHandler.onRemoteDeleteEvent(messageType, msg.getMessageId());
                 }
                 if (seenFlag) {
-                    msg.setSeen(true);
+                    msg.setReadStatus(ReadStatus.READ);
                     storageHandler.onRemoteReadEvent(messageType, msg.getMessageId());
                 }
                 mImapLog.addMessage(msg);
@@ -148,17 +135,19 @@ public class LocalStorage implements ISynchronizationHandler{
         Set<Integer> uids = new TreeSet<Integer>();        
         for(ImapMessage msg : messages){
             MessageType messageType = mMessageResolver.resolveType(msg);
-            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
-            if(resolvedMessage == null){
+			if(messageType == null){
                 continue;
             }
-            IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType); 
+            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
+            if(resolvedMessage==null){
+                continue;
+            }
+            IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType);
             String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
             if(messageId == null){ // message not present in local storage
                 uids.add(msg.getUid());    
             } 
             else{
-                
                 // update flag for local message
                 boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
                 boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
@@ -168,10 +157,13 @@ public class LocalStorage implements ISynchronizationHandler{
                 if(isSeen){
                     remoteEventHandler.onRemoteReadEvent(messageType, messageId);
                 }
-                
-                MessageData messageData = new MessageData(msg.getFolderPath(), 0, msg.getUid(),
-                        isSeen, isDeleted, messageType, messageId);
-                mImapLog.addMessage(messageData);
+                mImapLog.updateMessage(
+                        messageType,
+                        messageId,
+                        msg.getFolderPath(),
+                        msg.getUid(),
+                        isSeen,
+                        isDeleted);
             }
         }
      return uids;   
@@ -182,14 +174,18 @@ public class LocalStorage implements ISynchronizationHandler{
         for (ImapMessage msg : messages) {
 
             MessageType messageType = mMessageResolver.resolveType(msg);
-            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType,msg);
+            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
             if(resolvedMessage == null){
                 continue;
             }
             String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(messageType, resolvedMessage);
-            
-            MessageData messageData = new MessageData(resolvedMessage.getFolder(), 0, resolvedMessage.getUid(),
-                    resolvedMessage.isSeen(),resolvedMessage.isDeleted(),
+
+            MessageData messageData = new MessageData(
+                    resolvedMessage.getFolder(),
+                    resolvedMessage.getUid(),
+                    resolvedMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD,
+                    resolvedMessage.isDeleted() ? DeleteStatus.DELETED : DeleteStatus.NOT_DELETED,
+                    PushStatus.PUSHED,
                     messageType, messageId);
             mImapLog.addMessage(messageData);
         }
@@ -198,8 +194,24 @@ public class LocalStorage implements ISynchronizationHandler{
     @Override
     public List<FlagChange> getLocalFlagChanges(String folder) {
         List<FlagChange> changes = new ArrayList<>();
-        for (ILocalEventHandler handler : mLocalEventHandlers.values()) {
-            changes.addAll(handler.getLocalEvents(folder));
+        List<Integer> readUids = new ArrayList<>();
+        List<Integer> deletedUids = new ArrayList<>();
+        for (MessageData messageData :  mImapLog.getMessages(folder, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.DELETED_REPORT_REQUESTED)) {
+            Integer uid = messageData.getUid();
+            if(uid!=MessageData.INVALID_UID){
+                if(ReadStatus.READ_REPORT_REQUESTED == messageData.getReadStatus()){
+                    readUids.add(uid);
+                }
+                if(DeleteStatus.DELETED_REPORT_REQUESTED== messageData.getDeleteStatus()){
+                    deletedUids.add(uid);
+                }
+            }
+        }
+        if(!readUids.isEmpty()){
+            changes.add(new FlagChange(folder,readUids,Flag.Seen));
+        }
+        if(!deletedUids.isEmpty()){
+            changes.add(new FlagChange(folder,deletedUids,Flag.Deleted));
         }
         return changes;
     }
@@ -211,13 +223,16 @@ public class LocalStorage implements ISynchronizationHandler{
         Iterator<FlagChange> iter = flagChanges.iterator();
         while (iter.hasNext()) {
             FlagChange fg = iter.next();
+            String folder= fg.getFolder();
             boolean seenFlag = fg.addSeenFlag();
             boolean deleteFlag= fg.addDeletedFlag();
             for(Integer uid : fg.getUids()){
-                MessageData msg = mImapLog.getMessage(fg.getFolder(), uid);
-                MessageType messageType = msg.getMessageType();
-                ILocalEventHandler storageHandler = mLocalEventHandlers.get(messageType);
-                storageHandler.finalizeLocalEvents(messageType, msg.getMessageId(), seenFlag, deleteFlag);
+                if(seenFlag){
+                    mImapLog.updateReadStatus(folder, uid, ReadStatus.READ);
+                }
+                if(deleteFlag){
+                    mImapLog.updateDeleteStatus(folder, uid, DeleteStatus.DELETED);
+                }
             }
         }
     }

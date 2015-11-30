@@ -20,21 +20,6 @@
 
     <!-- Send message-->
     <string name="cms_toolkit_send_message_sent">Messages sent</string>
-    
-    <!-- CMS Settings -->
-    <string name="cms_toolkit_settings_save_btn">Save</string>
-    <string name="cms_toolkit_settings_save_ok">Change have been taken into account.</string>    
-    <string name="cms_toolkit_settings_message_folder_label">RCS message folder</string>
-    <string name="cms_toolkit_settings_imap_server_address_label">CMS / IMAP Server Address</string>
-    <string name="cms_toolkit_settings_imap_user_login_label">IMAP User account</string>
-    <string name="cms_toolkit_settings_imap_user_pwd_label">IMAP User password</string>
-    <string name="cms_toolkit_settings_my_number_label">My number</string>
-    <string name="cms_toolkit_settings_push_sms_label">Push SMS</string>
-    <string name="cms_toolkit_settings_push_mms_label">Push MMS</string>
-    <string name="cms_toolkit_settings_update_flag_imap_xms_label">Update flags for XMS with IMAP</string>
-    <string name="cms_toolkit_settings_default_directory_label">CMS default directory</string>
-    <string name="cms_toolkit_settings_directory_separator_label">CMS directory separator</string>
-
 
     <!-- Remote Operation -->
     <string name="cms_toolkit_remote_operations_delete_messages">Delete existing messages</string>

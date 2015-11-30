@@ -1,7 +1,7 @@
 
 package com.gsma.rcs.cms.imap.service;
 
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.ImapService;
@@ -26,10 +26,9 @@ public class ImapServiceManager {
     /**
      * @param settings 
      * @return BasicImapService
-     * @throws ImapServiceNotAvailableException 
-     * @throws ImapSynchronizationActiveException 
+     * @throws ImapServiceNotAvailableException
      */
-    public static BasicImapService getService(CmsSettings settings) throws ImapServiceNotAvailableException {
+    public static BasicImapService getService(RcsSettings settings) throws ImapServiceNotAvailableException {
 
         if (!sSemaphore.tryAcquire()) {
             if (sLogger.isActivated()) {
@@ -42,11 +41,11 @@ public class ImapServiceManager {
             sLogger.debug("Acquire a token for synchronization ... ");
         }
         mAvailable = false;
-        IoService io = new SocketIoService(settings.getServerAddress());
+        IoService io = new SocketIoService(settings.getCmsServerAddress());
         // ImapService service = new DefaultImapService(io);
         BasicImapService service = new BasicImapService(io);
-        service.setAuthenticationDetails(settings.getUserLogin(),
-                settings.getUserPwd(), null, null, false);        
+        service.setAuthenticationDetails(settings.getCmsUserLogin(),
+                settings.getCmsUserPwd(), null, null, false);
         return service;        
     }
       
@@ -105,11 +104,6 @@ public class ImapServiceManager {
     *
     */
    public interface ImapServiceListener {
-       
-       /**
-        * @param params
-        * @param result
-        */
-       public void onImapServiceAvailable();
+       void onImapServiceAvailable();
    }
 }

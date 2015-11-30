@@ -1,31 +1,39 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
-import com.gsma.rcs.cms.fordemo.ImapCommandController;
-import com.gsma.rcs.cms.fordemo.ImapContext;
+import android.content.Context;
+
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.provider.imap.DataUtils;
 import com.gsma.rcs.cms.provider.imap.FolderData;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.PartLog;
-import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.XmsData;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
-import com.gsma.rcs.cms.sync.ISynchronizer;
-import com.gsma.rcs.cms.sync.SynchronizerImpl;
+import com.gsma.rcs.cms.sync.ISyncProcessor;
+import com.gsma.rcs.cms.sync.SyncProcessorImpl;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 
+import com.gsma.services.rcs.contact.ContactId;
 import com.sonymobile.rcs.cpm.ms.impl.sync.AbstractSyncStrategy;
 import com.sonymobile.rcs.cpm.ms.sync.MutableReport;
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class BasicSyncStrategy extends AbstractSyncStrategy {
@@ -34,19 +42,22 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
     private static Logger sLogger = Logger.getLogger(BasicSyncStrategy.class.getName());
 
-    private BasicImapService mImapService;
-
     private boolean mExecutionResult;
 
-    private LocalStorage mLocalStorageHandler;
-    private ISynchronizer mSynchronizer;
+    private final BasicImapService mImapService;
+    private final RcsSettings mRcsSettings;
+    private final Context mContext;
+    private final LocalStorage mLocalStorageHandler;
+    private ISyncProcessor mSynchronizer;
 
     /**
      * @param imapService
      * @param localStorageHandler
      */
-    public BasicSyncStrategy(BasicImapService imapService,
+    public BasicSyncStrategy(Context context, RcsSettings rcsSettings, BasicImapService imapService,
             LocalStorage localStorageHandler) {
+        mContext = context;
+        mRcsSettings = rcsSettings;
         mImapService = imapService;
         mLocalStorageHandler = localStorageHandler;
     }
@@ -72,7 +83,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
         try {
             Map<String, FolderData> localFolders = mLocalStorageHandler.getLocalFolders();
-            mSynchronizer = new SynchronizerImpl(mImapService);
+            mSynchronizer = new SyncProcessorImpl(mImapService);
 
             for (ImapFolder remoteFolder : mImapService.listStatus()) {
                 String remoteFolderName = remoteFolder.getName();
@@ -94,22 +105,32 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);                
             }
             
-            //TODO FGI : TO BE REMOVED
+            //TODO FGI
             // Demo purpose only 
             // push on CMS server, messages that are marked as PUSH_requested in database
             // try to get an instance of XmsLog
-            XmsLog xmsLog = XmsLog.getInstance(null);
-            PartLog partLog = PartLog.getInstance(null);
-            if(xmsLog!=null){
-                List<XmsData> messagesToPush = xmsLog.getMessages(PushStatus.PUSH_REQUESTED);
-                if(!messagesToPush.isEmpty()){
-                    ImapContext localContext = new ImapContext();
-                    new PushMessageTask(mImapService, xmsLog, partLog, CmsSettings.getInstance().getMyNumber(), localContext, null).pushMessages(messagesToPush);
-                    for(String baseId : localContext.getUids().keySet()){
-                        xmsLog.updatePushStatus(baseId, XmsData.PushStatus.PUSHED);
+            XmsLog xmsLog = XmsLog.getInstance();
+            ImapLog imapLog = ImapLog.getInstance();
+            if(xmsLog!=null &&
+                    imapLog!=null
+                    ){
+                List<XmsDataObject> messagesToPush = new ArrayList<>();
+                for(MessageData messageData : imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)){
+                    XmsDataObject xms = XmsDataObjectFactory.createXmsDataObject(xmsLog, messageData.getMessageId());
+                    if(xms != null){
+                        messagesToPush.add(xms);
                     }
-                    ImapContext globalContext = ImapCommandController.getInstance().getContext();
-                    globalContext.importLocalContext(localContext);
+                }
+                if(!messagesToPush.isEmpty()){
+                    PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings, mImapService, xmsLog, imapLog, null);
+                    pushMessageTask.pushMessages(messagesToPush);
+                    Iterator<Entry<String,Integer>> iter = pushMessageTask.getCreatedUids().entrySet().iterator();
+                    while(iter.hasNext()) {
+                        Entry<String, Integer> entry = iter.next();
+                        String baseId = entry.getKey();
+                        Integer uid = entry.getValue();
+                        imapLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                    }
                 }
             }
 

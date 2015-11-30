@@ -8,7 +8,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_margin="5dip"
-        android:text="@string/cms_toolkit_settings_save_btn" />
+        android:text="@string/label_save" />
 
     <ScrollView
         android:layout_width="fill_parent"
@@ -23,23 +23,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_message_folder_label" />
-
-            <EditText
-                android:id="@+id/cms_rcs_message_folder"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip"
-                android:lines="1"
-                android:maxLength="100"
-                android:singleLine="true" />
-            
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_imap_server_address_label" />
+                android:text="@string/cms_imap_server_address" />
 
             <EditText
                 android:id="@+id/cms_imap_server_address"
@@ -55,7 +39,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_imap_user_login_label" />
+                android:text="@string/cms_imap_user_login" />
 
             <EditText
                 android:id="@+id/cms_imap_user_login"
@@ -71,7 +55,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_imap_user_pwd_label" />
+                android:text="@string/cms_imap_user_pwd" />
 
             <EditText
                 android:id="@+id/cms_imap_user_pwd"
@@ -82,49 +66,33 @@
                 android:lines="1"
                 android:maxLength="100"
                 android:singleLine="true" />
-            
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_my_number_label" />
-
-            <EditText
-                android:id="@+id/cms_toolkit_settings_myNumber"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip"
-                android:lines="1"
-                android:maxLength="100"
-                android:singleLine="true" />
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_toolkit_settings_push_sms"
-                android:text="@string/cms_toolkit_settings_push_sms_label"/>
+                android:id="@+id/cms_push_sms"
+                android:text="@string/cms_push_sms"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_toolkit_settings_push_mms"
-                android:text="@string/cms_toolkit_settings_push_mms_label"/>
+                android:id="@+id/cms_push_mms"
+                android:text="@string/cms_push_mms"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_toolkit_settings_update_flag_imap_xms"
-                android:text="@string/cms_toolkit_settings_update_flag_imap_xms_label" />
+                android:id="@+id/cms_update_flag_imap_xms"
+                android:text="@string/cms_update_flag_imap_xms" />
 
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_default_directory_label" />
+                android:text="@string/cms_default_directory_name" />
 
             <EditText
-                android:id="@+id/cms_toolkit_settings_default_directory"
+                android:id="@+id/cms_default_directory_name"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
@@ -137,10 +105,10 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_toolkit_settings_directory_separator_label" />
+                android:text="@string/cms_default_directory_separator" />
 
             <EditText
-                android:id="@+id/cms_toolkit_settings_directory_separator"
+                android:id="@+id/cms_default_directory_separator"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"

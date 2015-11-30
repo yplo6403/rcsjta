@@ -19,15 +19,22 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
 
+import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.service.ImsService;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
+
+import com.gsma.rcs.cms.storage.LocalStorage;
+import com.gsma.rcs.cms.sync.Synchronizer;
+import com.gsma.rcs.cms.utils.CmsUtils;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
@@ -39,16 +46,25 @@ public class CmsService extends ImsService {
     private final XmsLog mXmsLog;
     private CmsServiceImpl mCmsService;
 
+    private final Context mContext;
+    private final CmsManager mCmsManager;
+    private final RcsSettings mRcsSettings;
+    private final LocalStorage mLocalStorage;
+
     /**
      * Constructor
      *
      * @param parent IMS module
      * @param xmsLog The XMS log accessor
      */
-    public CmsService(ImsModule parent, XmsLog xmsLog) {
+    public CmsService(ImsModule parent, Context context, RcsSettings rcsSettings, XmsLog xmsLog) {
         super(parent, true);
+        mContext = context;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mXmsLog = xmsLog;
+        mCmsManager = parent.getCore().getCmsManager();
+        mRcsSettings = rcsSettings;
+        mLocalStorage = mCmsManager.getLocalStorage();
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -83,11 +99,31 @@ public class CmsService extends ImsService {
     }
 
     public void syncAll() {
-        // TODO
+        mOperationHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Synchronize CMS");
+                }
+                //TODO catch exception at this level
+                new Synchronizer(mContext, mRcsSettings, mLocalStorage).syncAll();
+                mCmsService.broadcastAllSynchronized();
+            }
+        });
     }
 
     public void syncOneToOneConversation(final ContactId contact) {
-        // TODO
+        mOperationHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Synchronize CMS for contact " + contact);
+                }
+                //TODO catch exception at this level
+                new Synchronizer(mContext, mRcsSettings, mLocalStorage).syncFolder(CmsUtils.contactToCmsFolder(mRcsSettings, contact));
+                mCmsService.broadcastOneToOneConversationSynchronized(contact);
+            }
+        });
     }
 
     public void syncGroupConversation(final String chatId) {

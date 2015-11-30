@@ -6,11 +6,12 @@ import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages;
 import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
 
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapService;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
 
 public class RemoteOperations extends ListActivity {
 
-    private CmsSettings mSettings;
+    private RcsSettings mSettings;
 
     private AlertDialog mInProgressDialog;
 
@@ -38,7 +39,7 @@ public class RemoteOperations extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mSettings = CmsSettings.getInstance();
+        mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);

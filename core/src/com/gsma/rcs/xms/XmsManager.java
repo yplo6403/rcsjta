@@ -34,6 +34,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.Telephony;
+import android.provider.Telephony.TextBasedSmsColumns;
 import android.telephony.SmsManager;
 
 import com.gsma.rcs.utils.IdGenerator;
@@ -54,6 +55,7 @@ public class XmsManager {
     private static final String SMS_DELIVERED_ACTION = "SMS_DELIVERED";
     private static final String KEY_TRANSACTION_ID = "trans_id";
     private static final String KEY_PART_ID = "part_id";
+    private static final String KEY_SMS_URI = "sms_uri";
     private final ContentResolver mContentResolver;
     private final Context mCtx;
     private ReceiveSmsEventSent mReceiveSmsEventSent;
@@ -92,17 +94,26 @@ public class XmsManager {
 
     public void sendSms(final ContactId contact, final String text) {
         SmsManager smsManager = SmsManager.getDefault();
-        Intent smsSentIntent = new Intent(SMS_SENT_ACTION);
         String transactionId = IdGenerator.generateMessageID();
+        Intent smsSentIntent = new Intent(SMS_SENT_ACTION);
         smsSentIntent.putExtra(KEY_TRANSACTION_ID, transactionId);
-        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
-                smsSentIntent, 0);
         Intent smsDeliveredIntent = new Intent(SMS_DELIVERED_ACTION);
         smsDeliveredIntent.putExtra(KEY_TRANSACTION_ID, transactionId);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            ContentValues values = new ContentValues();
+            values.put("address", contact.toString());
+            values.put("body", text);
+            Uri smsUri = mContentResolver.insert(Uri.parse("content://sms/sent"), values);
+            smsSentIntent.putExtra(KEY_SMS_URI, smsUri.toString());
+            smsDeliveredIntent.putExtra(KEY_SMS_URI, smsUri.toString());
+        }
+        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
+                smsSentIntent, 0);
         PendingIntent mDeliveredPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
                 smsDeliveredIntent, 0);
         ArrayList<String> parts = smsManager.divideMessage(text);
-                    /* Message too large for a single SMS, but may be sent as a multi-part SMS */
+
+        /* Message too large for a single SMS, but may be sent as a multi-part SMS */
         if (parts.size() > 1) {
             ArrayList<PendingIntent> sentPIs = new ArrayList<>(parts.size());
             ArrayList<PendingIntent> deliveredPIs = new ArrayList<>(parts.size());
@@ -126,12 +137,7 @@ public class XmsManager {
             smsManager.sendTextMessage(contact.toString(), null, text,
                     mSentPendingIntent, mDeliveredPendingIntent);
         }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            ContentValues values = new ContentValues();
-            values.put("address", contact.toString());
-            values.put("body", text);
-            mContentResolver.insert(Uri.parse("content://sms/sent"), values);
-        }
+
     }
 
     public void sendMms(final ContactId contact, final String text, final ArrayList<Uri> files) {
@@ -248,6 +254,12 @@ public class XmsManager {
                     if (sLogger.isActivated()) {
                         sLogger.debug("SMS sent successfully");
                     }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                        String smsUri = intent.getStringExtra(KEY_SMS_URI);
+                        ContentValues values = new ContentValues();
+                        values.put(TextBasedSmsColumns.STATUS, TextBasedSmsColumns.STATUS_PENDING);
+                        mContentResolver.update(Uri.parse(smsUri), values, null, null);
+                    }
                     break;
                 case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
                     if (sLogger.isActivated()) {
@@ -311,6 +323,12 @@ public class XmsManager {
                 case Activity.RESULT_OK:
                     if (sLogger.isActivated()) {
                         sLogger.debug("SMS delivered");
+                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+                        String smsUri = intent.getStringExtra(KEY_SMS_URI);
+                        ContentValues values = new ContentValues();
+                        values.put(TextBasedSmsColumns.STATUS, TextBasedSmsColumns.STATUS_COMPLETE);
+                        mContentResolver.update(Uri.parse(smsUri), values, null, null);
                     }
                     break;
                 case Activity.RESULT_CANCELED:

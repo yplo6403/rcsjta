@@ -64,6 +64,8 @@ public class Provisioning extends TabActivity {
                 .setContent(new Intent(this, ServiceProvisioning.class)));
         tabHost.addTab(tabHost.newTabSpec("logger").setIndicator("Logger", null)
                 .setContent(new Intent(this, LoggerProvisioning.class)));
+        tabHost.addTab(tabHost.newTabSpec("cms").setIndicator("Cms", null)
+                .setContent(new Intent(this, CmsProvisioning.class)));
     }
 
     /**

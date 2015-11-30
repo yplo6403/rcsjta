@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * Local storage interface
  */
-public interface ISynchronizationHandler {
+public interface ISyncProcessorHandler {
 
     /**
      * Update local IMAP data for a folder.
@@ -19,20 +19,20 @@ public interface ISynchronizationHandler {
      * (NEXTUID, HIGHESTMODSEQ, UIDVALIDITY, ...)
      * @param folder
      */
-    public void updateLocalFolder(FolderData folder);
+    void updateLocalFolder(FolderData folder);
     
     /**
      * Apply flag changes from a remote folder
      * @param flagchanges
      */
-    public void applyFlagChange(List<FlagChange> flagchanges);
+    void applyFlagChange(List<FlagChange> flagchanges);
     
     /**
      * Delete local IMAP folder when it is no more valid
      * by checking the UIDVALIDITY value retrieved from CMS.
      * @param folderName
      */
-    public void removeLocalFolder(String folderName);
+    void removeLocalFolder(String folderName);
     
     /**
      * Return messages that are not already present in local storage.
@@ -40,18 +40,18 @@ public interface ISynchronizationHandler {
      * @param messages
      * @return uids of new messages
      */
-    public Set<Integer> filterNewMessages(List<ImapMessage> messages);
+    Set<Integer> filterNewMessages(List<ImapMessage> messages);
     
     /**
      * Create new messages in local storage.
      * @param messages
      */
-    public void createMessages(List<ImapMessage> messages);
+    void createMessages(List<ImapMessage> messages);
        
     /**
      * Get flag change from local storage for a folder
      * @param folder 
      * @return flagChanges
      */
-    public List<FlagChange> getLocalFlagChanges(String folder);
+    List<FlagChange> getLocalFlagChanges(String folder);
 }

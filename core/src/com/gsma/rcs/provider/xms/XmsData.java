@@ -104,6 +104,12 @@ public class XmsData {
     public static final String KEY_NATIVE_ID = "native_id";
 
     /**
+     * Native provider thread id (MMS or SMS)
+     */
+    public static final String KEY_NATIVE_THREAD_ID = "native_thread_id";
+
+
+    /**
      * Message correlator
      */
     public static final String KEY_MESSAGE_CORRELATOR = "correlator";

@@ -24,6 +24,8 @@ package com.gsma.rcs.core;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
+import com.gsma.rcs.cms.CmsManager;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -66,6 +68,8 @@ public class Core {
     private static volatile Core sInstance;
 
     private final XmsManager mXmsManager;
+
+    private final CmsManager mCmsManager;
 
     private CoreListener mListener;
 
@@ -118,7 +122,7 @@ public class Core {
     public static Core createCore(Context ctx, CoreListener listener, RcsSettings rcsSettings,
             ContentResolver contentResolver, LocalContentResolver localContentResolver,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog) throws IOException, KeyStoreException {
+            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) throws IOException, KeyStoreException {
         if (sInstance != null) {
             return sInstance;
         }
@@ -127,7 +131,7 @@ public class Core {
                 KeyStoreManager.loadKeyStore(rcsSettings);
                 sInstance = new Core(ctx, listener, contentResolver, localContentResolver,
                         rcsSettings, contactManager, messagingLog, historyLog, richCallHistory,
-                        xmsLog);
+                        xmsLog, imapLog);
             }
         }
         return sInstance;
@@ -166,7 +170,7 @@ public class Core {
     private Core(Context ctx, CoreListener listener, ContentResolver contentResolver,
             LocalContentResolver localContentResolver, RcsSettings rcsSettings,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog) {
+            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.info("Terminal core initialization");
@@ -184,7 +188,8 @@ public class Core {
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
 
         mXmsManager = new XmsManager(ctx, contentResolver);
-
+        mCmsManager = new CmsManager(ctx, imapLog, xmsLog, rcsSettings);
+        mCmsManager.start();
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
 
@@ -279,6 +284,7 @@ public class Core {
         mLocaleManager.stop();
         mAddressBookManager.stop();
         mXmsManager.stop();
+        mCmsManager.stop();
         mImsModule.stop();
 
         mStopping = false;
@@ -360,5 +366,14 @@ public class Core {
      */
     public XmsManager getXmsManager() {
         return mXmsManager;
+    }
+
+    /**
+     * Gets CMS manager
+     *
+     * @return CmsManager
+     */
+    public CmsManager getCmsManager() {
+        return mCmsManager;
     }
 }

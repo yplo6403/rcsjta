@@ -1,16 +1,6 @@
 
 package com.gsma.rcs.cms.toolkit.operations.remote;
 
-import com.gsma.rcs.R;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
-import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
-import com.gsma.rcs.cms.toolkit.operations.remote.PushMessageTask.PushMessageTaskCallback;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
-import com.gsma.services.rcs.RcsService.Direction;
-
-import com.sonymobile.rcs.imap.Flag;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -24,12 +14,24 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.gsma.rcs.R;
+import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.operations.remote.PushMessageTask.PushMessageTaskCallback;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.sonymobile.rcs.imap.Flag;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class CreateMessages extends Activity implements PushMessageTaskCallback{
 
-    private CmsSettings mSettings;
+    private RcsSettings mSettings;
     private AlertDialog mInProgressDialog;
 
     private Spinner mDirectionSpinner;
@@ -50,7 +52,7 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
         // Set buttons callback
         Button btn = (Button) findViewById(R.id.cms_toolkit_create_btn);
         btn.setOnClickListener(saveBtnListener);
-        mSettings = CmsSettings.getInstance();
+        mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
         mDirectionSpinner = (Spinner) findViewById(R.id.cms_toolkit_create_message_direction);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
@@ -127,12 +129,20 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
             }
             
             Integer number = Integer.valueOf((String)mNumberSpinner.getSelectedItem());            
-            SmsData sms = new  SmsData(null, null, contact, content, System.currentTimeMillis(), direction, ReadStatus.READ_REQUESTED);
-            SmsData[] messages = new SmsData[number];
+            SmsDataObject sms = new SmsDataObject(
+                    IdGenerator.generateMessageID(),
+                    ContactUtil.createContactIdFromTrustedData(contact),
+                    content,
+                    direction,
+                    ReadStatus.READ,
+                    System.currentTimeMillis(),
+                    0,
+                    0);
+            SmsDataObject[] messages = new SmsDataObject[number];
             for(int i=0;i<number;i++){
                 messages[i] = sms;
             }
-            new PushMessageTask(mSettings, messages, myNumber, mSelectedFlags, CreateMessages.this).execute();
+            new PushMessageTask(mSettings, messages, ContactUtil.createContactIdFromTrustedData(myNumber), mSelectedFlags, CreateMessages.this).execute();
             mInProgressDialog = AlertDialogUtils.displayInfo(CreateMessages.this,
                     getString(R.string.cms_toolkit_in_progress));
         }

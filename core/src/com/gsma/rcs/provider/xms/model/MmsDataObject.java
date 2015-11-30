@@ -18,16 +18,17 @@
 
 package com.gsma.rcs.provider.xms.model;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,11 +43,20 @@ public class MmsDataObject extends XmsDataObject {
      */
     private final String mMmsId;
 
+    public MmsDataObject(String mmsId, String messageId, ContactId contact,
+            String body, RcsService.Direction dir, ReadStatus readStatus, long timestamp, long nativeId, long nativeThreadId, List<MmsPart> mmsPart) {
+        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp,
+                nativeId, nativeThreadId);
+        mMmsId = mmsId;
+        mReadStatus = readStatus;
+        mMmsPart = mmsPart;
+    }
+
     public MmsDataObject(Context ctx, String mmsId, String messageId, ContactId contact,
-            String body, RcsService.Direction dir, long timestamp, List<Uri> files, long nativeId)
+                         String body, RcsService.Direction dir, long timestamp, List<Uri> files, long nativeId)
             throws IOException {
         super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp,
-                nativeId);
+                nativeId,0);
         mMmsId = mmsId;
         mMmsPart = new ArrayList<>();
         ContentResolver contentResolver = ctx.getContentResolver();
@@ -67,7 +77,6 @@ public class MmsDataObject extends XmsDataObject {
                     null, body, null));
         }
     }
-
     public String getMmsId() {
         return mMmsId;
     }
@@ -76,7 +85,7 @@ public class MmsDataObject extends XmsDataObject {
         return mMmsPart;
     }
 
-    public class MmsPart {
+    public static class MmsPart {
         private final String mMessageId;
         private final String mMimeType;
         private final String mBody;
@@ -92,12 +101,13 @@ public class MmsDataObject extends XmsDataObject {
             mMimeType = mimeType;
             mFileName = fileName;
             mFileSize = fileSize;
-            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(data)) {
+            if(MimeManager.isApplicationType(mimeType) ||
+                    MimeManager.isTextType(mimeType)){
                 mBody = data;
                 mFile = null;
             } else {
                 mBody = null;
-                mFile = Uri.parse(new File(data).toString());
+                mFile = Uri.parse(data);
             }
             mFileIcon = fileIcon;
             mMessageId = messageId;

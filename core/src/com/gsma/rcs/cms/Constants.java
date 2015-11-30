@@ -34,7 +34,6 @@ public class Constants {
     public static final String HEADER_SEP = ": ";
     public static final String HEADER_FROM = "From";
     public static final String HEADER_TO = "To";
-    public static final String HEADER_SUBJECT = "Subject";
     public static final String HEADER_MESSAGE_CONTEXT = "Message-Context";
     public static final String HEADER_MESSAGE_CORRELATOR = "Message-Correlator";
     public static final String HEADER_MESSAGE_ID = "Message-ID";
@@ -52,8 +51,8 @@ public class Constants {
     public static final String BOUDARY_SEP = "--";
 
     public static final String CONTENT_TYPE_CPIM = "Message/CPIM";
-    public static final String PAGER_MESSAGE = "\"pager-message\"";
-    public static final String MULTIMEDIA_MESSAGE = "\"multimedia-message\"";
+    public static final String PAGER_MESSAGE = "pager-message";
+    public static final String MULTIMEDIA_MESSAGE = "multimedia-message";
     public static final String DIRECTION_SENT = "sent";
     public static final String DIRECTION_RECEIVED = "received";
 

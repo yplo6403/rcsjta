@@ -465,6 +465,7 @@ public class XmsProvider extends ContentProvider {
                     + XmsData.KEY_REASON_CODE + " INTEGER NOT NULL,"
                     + XmsData.KEY_READ_STATUS + " INTEGER NOT NULL,"
                     + XmsData.KEY_NATIVE_ID + " INTEGER,"
+                    + XmsData.KEY_NATIVE_THREAD_ID + " INTEGER,"
                     + XmsData.KEY_MESSAGE_CORRELATOR + " TEXT,"
                     + XmsData.KEY_MMS_ID + " TEXT)" );
 
@@ -476,6 +477,9 @@ public class XmsProvider extends ContentProvider {
 
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_NATIVE_ID + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_NATIVE_ID + ')');
+
+            db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_NATIVE_THREAD_ID + "_idx" +
+                    " ON " + TABLE_XMS + '(' + XmsData.KEY_NATIVE_THREAD_ID + ')');
 
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MESSAGE_CORRELATOR + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_MESSAGE_CORRELATOR + ')');

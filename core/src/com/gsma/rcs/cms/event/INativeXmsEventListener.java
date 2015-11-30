@@ -1,19 +1,22 @@
 package com.gsma.rcs.cms.event;
 
-import com.gsma.rcs.cms.provider.xms.model.MmsData;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.services.rcs.contact.ContactId;
 
 public interface INativeXmsEventListener {
 
-    void onIncomingSms(SmsData message);
-    void onOutgoingSms(SmsData message);
-    void onDeliverNativeSms(long nativeProviderId, long sentDate);
+    void onIncomingSms(SmsDataObject message);
+    void onOutgoingSms(SmsDataObject message);
     void onDeleteNativeSms(long nativeProviderId);
 
-    void onIncomingMms(MmsData message);
-    void onOutgoingMms(MmsData message);
+    void onIncomingMms(MmsDataObject message);
+    void onOutgoingMms(MmsDataObject message);
     void onDeleteNativeMms(String mmsId);
+
+    void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status);
 
     void onReadNativeConversation(long nativeThreadId);
     void onDeleteNativeConversation(long nativeThreadId);
+
 }

@@ -1,37 +1,12 @@
 package com.gsma.rcs.cms.toolkit.xms;
 
-import com.gsma.rcs.R;
-import com.gsma.rcs.cms.CmsService;
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager.ImapServiceListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
-import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
-import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
-import com.gsma.rcs.cms.observer.XmsObserverUtils;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.PartData;
-import com.gsma.rcs.cms.provider.xms.PartLog;
-import com.gsma.rcs.cms.provider.xms.XmsLogData;
-import com.gsma.rcs.cms.provider.xms.XmsLog;
-import com.gsma.rcs.cms.provider.xms.model.MmsPart;
-import com.gsma.rcs.cms.provider.xms.model.XmsData;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
-import com.gsma.rcs.cms.provider.xms.model.MmsData;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
-import com.gsma.rcs.cms.storage.LocalStorage;
-import com.gsma.rcs.cms.utils.MmsUtils;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.RcsService.Direction;
-
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -56,6 +31,34 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.gsma.rcs.R;
+import com.gsma.rcs.cms.CmsManager;
+import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceManager.ImapServiceListener;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
+import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
+import com.gsma.rcs.cms.storage.LocalStorage;
+import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.core.Core;
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.PartData;
+import com.gsma.rcs.provider.xms.XmsData;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.MimeManager;
+import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
+import com.gsma.services.rcs.contact.ContactId;
+
 public class XmsConversationView extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeXmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
     private final static Logger sLogger = Logger.getLogger(XmsConversationView.class.getSimpleName());
@@ -70,59 +73,49 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     private static class Xms{
 
         private final static String SORT = new StringBuilder(
-                XmsLogData.KEY_DATE).append(" ASC").toString();
+                XmsData.KEY_TIMESTAMP).append(" ASC").toString();
 
-        private final static String WHERE = new StringBuilder(XmsLogData.KEY_CONTACT)
-                .append("=?").append(" AND " ).append(XmsLogData.KEY_DELETE_STATUS).append("=").append(DeleteStatus.NOT_DELETED.toInt()).toString();
+        private final static String WHERE = new StringBuilder(XmsData.KEY_CONTACT).append("=?").toString();
 
         private final static String[] PROJECTION = new String[]{
-                XmsLogData.KEY_BASECOLUMN_ID,
-                XmsLogData.KEY_NATIVE_PROVIDER_ID,
-                XmsLogData.KEY_CONTACT,
-                XmsLogData.KEY_CONTENT,
-                XmsLogData.KEY_DATE,
-                XmsLogData.KEY_DIRECTION,
-                XmsLogData.KEY_READ_STATUS,
-                XmsLogData.KEY_MIME_TYPE,
-                XmsLogData.KEY_MMS_ID,
-                XmsLogData.KEY_SUBJECT
+                BaseColumns._ID,
+                XmsData.KEY_MESSAGE_ID,
+                XmsData.KEY_NATIVE_ID,
+                XmsData.KEY_CONTACT,
+                XmsData.KEY_BODY,
+                XmsData.KEY_TIMESTAMP,
+                XmsData.KEY_DIRECTION,
+                XmsData.KEY_READ_STATUS,
+                XmsData.KEY_MIME_TYPE,
         };
     }
 
+    private Core mCore;
     private XmsLogAdapter mAdapter;
+    private RcsSettings mRcsSettings;
+    private CmsManager mCmsManager;
     private XmsLog mXmsLog;
-    private PartLog mPartLog;
+    private LocalStorage mLocalStorage;
     private final static String EXTRA_CONTACT = "contact";
 
-    private String mContact;
+    private ContactId mContact;
     private EditText mContent;
     private ListView mListView;
     private TextView mSyncButton;
     
     private final static int MENU_ITEM_DELETE_MSG = 1; 
-    
-    private CmsService mCmsService;
 
     private class ImageViewOnClickListener implements OnClickListener{
 
-        private MmsPart mMmsPart;
+        private Uri mUri;
 
-        ImageViewOnClickListener(MmsPart mmsPart){
-            mMmsPart = mmsPart;
+        ImageViewOnClickListener(Uri uri){
+            mUri = uri;
         }
 
         @Override
         public void onClick(View view) {
-            String nativeId = mMmsPart.getNativeId();
-            Uri uri;
-            if(nativeId!=null){
-                uri =  Uri.parse(XmsObserverUtils.Mms.Part.URI.concat(nativeId));
-            }
-            else{
-                uri = Uri.withAppendedPath(PartData.CONTENT_URI, mMmsPart.getBaseId());
-            }
-            hasStartedDisplayImageActivity = true;
-            startActivity(XmsImageView.forgeIntentToStart(XmsConversationView.this, uri));
+            startActivity(XmsImageView.forgeIntentToStart(XmsConversationView.this, mUri));
         }
     }
 
@@ -132,14 +125,20 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mCore = Toolkit.checkCore(this);
+        if(mCore == null){
+            return;
+        }
 
         SIZE_100_DP = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
 
         setContentView(R.layout.rcs_cms_toolkit_xms_conversation_view);
-        
-        mContact = getIntent().getStringExtra(EXTRA_CONTACT);
-        mXmsLog = XmsLog.getInstance(getApplicationContext());
-        mPartLog = PartLog.getInstance(getApplicationContext());
+
+        mRcsSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
+        mCmsManager = mCore.getCmsManager();
+        mXmsLog = mCmsManager.getXmsLog();
+        mLocalStorage = mCmsManager.getLocalStorage();
+        mContact = ContactUtil.createContactIdFromTrustedData(getIntent().getStringExtra(EXTRA_CONTACT));
         mAdapter = new XmsLogAdapter(this);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
         mListView = (ListView) findViewById(android.R.id.list);
@@ -155,7 +154,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
                 if(messageContent.isEmpty()){
                     return;
                 }
-                new SmsSender(getApplicationContext(), mContact, mContent.getText().toString()).send();
+                new SmsSender(getApplicationContext(), mContact.toString(), mContent.getText().toString()).send();
                 mContent.setText("");
                 InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE); 
                 imm.hideSoftInputFromWindow(v.getWindowToken(), 0);                
@@ -169,38 +168,55 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
                 displaySyncButton(false);
                 try {      
                     new BasicSynchronizationTask(
-                            ImapServiceManager.getService(CmsSettings.getInstance()),                 
-                            LocalStorage.createInstance(ImapLog.getInstance(getApplicationContext())),
+                            getApplicationContext(),
+                            mRcsSettings,
+                            ImapServiceManager.getService(mRcsSettings),
+                            mLocalStorage,
                             XmsConversationView.this
-                            ).execute(new String[] {});
+                            ).execute(new String[]{CmsUtils.contactToCmsFolder(mRcsSettings, mContact)});
                 } catch (ImapServiceNotAvailableException e) {                
                     Toast.makeText(XmsConversationView.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
                 }                 
             }
             
         });
-        
-        mCmsService = CmsService.getInstance();                     
     }
 
     @Override
     protected void onResume() {
-        super.onResume();              
-        mCmsService.registerSmsObserverListener(this);
+        super.onResume();
+        if(!Toolkit.checkCore(this, mCore)){
+            return;
+        }
+        mCmsManager.registerSmsObserverListener(this);
         if(!hasStartedDisplayImageActivity ) {
             refreshView();
         }
         hasStartedDisplayImageActivity = false;
-        if(!mXmsLog.getMessages(mContact, ReadStatus.UNREAD).isEmpty()){
-            markConversationAsRead(mContact);
-        }
+        checkUnreadMessage();
         checkImapServiceStatus();
     }
-    
+
+    private void checkUnreadMessage(){
+        Cursor cursor = null;
+        try{
+            cursor = mCmsManager.getXmsLog().getXmsMessages(mContact);
+            int readStatusIdx = cursor.getColumnIndex(XmsData.KEY_READ_STATUS);
+            while(cursor.moveToNext()){
+                if(ReadStatus.UNREAD == ReadStatus.valueOf(cursor.getInt(readStatusIdx)))
+                    markConversationAsRead(mContact);
+                    break;
+                }
+            }
+        finally{
+            CursorUtil.close(cursor);
+        }
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        mCmsService.unregisterSmsObserverListener(this);
+        mCmsManager.unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
     
@@ -208,7 +224,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mCmsService.unregisterSmsObserverListener(this);
+        mCmsManager.unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
 
@@ -245,10 +261,10 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
             int directionIdx;
 
             private SmsViewHolder(View view, Cursor cursor){
-                contactIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTACT);
-                contentIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_CONTENT);
-                dateIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_DATE);
-                directionIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_DIRECTION);
+                contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BODY);
+                dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
+                directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
                 mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);
                 mDate = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_date);
             }
@@ -256,17 +272,13 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
 
         private class MmsViewHolder extends SmsViewHolder {
 
-            TextView mSubject;
             LinearLayout mImagesLayout;
-            int mmsIdIdx;
-            int subjectIdx;
+            int messageIdIdx;
             LinearLayout.LayoutParams imageParams;
 
             private MmsViewHolder(View view, Cursor cursor) {
                 super(view, cursor);
-                mmsIdIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_MMS_ID);
-                subjectIdx = cursor.getColumnIndexOrThrow(XmsLogData.KEY_SUBJECT);
-                mSubject = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_subject);
+                messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
                 mImagesLayout = (LinearLayout) view.findViewById(R.id.rcs_cms_toolkit_xms_images_layout);
                 imageParams = new LinearLayout.LayoutParams(SIZE_100_DP,SIZE_100_DP);
                 imageParams.bottomMargin = SIZE_100_DP/10;
@@ -345,9 +357,9 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
         }
 
         private int getItemViewType(Cursor cursor){
-            XmsData.MimeType mimeType = XmsData.MimeType.valueOf(cursor.getInt(cursor.getColumnIndex(XmsLogData.KEY_MIME_TYPE)));
-            Direction direction = Direction.valueOf(cursor.getInt(cursor.getColumnIndex(XmsLogData.KEY_DIRECTION)));
-            if(XmsData.MimeType.SMS == mimeType){
+            String mimeType = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MIME_TYPE));
+            Direction direction = Direction.valueOf(cursor.getInt(cursor.getColumnIndex(XmsData.KEY_DIRECTION)));
+            if(MimeType.TEXT_MESSAGE.equals(mimeType)){
                 if(Direction.INCOMING == direction ){
                     return VIEW_TYPE_SMS_IN;
                 }
@@ -387,24 +399,31 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
             holder.mDate.setText(DateUtils.getRelativeTimeSpanString(date,
                     System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
                     DateUtils.FORMAT_ABBREV_RELATIVE));
-            String mmsId = cursor.getString(holder.mmsIdIdx);
+            String messageId = cursor.getString(holder.messageIdIdx);
             holder.mContent.setText(cursor.getString(holder.contentIdx));
-            String subject = cursor.getString(holder.subjectIdx);
-            if (subject != null) {
-                holder.mSubject.setText(subject);
-            }
-
             holder.mImagesLayout.removeAllViews();
-            for(MmsPart mmsPart : mPartLog.getParts(mmsId, true)){
-                // filter out content type that are not image
-                if(!MmsUtils.CONTENT_TYPE_IMAGE.contains(mmsPart.getContentType())){
-                    continue;
+
+            Cursor partCursor = null;
+            try{
+                partCursor = mXmsLog.getMmsPart(messageId);
+                int mimeTypeIdx = partCursor.getColumnIndex(PartData.KEY_MIME_TYPE);
+                int fileIconIdx = partCursor.getColumnIndex(PartData.KEY_FILEICON);
+                int contentIdx = partCursor.getColumnIndex(PartData.KEY_CONTENT);
+                while(partCursor.moveToNext()){
+                    // filter out content type that are not image
+                    if(!MimeManager.isImageType(partCursor.getString(mimeTypeIdx))){
+                        continue;
+                    }
+                    byte[] fileIcon = partCursor.getBlob(fileIconIdx);
+                    ImageView imageView = new ImageView(context);
+                    imageView.setOnClickListener(new ImageViewOnClickListener(Uri.parse(partCursor.getString(contentIdx))));
+                    imageView.setLayoutParams(holder.imageParams);
+                    imageView.setImageBitmap(BitmapFactory.decodeByteArray(fileIcon, 0, fileIcon.length));
+                    holder.mImagesLayout.addView(imageView);
                 }
-                ImageView imageView = new ImageView(context);
-                imageView.setOnClickListener(new ImageViewOnClickListener(mmsPart));
-                imageView.setLayoutParams(holder.imageParams);
-                imageView.setImageBitmap(BitmapFactory.decodeByteArray(mmsPart.getThumb(), 0, mmsPart.getThumb().length));
-                holder.mImagesLayout.addView(imageView);
+            }
+            finally {
+                CursorUtil.close(partCursor);
             }
         }
 
@@ -429,23 +448,17 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
     
     @Override
-    public void onIncomingSms(SmsData message) {
-        if(!message.getContact().equals(mContact)){
+    public void onIncomingSms(SmsDataObject message) {
+        if(!message.getContact().toString().equals(mContact)){
             return;
         }
-        markMessageAsRead(message.getContact(), message.getBaseId());
+        markMessageAsRead(message.getMessageId());
         refreshView();
     }
 
     @Override
-    public void onOutgoingSms(SmsData message) {
+    public void onOutgoingSms(SmsDataObject message) {
         refreshView();
-    }
-
-    @Override
-    public void onDeliverNativeSms(long nativeProviderId, long sentDate) {
-        // TODO Auto-generated method stub
-        
     }
 
     @Override
@@ -454,21 +467,26 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
 
     @Override
-    public void onIncomingMms(MmsData message) {
-        if(!message.getContact().equals(mContact)){
+    public void onIncomingMms(MmsDataObject message) {
+        if(!message.getContact().toString().equals(mContact)){
             return;
         }
-        markMessageAsRead(message.getContact(), message.getBaseId());
+        markMessageAsRead(message.getMessageId());
         refreshView();
     }
 
     @Override
-    public void onOutgoingMms(MmsData message) {
+    public void onOutgoingMms(MmsDataObject message) {
         refreshView();
     }
 
     @Override
     public void onDeleteNativeMms(String mmsId) {
+
+    }
+
+    @Override
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
 
     }
 
@@ -493,28 +511,18 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
-
-        if(XmsData.MimeType.SMS == XmsData.MimeType.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(XmsLogData.KEY_MIME_TYPE)))){
-            CmsService.getInstance().onDeleteRcsSms(
-                    mContact,
-                    cursor.getString(cursor.getColumnIndex(XmsLogData.KEY_BASECOLUMN_ID)));
-        }
-        else{ // MMS
-            CmsService.getInstance().onDeleteRcsMms(
-                    mContact,
-                    cursor.getString(cursor.getColumnIndex(XmsLogData.KEY_BASECOLUMN_ID)),
-                    cursor.getString(cursor.getColumnIndex(XmsLogData.KEY_MMS_ID)));
-        }
+        mCmsManager.onDeleteRcsMessage(
+                cursor.getString(cursor.getColumnIndex(XmsData.KEY_MESSAGE_ID)));
         refreshView();
         return true;
     }
     
-    private void markConversationAsRead(String contact){
-        CmsService.getInstance().onReadRcsConversation(contact);
+    private void markConversationAsRead(ContactId contactId){
+        mCmsManager.onReadRcsConversation(contactId);
     }
 
-    private void markMessageAsRead(String contact, String baseId){
-        CmsService.getInstance().onReadRcsMessage(contact, baseId);
+    private void markMessageAsRead(String messageId){
+        mCmsManager.onReadRcsMessage(messageId);
     }
 
     @Override
@@ -563,7 +571,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     @Override
     public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
         /* Create a new CursorLoader with the following query parameters. */
-        return new CursorLoader(this, XmsLogData.CONTENT_URI, Xms.PROJECTION, Xms.WHERE, new String[]{mContact}, Xms.SORT);
+        return new CursorLoader(this, XmsData.CONTENT_URI, Xms.PROJECTION, Xms.WHERE, new String[]{mContact.toString()}, Xms.SORT);
     }
 
     @Override

@@ -1381,4 +1381,35 @@ public class RcsSettingsData {
 
     /* package private */static final String LOCAL_DISPLAY_LANGUAGE = "language";
     /* package private */static final String DEFAULT_LOCAL_DISPLAY_LANGUAGE = null;
+
+    /**
+     * Cms settings
+     */
+    public static final String CMS_IMAP_SERVER_ADDRESS = "cms_imap_server_address";
+    public static final String DEFAULT_CMS_IMAP_SERVER_ADDRESS = "imap://";
+
+    public static final String CMS_IMAP_USER_LOGIN = "cms_imap_user_login";
+    public  static final String DEFAULT_CMS_IMAP_USER_LOGIN = "";
+
+    public static final String CMS_IMAP_USER_PWD = "cms_imap_user_pwd";
+    public static final String DEFAULT_CMS_IMAP_USER_PWD = "";
+
+    /* Push SMS */
+    public static final String CMS_PUSH_SMS = "cms_push_sms";
+    /* package private */static final Boolean DEFAULT_CMS_PUSH_SMS = true;
+
+    /* Push MMS */
+    public static final String CMS_PUSH_MMS = "cms_push_mms";
+    /* package private */static final Boolean DEFAULT_CMS_PUSH_MMS = true;
+
+    /* Update flag with IMAP command for XMS messages*/
+    public static final String CMS_UPDATE_FLAGS_WITH_IMAP_XMS = "cms_update_flags_with_imap_xms";
+    /* package private */static final Boolean DEFAULT_CMS_UPDATE_FLAGS_WITH_IMAP_XMS = true;
+
+    public static final String CMS_DEFAULT_DIRECTORY_NAME = "cms_default_directory";
+    /* package private */static final String DEFAULT_CMS_DEFAULT_DIRECTORY_NAME = "Default";
+
+    public static final String CMS_DIRECTORY_SEPARATOR = "cms_directory_separator";
+    /* package private */static final String DEFAULT_CMS_DIRECTORY_SEPARATOR = "/";
+
 }

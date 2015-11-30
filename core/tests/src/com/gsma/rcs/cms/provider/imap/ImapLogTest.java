@@ -1,6 +1,9 @@
 package com.gsma.rcs.cms.provider.imap;
 
+import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
+import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
+import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 
 import android.content.Context;
 import android.test.AndroidTestCase;
@@ -18,7 +21,7 @@ public class ImapLogTest extends AndroidTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getContext();
-        mImapLog = ImapLog.getInstance(mContext);
+        mImapLog = ImapLog.createInstance(mContext);
         
         mFolders = new FolderData[] {
         		new FolderData("folder1",1,123,1),
@@ -27,12 +30,12 @@ public class ImapLogTest extends AndroidTestCase {
         };
         
         mMessages = new MessageData[]{
-        		new MessageData(mFolders[0].getName(), 1, 1, false, false, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[1].getName(), 1, 1, false, false, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[1].getName(), 2, 2, false, false, MessageType.SMS,"messageId2"),
-        		new MessageData(mFolders[2].getName(), 1, 1, false, false, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[2].getName(), 2, 2, false, false, MessageType.SMS,"messageId2"),
-        		new MessageData(mFolders[2].getName(), 3, 3, false, false, MessageType.SMS,"messageId3")        		
+        		new MessageData(mFolders[0].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
+        		new MessageData(mFolders[1].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
+        		new MessageData(mFolders[1].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2"),
+        		new MessageData(mFolders[2].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
+        		new MessageData(mFolders[2].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2"),
+        		new MessageData(mFolders[2].getName(), 3, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId3")
         };
         
         mImapLog.removeFolders(false);
@@ -197,16 +200,16 @@ public class ImapLogTest extends AndroidTestCase {
     	mImapLog.addMessage(new MessageData(
     			mMessages[0].getFolder(),
     			1,
-    			1,
-    			true,
-    			true,
+    			ReadStatus.READ,
+    			DeleteStatus.DELETED,
+				PushStatus.PUSHED,
     			MessageType.MMS,
     			"messageId1"));
     	
     	message = mImapLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());    	
     	assertEquals(1,mImapLog.getMessages().size());
-    	assertTrue(message.getDeleted());
-    	assertTrue(message.getSeen());
+		assertEquals(DeleteStatus.DELETED,message.getDeleteStatus());
+		assertEquals(ReadStatus.READ, message.getReadStatus());
     	assertEquals(MessageType.MMS, message.getMessageType());
     }
     

@@ -6,8 +6,10 @@ import com.gsma.rcs.cms.imap.service.ImapServiceManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
+import android.content.Context;
 import android.os.AsyncTask;
 
 /**
@@ -16,7 +18,9 @@ import android.os.AsyncTask;
 public class BasicSynchronizationTask extends AsyncTask<String,String,Boolean> {
         
     private static final Logger sLogger = Logger.getLogger(BasicSynchronizationTask.class.getSimpleName());
-    
+
+    private final Context mContext;
+    private final RcsSettings mRcsSettings;
     private final BasicSynchronizationTaskListener mListener;
     private final LocalStorage mLocalStorageHandler;        
     private final BasicImapService mImapService;
@@ -29,10 +33,14 @@ public class BasicSynchronizationTask extends AsyncTask<String,String,Boolean> {
      * @throws ImapServiceNotAvailableException
      */
     public BasicSynchronizationTask(
+            Context context,
+            RcsSettings rcsSettings,
             BasicImapService imapService,
             LocalStorage localStorageHandler,                         
             BasicSynchronizationTaskListener listener
-            ) throws ImapServiceNotAvailableException {
+            ) {
+        mContext = context;
+        mRcsSettings = rcsSettings;
         mImapService = imapService;        
         mLocalStorageHandler = localStorageHandler;
         mListener = listener;
@@ -47,13 +55,11 @@ public class BasicSynchronizationTask extends AsyncTask<String,String,Boolean> {
         currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
             try {
                 mImapService.init();
-                BasicSyncStrategy strategy = new BasicSyncStrategy(mImapService, mLocalStorageHandler);
                 if(params.length == 1){ // sync for only a conversation
-                    strategy.execute(params[0]);
+                    return syncFolder(params[0]);
                 }else{ // full sync
-                    strategy.execute();                    
+                    return syncAll();
                 }
-                return strategy.getExecutionResult();
             } catch (Exception e) {
                 e.printStackTrace();
                 return false;
@@ -63,44 +69,31 @@ public class BasicSynchronizationTask extends AsyncTask<String,String,Boolean> {
                 ImapServiceManager.releaseService(mImapService);    
             }
     }
-        
-//    /**
-//     * @param listener
-//     */
-//    public static void registerListener(BasicSynchronizationTaskListener listener){
-//        synchronized(mListeners){
-//            mListeners.add(listener);    
-//        }        
-//    }
-//
-//    /**
-//     * @param listener
-//     */
-//    public static void unregisterListener(BasicSynchronizationTaskListener listener){
-//        synchronized(mListeners){
-//            mListeners.remove(listener);
-//        }        
-//    }
 
-//    @Override
-//    protected void onPostExecute(Boolean result) {
-//        synchronized(mListeners){            
-//            if(sLogger.isActivated()){
-//                sLogger.debug("listeners : ".concat(String.valueOf(mListeners.size())));
-//            }                        
-//            for (BasicSynchronizationTaskListener listener : mListeners) {
-//                listener.onBasicSynchronizationTaskExecuted(mParams, result);
-//            }
-//            mListeners.clear();
-//        }
-//    }
+    public boolean syncFolder(String folder){
+        if(sLogger.isActivated()){
+            sLogger.info(new StringBuilder("Sync folder : ").append(folder).toString());
+        }
+        BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings, mImapService, mLocalStorageHandler);
+        strategy.execute(folder);
+        return strategy.getExecutionResult();
+    }
 
-  @Override
-  protected void onPostExecute(Boolean result) {
+    public boolean syncAll(){
+        if(sLogger.isActivated()){
+            sLogger.info("Sync all");
+        }
+        BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings, mImapService, mLocalStorageHandler);
+        strategy.execute();
+        return strategy.getExecutionResult();
+    }
+
+    @Override
+    protected void onPostExecute(Boolean result) {
       if(mListener!=null){
-          mListener.onBasicSynchronizationTaskExecuted(mParams, result);          
+          mListener.onBasicSynchronizationTaskExecuted(mParams, result);
       }
-  }
+    }
 
     /**
     *
@@ -111,6 +104,6 @@ public class BasicSynchronizationTask extends AsyncTask<String,String,Boolean> {
         * @param params
         * @param result
         */
-       public void onBasicSynchronizationTaskExecuted(String[] params, Boolean result);
+       void onBasicSynchronizationTaskExecuted(String[] params, Boolean result);
    }
 }

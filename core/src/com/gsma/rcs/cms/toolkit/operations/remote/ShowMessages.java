@@ -1,25 +1,6 @@
 
 package com.gsma.rcs.cms.toolkit.operations.remote;
 
-import com.gsma.rcs.R;
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.fordemo.ImapCommandController;
-import com.gsma.rcs.cms.fordemo.ImapContext;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
-import com.gsma.rcs.cms.imap.task.ShowMessagesTask;
-import com.gsma.rcs.cms.imap.task.ShowMessagesTask.ShowMessagesTaskListener;
-import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
-import com.gsma.rcs.cms.imap.task.UpdateFlagTask.UpdateFlagTaskListener;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.sync.strategy.FlagChange;
-import com.gsma.rcs.cms.sync.strategy.FlagChange.Operation;
-import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
-import com.gsma.rcs.utils.Base64;
-
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapMessage;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.pm.ActivityInfo;
@@ -33,6 +14,23 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.gsma.rcs.R;
+import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.imap.task.ShowMessagesTask;
+import com.gsma.rcs.cms.imap.task.ShowMessagesTask.ShowMessagesTaskListener;
+import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
+import com.gsma.rcs.cms.imap.task.UpdateFlagTask.UpdateFlagTaskListener;
+import com.gsma.rcs.cms.sync.strategy.FlagChange;
+import com.gsma.rcs.cms.sync.strategy.FlagChange.Operation;
+import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.Base64;
+import com.sonymobile.rcs.imap.Flag;
+import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +46,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
 
     private ListView mListView;
     private ArrayAdapter<Message> mArrayAdapter;
-    private CmsSettings mSettings;
+    private RcsSettings mSettings;
     private AlertDialog mInProgressDialog;
 
     @Override
@@ -62,7 +60,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         mListView = (ListView) findViewById(android.R.id.list);
         mListView.setEmptyView(emptyView);
         registerForContextMenu(mListView);
-        mSettings = CmsSettings.getInstance();
+        mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
         try {
             new ShowMessagesTask(ImapServiceManager.getService(mSettings),this).execute(new String[]{});
@@ -133,7 +131,6 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
             new UpdateFlagTask(
                     ImapServiceManager.getService(mSettings),
                      Arrays.asList(flagChange),
-                    ImapCommandController.getInstance().getContext(),
                      this
                      ).execute();
             mInProgressDialog.show();
@@ -182,7 +179,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
             else{
                 body = mImapMessage.getTextBody();
             }
-            sb.append(mImapMessage.getFrom()).append(" : ").append(body);
+            sb.append(body);
             sb.append("\r\n").append(mImapMessage.getMetadata().getFlags());
             return sb.toString();
         }
@@ -201,7 +198,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     }
 
     @Override
-    public void onUpdateFlagTaskExecuted(ImapContext localContext, List<FlagChange> changes) {
+    public void onUpdateFlagTaskExecuted(List<FlagChange> changes) {
         try {
             new ShowMessagesTask(ImapServiceManager.getService(mSettings),this).execute(new String[]{});
         } catch (ImapServiceNotAvailableException e) {

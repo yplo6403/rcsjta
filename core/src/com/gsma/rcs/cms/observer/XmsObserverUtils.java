@@ -3,6 +3,8 @@ package com.gsma.rcs.cms.observer;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
+import android.provider.Telephony.Mms;
+import android.provider.Telephony.Mms.Part;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,11 +30,7 @@ public class XmsObserverUtils{
                 BaseColumns._ID
         };
 
-        private static final String WHERE_CONTACT_NOT_NULL = new StringBuilder(Telephony.TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
-        private static final String WHERE_INBOX = new StringBuilder(Telephony.TextBasedSmsColumns.TYPE).append("=").append(Telephony.TextBasedSmsColumns.MESSAGE_TYPE_INBOX).toString();
-        private static final String WHERE_SENT = new StringBuilder(Telephony.TextBasedSmsColumns.TYPE).append("=").append(Telephony.TextBasedSmsColumns.MESSAGE_TYPE_SENT).toString();
-        static final String WHERE_INBOX_OR_SENT = new StringBuilder(WHERE_CONTACT_NOT_NULL).append(" AND (").append(WHERE_INBOX).append(" OR ").append(WHERE_SENT).append(")").toString();
-
+        static final String WHERE_CONTACT_NOT_NULL = new StringBuilder(Telephony.TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
     }
 
     public static class Mms {
@@ -69,9 +67,9 @@ public class XmsObserverUtils{
             public static final String[] PROJECTION = new String[]{
                     Telephony.BaseMmsColumns._ID,
                     Telephony.Mms.Part.CONTENT_TYPE,
-                    Telephony.Mms.Part.CONTENT_ID,
                     Telephony.Mms.Part.TEXT,
-                    Telephony.Mms.Part._DATA
+                    Telephony.Mms.Part.NAME,
+                    Telephony.Mms.Part._DATA,
             };
             public static final String WHERE = new StringBuilder(Telephony.Mms.Part.MSG_ID).append("=?").toString();
         }

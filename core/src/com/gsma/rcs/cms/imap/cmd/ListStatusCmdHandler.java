@@ -4,6 +4,7 @@ package com.gsma.rcs.cms.imap.cmd;
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 
+import com.gsma.rcs.utils.StringUtils;
 import com.sonymobile.rcs.imap.Part;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.Map.Entry;
 public class ListStatusCmdHandler extends CmdHandler {
 
     static final String sCommand = Constants.CMD_LIST_STATUS;
-    private static final String sPattern = "^STATUS \"(.*)\" \\(MESSAGES ([0-9]+) UIDNEXT ([0-9]+) UIDVALIDITY ([0-9]+) HIGHESTMODSEQ ([0-9]+)\\)$";
+    private static final String sPattern = "^STATUS (.*) \\(MESSAGES ([0-9]+) UIDNEXT ([0-9]+) UIDVALIDITY ([0-9]+) HIGHESTMODSEQ ([0-9]+)\\)$";
 
     private static final int sExpectedValues = 5;
 
@@ -43,6 +44,8 @@ public class ListStatusCmdHandler extends CmdHandler {
             if (values == null || values.length != sExpectedValues) {
                 continue;
             }
+
+            values[0] = StringUtils.removeQuotes(values[0]);
 
             Map<String, String> data = new HashMap<String, String>();
             data.put(Constants.METADATA_MESSAGES, values[1]);

@@ -1,23 +1,6 @@
 
 package com.gsma.rcs.cms.observer;
 
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
-import com.gsma.rcs.cms.provider.settings.CmsSettings;
-import com.gsma.rcs.cms.provider.xms.model.MmsPart;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
-import com.gsma.rcs.cms.provider.xms.model.MmsData;
-import com.gsma.rcs.cms.provider.xms.model.SmsData;
-import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.RcsService.Direction;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
@@ -29,6 +12,27 @@ import android.provider.Telephony;
 import android.provider.Telephony.BaseMmsColumns;
 import android.provider.Telephony.TextBasedSmsColumns;
 
+import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.event.XmsEventListener;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
+import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
+import com.gsma.services.rcs.contact.ContactId;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,22 +41,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class XmsObserver implements INativeXmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
 
-    private final List<INativeXmsEventListener> sXmsEventListeners = new ArrayList<INativeXmsEventListener>();
+    private List<INativeXmsEventListener> mNewXmsEventListeners = new ArrayList<>();
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
     private Context mContext;
     private ContentResolver mContentResolver;
     private XmsContentObserver mXmsContentObserver;
-    private CmsSettings mCmsSettings;
-
-    private static XmsObserver sInstance;
 
     private class XmsContentObserver extends ContentObserver {
 
@@ -119,84 +119,95 @@ public class XmsObserver implements INativeXmsEventListener {
             return false;
         }
 
-        /**
-         * This method checks SMS events :
-         * - incoming SMS
-         * - outgoing SMS
-         * - delete SMS
-         */
-        private void checkSmsEvents(Uri uri) {
-            Cursor cursor = null;
-            try {
-                Set<Long> currentSmsIds = getSmsIds();
-                int diff  = currentSmsIds.size() - mSmsIds.size();
-                mSmsIds = currentSmsIds;
-                if(diff==0){
-                    return;
-                }
-                if(diff==-1){
-                    onDeleteNativeSms(Long.parseLong(uri.getLastPathSegment()));
-                    return;
-                }
-
-                cursor = mContentResolver.query(uri, Sms.PROJECTION, Sms.WHERE_INBOX_OR_SENT, null, null);
-                if(!cursor.moveToNext()){
-                    return;
-                }
-                CursorUtil.assertCursorIsNotNull(cursor, uri);
-                Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                Long threadId = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.THREAD_ID));
-                String address = cursor
-                        .getString(cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS));
-                PhoneNumber phoneNumber = ContactUtil
-                        .getValidPhoneNumberFromAndroid(address);
-                if (phoneNumber != null) {
-                    address = ContactUtil.createContactIdFromValidatedData(phoneNumber)
-                            .toString();
-                } else {
-                    address = address.replaceAll(" ", "");
-                }
-                long date = cursor
-                        .getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE));
-                long date_sent = cursor
-                        .getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE_SENT));
-                String protocol = cursor
-                        .getString(cursor.getColumnIndex(TextBasedSmsColumns.PROTOCOL));
-                int status = cursor
-                        .getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
-                int type = cursor
-                        .getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
-                String body = cursor
-                        .getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
-                if ("0".equals(protocol)) { // incoming message
-                    onIncomingSms(new SmsData(_id, threadId, address, body, date,
-                            Direction.INCOMING, ReadStatus.UNREAD));
-                } else if (protocol == null
-                        && type == TextBasedSmsColumns.MESSAGE_TYPE_SENT) // outgoing
-                // message
-                {
-                    if (status == TextBasedSmsColumns.STATUS_NONE || // No delivery
-                            // report
-                            // asked by user
-                            status == TextBasedSmsColumns.STATUS_PENDING) { // delivery
-                        // report asked
-                        // by user
-                        onOutgoingSms(new SmsData(_id, threadId, address, body, date,
-                                Direction.OUTGOING, ReadStatus.READ_REQUESTED));
-                    } else if (status == TextBasedSmsColumns.STATUS_COMPLETE) { // delivery
-                        // report
-                        // receipt
-                        onDeliverNativeSms(_id, date_sent);
-                    }
-                }
-
-                return;
-            } finally {
-                CursorUtil.close(cursor);
-            }
-        }
-
     /**
+     * This method checks SMS events :
+     * - incoming SMS
+     * - outgoing SMS
+     * - delete SMS
+     */
+    private void checkSmsEvents(Uri uri) {
+        Set<Long> currentSmsIds = getSmsIds();
+        int diff  = currentSmsIds.size() - mSmsIds.size();
+        mSmsIds = currentSmsIds;
+        if(diff==-1){
+            onDeleteNativeSms(Long.parseLong(uri.getLastPathSegment()));
+            return;
+        }
+        else if(diff==1){
+            handleNewSms(uri);
+            return;
+        }
+        else{ // sms update status
+            handleSmsUpdateStatus(uri);
+            return;
+        }
+    }
+
+    private void handleNewSms(Uri uri) {
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, Sms.PROJECTION, Sms.WHERE_CONTACT_NOT_NULL, null, null);
+            if (!cursor.moveToNext()) {
+                return;
+            }
+            CursorUtil.assertCursorIsNotNull(cursor, uri);
+            Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
+            Long threadId = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.THREAD_ID));
+            String address = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS));
+            PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
+            if (phoneNumber == null) {
+                return;
+            }
+            ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
+            String body = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
+            long date = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE));
+            String protocol = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.PROTOCOL));
+            if ("0".equals(protocol)) { // incoming message
+                onIncomingSms(new SmsDataObject(
+                        IdGenerator.generateMessageID(),
+                        contactId,
+                        body,
+                        Direction.INCOMING,
+                        date,
+                        _id,
+                        threadId
+                ));
+            } else if (protocol == null) { // outgoing message
+                onOutgoingSms(new SmsDataObject(
+                        IdGenerator.generateMessageID(),
+                        contactId,
+                        body,
+                        Direction.OUTGOING,
+                        date,
+                        _id,
+                        threadId
+                ));
+            }
+            return;
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    private void handleSmsUpdateStatus(Uri uri) {
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, Sms.PROJECTION, Sms.WHERE_CONTACT_NOT_NULL, null, null);
+            if (!cursor.moveToNext()) {
+                return;
+            }
+            CursorUtil.assertCursorIsNotNull(cursor, uri);
+            Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
+            int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
+            int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
+            onMessageStateChanged(_id, MimeType.TEXT_MESSAGE, type, status);
+            return;
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+        /**
      * This method checks MMS events:
      * - incoming MMS
      *
@@ -228,10 +239,9 @@ public class XmsObserver implements INativeXmsEventListener {
         //check if we have all infos in database about mms message
         Long id,threadId, date;
         id = date = -1l;
-        String subject, messageId, from;
-        subject = messageId =from = null;
+        String mmsId;
         Direction direction = Direction.INCOMING;
-        TreeSet<String> contacts = new TreeSet<>();
+        Set<ContactId> contacts = new HashSet<>();
         try{
             cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION, Mms.WHERE, null, BaseMmsColumns._ID);
             CursorUtil.assertCursorIsNotNull(cursor, Mms.URI);
@@ -240,8 +250,7 @@ public class XmsObserver implements INativeXmsEventListener {
             }
             id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
             threadId = cursor.getLong(cursor.getColumnIndex(BaseMmsColumns.THREAD_ID));
-            subject =  cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
-            messageId = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID));
+            mmsId = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID));
             int messageType = cursor.getInt(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_TYPE));
             if(128 == messageType){
                 direction = Direction.OUTGOING;
@@ -253,6 +262,7 @@ public class XmsObserver implements INativeXmsEventListener {
         }
 
         // Get recipients
+        Map<ContactId,String> messageIds = new HashMap<>();
         try {
             int type = Mms.Addr.FROM;
             if(direction == Direction.OUTGOING){
@@ -262,7 +272,17 @@ public class XmsObserver implements INativeXmsEventListener {
             CursorUtil.assertCursorIsNotNull(cursor, Mms.Addr.URI);
             int adressIdx = cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS);
             while(cursor.moveToNext()){
-                contacts.add(cursor.getString(adressIdx));
+                String address = cursor.getString(adressIdx);
+                PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
+                if(phoneNumber == null){
+                    if(sLogger.isActivated()){
+                        sLogger.info(new StringBuilder("Bad format for contact : ").append(address).toString());
+                    }
+                    continue;
+                }
+                ContactId contact = ContactUtil.createContactIdFromValidatedData(phoneNumber);
+                messageIds.put(contact, IdGenerator.generateMessageID());
+                contacts.add(contact);
             }
         } finally {
             CursorUtil.close(cursor);
@@ -273,46 +293,84 @@ public class XmsObserver implements INativeXmsEventListener {
         }
 
         mMmsIds = mmsIds;
+
         // Get part
-        List<MmsPart> parts = new ArrayList<>();
+        Map<ContactId,List<MmsPart>> mmsParts= new HashMap<>();
         String textContent = null;
         try {
             cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION, Mms.Part.WHERE, new String[]{String.valueOf(id)}, null);
             CursorUtil.assertCursorIsNotNull(cursor, Mms.Part.URI);
             int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
+            int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.NAME);
             int contentTypeIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE);
-            int contentIdIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_ID);
             int textIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.TEXT);
             int dataIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part._DATA);
+
             while(cursor.moveToNext()){
                 String contentType = cursor.getString(contentTypeIdx);
                 String text = cursor.getString(textIdx);
+                String filename = cursor.getString(filenameIdx);
+                String content;
+                long fileSize = 0l;
+                byte[] fileIcon = null;
                 if(Constants.CONTENT_TYPE_TEXT.equals(contentType)){
                     textContent = text;
                 }
-                parts.add(new MmsPart(
-                        null,
-                        cursor.getString(_idIdx),
-                        contentType,
-                        cursor.getString(contentIdIdx),
-                        cursor.getString(dataIdx),
-                        text));
+                String data = cursor.getString(dataIdx);
+                if(data != null){
+                    content = Part.URI.concat(cursor.getString(_idIdx));
+                    byte[] bytes = MmsUtils.getContent(mContentResolver, Uri.parse(content));
+                    fileSize = bytes.length;
+                    fileIcon = MmsUtils.createThumb(bytes);
+                }
+                else{
+                    content = text;
+                }
 
+                for(ContactId contact : contacts){
+                    List<MmsPart> mmsPart = mmsParts.get(contact);
+                    if(mmsPart == null){
+                        mmsPart = new ArrayList<>();
+                        mmsParts.put(contact, mmsPart);
+                    }
+                    mmsPart.add(new MmsPart(
+                            messageIds.get(contact),
+                            contact,
+                            contentType,
+                            filename,
+                            fileSize,
+                            content,
+                            fileIcon
+                    ));
+                }
             }
         }
         finally {
             CursorUtil.close(cursor);
         }
 
-        MmsData mmsData = new MmsData(id, threadId, messageId, contacts, subject, textContent, date*1000, direction);
-        mmsData.setParts(parts);
-        if(Direction.INCOMING == direction){
-            mmsData.setReadStatus(ReadStatus.UNREAD);
-            onIncomingMms(mmsData);
-        }
-        else{
-            mmsData.setReadStatus(ReadStatus.READ_REQUESTED);
-            onOutgoingMms(mmsData);
+        Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
+        while(iter.hasNext()){
+            Entry<ContactId, List<MmsPart>> entry = iter.next();
+            ContactId contact = entry.getKey();
+            MmsDataObject mmsDataObject = new MmsDataObject(
+                    mmsId,
+                    messageIds.get(contact),
+                    contact,
+                    textContent,
+                    Direction.INCOMING,
+                    ReadStatus.UNREAD,
+                    date*1000,
+                    id,
+                    threadId,
+                    entry.getValue()
+            );
+            if(Direction.INCOMING == direction){
+                onIncomingMms(mmsDataObject);
+            }
+            else{
+                onOutgoingMms(mmsDataObject);
+            }
         }
         return true;
     }
@@ -381,7 +439,7 @@ public class XmsObserver implements INativeXmsEventListener {
         Cursor cursor = null;
         Set<Long> ids = new HashSet();
         try {
-            cursor = mContentResolver.query(Sms.URI, Sms.PROJECTION_ID, Sms.WHERE_INBOX_OR_SENT, null, BaseMmsColumns._ID);
+            cursor = mContentResolver.query(Sms.URI, Sms.PROJECTION_ID, Sms.WHERE_CONTACT_NOT_NULL, null, BaseMmsColumns._ID);
             CursorUtil.assertCursorIsNotNull(cursor, Sms.URI);
             int idx= cursor.getColumnIndex(BaseColumns._ID);
             while(cursor.moveToNext()){
@@ -394,61 +452,25 @@ public class XmsObserver implements INativeXmsEventListener {
     }
 
     private Set<String> getMmsIds() {
-            Cursor cursor = null;
-            Set<String> ids = new HashSet();
-            try {
-                cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID, Mms.WHERE, null, BaseMmsColumns._ID);
-                CursorUtil.assertCursorIsNotNull(cursor, Mms.URI);
-                int idx= cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID);
-                while(cursor.moveToNext()){
-                    ids.add(cursor.getString(idx));
-                }
-                return ids;
-            } finally {
-                CursorUtil.close(cursor);
+        Cursor cursor = null;
+        Set<String> ids = new HashSet();
+        try {
+            cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID, Mms.WHERE, null, BaseMmsColumns._ID);
+            CursorUtil.assertCursorIsNotNull(cursor, Mms.URI);
+            int idx= cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID);
+            while(cursor.moveToNext()){
+                ids.add(cursor.getString(idx));
             }
+            return ids;
+        } finally {
+            CursorUtil.close(cursor);
         }
+    }
 }
-//    /**
-//     * Returns the status report value found in the "pdu" extra of the intent
-//     *
-//     * @param intent to be analyzed
-//     * @return The value of the status report. 0 if the message has been delivered to the end user,
-//     * others values defined TS 23.040 or -1 if no "pdu" extra in the intent or the pdu is
-//     * not a status report message.
-//     */
-//    private int getStatusReportFromIntent(Intent intent) {
-//        Object message = intent.getExtras().get("pdu");
-//        if (message == null) {
-//            return -1;
-//        }
-//        byte[] pdu;
-//        pdu = (byte[]) message;
-//        android.telephony.SmsMessage msg;
-//        msg = android.telephony.SmsMessage.createFromPdu(pdu);
-//        if (msg.isStatusReportMessage()) {
-//            return msg.getStatus();
-//        } else {
-//            return -1;
-//        }
-//    }
 
-    private XmsObserver(Context context, CmsSettings cmsSettings) {
+    public XmsObserver(Context context) {
         mContext = context;
         mContentResolver = mContext.getContentResolver();
-        mCmsSettings = cmsSettings;
-    }
-
-    public static XmsObserver createInstance(Context context, CmsSettings cmsSettings) {
-        if (sInstance != null) {
-            return sInstance;
-        }
-        synchronized (XmsObserver.class) {
-            if (sInstance == null) {
-                sInstance = new XmsObserver(context, cmsSettings);
-            }
-        }
-        return sInstance;
     }
 
     /**
@@ -467,100 +489,35 @@ public class XmsObserver implements INativeXmsEventListener {
      */
     public void stop() {
         // unregister content observer
-        sXmsEventListeners.clear();
         mContentResolver.unregisterContentObserver(mXmsContentObserver);
         mXmsContentObserver = null;
+        mNewXmsEventListeners.clear();
+        mNewXmsEventListeners = null;
     }
 
     public void registerListener(INativeXmsEventListener listener) {
-        synchronized (sXmsEventListeners) {
-            sXmsEventListeners.add(listener);
+        synchronized (mNewXmsEventListeners) {
+            mNewXmsEventListeners.add(listener);
         }
     }
 
     public void unregisterListener(INativeXmsEventListener listener) {
-        synchronized (sXmsEventListeners) {
-            sXmsEventListeners.remove(listener);
+        synchronized (mNewXmsEventListeners) {
+            mNewXmsEventListeners.remove(listener);
         }
     }
 
-    @Override
-    public void onIncomingSms(SmsData message) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(sXmsEventListeners.size())));
-        }
-        PushStatus pushStatus = mCmsSettings.getPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
-        message.setPushStatus(pushStatus);
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
-                listener.onIncomingSms(message);
-            }
-        }
-    }
 
-    @Override
-    public void onOutgoingSms(SmsData message) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onOutgoingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-        }
-        PushStatus pushStatus = mCmsSettings.getPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
-        message.setPushStatus(pushStatus);
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
-                listener.onOutgoingSms(message);
-            }
-        }
-    }
-
-    @Override
-    public void onDeliverNativeSms(long nativeProviderId, long sentDate) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeliverNativeSms : ".concat(String.valueOf(nativeProviderId)));
-        }
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
-                listener.onDeliverNativeSms(nativeProviderId, sentDate);
-            }
-        }
-    }
+    /**********************         XMS Events          **********************/
 
     @Override
     public void onDeleteNativeSms(long nativeProviderId) {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeSms : ".concat(String.valueOf(nativeProviderId)));
         }
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
                 listener.onDeleteNativeSms(nativeProviderId);
-            }
-        }
-    }
-
-    @Override
-    public void onIncomingMms(MmsData message) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onIncomingMms : ".concat(message.toString()));
-        }
-        PushStatus pushStatus = mCmsSettings.getPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
-        message.setPushStatus(pushStatus);
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
-                listener.onIncomingMms(message);
-            }
-        }
-    }
-
-    @Override
-    public void onOutgoingMms(MmsData message) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onOutgoingMms : ".concat(message.toString()));
-        }
-        PushStatus pushStatus = mCmsSettings.getPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED;
-        message.setPushStatus(pushStatus);
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
-                listener.onOutgoingMms(message);
             }
         }
     }
@@ -570,8 +527,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeMms : ".concat(mmsId));
         }
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
                 listener.onDeleteNativeMms(mmsId);
             }
         }
@@ -582,8 +539,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeConversation : " + nativeThreadId);
         }
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
                 listener.onDeleteNativeConversation(nativeThreadId);
             }
         }
@@ -594,9 +551,70 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onReadNativeConversation : " + nativeThreadId);
         }
-        synchronized (sXmsEventListeners) {
-            for (INativeXmsEventListener listener : sXmsEventListeners) {
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
                 listener.onReadNativeConversation(nativeThreadId);
+            }
+        }
+    }
+
+    @Override
+    public void onIncomingSms(SmsDataObject message) {
+        if (sLogger.isActivated()) {
+            sLogger.info("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+        }
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+                listener.onIncomingSms(message);
+            }
+        }
+    }
+
+    @Override
+    public void onOutgoingSms(SmsDataObject message) {
+        if (sLogger.isActivated()) {
+            sLogger.info("onOutgoingSms : ".concat(String.valueOf(message.getNativeProviderId())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+        }
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+                listener.onOutgoingSms(message);
+            }
+        }
+    }
+
+    @Override
+    public void onIncomingMms(MmsDataObject message) {
+        if (sLogger.isActivated()) {
+            sLogger.info("onIncomingMms : ".concat(String.valueOf(message.getNativeProviderId())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+        }
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+                listener.onIncomingMms(message);
+            }
+        }
+    }
+
+    @Override
+    public void onOutgoingMms(MmsDataObject message) {
+        if (sLogger.isActivated()) {
+            sLogger.info("onOutgoingMms : ".concat(String.valueOf(message.getNativeProviderId())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+        }
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+                listener.onOutgoingMms(message);
+            }
+        }
+    }
+
+    @Override
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
+        synchronized (mNewXmsEventListeners) {
+            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+                listener.onMessageStateChanged(nativeProviderId, mimeType, type, status);
             }
         }
     }

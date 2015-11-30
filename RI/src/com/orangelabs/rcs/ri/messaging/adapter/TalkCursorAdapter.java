@@ -153,8 +153,10 @@ public class TalkCursorAdapter extends CursorAdapter {
         boolean noThumbnail = false;
 
         for (MmsPartDataObject mmsPart : MmsPartDataObject.getParts(mCtx, mmsId)) {
-            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mmsPart.getMimeType())) {
-                /* discard mms body */
+            String mimeTye = mmsPart.getMimeType();
+            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeTye) ||
+                XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeTye)) {
+                /* discard mms body or application/smil content */
                 continue;
             }
             byte[] fileIcon = mmsPart.getFileIcon();

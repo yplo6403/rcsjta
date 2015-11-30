@@ -136,7 +136,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(this, xmsLog));
+        mServices.put(ImsServiceType.CMS, new CmsService(this, ctx, rcsSettings, xmsLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {

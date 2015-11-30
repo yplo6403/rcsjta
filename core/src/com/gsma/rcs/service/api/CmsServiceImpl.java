@@ -18,6 +18,13 @@
 
 package com.gsma.rcs.service.api;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+import android.os.RemoteException;
+import android.text.TextUtils;
+
+import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
@@ -34,12 +41,6 @@ import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-import android.os.RemoteException;
-import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -69,12 +70,13 @@ public class CmsServiceImpl extends ICmsService.Stub {
     private final ContentResolver mContentResolver;
     private final Context mContext;
     private final XmsManager mXmsManager;
+    private final CmsManager mCmsManager;
 
     /**
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-                          ContentResolver contentResolver, XmsManager xmsManager) {
+                          ContentResolver contentResolver, XmsManager xmsManager, CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -84,6 +86,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
         mXmsLog = xmsLog;
         mContentResolver = contentResolver;
         mXmsManager = xmsManager;
+        mCmsManager = cmsManager;
+        mCmsManager.registerXmsMessageEventBroadcaster(mXmsMessageBroadcaster);
     }
 
     /**
@@ -94,6 +98,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is closed");
         }
+        mCmsManager.unregisterXmsMessageEventBroadcaster(mXmsMessageBroadcaster);
     }
 
     @Override
@@ -352,7 +357,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
                     RcsService.ReadStatus readStatus = mXmsLog.getReadStatus(messageId);
                     if (readStatus != null) {
                         if (RcsService.ReadStatus.UNREAD == readStatus) {
-                            mXmsLog.markMessageAsRead(messageId);
+                            mCmsManager.onReadRcsMessage(messageId);
                             if (!mCmsService.isServiceStarted()) {
                                 // TODO synchronize CMS
                             }
@@ -426,7 +431,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
             @Override
             public void run() {
                 try {
-                    mXmsLog.deleteAllEntries();
+                    mCmsManager.onDeleteAll();
                     if (mCmsService.isServiceStarted()) {
                         // TODO synchronize CMS
                     }
@@ -450,7 +455,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
             @Override
             public void run() {
                 try {
-                    mXmsLog.deleteXmsMessages(contact);
+                    mCmsManager.onDeleteRcsConversation(contact);
                     if (mCmsService.isServiceStarted()) {
                         // TODO synchronize CMS
                     }
@@ -474,7 +479,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
             @Override
             public void run() {
                 try {
-                    mXmsLog.deleteXmsMessage(messageId);
+                    mCmsManager.onDeleteRcsMessage(messageId);
                     if (mCmsService.isServiceStarted()) {
                         // TODO synchronize CMS
                     }

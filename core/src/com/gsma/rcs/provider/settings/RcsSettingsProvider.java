@@ -407,6 +407,23 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_PROV_REJECT_BUTTON);
             addParameter(db, RcsSettingsData.LOCAL_DISPLAY_LANGUAGE,
                     RcsSettingsData.DEFAULT_LOCAL_DISPLAY_LANGUAGE);
+            //cms
+            addParameter(db, RcsSettingsData.CMS_IMAP_SERVER_ADDRESS,
+                    RcsSettingsData.DEFAULT_CMS_IMAP_SERVER_ADDRESS);
+            addParameter(db, RcsSettingsData.CMS_IMAP_USER_LOGIN,
+                    RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN);
+            addParameter(db, RcsSettingsData.CMS_IMAP_USER_PWD,
+                    RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD);
+            addParameter(db, RcsSettingsData.CMS_PUSH_SMS,
+                    RcsSettingsData.DEFAULT_CMS_PUSH_SMS);
+            addParameter(db, RcsSettingsData.CMS_PUSH_MMS,
+                    RcsSettingsData.DEFAULT_CMS_PUSH_MMS);
+            addParameter(db, RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS,
+                    RcsSettingsData.DEFAULT_CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+            addParameter(db, RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME,
+                    RcsSettingsData.DEFAULT_CMS_DEFAULT_DIRECTORY_NAME);
+            addParameter(db, RcsSettingsData.CMS_DIRECTORY_SEPARATOR,
+                    RcsSettingsData.DEFAULT_CMS_DIRECTORY_SEPARATOR);
         }
 
         @Override

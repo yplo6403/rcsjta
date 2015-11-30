@@ -178,18 +178,6 @@
             android:readPermission="com.gsma.services.permission.RCS"
             android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
         <provider
-            android:name="com.gsma.rcs.cms.provider.xms.XmsProvider"
-            android:authorities="com.gsma.rcs.cms.xms"
-            android:exported="true"
-            android:readPermission="com.gsma.services.permission.RCS"
-            android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
-        <provider
-            android:name="com.gsma.rcs.cms.provider.settings.CmsSettingsProvider"
-            android:authorities="com.gsma.rcs.cms.settings"
-            android:exported="true"
-            android:readPermission="com.gsma.services.permission.RCS"
-            android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
-        <provider
             android:name="com.gsma.rcs.provider.xms.XmsProvider"
             android:authorities="com.gsma.rcs.xms;com.gsma.services.rcs.provider.xms"
             android:exported="true"
@@ -250,6 +238,7 @@
         <activity android:name=".provisioning.local.StackProvisioning" />
         <activity android:name=".provisioning.local.ServiceProvisioning" />
         <activity android:name=".provisioning.local.LoggerProvisioning" />
+        <activity android:name=".provisioning.local.CmsProvisioning" />
 
         <service
             android:name="com.gsma.rcs.service.api.OneToOneDeliveryExpirationService"
@@ -268,48 +257,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.gsma.rcs.cms.toolkit.settings.CmsSettingsView" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.delete.DeleteOperations" />        
+        <activity android:name="com.gsma.rcs.cms.toolkit.delete.DeleteOperations" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.RemoteOperations" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.operations.LocalOperations" />
         <activity android:name="com.gsma.rcs.cms.toolkit.synchro.Synchronizer" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.operations.local.SimulateSms" />
         <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsList" />
         <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsConversationView" android:windowSoftInputMode="adjustPan"/>            
         <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsSendView" />
         <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsImageView" />
-        
-        <provider
-            android:name="com.gsma.rcs.cms.provider.CmsProvider"
-            android:authorities="@string/rcs_cms_provider_authority"
-            android:exported="true"
-            android:syncable="true"
-            android:readPermission="com.gsma.services.permission.RCS"
-            android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
-        
-		<service
-            android:name="com.gsma.rcs.cms.sync.adapter.AuthenticatorService"
-            android:exported="true" >
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/rcs_cms_authenticator" />
-        </service>
-		<service 
-		    android:name="com.gsma.rcs.cms.sync.adapter.CmsSyncService"
-		    android:exported="true">
-		    <!-- android:process=":sync" >--> 
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-            <meta-data
-                android:name="android.content.SyncAdapter"
-                android:resource="@xml/rcs_cms_syncadapter" />
-        </service>
+
     </application>
 
 </manifest>

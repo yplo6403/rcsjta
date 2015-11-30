@@ -1,13 +1,17 @@
 package com.gsma.rcs.cms.imap.message;
 
+import android.content.Context;
+import android.net.Uri;
+
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.mime.MmsMimeBody;
 import com.gsma.rcs.cms.imap.message.mime.MimeHeaders;
+import com.gsma.rcs.cms.imap.message.mime.MmsMimeBody;
 import com.gsma.rcs.cms.imap.message.mime.MmsMimeMessage;
-import com.gsma.rcs.cms.provider.xms.model.MmsPart;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
+import com.gsma.rcs.utils.MimeManager;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.IPart;
 import com.sonymobile.rcs.imap.ImapMessage;
@@ -26,11 +30,11 @@ public class ImapMmsMessage implements IImapMessage {
     }
 
     public ImapMmsMessage(
+            Context context,
             String from,
             String to,
             String direction,
             long date,
-            String subject,
             String conversationId,
             String contributionId,
             String imdnMessageId,
@@ -59,9 +63,6 @@ public class ImapMmsMessage implements IImapMessage {
         cpimHeaders.addHeader(Constants.HEADER_FROM, from);
         cpimHeaders.addHeader(Constants.HEADER_TO, to);
         cpimHeaders.addHeader("DateTime", dateStr);
-        if(subject!=null){
-            cpimHeaders.addHeader(Constants.HEADER_SUBJECT, subject);
-        }
         cpimHeaders.addHeader("NS", "imdn <urn:ietf:params:imdn>");
         cpimHeaders.addHeader("NS", "rcs <http://www.gsma.com>");
         cpimHeaders.addHeader("imdn.Message-ID", imdnMessageId);
@@ -69,18 +70,18 @@ public class ImapMmsMessage implements IImapMessage {
 
         MmsMimeBody mimeBody  = new MmsMimeBody();
         for(MmsPart mmsPart : mmsParts){
-            String contentType = mmsPart.getContentType();
-            String content = mmsPart.getText();
+            String mimeType = mmsPart.getMimeType();
+            String content = mmsPart.getBody();
             String transferEncoding = null;
-            if(MmsUtils.CONTENT_TYPE_IMAGE.contains(contentType)){ // base 64
-                byte[] bytes = MmsUtils.getContent(mmsPart);
+            if(MimeManager.isImageType(mimeType)){ // base 64
+                byte[] bytes = MmsUtils.getContent(context.getContentResolver(), mmsPart.getFile());
                 if(bytes==null){
                     continue;
                 }
                 transferEncoding = Constants.HEADER_BASE64;
                 content = Base64.encodeBase64ToString(bytes);
             }
-            mimeBody.addMultiPart(mmsPart.getContentType(), mmsPart.getContentId(), transferEncoding, content);
+            mimeBody.addMultiPart(mmsPart.getMimeType(),null, transferEncoding, content);
         }
         mimeMessage.setBodyPart(mimeBody);
     }

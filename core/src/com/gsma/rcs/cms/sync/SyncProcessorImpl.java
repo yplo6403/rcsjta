@@ -16,16 +16,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SynchronizerImpl implements ISynchronizer {
+public class SyncProcessorImpl implements ISyncProcessor {
 
-    private static Logger sLogger = Logger.getLogger(SynchronizerImpl.class.getSimpleName());
+    private static Logger sLogger = Logger.getLogger(SyncProcessorImpl.class.getSimpleName());
     
     private BasicImapService mImapService;
 
     /**
      * @param imapService
      */
-    public SynchronizerImpl(BasicImapService imapService) {
+    public SyncProcessorImpl(BasicImapService imapService) {
         mImapService = imapService;
     }
 
