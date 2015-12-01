@@ -19,6 +19,7 @@
 package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.gsma.services.rcs.RcsGenericException;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.cms.CmsService;
@@ -65,6 +66,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -104,6 +107,15 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
      */
     private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=?";
     private final static String ORDER_ASC = HistoryLog.TIMESTAMP + " ASC";
+
+    private final static String[] PROJECTION_UNREAD_MESSAGE = new String[] {
+            HistoryLog.PROVIDER_ID, HistoryLog.ID
+    };
+
+    private final static String UNREADS_WHERE_CLAUSE = HistoryLog.CHAT_ID + "=? AND "
+            + HistoryLog.READ_STATUS + "=" + RcsService.ReadStatus.UNREAD.toInt() +" AND "
+            + HistoryLog.DIRECTION +  "=" + RcsService.Direction.INCOMING.toInt();
+
     private static final String OPEN_CONVERSATION = "open_conversation";
 
     /**
@@ -262,7 +274,12 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
             setTitle(getString(R.string.title_chat, displayName));
             /* Mark as read messages if required */
-            // TODO
+            Map<String, Integer> msgIdUnreads = getUnreadMessageIds(mContact);
+            for (Map.Entry<String, Integer> entryMsgIdUnread : msgIdUnreads.entrySet()) {
+                if (XmsMessageLog.HISTORYLOG_MEMBER_ID == entryMsgIdUnread.getValue()) {
+                    mCmsService.markMessageAsRead(entryMsgIdUnread.getKey());
+                }
+            }
             return true;
 
         } catch (RcsServiceException e) {
@@ -423,4 +440,36 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         mAdapter.swapCursor(null);
     }
 
+    /**
+     * Get unread messages for contact
+     *
+     * @param contact contact ID
+     * @return Map of unread message IDs associated with the provider ID
+     */
+    private Map<String, Integer> getUnreadMessageIds(ContactId contact) {
+        Map<String, Integer> unReadMessageIDs = new HashMap<>();
+        String[] where_args = new String[] {
+                contact.toString()
+        };
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
+                    UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
+            if (!cursor.moveToFirst()) {
+                return unReadMessageIDs;
+            }
+            int msgIdcolumIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
+            int providerIdColumIdx = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
+            do {
+                unReadMessageIDs.put(cursor.getString(msgIdcolumIdx),
+                        cursor.getInt(providerIdColumIdx));
+            } while (cursor.moveToNext());
+            return unReadMessageIDs;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
 }
