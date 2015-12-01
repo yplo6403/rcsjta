@@ -91,7 +91,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                 }
             }
             String contact = xmsData.getContact();
-            String folderName = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact);
+            String folderName = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact);
             List<Integer> uids = folderUidsMap.get(folderName);
             if(uids==null){
                 uids = new ArrayList<>();
@@ -123,7 +123,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                 }
             }
             String contact = xmsData.getContact();
-            String folderName = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact);
+            String folderName = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact);
             List<Integer> uids = folderUidsMap.get(folderName);
             if(uids==null){
                 uids = new ArrayList<>();

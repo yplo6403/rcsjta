@@ -6,6 +6,7 @@ import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.XmsData;
@@ -62,7 +63,7 @@ public class PushMessageTaskMock extends PushMessageTask {
                         message.getDate(), message.getContent(), "" + message.getDate(),
                         "" + message.getDate(), "" + message.getDate());
 
-                String remoteFolder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
+                String remoteFolder = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
                     mImapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);

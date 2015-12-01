@@ -118,7 +118,7 @@ public class DeleteTask extends AsyncTask<String, String, Boolean> {
          * @param params
          * @param result
          */
-        public void onDeleteTaskExecuted(String[] params, Boolean result);
+        void onDeleteTaskExecuted(String[] params, Boolean result);
     }
 
 }

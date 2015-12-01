@@ -245,35 +245,35 @@ public class SmsTest extends AndroidTestCase{
        * Step 2 : start sync
        * step 3 : check that conversation is marked as seen
        */
-     public void test4()  {
-   
-            test1();
-             // delete mailbox on CMS
-             try {
-                 deleteRemoteMailbox(CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, SmsIntegrationUtils.Test1.contact));
-            } catch (ImapServiceNotAvailableException e) {
-                e.printStackTrace();
-                Assert.fail();
-            }
-             
-             mXmsLog.updateReadStatus(SmsIntegrationUtils.Test1.contact, ReadStatus.READ_REQUESTED);   
-
-             startSynchro();
-
-             List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
-             for(SmsData sms:messages){
-                 Assert.assertEquals(ReadStatus.READ_REQUESTED, sms.getReadStatus());
-             }
-
-             mXmsLog.updateDeleteStatus(SmsIntegrationUtils.Test1.contact, DeleteStatus.DELETED_REQUESTED);
-             startSynchro();
-
-             messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
-             for(SmsData sms:messages){
-                 Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, sms.getDeleteStatus());
-             }
-
-     }
+//     public void test4()  {
+//
+//            test1();
+//             // delete mailbox on CMS
+//             try {
+//                 deleteRemoteMailbox(CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), SmsIntegrationUtils.Test1.contact));
+//            } catch (ImapServiceNotAvailableException e) {
+//                e.printStackTrace();
+//                Assert.fail();
+//            }
+//
+//             mXmsLog.updateReadStatus(SmsIntegrationUtils.Test1.contact, ReadStatus.READ_REQUESTED);
+//
+//             startSynchro();
+//
+//             List<SmsData> messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
+//             for(SmsData sms:messages){
+//                 Assert.assertEquals(ReadStatus.READ_REQUESTED, sms.getReadStatus());
+//             }
+//
+//             mXmsLog.updateDeleteStatus(SmsIntegrationUtils.Test1.contact, DeleteStatus.DELETED_REQUESTED);
+//             startSynchro();
+//
+//             messages = mXmsLogEnvIntegration.getMessages(SmsIntegrationUtils.Test1.contact);
+//             for(SmsData sms:messages){
+//                 Assert.assertEquals(DeleteStatus.DELETED_REQUESTED, sms.getDeleteStatus());
+//             }
+//
+//     }
   
      /**
       * Test5 
@@ -288,7 +288,7 @@ public class SmsTest extends AndroidTestCase{
             // mark messages as deleted on server and expunge them.
             try {
                 updateRemoteFlags(Arrays.asList(SmsIntegrationUtils.Test5.flagChangesDeleted));
-                deleteRemoteMessages(CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, SmsIntegrationUtils.Test1.contact));
+                deleteRemoteMessages(CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), SmsIntegrationUtils.Test1.contact));
             } catch (Exception e) {
                 Assert.fail();
             }

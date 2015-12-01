@@ -1,6 +1,7 @@
 package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.DeleteStatus;
 import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
@@ -16,7 +17,7 @@ public class SmsIntegrationUtils {
     public static class Test1{
         
         public static String contact = "+33640332858";
-        public static String folderName = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact);
+        public static String folderName = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact);
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         public static DeleteStatus deleteStatus = DeleteStatus.NOT_DELETED; 
         
@@ -124,9 +125,9 @@ public class SmsIntegrationUtils {
         public static String contact2 = "+33600000002";
         public static String contact3 = "+33600000003";
         
-        public static String folder1 = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact1);
-        public static String folder2 = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact2);
-        public static String folder3 = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, contact3);
+        public static String folder1 = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact1);
+        public static String folder2 = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact2);
+        public static String folder3 = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), contact3);
 
         public static ReadStatus readStatus = ReadStatus.UNREAD;
         

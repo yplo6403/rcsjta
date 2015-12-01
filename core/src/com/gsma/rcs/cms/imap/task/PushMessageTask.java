@@ -1,6 +1,8 @@
 
 package com.gsma.rcs.cms.imap.task;
 
+import android.os.AsyncTask;
+
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.fordemo.ImapContext;
 import com.gsma.rcs.cms.imap.ImapFolder;
@@ -9,30 +11,22 @@ import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
-import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.MmsData;
-import com.gsma.rcs.cms.provider.xms.model.MmsPart;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
-import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
 import com.gsma.rcs.cms.provider.xms.model.XmsData;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.PushStatus;
+import com.gsma.rcs.cms.provider.xms.model.XmsData.ReadStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.cms.utils.SipUtils;
 import com.gsma.rcs.utils.logger.Logger;
-
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
-import android.content.Context;
-import android.os.AsyncTask;
-
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -51,12 +45,12 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
 
     /**
      * @param imapService
-     * @param xmsLog 
+     * @param xmsLog
      * @param myNumber
-     * @param listener 
+     * @param listener
      */
     public PushMessageTask(BasicImapService imapService, XmsLog xmsLog, PartLog partLog, String myNumber, ImapContext imapContext, PushMessageTaskListener listener) {
-        mImapService = imapService;    
+        mImapService = imapService;
         mXmsLog = xmsLog;
         mPartLog = partLog;
         mMyNumber = myNumber;
@@ -86,7 +80,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
             }
         finally {
             Thread.currentThread().setName(currentName);
-            ImapServiceManager.releaseService(mImapService);    
+            ImapServiceManager.releaseService(mImapService);
         }
     }
 
@@ -108,21 +102,18 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                 List<Flag> flags = new ArrayList<Flag>();
                 switch (message.getDirection()) {
                     case INCOMING:
-                        from = message.getContact();
-                        to = mMyNumber;
+                        from = CmsUtils.contactToHeader(message.getContact());
+                        to = CmsUtils.contactToHeader(mMyNumber);
                         direction = Constants.DIRECTION_RECEIVED;
                         break;
                     case OUTGOING:
-                        from = mMyNumber;
-                        to = message.getContact();
+                        from = CmsUtils.contactToHeader(mMyNumber);
+                        to = CmsUtils.contactToHeader(message.getContact());
                         direction = Constants.DIRECTION_SENT;
                         break;
                     default:
                         break;
                 }
-
-                from = SipUtils.asSipContact(from);
-                to = SipUtils.asSipContact(to);
                 if (message.getReadStatus() != ReadStatus.UNREAD) {
                     flags.add(Flag.Seen);
                 }
@@ -155,7 +146,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                             mms.getMmsId(),
                             mPartLog.getParts(mms.getMmsId(), false));
                 }
-                String remoteFolder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
+                String remoteFolder = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
                     mImapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);

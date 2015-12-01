@@ -10,6 +10,7 @@ import com.gsma.rcs.cms.imap.message.mime.MultiPart;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
+import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.PartLog;
 import com.gsma.rcs.cms.provider.xms.XmsLog;
 import com.gsma.rcs.cms.provider.xms.model.MmsPart;
@@ -311,7 +312,7 @@ public class XmsEventHandler implements IRemoteEventHandler, ILocalEventHandler,
 
     @Override
     public Set<FlagChange> getLocalEvents(String cmsRemoteFolder) {
-        String contact = CmsUtils.convertCmsRemoteFolderToContact(MessageType.SMS, cmsRemoteFolder);
+        String contact = CmsUtils.cmsFolderToContact(CmsSettings.getInstance(), cmsRemoteFolder);
         List<XmsData> messages;
         Set<FlagChange> changes = new HashSet<FlagChange>();
         List<Integer> readUids = new ArrayList<>();

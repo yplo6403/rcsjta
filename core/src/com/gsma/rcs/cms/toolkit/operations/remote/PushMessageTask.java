@@ -1,5 +1,7 @@
 package com.gsma.rcs.cms.toolkit.operations.remote;
 
+import android.os.AsyncTask;
+
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
@@ -9,13 +11,9 @@ import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.settings.CmsSettings;
 import com.gsma.rcs.cms.provider.xms.model.SmsData;
-
 import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.cms.utils.SipUtils;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
-
-import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,27 +82,24 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
             for (SmsData message : messages) {
                 switch (message.getDirection()) {
                     case INCOMING:
-                        from = message.getContact();
-                        to = mMyNumber;
+                        from = CmsUtils.contactToHeader(message.getContact());
+                        to = CmsUtils.contactToHeader(mMyNumber);
                         direction = Constants.DIRECTION_RECEIVED;
                         break;
                     case OUTGOING:
-                        from = mMyNumber;
-                        to = message.getContact();
+                        from = CmsUtils.contactToHeader(mMyNumber);
+                        to = CmsUtils.contactToHeader(message.getContact());
                         direction = Constants.DIRECTION_SENT;
                         break;
                     default:
                         break;
                 }
 
-                from = SipUtils.asSipContact(from);
-                to = SipUtils.asSipContact(to);
-
                 ImapSmsMessage imapSmsMessage = new ImapSmsMessage(from, to, direction,
                         message.getDate(), message.getContent(), "" + message.getDate(),
                         "" + message.getDate(), "" + message.getDate());
                 
-                String folder = CmsUtils.convertContactToCmsRemoteFolder(MessageData.MessageType.SMS, message.getContact());
+                String folder = CmsUtils.contactToCmsFolder(CmsSettings.getInstance(), message.getContact());
                 if (!existingFolders.contains(folder)) {
                     mImapService.create(folder);
                     existingFolders.add(folder);

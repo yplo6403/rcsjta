@@ -182,7 +182,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
             else{
                 body = mImapMessage.getTextBody();
             }
-            sb.append(mImapMessage.getFrom()).append(" : ").append(body);
+            sb.append(body);
             sb.append("\r\n").append(mImapMessage.getMetadata().getFlags());
             return sb.toString();
         }
