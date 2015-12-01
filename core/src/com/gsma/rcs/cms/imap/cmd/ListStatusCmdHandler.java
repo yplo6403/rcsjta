@@ -45,8 +45,6 @@ public class ListStatusCmdHandler extends CmdHandler {
                 continue;
             }
 
-            values[0] = StringUtils.removeQuotes(values[0]);
-
             Map<String, String> data = new HashMap<String, String>();
             data.put(Constants.METADATA_MESSAGES, values[1]);
             data.put(Constants.METADATA_UIDNEXT, values[2]);

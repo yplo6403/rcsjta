@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  *
@@ -130,6 +131,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                 }
 
                 IImapMessage imapMessage = null;
+
                 if(message instanceof SmsDataObject){
                     imapMessage = new ImapSmsMessage(
                             from,
@@ -137,8 +139,8 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                             direction,
                             message.getTimestamp(),
                             message.getBody(),
-                            "" + message.getTimestamp(),
-                            "" + message.getTimestamp(),
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(),
                             "" + message.getTimestamp());
                 }
                 else if(message instanceof MmsDataObject) {
@@ -149,8 +151,8 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                             to,
                             direction,
                             mms.getTimestamp(),
-                            "" + mms.getTimestamp(),
-                            "" + mms.getTimestamp(),
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(),
                             "" + mms.getTimestamp(),
                             mms.getMmsId(),
                             mms.getMmsPart());

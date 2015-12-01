@@ -3,11 +3,8 @@ package com.gsma.rcs.cms;
 
 public class Constants {
 
-    public static final String CMD_LIST = "LIST";
-    public static final String CMD_STATUS = "STATUS";
     public static final String CMD_LIST_STATUS = "LIST \"\" * RETURN (STATUS (MESSAGES UIDNEXT UIDVALIDITY HIGHESTMODSEQ))";
-    public static final String CMD_SELECT = "SELECT \"%1$s\"";
-    public static final String CMD_SELECT_CONDSTORE = "SELECT \"%1$s\" (CONDSTORE)";
+    public static final String CMD_SELECT_CONDSTORE = "SELECT %1$s (CONDSTORE)";
     public static final String CMD_FETCH_FLAGS = "UID FETCH 1:%1$s (UID FLAGS) (CHANGEDSINCE %2$s)";
     // public static final String CMD_FETCH_HEADERS = "UID FTECH %1$s:%2$s (RFC822.SIZE FLAGS MOSDEQ
     // BODY.PEEK[HEADER.FIELDS(FROM TO)])";
@@ -15,7 +12,6 @@ public class Constants {
     public static final String CMD_FETCH_MESSAGE = "UID FETCH %1$s (RFC822.SIZE FLAGS MODSEQ BODY.PEEK[])";
 
     public static final String CAPA_CONDSTORE = "CONDSTORE";
-    public static final String CAPA_QRESYNC = "QRESYNC";
 
     public static final String METADATA_MESSAGES = "MESSAGES";
     public static final String METADATA_FLAGS = "FLAGS";
@@ -40,6 +36,7 @@ public class Constants {
     public static final String HEADER_CONVERSATION_ID = "Conversation-ID";
     public static final String HEADER_CONTRIBUTION_ID = "Contribution-ID";
     public static final String HEADER_DATE = "Date";
+    public static final String HEADER_DATE_TIME = "DateTime";
     public static final String HEADER_IMDN_MESSAGE_ID = "IMDN-Message-ID";
     public static final String HEADER_DIRECTION = "Message-Direction";
     public static final String HEADER_CONTENT_TYPE = "Content-Type";

@@ -2,6 +2,7 @@ package com.gsma.rcs.cms.utils;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.StringUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -22,7 +23,7 @@ public class CmsUtils {
     }
 
     public static String cmsFolderToContact(RcsSettings settings, String cmsFolder){
-        String contact = cmsFolder;
+        String contact = StringUtils.removeQuotes(cmsFolder);
         String prefix = new StringBuilder(settings.getCmsDefaultDirectoryName())
                 .append(settings.getCmsDirectorySeparator())
                 .append((Constants.TEL_PREFIX)).toString();
@@ -34,9 +35,8 @@ public class CmsUtils {
 
     public static String headerToContact(String header){
         String contact = header;
-        String prefix = new StringBuilder(Constants.TEL_PREFIX).toString();
-        if(header.startsWith(prefix)){
-            contact = header.substring(prefix.length());
+        if(header.startsWith(Constants.TEL_PREFIX)){
+            contact = header.substring(Constants.TEL_PREFIX.length());
         }
         return contact;
     }

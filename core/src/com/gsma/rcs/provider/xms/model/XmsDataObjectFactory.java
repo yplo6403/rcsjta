@@ -127,7 +127,7 @@ public class XmsDataObjectFactory {
                 ContactUtil.createContactIdFromTrustedData(contact),
                 ((SmsMimeMessage)imapMessage.getPart()).getBodyPart() ,
                 direction,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE)),
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
                 imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD,
                 body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
     }
@@ -193,7 +193,7 @@ public class XmsDataObjectFactory {
                 textContent,
                 direction,
                 imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE)),
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
                 0,
                 0,
                 mmsParts

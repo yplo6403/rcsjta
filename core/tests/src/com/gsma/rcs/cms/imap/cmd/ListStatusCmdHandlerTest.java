@@ -18,9 +18,9 @@ public class ListStatusCmdHandlerTest extends AndroidTestCase {
         String expectedCmd = String.format(ListStatusCmdHandler.sCommand, "myFolder");    
         String[] lines  = new String[]{
                 "* LIST () \".\" \"+33642575779\"",            
-                "* STATUS \"+33642575779\" (MESSAGES 1 UIDNEXT 4 UIDVALIDITY 1437039675 HIGHESTMODSEQ 7)",
+                "* STATUS +33642575779 (MESSAGES 1 UIDNEXT 4 UIDVALIDITY 1437039675 HIGHESTMODSEQ 7)",
                 "* LIST () \".\" \"INBOX\"",
-                "* STATUS \"INBOX\" (MESSAGES 2 UIDNEXT 1 UIDVALIDITY 1437039422 HIGHESTMODSEQ 1)",
+                "* STATUS INBOX (MESSAGES 2 UIDNEXT 1 UIDVALIDITY 1437039422 HIGHESTMODSEQ 1)",
                 "a3 OK List completed."
         }; 
         
