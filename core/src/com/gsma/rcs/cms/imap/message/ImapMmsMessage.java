@@ -39,13 +39,11 @@ public class ImapMmsMessage implements IImapMessage {
             ) {
         super();
 
-        String dateStr = DateUtils.getDateAsString(date);
-
         mimeMessage = new MmsMimeMessage();
         MimeHeaders mailHeaders = new MimeHeaders();
         mailHeaders.addHeader(Constants.HEADER_FROM, from);
         mailHeaders.addHeader(Constants.HEADER_TO, to);
-        mailHeaders.addHeader(Constants.HEADER_DATE, dateStr);
+        mailHeaders.addHeader(Constants.HEADER_DATE, DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
         mailHeaders.addHeader(Constants.HEADER_CONVERSATION_ID, conversationId);
         mailHeaders.addHeader(Constants.HEADER_CONTRIBUTION_ID, contributionId);
         mailHeaders.addHeader(Constants.HEADER_MESSAGE_ID, mmsId);
@@ -58,7 +56,7 @@ public class ImapMmsMessage implements IImapMessage {
         MimeHeaders cpimHeaders = new MimeHeaders();
         cpimHeaders.addHeader(Constants.HEADER_FROM, from);
         cpimHeaders.addHeader(Constants.HEADER_TO, to);
-        cpimHeaders.addHeader("DateTime", dateStr);
+        cpimHeaders.addHeader(Constants.HEADER_DATE_TIME, DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
         if(subject!=null){
             cpimHeaders.addHeader(Constants.HEADER_SUBJECT, subject);
         }

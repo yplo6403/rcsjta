@@ -41,6 +41,7 @@ public class Constants {
     public static final String HEADER_CONVERSATION_ID = "Conversation-ID";
     public static final String HEADER_CONTRIBUTION_ID = "Contribution-ID";
     public static final String HEADER_DATE = "Date";
+    public static final String HEADER_DATE_TIME = "DateTime";
     public static final String HEADER_IMDN_MESSAGE_ID = "IMDN-Message-ID";
     public static final String HEADER_DIRECTION = "Message-Direction";
     public static final String HEADER_CONTENT_TYPE = "Content-Type";

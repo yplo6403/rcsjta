@@ -34,7 +34,7 @@ public class MessageDataConverter {
                 null,
                 contact,
                 ((SmsMimeMessage)imapMessage.getPart()).getBodyPart() ,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE)),
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
                 direction,
                 imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD,
                 body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
@@ -63,7 +63,7 @@ public class MessageDataConverter {
                 contact,
                 body.getHeader(Constants.HEADER_SUBJECT),
                 null,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE)),
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
                 direction,
                 imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD
                 );

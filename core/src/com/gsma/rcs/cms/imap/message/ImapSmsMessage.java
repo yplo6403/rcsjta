@@ -28,13 +28,11 @@ public class ImapSmsMessage implements IImapMessage {
             String content, String conversationId, String contributionId, String imdnMessageId) {
         super();
 
-        String dateStr = DateUtils.getDateAsString(date);
-
         mimeMessage = new SmsMimeMessage();
         MimeHeaders mailHeaders = new MimeHeaders();
         mailHeaders.addHeader(Constants.HEADER_FROM, from);
         mailHeaders.addHeader(Constants.HEADER_TO, to);
-        mailHeaders.addHeader(Constants.HEADER_DATE, dateStr);
+        mailHeaders.addHeader(Constants.HEADER_DATE,  DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
         mailHeaders.addHeader(Constants.HEADER_CONVERSATION_ID, conversationId);
         mailHeaders.addHeader(Constants.HEADER_CONTRIBUTION_ID, contributionId);
         mailHeaders.addHeader(Constants.HEADER_IMDN_MESSAGE_ID, imdnMessageId);
@@ -42,14 +40,15 @@ public class ImapSmsMessage implements IImapMessage {
         mailHeaders.addHeader(Constants.HEADER_MESSAGE_CORRELATOR, HeaderCorrelatorUtils.buildHeader(content));
         mailHeaders.addHeader(Constants.HEADER_MESSAGE_CONTEXT, Constants.PAGER_MESSAGE);
         mailHeaders.addHeader(Constants.HEADER_CONTENT_TYPE, Constants.CONTENT_TYPE_CPIM);
-        //mailHeaders.add(Header.createHeader(Constants.HEADER_CONTENT_TRANSFER_ENCODING + ": " + Constants.HEADER_BASE64 ));
         mimeMessage.addHeaderPart(mailHeaders);
 
         MimeHeaders cpimHeaders =  new MimeHeaders();
         cpimHeaders.addHeader(Constants.HEADER_FROM, from);
         cpimHeaders.addHeader(Constants.HEADER_TO, to);
+        cpimHeaders.addHeader("NS", "imdn <urn:ietf:params:imdn>");
+        cpimHeaders.addHeader("NS", "rcs <http://www.gsma.com>");
         cpimHeaders.addHeader("imdn.Message-ID", imdnMessageId);
-        cpimHeaders.addHeader("DateTime", dateStr);
+        cpimHeaders.addHeader(Constants.HEADER_DATE_TIME,  DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
         mimeMessage.addHeaderPart(cpimHeaders);
 
         MimeHeaders mimeHeaders =  new MimeHeaders();

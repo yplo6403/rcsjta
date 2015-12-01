@@ -27,6 +27,7 @@ import com.sonymobile.rcs.imap.ImapException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  *
@@ -118,18 +119,16 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                     flags.add(Flag.Seen);
                 }
 
-                boolean isSms = false;
                 IImapMessage imapMessage = null;
                 if(message instanceof SmsData){
-                    isSms = true;
                     imapMessage = new ImapSmsMessage(
                             from,
                             to,
                             direction,
                             message.getDate(),
                             message.getContent(),
-                            "" + message.getDate(),
-                            "" + message.getDate(),
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(),
                             "" + message.getDate());
                 }
                 else if(message instanceof MmsData) {
@@ -140,8 +139,8 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                             direction,
                             mms.getDate(),
                             mms.getSubject(),
-                            "" + mms.getDate(),
-                            "" + mms.getDate(),
+                            UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(),
                             "" + message.getDate(),
                             mms.getMmsId(),
                             mPartLog.getParts(mms.getMmsId(), false));
