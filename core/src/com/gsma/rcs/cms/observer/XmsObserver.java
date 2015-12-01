@@ -358,7 +358,7 @@ public class XmsObserver implements INativeXmsEventListener {
                     messageIds.get(contact),
                     contact,
                     textContent,
-                    Direction.INCOMING,
+                    direction,
                     ReadStatus.UNREAD,
                     date*1000,
                     id,

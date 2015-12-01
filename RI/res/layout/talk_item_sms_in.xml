@@ -42,7 +42,7 @@
         android:padding="5dip">
 
         <TextView
-            android:id="@+id/xms_content"
+            android:id="@+id/content_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="5dp"
@@ -51,17 +51,17 @@
             />
 
         <TextView
-            android:id="@+id/xms_date"
+            android:id="@+id/timestamp_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/xms_content"
+            android:layout_below="@+id/content_text"
             android:textColor="@android:color/darker_gray"
             />
 
     </RelativeLayout>
 
     <TextView
-        android:id="@+id/xms_state"
+        android:id="@+id/status_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"

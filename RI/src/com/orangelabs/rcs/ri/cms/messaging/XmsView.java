@@ -36,6 +36,7 @@ import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.orangelabs.rcs.ri.messaging.chat.ChatView;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
@@ -104,7 +105,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=?";
     private final static String ORDER_ASC = HistoryLog.TIMESTAMP + " ASC";
     private static final String OPEN_CONVERSATION = "open_conversation";
-    public static String sIdOnForeground;
+
     /**
      * The adapter that binds data to the ListView
      */
@@ -127,6 +128,21 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     public static Intent forgeIntentToOpenConversation(Context context, ContactId contact) {
         Intent intent = new Intent(context, XmsView.class);
         intent.setAction(OPEN_CONVERSATION);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(EXTRA_CONTACT, (Parcelable) contact);
+        return intent;
+    }
+
+    /**
+     * Forge intent to restart XmsView activity on new message event
+     *
+     * @param ctx The context
+     * @param contact The contact ID
+     * @param intent intent
+     * @return intent
+     */
+    public static Intent forgeIntentOnNewMessage(Context ctx, ContactId contact, Intent intent) {
+        intent.setClass(ctx, XmsView.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(EXTRA_CONTACT, (Parcelable) contact);
         return intent;
@@ -161,7 +177,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         /* Initialize the adapter. */
         mAdapter = new TalkCursorAdapter(this);
         // Associate the list adapter with the ListView.
-        ListView listView = (ListView) findViewById(android.R.id.list);
+        ListView listView = (ListView) findViewById(R.id.talkListView);
         listView.setAdapter(mAdapter);
 
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
@@ -246,7 +262,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
             setTitle(getString(R.string.title_chat, displayName));
             /* Mark as read messages if required */
-
+            // TODO
             return true;
 
         } catch (RcsServiceException e) {
@@ -261,7 +277,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         /* Save contact ID */
         mContact = newContact;
         setCursorLoader(firstLoad);
-        sIdOnForeground = mContact.toString();
+        ChatView.sChatIdOnForeground = mContact.toString();
     }
 
     private void setCursorLoader(boolean firstLoad) {
@@ -291,7 +307,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     @Override
     protected void onPause() {
         super.onPause();
-        sIdOnForeground = null;
+        ChatView.sChatIdOnForeground = null;
     }
 
     @Override
@@ -309,7 +325,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     protected void onResume() {
         super.onResume();
         if (mContact != null) {
-            sIdOnForeground = mContact.toString();
+            ChatView.sChatIdOnForeground = mContact.toString();
         }
     }
 

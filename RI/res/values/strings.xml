@@ -416,6 +416,8 @@
     <string name="label_xms_delete_failed">Delete XMS conversation failed</string>
     <string name="title_send_mms">Send MMS to %1$s</string>
     <string name="mms_image">MMS image</string>
+    <string name="title_recv_sms">SMS from %s</string>
+    <string name="title_recv_mms">MMS from %s</string>
 
 
     <!-- States -->

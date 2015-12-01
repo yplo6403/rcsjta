@@ -332,7 +332,7 @@ public class ChatCursorAdapter extends CursorAdapter {
             columnMimetype = cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE);
             /* Save children views */
             statusText = (TextView) base.findViewById(R.id.status_text);
-            dateText = (TextView) base.findViewById(R.id.date_text);
+            dateText = (TextView) base.findViewById(R.id.timestamp_text);
             contactText = (TextView) base.findViewById(R.id.contact_text);
         }
 
@@ -363,7 +363,7 @@ public class ChatCursorAdapter extends CursorAdapter {
             columnExpiredDelivery = cursor.getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY);
             /* Save children views */
             chatItemLayout = (RelativeLayout) base.findViewById(R.id.msg_item);
-            chatText = (TextView) base.findViewById(R.id.chat_text);
+            chatText = (TextView) base.findViewById(R.id.content_text);
             undeliveredIcon = (ImageView) base.findViewById(R.id.undelivered);
         }
 
@@ -398,7 +398,7 @@ public class ChatCursorAdapter extends CursorAdapter {
             columnReasonCode = cursor.getColumnIndexOrThrow(HistoryLog.REASON_CODE);
             /* Save children views */
             filetransferItemLayout = (RelativeLayout) base.findViewById(R.id.rl_file_item);
-            fileImageOutgoing = (ImageView) base.findViewById(R.id.file_image_outgoing);
+            fileImageOutgoing = (ImageView) base.findViewById(R.id.file_image);
             fileImageIncoming = (ImageView) base.findViewById(R.id.file_image_incoming);
             progressText = (TextView) base.findViewById(R.id.progress_text);
             undeliveredIcon = (ImageView) base.findViewById(R.id.undelivered);

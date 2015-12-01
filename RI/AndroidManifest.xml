@@ -554,7 +554,16 @@
         <activity
             android:name=".cms.messaging.XmsImageView"
         />
-
+        <service
+            android:name=".cms.messaging.XmsIntentService"
+            android:exported="false" />
+        <receiver
+            android:name=".cms.messaging.XmsMessageReceiver"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.gsma.services.rcs.cms.action.NEW_XMS_MESSAGE" />
+            </intent-filter>
+        </receiver>
 
         <receiver
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.UndeliveredMessageReceiver"

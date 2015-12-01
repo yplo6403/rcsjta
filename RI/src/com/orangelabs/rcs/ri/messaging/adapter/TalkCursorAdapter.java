@@ -36,13 +36,10 @@ import android.graphics.BitmapFactory;
 import android.support.v4.widget.CursorAdapter;
 import android.text.format.DateUtils;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 /**
@@ -59,7 +56,6 @@ public class TalkCursorAdapter extends CursorAdapter {
 
     public static Bitmap sDefaultThumbnail;
     private final Context mCtx;
-    private int mSizeOf100Dp;
     private LayoutInflater mInflater;
 
     /**
@@ -71,8 +67,6 @@ public class TalkCursorAdapter extends CursorAdapter {
         super(ctx, null, 0);
         mCtx = ctx;
         mInflater = LayoutInflater.from(ctx);
-        mSizeOf100Dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, ctx
-                .getResources().getDisplayMetrics());
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "ConversationCursorAdapter create");
         }
@@ -84,22 +78,22 @@ public class TalkCursorAdapter extends CursorAdapter {
         switch (viewType) {
             case VIEW_TYPE_SMS_IN:
                 View view = mInflater.inflate(R.layout.talk_item_sms_in, parent, false);
-                view.setTag(new SmsInViewHolder(view, cursor));
+                view.setTag(new SmsViewHolder(view, cursor));
                 return view;
 
             case VIEW_TYPE_SMS_OUT:
                 view = mInflater.inflate(R.layout.talk_item_sms_out, parent, false);
-                view.setTag(new SmsOutViewHolder(view, cursor));
+                view.setTag(new SmsViewHolder(view, cursor));
                 return view;
 
             case VIEW_TYPE_MMS_IN:
                 view = mInflater.inflate(R.layout.talk_item_mms_in, parent, false);
-                view.setTag(new MmsInViewHolder(view, cursor));
+                view.setTag(new MmsViewHolder(view, cursor));
                 return view;
 
             case VIEW_TYPE_MMS_OUT:
                 view = mInflater.inflate(R.layout.talk_item_mms_out, parent, false);
-                view.setTag(new MmsOutViewHolder(view, cursor));
+                view.setTag(new MmsViewHolder(view, cursor));
                 return view;
 
             default:
@@ -118,7 +112,7 @@ public class TalkCursorAdapter extends CursorAdapter {
 
             case VIEW_TYPE_MMS_IN:
             case VIEW_TYPE_MMS_OUT:
-                bindMmsView(view, ctx, cursor);
+                bindMmsView(view, cursor);
                 break;
 
             default:
@@ -129,39 +123,45 @@ public class TalkCursorAdapter extends CursorAdapter {
     private void bindSmsView(View view, Cursor cursor) {
         SmsViewHolder holder = (SmsViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
-        long date = cursor.getLong(holder.dateIdx);
-        holder.mDate.setText(DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
-        holder.mContent.setText(cursor.getString(holder.contentIdx));
-        holder.mStatus.setText(getXmsStatus(cursor, holder));
+        long date = cursor.getLong(holder.getColumnTimestampIdx());
+        holder.getTimestampText().setText(
+                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getContentText().setText(cursor.getString(holder.getColumnContentIdx()));
+        holder.getStatusText().setText(getXmsStatus(cursor, holder));
     }
 
-    private void bindMmsView(View view, Context context, Cursor cursor) {
+    private void bindMmsView(View view, Cursor cursor) {
         MmsViewHolder holder = (MmsViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
-        long date = cursor.getLong(holder.dateIdx);
-        holder.mDate.setText(DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
-        String mmsId = cursor.getString(holder.messageIdx);
-        holder.mContent.setText(cursor.getString(holder.contentIdx));
-        holder.mStatus.setText(getXmsStatus(cursor, holder));
-        holder.mImagesLayout.removeAllViews();
+        long date = cursor.getLong(holder.getColumnTimestampIdx());
+        holder.getTimestampText().setText(
+                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
+                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        String mmsId = cursor.getString(holder.getColumnIdIdx());
+        holder.getContentText().setText(cursor.getString(holder.getColumnContentIdx()));
+        holder.getStatusText().setText(getXmsStatus(cursor, holder));
+        holder.getImagesLayout().removeAllViews();
 
-        String status = RiApplication.sXmsMessageStates[(int) cursor.getLong(holder.statusIdx)];
-        holder.mStatus.setText(status);
-
-        boolean noThumbnail = false;
-
+        /*
+         * A ListView (ScrollView) in a Listview (ScrollView) isn't possible on Android without
+         * major bugs, Google says to not do it. You could have a LinearLayout inside of your list
+         * item (with its orientation set to vertical) and manually use addView() to add views to
+         * the LinearLayout that will be displayed with the layout's set orientation.
+         */
         for (MmsPartDataObject mmsPart : MmsPartDataObject.getParts(mCtx, mmsId)) {
             String mimeTye = mmsPart.getMimeType();
-            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeTye) ||
-                XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeTye)) {
+            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeTye)
+                    || XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeTye)) {
                 /* discard mms body or application/smil content */
                 continue;
             }
             byte[] fileIcon = mmsPart.getFileIcon();
-            ImageView imageView = new ImageView(context);
-            imageView.setLayoutParams(holder.imageParams);
+            View mmsItemView = mInflater.inflate(R.layout.mms_list_item, holder.getImagesLayout(),
+                    false);
+            ImageView imageView = (ImageView) mmsItemView.findViewById(R.id.image);
+            TextView filenameText = (TextView) mmsItemView.findViewById(R.id.FileName);
+            TextView fileSizeText = (TextView) mmsItemView.findViewById(R.id.FileSize);
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
                 if (sDefaultThumbnail == null) {
@@ -169,35 +169,27 @@ public class TalkCursorAdapter extends CursorAdapter {
                             R.drawable.video_file);
                 }
                 imageView.setImageBitmap(sDefaultThumbnail);
-                if (!noThumbnail) {
-                    /*
-                     * The filename and size is only displayed for the 1rst file with no thumbnail.
-                     */
-                    noThumbnail = true;
-                    holder.mFilename.setVisibility(View.VISIBLE);
-                    holder.mFilename.setText(mmsPart.getFilename());
-                    holder.mFileSize.setVisibility(View.VISIBLE);
-                    holder.mFileSize.setText(FileUtils.humanReadableByteCount(
-                            mmsPart.getFileSize(), true));
-                }
+                filenameText.setVisibility(View.VISIBLE);
+                filenameText.setText(mmsPart.getFilename());
+                fileSizeText.setVisibility(View.VISIBLE);
+                fileSizeText.setText(FileUtils.humanReadableByteCount(mmsPart.getFileSize(), true));
             } else {
-                if (!noThumbnail) {
-                    holder.mFilename.setVisibility(View.GONE);
-                    holder.mFileSize.setVisibility(View.GONE);
-                }
                 imageView.setImageBitmap(BitmapFactory
                         .decodeByteArray(fileIcon, 0, fileIcon.length));
+                filenameText.setVisibility(View.GONE);
+                fileSizeText.setVisibility(View.GONE);
             }
             // TODO imageView.setOnClickListener(new ImageViewOnClickListener(mmsPart));
-            holder.mImagesLayout.addView(imageView);
+            holder.getImagesLayout().addView(mmsItemView);
         }
     }
 
-    private String getXmsStatus(Cursor cursor, SmsViewHolder holder) {
-        XmsMessage.State state = XmsMessage.State.valueOf((int) cursor.getLong(holder.statusIdx));
+    private String getXmsStatus(Cursor cursor, BasicViewHolder holder) {
+        XmsMessage.State state = XmsMessage.State.valueOf((int) cursor.getLong(holder
+                .getColumnStatusIdx()));
         StringBuilder status = new StringBuilder(RiApplication.sXmsMessageStates[state.toInt()]);
-        XmsMessage.ReasonCode reason = XmsMessage.ReasonCode.valueOf((int) cursor
-                .getLong(holder.reasonIdx));
+        XmsMessage.ReasonCode reason = XmsMessage.ReasonCode.valueOf((int) cursor.getLong(holder
+                .getColumnReasonCodeIdx()));
         if (XmsMessage.ReasonCode.UNSPECIFIED != reason) {
             status.append(" / ");
             status.append(RiApplication.sXmsMessageReasonCodes[reason.toInt()]);
@@ -237,74 +229,6 @@ public class TalkCursorAdapter extends CursorAdapter {
     @Override
     public int getViewTypeCount() {
         return 4;
-    }
-
-    private abstract class SmsViewHolder {
-        RelativeLayout mItemLayout;
-        TextView mContent;
-        TextView mDate;
-        TextView mStatus;
-        int contentIdx;
-        int dateIdx;
-        int statusIdx;
-        int reasonIdx;
-
-        private SmsViewHolder(View view, Cursor cursor) {
-            contentIdx = cursor.getColumnIndexOrThrow(HistoryLog.CONTENT);
-            dateIdx = cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP);
-            statusIdx = cursor.getColumnIndexOrThrow(HistoryLog.STATUS);
-            reasonIdx = cursor.getColumnIndexOrThrow(HistoryLog.REASON_CODE);
-            mContent = (TextView) view.findViewById(R.id.xms_content);
-            mDate = (TextView) view.findViewById(R.id.xms_date);
-            mStatus = (TextView) view.findViewById(R.id.xms_state);
-        }
-    }
-
-    private class MmsViewHolder extends SmsViewHolder {
-        int messageIdx;
-        LinearLayout mImagesLayout;
-        LinearLayout.LayoutParams imageParams;
-        TextView mFilename;
-        TextView mFileSize;
-
-        private MmsViewHolder(View view, Cursor cursor) {
-            super(view, cursor);
-            messageIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
-            mFilename = (TextView) view.findViewById(R.id.mms_filename);
-            mFileSize = (TextView) view.findViewById(R.id.mms_filesize);
-            mImagesLayout = (LinearLayout) view.findViewById(R.id.xms_images_layout);
-            imageParams = new LinearLayout.LayoutParams(mSizeOf100Dp, mSizeOf100Dp);
-            imageParams.bottomMargin = mSizeOf100Dp / 10;
-        }
-    }
-
-    private class SmsInViewHolder extends SmsViewHolder {
-        private SmsInViewHolder(View view, Cursor cursor) {
-            super(view, cursor);
-            mItemLayout = (RelativeLayout) view.findViewById(R.id.conv_item_sms_in);
-        }
-    }
-
-    private class SmsOutViewHolder extends SmsViewHolder {
-        private SmsOutViewHolder(View view, Cursor cursor) {
-            super(view, cursor);
-            mItemLayout = (RelativeLayout) view.findViewById(R.id.conv_item_sms_out);
-        }
-    }
-
-    private class MmsInViewHolder extends MmsViewHolder {
-
-        private MmsInViewHolder(View view, Cursor cursor) {
-            super(view, cursor);
-            mItemLayout = (RelativeLayout) view.findViewById(R.id.conv_item_mms_in);
-        }
-    }
-
-    private class MmsOutViewHolder extends MmsViewHolder {
-        private MmsOutViewHolder(View view, Cursor cursor) {
-            super(view, cursor);
-            mItemLayout = (RelativeLayout) view.findViewById(R.id.conv_item_mms_out);
-        }
     }
 
 }
