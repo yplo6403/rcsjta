@@ -22,11 +22,13 @@ import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
+import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
 
@@ -91,6 +93,10 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         HistoryLog.STATUS,
         HistoryLog.DIRECTION,
         HistoryLog.CONTACT,
+        HistoryLog.EXPIRED_DELIVERY,
+        HistoryLog.FILENAME,
+        HistoryLog.FILESIZE,
+        HistoryLog.TRANSFERRED,
         HistoryLog.REASON_CODE
     };
     // @formatter:on
@@ -113,8 +119,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     };
 
     private final static String UNREADS_WHERE_CLAUSE = HistoryLog.CHAT_ID + "=? AND "
-            + HistoryLog.READ_STATUS + "=" + RcsService.ReadStatus.UNREAD.toInt() +" AND "
-            + HistoryLog.DIRECTION +  "=" + RcsService.Direction.INCOMING.toInt();
+            + HistoryLog.READ_STATUS + "=" + RcsService.ReadStatus.UNREAD.toInt() + " AND "
+            + HistoryLog.DIRECTION + "=" + RcsService.Direction.INCOMING.toInt();
 
     private static final String OPEN_CONVERSATION = "open_conversation";
 
@@ -167,6 +173,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(XmsMessageLog.HISTORYLOG_MEMBER_ID);
+        uriBuilder.appendProvider(ChatLog.Message.HISTORYLOG_MEMBER_ID);
+        uriBuilder.appendProvider(FileTransferLog.HISTORYLOG_MEMBER_ID);
         mUriHistoryProvider = uriBuilder.build();
 
         if (!isServiceConnected(ConnectionManager.RcsServiceName.CMS,
@@ -188,7 +196,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
         /* Initialize the adapter. */
         mAdapter = new TalkCursorAdapter(this);
-        // Associate the list adapter with the ListView.
+
+        /* Associate the list adapter with the ListView. */
         ListView listView = (ListView) findViewById(R.id.talkListView);
         listView.setAdapter(mAdapter);
 
@@ -449,7 +458,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     private Map<String, Integer> getUnreadMessageIds(ContactId contact) {
         Map<String, Integer> unReadMessageIDs = new HashMap<>();
         String[] where_args = new String[] {
-                contact.toString()
+            contact.toString()
         };
         Cursor cursor = null;
         try {
