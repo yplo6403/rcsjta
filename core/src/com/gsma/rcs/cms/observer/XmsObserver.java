@@ -356,6 +356,10 @@ public class XmsObserver implements INativeXmsEventListener {
                 onDeleteNativeConversation(conversation);
                 eventChecked = true;
             }
+            if(eventChecked){
+                mSmsIds = getSmsIds();
+                mMmsIds = getMmsIds();
+            }
             return eventChecked;
         }
 
