@@ -107,6 +107,8 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     private static final int CMS_MENU_ITEM_DELETE = 1;
     private static final int CMS_MENU_ITEM_OPEN = 0;
 
+    private static final int MESSAGE_BODY_MAX_SIZE = 25;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -184,10 +186,18 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             } else {
                 holder.contactText.setText(getString(R.string.label_cms_mms_contact, displayName));
             }
-            String body = cursor.getString(holder.columnBody);
+            String body = truncate(cursor.getString(holder.columnBody));
             holder.contentText.setText((body == null) ? "" : body);
             holder.contentText.setVisibility(View.VISIBLE);
         }
+    }
+
+    private String truncate(String content) {
+        if (content!=null && content.length() > MESSAGE_BODY_MAX_SIZE) {
+            content = content.substring(0, MESSAGE_BODY_MAX_SIZE);
+            content = content.concat("...");
+        }
+        return content;
     }
 
     /**

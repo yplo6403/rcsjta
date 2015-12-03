@@ -283,7 +283,6 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             content = content.concat("...");
         }
         return content;
-
     }
 
     private void checkImapServiceStatus() {

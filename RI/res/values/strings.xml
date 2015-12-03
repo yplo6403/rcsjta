@@ -649,7 +649,8 @@
         <item>SENT</item>
         <item>FAILED</item>
         <item>DELIVERED</item>
-        <item>DELETING</item>
+        <item>DISPLAYED</item>
+        <item>RECEIVED</item>
     </string-array>
     <string-array name="xms_reason_codes">
         <item/>

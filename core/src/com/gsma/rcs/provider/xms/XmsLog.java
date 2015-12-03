@@ -255,7 +255,7 @@ public class XmsLog {
         values.put(XmsData.KEY_TIMESTAMP, sms.getTimestamp());
         values.put(XmsData.KEY_TIMESTAMP_SENT, sms.getTimestampSent());
         values.put(XmsData.KEY_TIMESTAMP_DELIVERED, sms.getTimestampDelivered());
-        values.put(XmsData.KEY_STATE, sms.getReadStatus().toInt());
+        values.put(XmsData.KEY_STATE, sms.getState().toInt());
         values.put(XmsData.KEY_REASON_CODE, sms.getReasonCode().toInt());
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == sms.getReadStatus() ? 1
                 : 0);
@@ -323,7 +323,7 @@ public class XmsLog {
                 .withValue(XmsData.KEY_TIMESTAMP, mms.getTimestamp())
                 .withValue(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent())
                 .withValue(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered())
-                .withValue(XmsData.KEY_STATE, mms.getReadStatus().toInt())
+                .withValue(XmsData.KEY_STATE, mms.getState().toInt())
                 .withValue(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt())
                 .withValue(XmsData.KEY_READ_STATUS,
                         RcsService.ReadStatus.READ == mms.getReadStatus() ? 1 : 0)
