@@ -73,8 +73,6 @@
     <string name="menu_contacts">Contacts</string>
     <string name="menu_address_book">Native address book</string>
     <string name="menu_list_rcs_contacts">All RCS contacts</string>
-    <string name="menu_list_online_contacts">Online RCS contacts</string>
-    <string name="menu_list_supported_contacts">Contacts supporting a service</string>
     <string name="label_ext_tag">Extension tag:</string>
     <string name="menu_contact_vcard">Contact visit card</string>
     <string name="label_vcard">Visit card:</string>
@@ -106,8 +104,6 @@
     <string name="label_capabilities_empty">No capabilities</string>
     <string name="label_contact">Contact %s</string>
     <string name="label_capabilities_geolocation_push">Geolocation push</string>
-    <string name="label_capabilities_ip_voice_call">IP voice call</string>
-    <string name="label_capabilities_ip_video_call">IP video call</string>
     <string name="label_automata">Automata:</string>
     <string name="label_capabilities_timestamp">Last refresh:</string>
     <string name="label_no_capabilities">No capabilities for %s</string>
@@ -419,6 +415,10 @@
     <string name="title_recv_sms">SMS from %s</string>
     <string name="title_recv_mms">MMS from %s</string>
     <string name="toast_mms_image">MMS image %1$s for contact %2$s</string>
+
+    <string name="toast_image_in">Image %1$s received from contact %2$s</string>
+    <string name="toast_image_out">Image %1$s sent to contact %2$s</string>
+    <string name="menu_delete_xms">Delete XMS</string>
 
     <!-- States -->
 

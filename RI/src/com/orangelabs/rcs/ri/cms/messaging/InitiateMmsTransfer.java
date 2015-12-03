@@ -18,6 +18,19 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
+import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
+
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
@@ -33,21 +46,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.contact.ContactId;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
 /**
  * Initiate XMS transfer
@@ -92,7 +93,12 @@ public class InitiateMmsTransfer extends RcsActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         // TODO manage screen rotation
         setContentView(R.layout.mms_init_transfer);
+        intitialize();
+        processIntent(getIntent());
+    }
 
+    private void intitialize() {
+        mListView = (ListView) findViewById(R.id.ImageList);
         /* Set send button listener */
         mSendBtn = (Button) findViewById(R.id.SendButton);
         mSendBtn.setOnClickListener(new View.OnClickListener() {
@@ -121,12 +127,6 @@ public class InitiateMmsTransfer extends RcsActivity {
                 }
             }
         });
-        intitialize();
-        processIntent(getIntent());
-    }
-
-    private void intitialize() {
-        mListView = (ListView) findViewById(R.id.ImageList);
     }
 
     private void processIntent(Intent intent) {
@@ -186,8 +186,10 @@ public class InitiateMmsTransfer extends RcsActivity {
                         public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                             MmsPartDataObject mmsPart = (MmsPartDataObject) (parent.getAdapter())
                                     .getItem(pos);
-                            String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(), mContact.toString());
-                            Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(), msg);
+                            String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(),
+                                    mContact.toString());
+                            Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(),
+                                    msg);
                         }
 
                     });

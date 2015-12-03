@@ -20,13 +20,14 @@
 
 package com.orangelabs.rcs.ri.messaging.adapter;
 
+import com.gsma.services.rcs.history.HistoryLog;
+
+import com.orangelabs.rcs.ri.R;
+
 import android.database.Cursor;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.gsma.services.rcs.history.HistoryLog;
-import com.orangelabs.rcs.ri.R;
 
 /**
  * A ViewHolder class keeps references to children views to avoid unnecessary calls to
@@ -40,11 +41,12 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
     private final int mColumnFilenameIdx;
     private final int mColumnFilesizeIdx;
     private final int mColumnTransferredIdx;
+    private final int mColumnContactIdx;
 
     /**
      * Constructor
      *
-     * @param base   view
+     * @param base view
      * @param cursor cursor
      */
     RcsFileTransferInViewHolder(View base, Cursor cursor) {
@@ -54,6 +56,7 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
         mColumnFilenameIdx = cursor.getColumnIndexOrThrow(HistoryLog.FILENAME);
         mColumnFilesizeIdx = cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE);
         mColumnTransferredIdx = cursor.getColumnIndexOrThrow(HistoryLog.TRANSFERRED);
+        mColumnContactIdx = cursor.getColumnIndexOrThrow(HistoryLog.CONTACT);
         /* Save children views */
         mProgressText = (TextView) base.findViewById(R.id.progress_text);
         mFileImageView = (ImageView) base.findViewById(R.id.file_image);
@@ -83,4 +86,7 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
         return mColumnTransferredIdx;
     }
 
+    public int getColumnContactIdx() {
+        return mColumnContactIdx;
+    }
 }

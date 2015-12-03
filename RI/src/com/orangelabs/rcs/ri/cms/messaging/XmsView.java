@@ -260,7 +260,6 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
                 }
             }
         };
-
     }
 
     public boolean processIntent(Intent intent) {
@@ -304,6 +303,39 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         mContact = newContact;
         setCursorLoader(firstLoad);
         ChatView.sChatIdOnForeground = mContact.toString();
+    }
+
+    /**
+     * Get unread messages for contact
+     *
+     * @param contact contact ID
+     * @return Map of unread message IDs associated with the provider ID
+     */
+    private Map<String, Integer> getUnreadMessageIds(ContactId contact) {
+        Map<String, Integer> unReadMessageIDs = new HashMap<>();
+        String[] where_args = new String[] {
+            contact.toString()
+        };
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
+                    UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
+            if (!cursor.moveToFirst()) {
+                return unReadMessageIDs;
+            }
+            int msgIdcolumIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
+            int providerIdColumIdx = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
+            do {
+                unReadMessageIDs.put(cursor.getString(msgIdcolumIdx),
+                        cursor.getInt(providerIdColumIdx));
+            } while (cursor.moveToNext());
+            return unReadMessageIDs;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     private void setCursorLoader(boolean firstLoad) {
@@ -364,8 +396,18 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (R.id.menu_send_mms == item.getItemId()) {
-            startActivity(InitiateMmsTransfer.forgeStartIntent(this, mContact));
+        switch (item.getItemId()) {
+            case R.id.menu_send_mms:
+                startActivity(InitiateMmsTransfer.forgeStartIntent(this, mContact));
+                break;
+            case R.id.menu_delete_xms:
+                try {
+                    mCmsService.deleteXmsMessages(mContact);
+
+                } catch (RcsServiceException e) {
+                    showException(e);
+                }
+                break;
         }
         return true;
     }
@@ -373,7 +415,14 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        menu.add(0, MENU_ITEM_DELETE, MENU_ITEM_DELETE, R.string.menu_delete_message);
+        /* Get the list item position */
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
+        Cursor cursor = (Cursor) mAdapter.getItem(info.position);
+        /* Adapt the contextual menu according to the selected item */
+        int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
+        if (XmsMessageLog.HISTORYLOG_MEMBER_ID == providerId) {
+            menu.add(0, MENU_ITEM_DELETE, MENU_ITEM_DELETE, R.string.menu_delete_message);
+        }
     }
 
     @Override
@@ -436,6 +485,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
                 mObserver = new ChatCursorObserver(new Handler(), loader);
                 ContentResolver resolver = getContentResolver();
                 resolver.registerContentObserver(XmsMessageLog.CONTENT_URI, true, mObserver);
+                resolver.registerContentObserver(ChatLog.Message.CONTENT_URI, true, mObserver);
+                resolver.registerContentObserver(FileTransferLog.CONTENT_URI, true, mObserver);
             }
         }
     }
@@ -447,38 +498,5 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
          * old data by replacing it with a null Cursor.
          */
         mAdapter.swapCursor(null);
-    }
-
-    /**
-     * Get unread messages for contact
-     *
-     * @param contact contact ID
-     * @return Map of unread message IDs associated with the provider ID
-     */
-    private Map<String, Integer> getUnreadMessageIds(ContactId contact) {
-        Map<String, Integer> unReadMessageIDs = new HashMap<>();
-        String[] where_args = new String[] {
-            contact.toString()
-        };
-        Cursor cursor = null;
-        try {
-            cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
-                    UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
-            if (!cursor.moveToFirst()) {
-                return unReadMessageIDs;
-            }
-            int msgIdcolumIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
-            int providerIdColumIdx = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
-            do {
-                unReadMessageIDs.put(cursor.getString(msgIdcolumIdx),
-                        cursor.getInt(providerIdColumIdx));
-            } while (cursor.moveToNext());
-            return unReadMessageIDs;
-
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
     }
 }

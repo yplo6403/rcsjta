@@ -23,7 +23,9 @@
 
     <item
         android:id="@+id/menu_send_mms"
-        android:icon="@drawable/ri_menu_file_transfer"
         android:title="@string/menu_send_mms"/>
 
+    <item
+        android:id="@+id/menu_delete_xms"
+        android:title="@string/menu_delete_xms"/>
 </menu>

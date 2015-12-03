@@ -193,7 +193,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     }
 
     private String truncate(String content) {
-        if (content!=null && content.length() > MESSAGE_BODY_MAX_SIZE) {
+        if (content != null && content.length() > MESSAGE_BODY_MAX_SIZE) {
             content = content.substring(0, MESSAGE_BODY_MAX_SIZE);
             content = content.concat("...");
         }
@@ -274,8 +274,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             return;
         }
         menu.add(0, CMS_MENU_ITEM_OPEN, CMS_MENU_ITEM_OPEN, R.string.menu_open_xms_talk);
-        menu.add(0, CMS_MENU_ITEM_DELETE, CMS_MENU_ITEM_DELETE,
-                R.string.menu_delete_xms_talk);
+        menu.add(0, CMS_MENU_ITEM_DELETE, CMS_MENU_ITEM_DELETE, R.string.menu_delete_xms_talk);
     }
 
     @Override
