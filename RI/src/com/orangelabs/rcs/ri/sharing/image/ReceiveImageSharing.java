@@ -308,8 +308,10 @@ public class ReceiveImageSharing extends RcsActivity {
                                 progressBar.setProgress(progressBar.getMax());
 
                                 // Show the shared image
+                                String toast = getString(R.string.label_receive_image,
+                                        mIshDao.getFilename(), mIshDao.getContact().toString());
                                 Utils.showPictureAndExit(ReceiveImageSharing.this,
-                                        mIshDao.getFile());
+                                        mIshDao.getFile(), toast);
                                 break;
 
                             default:

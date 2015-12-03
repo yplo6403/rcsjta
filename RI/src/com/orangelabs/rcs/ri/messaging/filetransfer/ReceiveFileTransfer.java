@@ -35,6 +35,7 @@ import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatDAO;
+import com.orangelabs.rcs.ri.utils.FileUtils;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
@@ -560,9 +561,11 @@ public class ReceiveFileTransfer extends RcsActivity {
             startActivity(intent);
 
         } else {
-            if (mFtDao.getMimeType().startsWith("image/")) {
+            if (FileUtils.isImageType(mFtDao.getMimeType())) {
                 /* Show the transferred image */
-                Utils.showPictureAndExit(this, mFtDao.getFile());
+                String toast = getString(R.string.label_receive_image,
+                        mFtDao.getFilename(), mFtDao.getContact().toString());
+                Utils.showPictureAndExit(this, mFtDao.getFile(), toast);
             }
         }
     }

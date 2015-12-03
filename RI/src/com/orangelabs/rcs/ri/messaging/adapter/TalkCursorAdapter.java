@@ -38,14 +38,19 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.v4.widget.CursorAdapter;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import java.io.IOException;
 
 /**
  * Conversation cursor adapter
@@ -66,6 +71,7 @@ public class TalkCursorAdapter extends CursorAdapter {
     private static final String LOGTAG = LogUtils.getTag(TalkCursorAdapter.class.getSimpleName());
 
     public static Bitmap sDefaultThumbnail;
+    private final LinearLayout.LayoutParams mImageParams;
     private LayoutInflater mInflater;
 
     /**
@@ -76,6 +82,10 @@ public class TalkCursorAdapter extends CursorAdapter {
     public TalkCursorAdapter(Context ctx) {
         super(ctx, null, 0);
         mInflater = LayoutInflater.from(ctx);
+
+        int size100Dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, mContext.getResources().getDisplayMetrics());
+        mImageParams = new LinearLayout.LayoutParams(size100Dp, size100Dp);
+
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "ConversationCursorAdapter create");
         }
@@ -157,11 +167,11 @@ public class TalkCursorAdapter extends CursorAdapter {
                 break;
 
             case VIEW_TYPE_RCS_FILE_TRANSFER_IN:
-                bindRcsFileTransferInView(view, cursor);
+                bindRcsFileTransferInView(view, cursor, ctx);
                 break;
 
             case VIEW_TYPE_RCS_FILE_TRANSFER_OUT:
-                bindRcsFileTransferOutView(view, cursor);
+                bindRcsFileTransferOutView(view, cursor, ctx);
                 break;
 
             default:
@@ -221,14 +231,14 @@ public class TalkCursorAdapter extends CursorAdapter {
         throw new IllegalArgumentException("Invalid provider IDe: '" + providerId + "'!");
     }
 
-    private void bindRcsFileTransferOutView(View view, Cursor cursor) {
-        bindRcsFileTransferInView(view, cursor);
+    private void bindRcsFileTransferOutView(View view, Cursor cursor, Context ctx) {
+        bindRcsFileTransferInView(view, cursor, ctx);
         RcsFileTransferOutViewHolder holder = (RcsFileTransferOutViewHolder) view.getTag();
         boolean undeliveredExpiration = cursor.getInt(holder.getColumnExpiredDeliveryIdx()) == 1;
         holder.getUndeliveredView().setVisibility(undeliveredExpiration ? View.VISIBLE : View.GONE);
     }
 
-    private void bindRcsFileTransferInView(View view, Cursor cursor) {
+    private void bindRcsFileTransferInView(View view, Cursor cursor, Context ctx) {
         RcsFileTransferInViewHolder holder = (RcsFileTransferInViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
@@ -239,21 +249,38 @@ public class TalkCursorAdapter extends CursorAdapter {
         StringBuilder filename = new StringBuilder(cursor.getString(holder.getColumnFilenameIdx()));
         long filesize = cursor.getLong(holder.getColumnFilesizeIdx());
         long transferred = cursor.getLong(holder.getColumnTransferredIdx());
+        ImageView imageView = holder.getFileImageView();
         if (filesize != transferred) {
             holder.getProgressText().setText(
                     filename.append(" : ").append(Utils.getProgressLabel(transferred, filesize))
                             .toString());
-            holder.getFileImageView().setImageResource(R.drawable.ri_filetransfer_off);
+            imageView.setImageResource(R.drawable.ri_filetransfer_off);
         } else {
             int reason = cursor.getInt(holder.getColumnReasonCodeIdx());
             FileTransfer.ReasonCode reasonCode = FileTransfer.ReasonCode.valueOf(reason);
             if (FileTransfer.ReasonCode.UNSPECIFIED == reasonCode) {
-                holder.getFileImageView().setImageResource(R.drawable.ri_filetransfer_on);
+                if (FileUtils.isImageType(mimeType)) {
+                    String uri = cursor.getString(holder.getColumnContentIdx());
+                    Uri file = Uri.parse(uri);
+                    try {
+                        // TODO manage cache + create thumbnail in background
+                        byte[] fileIcon = FileUtils.createThumb(ctx.getContentResolver(), file);
+                        imageView.setImageBitmap(BitmapFactory.decodeByteArray(fileIcon, 0, fileIcon.length));
+                        imageView.setLayoutParams(mImageParams);
+
+                    } catch (IOException e) {
+                        holder.getFileImageView().setImageResource(R.drawable.ri_filetransfer_on);
+                        Log.e(LOGTAG, "bindRcsFileTransferInView failed to display image URI " + uri, e);
+                    }
+                } else {
+                    // TODO create thumbnail for video
+                    imageView.setImageResource(R.drawable.ri_filetransfer_on);
+                }
             } else {
-                holder.getFileImageView().setImageResource(R.drawable.ri_filetransfer_off);
+                imageView.setImageResource(R.drawable.ri_filetransfer_off);
             }
             holder.getProgressText().setText(
-                    filename.append(" (").append(filesize / 1024).append(" Kb)").toString());
+                    filename.append(" (").append(FileUtils.humanReadableByteCount(filesize,true)).append(")").toString());
         }
         holder.getStatusText().setText(getRcsFileTransferStatus(cursor, holder));
     }
@@ -338,8 +365,8 @@ public class TalkCursorAdapter extends CursorAdapter {
                 fileSizeText.setVisibility(View.VISIBLE);
                 fileSizeText.setText(FileUtils.humanReadableByteCount(mmsPart.getFileSize(), true));
             } else {
-                imageView.setImageBitmap(BitmapFactory
-                        .decodeByteArray(fileIcon, 0, fileIcon.length));
+                imageView.setImageBitmap(BitmapFactory.decodeByteArray(fileIcon, 0, fileIcon.length));
+                imageView.setLayoutParams(mImageParams);
                 filenameText.setVisibility(View.GONE);
                 fileSizeText.setVisibility(View.GONE);
             }
@@ -401,7 +428,7 @@ public class TalkCursorAdapter extends CursorAdapter {
      * Format geolocation
      *
      * @param context context
-     * @param geoloc The geolocation
+     * @param geoloc  The geolocation
      * @return a formatted text
      */
     private CharSequence formatGeolocation(Context context, Geoloc geoloc) {

@@ -93,17 +93,17 @@ public class Utils {
      * 
      * @param activity Activity
      * @param uri Picture to be displayed
+     * @param toastMessage The toast message
      */
-    public static void showPictureAndExit(final Activity activity, Uri uri) {
+    public static void showPictureAndExit(final Activity activity, Uri uri, String toastMessage) {
         if (activity.isFinishing()) {
             return;
         }
-        String filename = FileUtils.getFileName(activity, uri);
-        Toast.makeText(activity, activity.getString(R.string.label_receive_image, filename),
-                Toast.LENGTH_LONG).show();
+        Toast.makeText(activity, toastMessage, Toast.LENGTH_LONG).show();
         Intent intent = new Intent();
         intent.setAction(android.content.Intent.ACTION_VIEW);
         intent.setDataAndType(uri, "image/*");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         activity.startActivity(intent);
     }
 
@@ -134,12 +134,11 @@ public class Utils {
      */
     public static String getProgressLabel(long currentSize, long totalSize) {
         StringBuilder value = new StringBuilder();
-        value.append(currentSize / 1024);
+        value.append(FileUtils.humanReadableByteCount(currentSize,true));
         if (totalSize != 0) {
             value.append('/');
-            value.append(totalSize / 1024);
+            value.append(FileUtils.humanReadableByteCount(currentSize,true));
         }
-        value.append(" Kb");
         return value.toString();
     }
 

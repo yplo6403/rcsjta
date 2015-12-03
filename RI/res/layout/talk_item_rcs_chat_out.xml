@@ -21,7 +21,9 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:paddingBottom="5dip"
+                android:paddingTop="5dip">
 
     <RelativeLayout
         android:id="@+id/conv_item_chat_text_out"
@@ -29,7 +31,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="0dp"
         android:background="@drawable/msg_item_left"
         android:orientation="vertical"
         >

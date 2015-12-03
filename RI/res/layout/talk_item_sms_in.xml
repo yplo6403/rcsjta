@@ -27,8 +27,7 @@
                 android:paddingLeft="0dip"
                 android:paddingRight="12dip"
                 android:paddingStart="0dip"
-                android:paddingTop="5dip"
-    >
+                android:paddingTop="5dip">
 
     <RelativeLayout
         android:id="@+id/conv_item_sms_in"
@@ -36,7 +35,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="0dp"
         android:background="@drawable/talk_item_in"
         android:orientation="vertical"
         android:padding="5dip">

@@ -21,18 +21,29 @@
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:paddingBottom="5dip"
+                android:paddingEnd="12dip"
+                android:paddingLeft="0dip"
+                android:paddingRight="12dip"
+                android:paddingStart="0dip"
+                android:paddingTop="5dip">
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/conv_item_file_transfer_in"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:layout_marginTop="0dp"
-        android:background="@drawable/msg_item_right"
+        android:background="@drawable/talk_item_rcs_in"
         android:orientation="vertical"
-        >
+        android:padding="5dip">
+
+        <ImageView
+            android:id="@+id/file_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ri_filetransfer_off"/>
 
         <TextView
             android:id="@+id/progress_text"
@@ -41,22 +52,14 @@
             android:textColor="@android:color/black"
             />
 
-        <ImageView
-            android:id="@+id/file_image"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/progress_text"
-            android:src="@drawable/ri_filetransfer_off"/>
-
         <TextView
             android:id="@+id/timestamp_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/file_image"
             android:textColor="@android:color/darker_gray"
             />
 
-    </RelativeLayout>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/status_text"

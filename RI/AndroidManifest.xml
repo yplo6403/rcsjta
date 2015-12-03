@@ -551,9 +551,7 @@
         <activity
             android:name=".cms.messaging.InitiateMmsTransfer"
         />
-        <activity
-            android:name=".cms.messaging.XmsImageView"
-        />
+
         <service
             android:name=".cms.messaging.XmsIntentService"
             android:exported="false" />
