@@ -42,6 +42,9 @@ public class CmsManager implements IRcsXmsEventListener {
 
     public void start() {
 
+        // execute sync between providers with async task
+        new ProviderSynchronizer(mContext, mRcsSettings, mXmsLog, mImapLog).execute();
+
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
 
@@ -69,12 +72,13 @@ public class CmsManager implements IRcsXmsEventListener {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
-        if(mLocalStorage!=null){
-            mLocalStorage.removeListeners();
-            mLocalStorage = null;
-        }
-        mNewXmsEventListener = null;
-        mImapCommandController = null;
+        //TODO FGI : Fix me : when the core is stopped while a background task is still processing (IMAP sync)
+//        if(mLocalStorage!=null){
+//            mLocalStorage.removeListeners();
+//            mLocalStorage = null;
+//        }
+//        mNewXmsEventListener = null;
+//        mImapCommandController = null;
     }
 
     /**

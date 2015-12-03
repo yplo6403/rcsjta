@@ -30,6 +30,7 @@ import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -162,26 +163,25 @@ public class XmsObserver implements INativeXmsEventListener {
             String body = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
             long date = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE));
             String protocol = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.PROTOCOL));
-            if ("0".equals(protocol)) { // incoming message
-                onIncomingSms(new SmsDataObject(
-                        IdGenerator.generateMessageID(),
-                        contactId,
-                        body,
-                        Direction.INCOMING,
-                        date,
-                        _id,
-                        threadId
-                ));
-            } else if (protocol == null) { // outgoing message
-                onOutgoingSms(new SmsDataObject(
-                        IdGenerator.generateMessageID(),
-                        contactId,
-                        body,
-                        Direction.OUTGOING,
-                        date,
-                        _id,
-                        threadId
-                ));
+            Direction direction = Direction.INCOMING;
+            if(protocol == null){
+                direction = Direction.OUTGOING;
+            }
+            SmsDataObject smsDataObject = new SmsDataObject(
+                    IdGenerator.generateMessageID(),
+                    contactId,
+                    body,
+                    direction,
+                    date,
+                    _id,
+                    threadId
+            );
+            if(Direction.INCOMING == direction){
+                smsDataObject.setState(State.RECEIVED);
+                onIncomingSms(smsDataObject);
+            }
+            else{
+                onOutgoingSms(smsDataObject);
             }
             return;
         } finally {
@@ -366,6 +366,7 @@ public class XmsObserver implements INativeXmsEventListener {
                     entry.getValue()
             );
             if(Direction.INCOMING == direction){
+                mmsDataObject.setState(State.RECEIVED);
                 onIncomingMms(mmsDataObject);
             }
             else{
@@ -413,6 +414,10 @@ public class XmsObserver implements INativeXmsEventListener {
             for (Long conversation : deletedConversations) {
                 onDeleteNativeConversation(conversation);
                 eventChecked = true;
+            }
+            if(eventChecked){
+                mSmsIds = getSmsIds();
+                mMmsIds = getMmsIds();
             }
             return eventChecked;
         }

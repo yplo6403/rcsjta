@@ -53,13 +53,14 @@ public class XmsMessage {
          */
         DELIVERED(3),
         /**
-         * The message is being deleted.
-         */
-        DELETING(4),
-        /**
          * The message is being displayed.
          */
-        DISPLAYED(5);
+        DISPLAYED(4),
+        /**
+         * The message is being received.
+         */
+        RECEIVED(5)
+        ;
 
         private static SparseArray<State> mValueToEnum = new SparseArray<>();
 

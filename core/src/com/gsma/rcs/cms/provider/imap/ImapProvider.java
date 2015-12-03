@@ -107,7 +107,8 @@ public class ImapProvider extends ContentProvider {
                     .append(MessageData.KEY_DELETE_STATUS).append(" INTEGER NOT NULL,")
                     .append(MessageData.KEY_PUSH_STATUS).append(" INTEGER NOT NULL,")
                     .append(MessageData.KEY_MESSAGE_TYPE).append(" TEXT NOT NULL,")
-                    .append(MessageData.KEY_MESSAGE_ID).append(" TEXT NOT NULL)").toString());
+                    .append(MessageData.KEY_MESSAGE_ID).append(" TEXT NOT NULL,")
+                    .append(MessageData.KEY_NATIVE_PROVIDER_ID).append(" INTEGER)").toString());
             db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_MESSAGE).append('_')
                     .append(BaseColumns._ID).append("_idx").append(" ON ").append(TABLE_MESSAGE)
                     .append('(').append(BaseColumns._ID).append(')').toString());

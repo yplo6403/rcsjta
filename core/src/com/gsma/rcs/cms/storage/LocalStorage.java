@@ -186,7 +186,7 @@ public class LocalStorage implements ISyncProcessorHandler {
                     resolvedMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD,
                     resolvedMessage.isDeleted() ? DeleteStatus.DELETED : DeleteStatus.NOT_DELETED,
                     PushStatus.PUSHED,
-                    messageType, messageId);
+                    messageType, messageId, null);
             mImapLog.addMessage(messageData);
         }
     }

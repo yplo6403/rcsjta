@@ -1,4 +1,4 @@
-package com.gsma.rcs.cms.toolkit.xms;
+package com.gsma.rcs.cms;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -12,19 +12,18 @@ import android.provider.Telephony;
 import android.provider.Telephony.BaseMmsColumns;
 import android.provider.Telephony.TextBasedSmsColumns;
 
-import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.observer.XmsObserverUtils;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
@@ -35,8 +34,6 @@ import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
-import com.gsma.services.rcs.cms.XmsMessageLog;
-import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
@@ -49,13 +46,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
+public class ProviderSynchronizer extends AsyncTask<String,String,Boolean> {
 
-    private static final Logger sLogger = Logger.getLogger(SmsImportAsyncTask.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(ProviderSynchronizer.class.getSimpleName());
 
     private static Uri sSmsUri = Uri.parse("content://sms/");
     private static Uri sMmsUri = Uri.parse("content://mms/");
-    
+
     private final String[] PROJECTION_SMS = new String[]{
             BaseColumns._ID,
             TextBasedSmsColumns.THREAD_ID,
@@ -65,9 +62,11 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
             TextBasedSmsColumns.PROTOCOL,
             TextBasedSmsColumns.BODY,
             TextBasedSmsColumns.READ};
-    
-    private final String[] PROJECTION_IDS = new String[]{
-            BaseColumns._ID};
+
+    private final String[] PROJECTION_ID_READ = new String[]{
+            BaseColumns._ID,
+            TextBasedSmsColumns.READ
+    };
 
     private static final String SELECTION_CONTACT_NOT_NULL = new StringBuilder(TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
     static final String SELECTION_BASE_ID = new StringBuilder(BaseColumns._ID).append("=?").append(" AND ").append(SELECTION_CONTACT_NOT_NULL).toString();
@@ -77,134 +76,176 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
     private ImapLog mImapLog;
     private RcsSettings mSettings;
 
-    private ImportTaskListener mListener;
-    
-    /**
-     * @param context 
-     * @param xmsLog
-     * @param listener 
-     */
-    public SmsImportAsyncTask(Context context,RcsSettings settings, XmsLog xmsLog, ImapLog imapLog, ImportTaskListener listener ){
+    private List<Long> mNativeIds;
+    private List<Long> mNativeReadIds;
+
+    public ProviderSynchronizer(Context context,RcsSettings settings, XmsLog xmsLog, ImapLog imapLog){
         mContentResolver = context.getContentResolver();
         mXmsLog = xmsLog;
         mImapLog = imapLog;
-        mListener = listener;
         mSettings = settings;
     }
-    
-    private void importSms(){
 
-        Set<Long> nativeIds = getSmsNativeIds();
-        Set<Long> rcsMessagesIds = getRcsMessageIds(MimeType.TEXT_MESSAGE);
+    private void syncSms(){
+        getNativeSmsIds();
+        Map<Long,MessageData> rcsMessages = getRcsMessages(MessageType.SMS);
+        checkDeletedMessages(MessageType.SMS, rcsMessages);
+        checkNewMessages(MessageType.SMS, rcsMessages);
+        checkReadMessages(MessageType.SMS, rcsMessages);
+    }
 
-        // insert new ids only
-        nativeIds.removeAll(rcsMessagesIds);
+    private void syncMms(){
+        getNativeMmsIds();
+        Map<Long,MessageData> rcsMessages = getRcsMessages(MessageType.MMS);
+        checkDeletedMessages(MessageType.MMS, rcsMessages);
+        checkNewMessages(MessageType.MMS, rcsMessages);
+        checkReadMessages(MessageType.MMS, rcsMessages);
+    }
 
-        for (Long id : nativeIds) {
-            SmsDataObject smsData = getSmsFromNativeProvider(id);
-            if(smsData!=null){
-                mXmsLog.addSms(smsData);
-                mImapLog.addMessage(new MessageData(
-                        CmsUtils.contactToCmsFolder(mSettings, smsData.getContact()),
-                        MessageData.ReadStatus.READ,
-                        MessageData.DeleteStatus.NOT_DELETED,
-                        mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                        MessageType.SMS,
-                        smsData.getMessageId(),
-                        smsData.getNativeProviderId()
-                ));
+    private void getNativeSmsIds(){
+        mNativeIds = new ArrayList<>();
+        mNativeReadIds = new ArrayList<>();
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(sSmsUri, PROJECTION_ID_READ, null, null, null);
+            int idIdx = cursor.getColumnIndex(BaseColumns._ID);
+            int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
+            CursorUtil.assertCursorIsNotNull(cursor,sSmsUri);
+            while(cursor.moveToNext()) {
+                Long id = cursor.getLong(idIdx);
+                mNativeIds.add(id);
+                if(cursor.getInt(readIdx) == 1){
+                    mNativeReadIds.add(id);
+                }
             }
+        } finally {
+            CursorUtil.close(cursor);
         }
     }
 
-    private void importMms(){
-
-        Set<Long> nativeIds = getMmsNativeIds();
-        Set<Long> rcsMessagesIds = getRcsMessageIds(MimeType.MULTIMEDIA_MESSAGE);
-
-        // insert new ids only
-        nativeIds.removeAll(rcsMessagesIds);
-
-        for (Long id : nativeIds) {
-            Collection<MmsDataObject> mmsDataObjects = getMmsFromNativeProvider(id);
-            if(mmsDataObjects == null){
-                continue;
+    private void getNativeMmsIds(){
+        Cursor cursor = null;
+        mNativeIds = new ArrayList<>();
+        mNativeReadIds = new ArrayList<>();
+        try {
+            cursor = mContentResolver.query(sMmsUri, PROJECTION_ID_READ, null, null, null);
+            int idIdx = cursor.getColumnIndex(BaseColumns._ID);
+            int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
+            CursorUtil.assertCursorIsNotNull(cursor,sMmsUri);
+            while(cursor.moveToNext()) {
+                Long id = cursor.getLong(idIdx);
+                mNativeIds.add(id);
+                if(cursor.getInt(readIdx) == 1){
+                    mNativeReadIds.add(id);
+                }
             }
-            for(MmsDataObject mmsData : mmsDataObjects){
-                try {
-                    mXmsLog.addMms(mmsData);
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    private Map<Long,MessageData> getRcsMessages(MessageType messageType){
+        return mImapLog.getNativeMessages(messageType);
+    }
+
+    private void purgeDeletedMessages(){
+        int nb = mImapLog.purgeMessages();
+        if(sLogger.isActivated()){
+            sLogger.debug(nb + " messages have been removed from Imap data");
+        }
+    }
+
+    /**
+     * Check messages deleted from native provider
+     * @param messageType
+     */
+    private void checkDeletedMessages(MessageData.MessageType messageType, Map<Long,MessageData> rcsMessages){
+        boolean isActivated = sLogger.isActivated();
+        List<Long> deletedIds = new ArrayList<>(rcsMessages.keySet());
+        deletedIds.removeAll(mNativeIds);
+        for(Long id : deletedIds){
+            MessageData messageData = rcsMessages.get(id);
+            DeleteStatus deleteStatus = messageData.getDeleteStatus();
+            if(DeleteStatus.NOT_DELETED == deleteStatus){
+                if(isActivated){
+                    sLogger.debug(messageType.toString() + " message is marked as DELETED_REPORT_REQUESTED :" + id);
+                }
+                deleteStatus =  DeleteStatus.DELETED_REPORT_REQUESTED;
+            }
+            mImapLog.updateDeleteStatus(messageType, id, deleteStatus);
+        }
+    }
+
+    private void checkNewMessages(MessageData.MessageType messageType, Map<Long,MessageData> rcsMessages){
+        boolean isActivated = sLogger.isActivated();
+        List<Long> newIds = new ArrayList<>(mNativeIds);
+        newIds.removeAll(rcsMessages.keySet());
+        for(Long id : newIds){
+            if(MessageType.SMS == messageType){
+                SmsDataObject smsData = getSmsFromNativeProvider(id);
+                if(smsData!=null){
+                    if(isActivated){
+                        sLogger.debug(" Importing new SMS message :" + id);
+                    }
+                    mXmsLog.addSms(smsData);
                     mImapLog.addMessage(new MessageData(
-                            CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
-                            MessageData.ReadStatus.READ,
+                            CmsUtils.contactToCmsFolder(mSettings, smsData.getContact()),
+                            smsData.getReadStatus()== ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD : MessageData.ReadStatus.READ_REPORT_REQUESTED ,
                             MessageData.DeleteStatus.NOT_DELETED,
-                            mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                            MessageType.MMS,
-                            mmsData.getMessageId(),
-                            mmsData.getNativeProviderId()
+                            mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                            MessageType.SMS,
+                            smsData.getMessageId(),
+                            smsData.getNativeProviderId()
                     ));
-                } catch (RemoteException e) {//TODO FGI exception handling
-                    e.printStackTrace();
-                } catch (OperationApplicationException e) {
-                    e.printStackTrace();
+                }
+            }
+            else if (MessageType.MMS == messageType){
+                for(MmsDataObject mmsData : getMmsFromNativeProvider(id)){
+                    try {
+                        if(isActivated){
+                            sLogger.debug(" Importing new MMS message :" + id);
+                        }
+                        mXmsLog.addMms(mmsData);
+                        mImapLog.addMessage(new MessageData(
+                                CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
+                                mmsData.getReadStatus()== ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD : MessageData.ReadStatus.READ_REPORT_REQUESTED ,
+                                MessageData.DeleteStatus.NOT_DELETED,
+                                mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                                MessageType.MMS,
+                                mmsData.getMessageId(),
+                                mmsData.getNativeProviderId()
+                        ));
+                    } catch (RemoteException e) {//TODO FGI exception handling
+                        e.printStackTrace();
+                    } catch (OperationApplicationException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
     }
 
-    private Set<Long> getSmsNativeIds(){
-        Cursor cursor = null;
-        Set<Long> ids = new HashSet<Long>();
-        try {
-            cursor = mContentResolver.query(sSmsUri, PROJECTION_IDS, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor,sSmsUri);
-            while(cursor.moveToNext()) {
-                ids.add(cursor.getLong(0));
-            }            
-            return ids;
-        } finally {
-            CursorUtil.close(cursor);
+    private void checkReadMessages(MessageData.MessageType messageType, Map<Long,MessageData> rcsMessages){
+        boolean isActivated = sLogger.isActivated();
+        List<Long> readIds = new ArrayList<>(mNativeReadIds);
+        readIds.retainAll(rcsMessages.keySet());
+        for(Long id : readIds){
+            if(MessageData.ReadStatus.UNREAD == rcsMessages.get(id).getReadStatus()){
+                if(isActivated){
+                    sLogger.debug(messageType.toString() + " message is marked as READ_REPORT_REQUESTED :" + id);
+                }
+                mImapLog.updateReadStatus(messageType, id, MessageData.ReadStatus.READ_REPORT_REQUESTED);
+            }
         }
     }
 
-    private Set<Long> getMmsNativeIds(){
-        Cursor cursor = null;
-        Set<Long> ids = new HashSet<Long>();
-        try {
-            cursor = mContentResolver.query(sMmsUri, PROJECTION_IDS, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor,sMmsUri);
-            while(cursor.moveToNext()) {
-                ids.add(cursor.getLong(0));
-            }
-            return ids;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    private Set<Long> getRcsMessageIds(String mimeType){
-        Cursor cursor = null;
-        Set<Long> ids = new HashSet<>();
-        try{
-            cursor = mXmsLog.getXmsMessages(mimeType);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsMessageLog.CONTENT_URI);
-            int nativeIdIdx = cursor.getColumnIndex(XmsData.KEY_NATIVE_ID);
-            while(cursor.moveToNext()){
-                ids.add(cursor.getLong(nativeIdIdx));
-            }
-            return ids;
-        }
-        finally{
-            CursorUtil.close(cursor);
-        }
-    }
-        
     private SmsDataObject getSmsFromNativeProvider(Long id){
-                
+
         Cursor cursor = null;
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_SMS, SELECTION_BASE_ID, new String[]{String.valueOf(id)}, null);
             CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
-            
+
             if(!cursor.moveToFirst()) {
                 return null;
             }
@@ -379,27 +420,18 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
     }
 
     @Override
-    protected Boolean doInBackground(String... params) {
-        importSms();
-        importMms();
+    protected Boolean doInBackground(String... strings) {
+        boolean isActivated = sLogger.isActivated();
+        if(isActivated){
+            sLogger.info(" >>> start sync between providers ...");
+        }
+        purgeDeletedMessages();
+        syncSms();
+        syncMms();
+        if(isActivated){
+            sLogger.info(" <<< end of sync");
+        }
+
         return true;
     }
-    
-    @Override
-    protected void onPostExecute(Boolean result) {
-        if(mListener!=null){
-            mListener.onImportTaskExecuted(result);
-        }
-    }
-    
-    /**
-    *
-    */
-   public interface ImportTaskListener {
-       
-       /**
-        * @param result
-        */
-       void onImportTaskExecuted(Boolean result);
-   }
 }

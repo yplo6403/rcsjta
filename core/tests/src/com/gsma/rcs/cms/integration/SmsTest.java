@@ -365,7 +365,7 @@ public class SmsTest extends AndroidTestCase{
                                       Test7.imapDeleteStatus,
                                       PushStatus.PUSHED,
                                       MessageType.SMS,
-                                      messageId)
+                                      messageId,null)
                       );
                   }
                               
@@ -420,7 +420,7 @@ public class SmsTest extends AndroidTestCase{
                                          Test8.imapDeleteStatus,
                                          PushStatus.PUSHED,
                                          MessageType.SMS,
-                                         sms.getMessageId())
+                                         sms.getMessageId(),null)
                          );
 
                      }
@@ -475,7 +475,7 @@ public class SmsTest extends AndroidTestCase{
                                             Test9.imapDeleteStatus,
                                             PushStatus.PUSHED,
                                             MessageType.SMS,
-                                            messageId)
+                                            messageId,null)
                             );
                         }
                                     
@@ -515,7 +515,7 @@ public class SmsTest extends AndroidTestCase{
                                                Test9.imapDeleteStatus,
                                                PushStatus.PUSHED,
                                                MessageType.SMS,
-                                               sms.getMessageId())
+                                               sms.getMessageId(),null)
                                );
                            }
 

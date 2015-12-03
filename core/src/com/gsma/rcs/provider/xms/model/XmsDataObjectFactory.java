@@ -24,6 +24,7 @@ import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.sonymobile.rcs.imap.Part;
 
@@ -122,7 +123,7 @@ public class XmsDataObjectFactory {
             direction = Direction.OUTGOING;
             contact =  CmsUtils.headerToContact(body.getHeader(Constants.HEADER_TO));
         }
-        return new SmsDataObject(
+        SmsDataObject smsDataObject = new SmsDataObject(
                 IdGenerator.generateMessageID(),
                 ContactUtil.createContactIdFromTrustedData(contact),
                 ((SmsMimeMessage)imapMessage.getPart()).getBodyPart() ,
@@ -130,6 +131,10 @@ public class XmsDataObjectFactory {
                 DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
                 imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD,
                 body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
+        if(Direction.INCOMING == direction){
+            smsDataObject.setState(State.RECEIVED);
+        }
+        return smsDataObject;
     }
 
     public static MmsDataObject createMmsDataObject(Context context, ImapMmsMessage imapMessage){
@@ -186,7 +191,7 @@ public class XmsDataObjectFactory {
             ));
         }
 
-        return new MmsDataObject(
+        MmsDataObject mmsDataObject = new MmsDataObject(
                 body.getHeader(Constants.HEADER_MESSAGE_ID),
                 messageId,
                 ContactUtil.createContactIdFromTrustedData(contact),
@@ -198,5 +203,10 @@ public class XmsDataObjectFactory {
                 0,
                 mmsParts
                 );
+
+        if(Direction.INCOMING == direction){
+            mmsDataObject.setState(State.RECEIVED);
+        }
+        return mmsDataObject;
     }
 }

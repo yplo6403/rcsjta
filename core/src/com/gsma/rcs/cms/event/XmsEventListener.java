@@ -27,6 +27,8 @@ import com.gsma.rcs.service.broadcaster.IXmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
@@ -92,7 +94,8 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS,
-                message.getMessageId()
+                message.getMessageId(),
+                message.getNativeProviderId()
         ));
 
         synchronized (mXmsMessageEventBroadcaster){
@@ -114,7 +117,8 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS,
-                message.getMessageId()
+                message.getMessageId(),
+                message.getNativeProviderId()
         ));
 
         synchronized (mXmsMessageEventBroadcaster){
@@ -141,7 +145,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
 
             synchronized (mXmsMessageEventBroadcaster){
                 for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                    listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), MimeType.TEXT_MESSAGE, messageId, State.DELETING, ReasonCode.UNSPECIFIED);
+                    Set<String> messageIds = new HashSet<>();
+                    messageIds.add(messageId);
+                    listener.broadcastMessageDeleted(ContactUtil.createContactIdFromTrustedData(contact), messageIds);
                 }
             }
         }
@@ -171,7 +177,8 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS,
-                message.getMessageId()
+                message.getMessageId(),
+                message.getNativeProviderId()
         ));
 
         synchronized (mXmsMessageEventBroadcaster){
@@ -199,7 +206,8 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS,
-                message.getMessageId()
+                message.getMessageId(),
+                message.getNativeProviderId()
         ));
 
         synchronized (mXmsMessageEventBroadcaster){
@@ -226,7 +234,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             mImapLog.updateDeleteStatus(MessageType.MMS, messageId, MessageData.DeleteStatus.DELETED_REPORT_REQUESTED);
             synchronized (mXmsMessageEventBroadcaster){
                 for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                    listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), MimeType.MULTIMEDIA_MESSAGE, messageId, State.DELETING, ReasonCode.UNSPECIFIED);
+                    Set<String> messageIds = new HashSet<>();
+                    messageIds.add(messageId);
+                    listener.broadcastMessageDeleted(ContactUtil.createContactIdFromTrustedData(contact), messageIds);
                 }
             }
         }
@@ -249,24 +259,33 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         if(state == null){
             return;
         }
+
+        String contact = null;
+        String messageId = null;
         Cursor cursor = null;
         try {
             cursor = mXmsLog.getXmsMessage(nativeProviderId, mimeType);
             if(!cursor.moveToNext()){
                 return;
             }
-            String messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
-            String contact =  cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTACT));
-            synchronized (mXmsMessageEventBroadcaster){
-                for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                    Set<String> messageIds = new HashSet<>();
-                    messageIds.add(messageId);
-                    listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), mimeType, messageId, state, ReasonCode.UNSPECIFIED);
-                }
-            }
+            messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+            contact =  cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTACT));
         }
         finally{
             CursorUtil.close(cursor);
+        }
+
+        if( messageId==null || contact==null ){
+            return;
+        }
+
+        mXmsLog.updateState(messageId, state);
+        synchronized (mXmsMessageEventBroadcaster){
+            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                Set<String> messageIds = new HashSet<>();
+                messageIds.add(messageId);
+                listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), mimeType, messageId, state, ReasonCode.UNSPECIFIED);
+            }
         }
     }
 
@@ -308,10 +327,10 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 }
                 mImapLog.updateReadStatus(messageType, messageId, MessageData.ReadStatus.READ_REPORT_REQUESTED);
                 mXmsLog.markMessageAsRead(messageId);
+                Set<String> messageIds = new HashSet<>();
+                messageIds.add(messageId);
                 synchronized (mXmsMessageEventBroadcaster){
                     for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                        Set<String> messageIds = new HashSet<>();
-                        messageIds.add(messageId);
                         listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), mimeType, messageId, State.DISPLAYED, ReasonCode.UNSPECIFIED);
                     }
                 }
@@ -328,13 +347,15 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             sLogger.debug("onDeleteNativeConversation " + nativeThreadId);
         }
         Cursor cursor = null;
+        String contact = null;
+        Set<String> messageIds = new HashSet<>();
         try{
             cursor = mXmsLog.getXmsMessages(nativeThreadId);
             int messageIdIdx = cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID);
             int mimeTypeIdx = cursor.getColumnIndex(XmsMessageLog.MIME_TYPE);
             int contactIdIx = cursor.getColumnIndex(XmsMessageLog.CONTACT);
             while(cursor.moveToNext()){
-                String contact = cursor.getString(contactIdIx);
+                contact = cursor.getString(contactIdIx);
                 String messageId = cursor.getString(messageIdIdx);
                 String mimeType = cursor.getString(mimeTypeIdx);
                 MessageType messageType = MessageType.SMS;
@@ -343,11 +364,12 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 }
                 mImapLog.updateDeleteStatus(messageType, messageId, MessageData.DeleteStatus.DELETED_REPORT_REQUESTED);
                 mXmsLog.deleteXmsMessage(messageId);
+                messageIds.add(messageId);
+            }
+            if(contact!=null){
                 synchronized (mXmsMessageEventBroadcaster){
                     for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                        Set<String> messageIds = new HashSet<>();
-                        messageIds.add(messageId);
-                        listener.broadcastMessageStateChanged(ContactUtil.createContactIdFromTrustedData(contact), mimeType, messageId, State.DELETING, ReasonCode.UNSPECIFIED);
+                        listener.broadcastMessageDeleted(ContactUtil.createContactIdFromTrustedData(contact), messageIds);
                     }
                 }
             }
@@ -452,8 +474,16 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             sLogger.debug("onRemoteReadEvent");
         }
         mXmsLog.markMessageAsRead(messageId);
-        //TODO update message status for API
-
+        synchronized (mXmsMessageEventBroadcaster){
+            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                listener.broadcastMessageStateChanged(
+                        ContactUtil.createContactIdFromTrustedData(mXmsLog.getContact(messageId)),
+                        MessageType.SMS == messageType ? MimeType.TEXT_MESSAGE : MimeType.MULTIMEDIA_MESSAGE,
+                        messageId,
+                        State.DISPLAYED,
+                        ReasonCode.UNSPECIFIED);
+            }
+        }
     }
 
     @Override
@@ -461,7 +491,15 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         if(sLogger.isActivated()){
             sLogger.debug("onRemoteDeleteEvent");
         }
+        ContactId contactId = ContactUtil.createContactIdFromTrustedData(mXmsLog.getContact(messageId));
         mXmsLog.deleteXmsMessage(messageId);
+        Set<String> messageIds = new HashSet<>();
+        messageIds.add(messageId);
+        synchronized (mXmsMessageEventBroadcaster){
+            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                listener.broadcastMessageDeleted(contactId, messageIds);
+            }
+        }
     }
 
     @Override
@@ -477,18 +515,34 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         if(MessageType.SMS == messageType){
             SmsDataObject smsDataObject = XmsDataObjectFactory.createSmsDataObject((ImapSmsMessage) message);
             mXmsLog.addSms(smsDataObject);
-            return smsDataObject.getMessageId();
+            String messageId = smsDataObject.getMessageId();
+            if(RcsService.ReadStatus.UNREAD == smsDataObject.getReadStatus()){
+                synchronized (mXmsMessageEventBroadcaster){
+                    for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                        listener.broadcastNewMessage(MimeType.TEXT_MESSAGE, messageId);
+                    }
+                }
+            }
+            return messageId;
         }
         else if(MessageType.MMS == messageType){
             MmsDataObject mmsDataObject = XmsDataObjectFactory.createMmsDataObject(mContext, (ImapMmsMessage) message);
             try { //TODO FGI handle exceptions
                 mXmsLog.addMms(mmsDataObject);
+                String messageId = mmsDataObject.getMessageId();
+                if(RcsService.ReadStatus.UNREAD == mmsDataObject.getReadStatus()) {
+                    synchronized (mXmsMessageEventBroadcaster) {
+                        for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                            listener.broadcastNewMessage(MimeType.MULTIMEDIA_MESSAGE, messageId);
+                        }
+                    }
+                }
+                return messageId;
             } catch (RemoteException e) {
                 e.printStackTrace();
             } catch (OperationApplicationException e) {
                 e.printStackTrace();
             }
-            return mmsDataObject.getMessageId();
         }
         return null;
     }

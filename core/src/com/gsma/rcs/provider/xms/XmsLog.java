@@ -35,6 +35,7 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
@@ -275,6 +276,21 @@ public class XmsLog {
                 values, null, null) < 1) {
             if (sLogger.isActivated()) {
                 sLogger.warn("There was no message with msgId '" + messageId + "' to mark as read.");
+            }
+        }
+    }
+
+    public void updateState(String messageId, State state) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Update message status for Id=" + messageId + ", state=" + state.toString());
+        }
+        ContentValues values = new ContentValues();
+        values.put(XmsData.KEY_STATE, state.toInt());
+
+        if (mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
+                values, null, null) < 1) {
+            if (sLogger.isActivated()) {
+                sLogger.warn("There was no message with msgId '" + messageId);
             }
         }
     }

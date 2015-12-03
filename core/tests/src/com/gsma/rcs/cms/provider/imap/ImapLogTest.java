@@ -30,12 +30,12 @@ public class ImapLogTest extends AndroidTestCase {
         };
         
         mMessages = new MessageData[]{
-        		new MessageData(mFolders[0].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[1].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[1].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2"),
-        		new MessageData(mFolders[2].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1"),
-        		new MessageData(mFolders[2].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2"),
-        		new MessageData(mFolders[2].getName(), 3, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId3")
+        		new MessageData(mFolders[0].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1",null),
+        		new MessageData(mFolders[1].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1",null),
+        		new MessageData(mFolders[1].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2",null),
+        		new MessageData(mFolders[2].getName(), 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId1",null),
+        		new MessageData(mFolders[2].getName(), 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId2",null),
+        		new MessageData(mFolders[2].getName(), 3, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS,"messageId3",null)
         };
         
         mImapLog.removeFolders(false);
@@ -204,7 +204,7 @@ public class ImapLogTest extends AndroidTestCase {
     			DeleteStatus.DELETED,
 				PushStatus.PUSHED,
     			MessageType.MMS,
-    			"messageId1"));
+    			"messageId1",null));
     	
     	message = mImapLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());    	
     	assertEquals(1,mImapLog.getMessages().size());

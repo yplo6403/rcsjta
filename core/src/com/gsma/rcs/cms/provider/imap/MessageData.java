@@ -71,6 +71,11 @@ public final class MessageData {
      */
     /* package private */static final String KEY_MESSAGE_ID = "messageId";
 
+    /**
+     * RCS Message Id
+     */
+    /* package private */static final String KEY_NATIVE_PROVIDER_ID = "nativeProviderId";
+
     public static enum MessageType {
         SMS, MMS, ONETOONE, GC
     }
@@ -250,6 +255,7 @@ public final class MessageData {
     private PushStatus mPushStatus = PushStatus.PUSHED;
     private MessageType mMessageType;
     private String mMessageId;
+    private Long mNativeProviderId;
 
     /**
      * @param readStatus
@@ -258,7 +264,7 @@ public final class MessageData {
      * @param messageId
      */
     public MessageData(String folder, ReadStatus readStatus, DeleteStatus deleteStatus, PushStatus pushStatus,
-                       MessageType messageType, String messageId) {
+                       MessageType messageType, String messageId, Long nativeProviderId) {
         super();
         mFolder = folder;
         mReadStatus = readStatus;
@@ -266,6 +272,7 @@ public final class MessageData {
         mPushStatus = pushStatus;
         mMessageType = messageType;
         mMessageId = messageId;
+        mNativeProviderId = nativeProviderId;
     }
 
     /**
@@ -277,7 +284,7 @@ public final class MessageData {
      * @param messageId
      */
     public MessageData(String folder, Integer uid, ReadStatus readStatus, DeleteStatus deleteStatus, PushStatus pushStatus,
-            MessageType messageType, String messageId) {
+            MessageType messageType, String messageId, Long nativeProviderId) {
         super();
         mFolder = folder;
         mUid = uid;
@@ -286,6 +293,14 @@ public final class MessageData {
         mPushStatus = pushStatus;
         mMessageType = messageType;
         mMessageId = messageId;
+        mNativeProviderId = nativeProviderId;
+    }
+
+    public MessageData(Long nativeProviderId, ReadStatus readStatus, DeleteStatus deleteStatus) {
+        super();
+        mNativeProviderId = nativeProviderId;
+        mReadStatus = readStatus;
+        mDeleteStatus = deleteStatus;
     }
 
     public String getFolder() {
@@ -324,68 +339,53 @@ public final class MessageData {
         return mPushStatus;
     }
 
-    public void setPushStatus(PushStatus mPushStatus) {
-        this.mPushStatus = mPushStatus;
+    public Long getNativeProviderId() {
+        return mNativeProviderId;
     }
-
 
     @Override
     public String toString() {
-        return "MessageData [mFolder=" + mFolder + ", mUid=" + mUid
-                + ", mSeen=" + mReadStatus + ", mDeleted=" + mDeleteStatus + ", mMessageType=" + mMessageType
-                + ", mMessageId=" + mMessageId + "]";
+        final StringBuilder sb = new StringBuilder("MessageData{");
+        sb.append("mFolder='").append(mFolder).append('\'');
+        sb.append(", mUid=").append(mUid);
+        sb.append(", mReadStatus=").append(mReadStatus);
+        sb.append(", mDeleteStatus=").append(mDeleteStatus);
+        sb.append(", mPushStatus=").append(mPushStatus);
+        sb.append(", mMessageType=").append(mMessageType);
+        sb.append(", mMessageId='").append(mMessageId).append('\'');
+        sb.append(", mNativeProviderId=").append(mNativeProviderId);
+        sb.append('}');
+        return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MessageData that = (MessageData) o;
+
+        if (!mFolder.equals(that.mFolder)) return false;
+        if (mUid != null ? !mUid.equals(that.mUid) : that.mUid != null) return false;
+        if (mReadStatus != that.mReadStatus) return false;
+        if (mDeleteStatus != that.mDeleteStatus) return false;
+        if (mPushStatus != that.mPushStatus) return false;
+        if (mMessageType != that.mMessageType) return false;
+        if (!mMessageId.equals(that.mMessageId)) return false;
+        return !(mNativeProviderId != null ? !mNativeProviderId.equals(that.mNativeProviderId) : that.mNativeProviderId != null);
+
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((mDeleteStatus == null) ? 0 : mDeleteStatus.hashCode());
-        result = prime * result + ((mFolder == null) ? 0 : mFolder.hashCode());
-        result = prime * result + ((mMessageId == null) ? 0 : mMessageId.hashCode());
-        result = prime * result + ((mMessageType == null) ? 0 : mMessageType.hashCode());
-        result = prime * result + ((mReadStatus == null) ? 0 : mReadStatus.hashCode());
-        result = prime * result + ((mUid == null) ? 0 : mUid.hashCode());
+        int result = mFolder.hashCode();
+        result = 31 * result + (mUid != null ? mUid.hashCode() : 0);
+        result = 31 * result + mReadStatus.hashCode();
+        result = 31 * result + mDeleteStatus.hashCode();
+        result = 31 * result + mPushStatus.hashCode();
+        result = 31 * result + mMessageType.hashCode();
+        result = 31 * result + mMessageId.hashCode();
+        result = 31 * result + (mNativeProviderId != null ? mNativeProviderId.hashCode() : 0);
         return result;
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        MessageData other = (MessageData) obj;
-        if (mDeleteStatus == null) {
-            if (other.mDeleteStatus != null)
-                return false;
-        } else if (!mDeleteStatus.equals(other.mDeleteStatus))
-            return false;
-        if (mFolder == null) {
-            if (other.mFolder != null)
-                return false;
-        } else if (!mFolder.equals(other.mFolder))
-            return false;
-        if (mMessageId == null) {
-            if (other.mMessageId != null)
-                return false;
-        } else if (!mMessageId.equals(other.mMessageId))
-            return false;
-        if (mMessageType != other.mMessageType)
-            return false;
-        if (mReadStatus == null) {
-            if (other.mReadStatus != null)
-                return false;
-        } else if (!mReadStatus.equals(other.mReadStatus))
-            return false;
-        if (mUid == null) {
-            if (other.mUid != null)
-                return false;
-        } else if (!mUid.equals(other.mUid))
-            return false;
-        return true;
-    }
-
 }
