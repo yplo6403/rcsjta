@@ -28,11 +28,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.provider.Telephony;
 import android.provider.Telephony.TextBasedSmsColumns;
 import android.telephony.SmsManager;
@@ -50,23 +49,26 @@ import java.util.Set;
  * Created by Philippe LEMORDANT on 12/11/2015.
  */
 public class XmsManager {
+
     private final static Logger sLogger = Logger.getLogger(XmsManager.class.getSimpleName());
     private static final String SMS_SENT_ACTION = "SMS_SENT";
     private static final String SMS_DELIVERED_ACTION = "SMS_DELIVERED";
     private static final String KEY_TRANSACTION_ID = "trans_id";
     private static final String KEY_PART_ID = "part_id";
     private static final String KEY_SMS_URI = "sms_uri";
+    private static String DEFAULT_PACKAGE_ANDROID_MMS = "com.android.mms";
     private final ContentResolver mContentResolver;
     private final Context mCtx;
     private ReceiveSmsEventSent mReceiveSmsEventSent;
     private ReceiveSmsEventDelivered mReceiveSmsEventDelivered;
 
+    private Boolean mPackageAndroidMmsExists;
+
     /**
      * Constructor
      *
-     * @param ctx The context
+     * @param ctx             The context
      * @param contentResolver The content resolver
-     *
      */
     public XmsManager(Context ctx, ContentResolver contentResolver) {
         mCtx = ctx;
@@ -171,7 +173,9 @@ public class XmsManager {
             intent.setPackage(defaultSmsPackageName);
         } else {
             // TODO this may not work on some devices
-            intent.setPackage("com.android.mms");
+            if (mPackageAndroidMmsExists) {
+                intent.setPackage(DEFAULT_PACKAGE_ANDROID_MMS);
+            }
         }
         if (sLogger.isActivated()) {
             sLogger.debug("sendMms " + intent + " to contact=" + contact + " text='"
@@ -217,6 +221,20 @@ public class XmsManager {
             return "image/*";
         }
         return null;
+    }
+
+    public void initialize() {
+        mPackageAndroidMmsExists = isPackageExisted(DEFAULT_PACKAGE_ANDROID_MMS);
+    }
+
+    private boolean isPackageExisted(String targetPackage) {
+        PackageManager pm = mCtx.getPackageManager();
+        try {
+            pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+        return true;
     }
 
 

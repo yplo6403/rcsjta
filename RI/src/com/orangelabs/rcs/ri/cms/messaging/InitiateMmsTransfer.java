@@ -101,6 +101,7 @@ public class InitiateMmsTransfer extends RcsActivity {
         mListView = (ListView) findViewById(R.id.ImageList);
         /* Set send button listener */
         mSendBtn = (Button) findViewById(R.id.SendButton);
+        mSendBtn.setEnabled(false);
         mSendBtn.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -165,13 +166,21 @@ public class InitiateMmsTransfer extends RcsActivity {
                         }
                     } else {
                         Uri uri = data.getData();
-                        takePersistableContentUriPermission(this, uri);
-                        mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
+                        if (uri != null) {
+                            takePersistableContentUriPermission(this, uri);
+                            mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
+                        } else {
+                            return;
+                        }
                     }
                 } else {
                     Uri uri = data.getData();
-                    takePersistableContentUriPermission(this, uri);
-                    mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
+                    if (uri != null) {
+                        takePersistableContentUriPermission(this, uri);
+                        mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
+                    } else {
+                        return;
+                    }
                 }
                 if (mMmsParts.isEmpty()) {
                     showMessage(R.string.err_select_file);
