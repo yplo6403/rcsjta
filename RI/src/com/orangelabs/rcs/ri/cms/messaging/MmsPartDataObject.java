@@ -18,17 +18,16 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
-import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.cms.XmsMessageLog;
-import com.gsma.services.rcs.contact.ContactId;
-
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+
+import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.cms.XmsMessageLog;
+import com.gsma.services.rcs.contact.ContactId;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -76,15 +75,7 @@ public class MmsPartDataObject {
         mBody = null;
         mFile = file;
         mContact = contact;
-        if (mMimeType != null) {
-            if (FileUtils.isImageType(mMimeType)) {
-                mFileIcon = FileUtils.createThumb(ctx.getContentResolver(), file);
-            } else {
-                mFileIcon = null;
-            }
-        } else {
-            mFileIcon = null;
-        }
+        mFileIcon = null;
     }
 
     public MmsPartDataObject(long id, String messageId, String mimeType, String filename,
@@ -98,11 +89,12 @@ public class MmsPartDataObject {
         if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(content)) {
             mBody = content;
             mFile = null;
+            mFileIcon = null;
         } else {
             mBody = null;
             mFile = Uri.parse(content);
+            mFileIcon = fileIcon;
         }
-        mFileIcon = fileIcon;
     }
 
     /**

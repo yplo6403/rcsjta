@@ -32,6 +32,7 @@ import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
 import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.ImageUtils;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
 
@@ -52,12 +53,13 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.io.IOException;
-
 /**
  * Conversation cursor adapter
  */
 public class TalkCursorAdapter extends CursorAdapter {
+
+    private static final int MAX_IMAGE_WIDTH = 100;
+    private static final int MAX_IMAGE_HEIGHT = 100;
 
     private static final int VIEW_TYPE_SMS_IN = 0;
     private static final int VIEW_TYPE_SMS_OUT = 1;
@@ -266,36 +268,36 @@ public class TalkCursorAdapter extends CursorAdapter {
             FileTransfer.ReasonCode reasonCode = FileTransfer.ReasonCode.valueOf(reason);
             if (FileTransfer.ReasonCode.UNSPECIFIED == reasonCode) {
                 if (FileUtils.isImageType(mimeType)) {
-                    String uri = cursor.getString(holder.getColumnContentIdx());
-                    final Uri file = Uri.parse(uri);
-                    try {
-                        // TODO manage cache + create thumbnail in background
-                        byte[] fileIcon = FileUtils.createThumb(mActivity.getContentResolver(),
-                                file);
-                        imageView.setImageBitmap(BitmapFactory.decodeByteArray(fileIcon, 0,
-                                fileIcon.length));
-                        imageView.setLayoutParams(mImageParams);
-                        final String number = cursor.getString(holder.getColumnContactIdx());
-                        imageView.setOnClickListener(new View.OnClickListener() {
-
-                            @Override
-                            public void onClick(View v) {
-                                String toast;
-                                if (Direction.INCOMING == dir) {
-                                    toast = mActivity.getString(R.string.toast_image_in, filename,
-                                            number);
-                                } else {
-                                    toast = mActivity.getString(R.string.toast_image_out, filename,
-                                            number);
-                                }
-                                Utils.showPictureAndExit(mActivity, file, toast);
-                            }
-                        });
-                    } catch (IOException e) {
-                        holder.getFileImageView().setImageResource(R.drawable.ri_filetransfer_on);
-                        Log.e(LOGTAG, "bindRcsFileTransferInView failed to display image URI "
-                                + uri, e);
+                    final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
+                    String filePath = FileUtils.getPath(mContext, file);
+                    Bitmap imageBitmap = null;
+                    if (filePath != null) {
+                        // TODO do not perform on UI thread and use memory cache
+                        imageBitmap = ImageUtils.getImageBitmap2Display(filePath, MAX_IMAGE_WIDTH,
+                                MAX_IMAGE_HEIGHT);
                     }
+                    if (imageBitmap != null) {
+                        imageView.setImageBitmap(imageBitmap);
+                        imageView.setLayoutParams(mImageParams);
+                    } else {
+                        imageView.setImageResource(R.drawable.ri_filetransfer_on);
+                    }
+                    final String number = cursor.getString(holder.getColumnContactIdx());
+                    imageView.setOnClickListener(new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View v) {
+                            String toast;
+                            if (Direction.INCOMING == dir) {
+                                toast = mActivity.getString(R.string.toast_image_in, filename,
+                                        number);
+                            } else {
+                                toast = mActivity.getString(R.string.toast_image_out, filename,
+                                        number);
+                            }
+                            Utils.showPictureAndExit(mActivity, file, toast);
+                        }
+                    });
                 } else {
                     // TODO create thumbnail for video
                     imageView.setImageResource(R.drawable.ri_filetransfer_on);
@@ -372,12 +374,12 @@ public class TalkCursorAdapter extends CursorAdapter {
                 /* discard mms body or application/smil content */
                 continue;
             }
-            byte[] fileIcon = mmsPart.getFileIcon();
             View mmsItemView = mInflater.inflate(R.layout.mms_list_item, holder.getImagesLayout(),
                     false);
             ImageView imageView = (ImageView) mmsItemView.findViewById(R.id.image);
             TextView filenameText = (TextView) mmsItemView.findViewById(R.id.FileName);
             TextView fileSizeText = (TextView) mmsItemView.findViewById(R.id.FileSize);
+            byte[] fileIcon = mmsPart.getFileIcon();
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
                 if (sDefaultThumbnail == null) {
@@ -390,8 +392,8 @@ public class TalkCursorAdapter extends CursorAdapter {
                 fileSizeText.setVisibility(View.VISIBLE);
                 fileSizeText.setText(FileUtils.humanReadableByteCount(mmsPart.getFileSize(), true));
             } else {
-                imageView.setImageBitmap(BitmapFactory
-                        .decodeByteArray(fileIcon, 0, fileIcon.length));
+                Bitmap imageBitmap = BitmapFactory.decodeByteArray(fileIcon, 0, fileIcon.length);
+                imageView.setImageBitmap(imageBitmap);
                 final String filename = mmsPart.getFilename();
                 final ContactId contact = mmsPart.getContact();
                 final Uri file = mmsPart.getFile();

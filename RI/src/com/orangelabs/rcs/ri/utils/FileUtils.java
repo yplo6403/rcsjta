@@ -20,27 +20,147 @@ package com.orangelabs.rcs.ri.utils;
 
 import android.app.Activity;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.BaseColumns;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.webkit.MimeTypeMap;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 
 public class FileUtils {
 
     private static MimeTypeMap sMimeTypeMapSingleton;
 
-    private static final int THUMB_SIZE = 100;
+    private static final String[] PROJECTION_DATA = {
+        MediaStore.MediaColumns.DATA
+    };
+
+    private static final String SELECTION_ID = BaseColumns._ID + "=?";
+
+    public static String getPath(final Context context, final Uri uri) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // DocumentProvider
+            if (DocumentsContract.isDocumentUri(context, uri)) {
+                // ExternalStorageProvider
+                if (isExternalStorageDocument(uri)) {
+                    String docId = DocumentsContract.getDocumentId(uri);
+                    String[] split = docId.split(":");
+                    String type = split[0];
+                    if ("primary".equalsIgnoreCase(type)) {
+                        return Environment.getExternalStorageDirectory() + "/" + split[1];
+                    }
+
+                } else if (isDownloadsDocument(uri)) { // DownloadsProvider
+                    String id = DocumentsContract.getDocumentId(uri);
+                    Uri contentUri = ContentUris.withAppendedId(
+                            Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+                    return getDataColumn(context, contentUri, null, null);
+
+                } else if (isMediaDocument(uri)) { // MediaProvider
+                    String docId = DocumentsContract.getDocumentId(uri);
+                    String[] split = docId.split(":");
+                    String type = split[0];
+                    Uri contentUri = null;
+                    switch (type) {
+                        case "image":
+                            contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                            break;
+                        case "video":
+                            contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                            break;
+                        case "audio":
+                            contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                            break;
+                    }
+
+                    String[] selectionArgs = new String[] {
+                        split[1]
+                    };
+                    return getDataColumn(context, contentUri, SELECTION_ID, selectionArgs);
+                }
+            }
+        }
+        if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+            /* MediaStore (and general) */
+            // Return the remote address
+            if (isGooglePhotosUri(uri)) {
+                return uri.getLastPathSegment();
+            }
+            return getDataColumn(context, uri, null, null);
+
+        } else if (ContentResolver.SCHEME_FILE.equalsIgnoreCase(uri.getScheme())) {
+            /* File */
+            return uri.getPath();
+        }
+        return null;
+    }
+
+    /**
+     * Get the value of the data column for this Uri. This is useful for MediaStore Uris, and other
+     * file-based ContentProviders.
+     *
+     * @param context The context.
+     * @param uri The Uri to query.
+     * @param selection (Optional) Filter used in the query.
+     * @param selectionArgs (Optional) Selection arguments used in the query.
+     * @return The value of the _data column, which is typically a file path.
+     */
+    private static String getDataColumn(Context context, Uri uri, String selection,
+            String[] selectionArgs) {
+        Cursor cursor = null;
+        try {
+            cursor = context.getContentResolver().query(uri, PROJECTION_DATA, selection,
+                    selectionArgs, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA));
+            }
+            return null;
+        } finally {
+            if (cursor != null)
+                cursor.close();
+        }
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is ExternalStorageProvider.
+     */
+    private static boolean isExternalStorageDocument(Uri uri) {
+        return "com.android.externalstorage.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is DownloadsProvider.
+     */
+    private static boolean isDownloadsDocument(Uri uri) {
+        return "com.android.providers.downloads.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is MediaProvider.
+     */
+    private static boolean isMediaDocument(Uri uri) {
+        return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    /**
+     * @param uri The Uri to check.
+     * @return Whether the Uri authority is <span class="IL_AD" id="IL_AD3">Google</span> Photos.
+     */
+    private static boolean isGooglePhotosUri(Uri uri) {
+        return "com.google.android.apps.photos.content".equals(uri.getAuthority());
+    }
 
     /**
      * Fetch the file name from URI
@@ -142,23 +262,6 @@ public class FileUtils {
      */
     public static boolean isImageType(String mime) {
         return mime.toLowerCase().startsWith("image/");
-    }
-
-    public static byte[] createThumb(ContentResolver contentResolver, Uri uri) throws IOException {
-        InputStream is = null;
-        try {
-            is = contentResolver.openInputStream(uri);
-            Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(is),
-                    THUMB_SIZE, THUMB_SIZE);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            return baos.toByteArray();
-
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
     }
 
     /**

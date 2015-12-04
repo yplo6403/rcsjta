@@ -21,8 +21,10 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
 import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.ImageUtils;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +39,9 @@ import java.util.List;
  * Created by yplo6403 on 27/11/2015.
  */
 public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
+
+    private static final int MAX_IMAGE_WIDTH = 100;
+    private static final int MAX_IMAGE_HEIGHT = 100;
 
     // TODO manage item selection listener to view image
 
@@ -66,7 +71,15 @@ public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
             holder.mFileNameText.setText(item.getFilename());
             holder.mFileSizeText
                     .setText(FileUtils.humanReadableByteCount(item.getFileSize(), true));
-            byte[] fileIcon = item.getFileIcon();
+            Bitmap fileIcon = null;
+            if (FileUtils.isImageType(item.getMimeType())) {
+                String filePath = FileUtils.getPath(mCtx, item.getFile());
+                if (filePath != null) {
+                    // TODO do not perform on UI thread and use memory cache
+                    fileIcon = ImageUtils.getImageBitmap2Display(filePath, MAX_IMAGE_WIDTH,
+                            MAX_IMAGE_HEIGHT);
+                }
+            }
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
                 if (TalkCursorAdapter.sDefaultThumbnail == null) {
@@ -75,8 +88,7 @@ public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
                 }
                 holder.mImageView.setImageBitmap(TalkCursorAdapter.sDefaultThumbnail);
             } else {
-                holder.mImageView.setImageBitmap(BitmapFactory.decodeByteArray(fileIcon, 0,
-                        fileIcon.length));
+                holder.mImageView.setImageBitmap(fileIcon);
             }
         }
         return convertView;
