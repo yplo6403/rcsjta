@@ -356,6 +356,7 @@
     <string name="menu_delete_message">Delete</string>
     <string name="menu_resend_message">Resend</string>
     <string name="menu_send_message">Send</string>
+    <string name="menu_view_message">View</string>
     <string name="hint_type_message">Enter your message ... </string>
 
     <!-- Chat session menu -->

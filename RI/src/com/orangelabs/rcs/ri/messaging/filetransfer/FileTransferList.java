@@ -26,16 +26,20 @@ import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 
+import com.gsma.services.rcs.history.HistoryLog;
 import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.FileUtils;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -59,7 +63,7 @@ import java.util.Date;
 
 /**
  * List file transfers from the content provider
- * 
+ *
  * @author Jean-Marc AUFFRET
  * @author Philippe LEMORDANT
  */
@@ -73,6 +77,8 @@ public class FileTransferList extends RcsFragmentActivity implements
             FileTransferLog.FT_ID,
             FileTransferLog.CONTACT,
             FileTransferLog.FILENAME,
+            FileTransferLog.MIME_TYPE,
+            FileTransferLog.FILE,
             FileTransferLog.FILESIZE,
             FileTransferLog.STATE,
             FileTransferLog.REASON_CODE,
@@ -94,6 +100,7 @@ public class FileTransferList extends RcsFragmentActivity implements
      */
     private final static int MENU_ITEM_DELETE = 0;
     private final static int MENU_ITEM_RESEND = 1;
+    private final static int MENU_ITEM_VIEW = 2;
 
     /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
@@ -129,7 +136,7 @@ public class FileTransferList extends RcsFragmentActivity implements
 
         /**
          * Constructor
-         * 
+         *
          * @param context Context
          */
         public FtCursorAdapter(Context context) {
@@ -287,8 +294,17 @@ public class FileTransferList extends RcsFragmentActivity implements
         String transferId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
         try {
             FileTransfer transfer = mFileTransferService.getFileTransfer(transferId);
-            if (transfer != null && transfer.isAllowedToResendTransfer()) {
+            if (transfer == null) {
+                return;
+            }
+            State state = transfer.getState();
+            if (transfer.isAllowedToResendTransfer()) {
                 menu.add(0, MENU_ITEM_RESEND, 1, R.string.menu_resend_message);
+            } else if (Direction.OUTGOING == transfer.getDirection() ||
+                    (State.TRANSFERRED == state) || (State.DISPLAYED == state)) {
+                if (FileUtils.isImageType(transfer.getMimeType())) {
+                    menu.add(0, MENU_ITEM_VIEW, 1, R.string.menu_view_message);
+                }
             }
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
@@ -325,6 +341,25 @@ public class FileTransferList extends RcsFragmentActivity implements
                         return true;
                     }
                     mFileTransferService.deleteFileTransfer(transferId);
+                    return true;
+
+                case MENU_ITEM_VIEW:
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "onContextItemSelected view ftId=".concat(transferId));
+                    }
+                    String uri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
+                    String filename = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILENAME));
+                    Direction dir = Direction.valueOf(cursor.getInt(cursor
+                            .getColumnIndex(HistoryLog.DIRECTION)));
+                    String number = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
+                    Uri file = Uri.parse(uri);
+                    String toast;
+                    if (Direction.INCOMING == dir) {
+                        toast = getString(R.string.toast_image_in, filename, number);
+                    } else {
+                        toast = getString(R.string.toast_image_out, filename, number);
+                    }
+                    Utils.showPictureAndExit(this, file, toast);
                     return true;
             }
         } catch (RcsServiceException e) {
