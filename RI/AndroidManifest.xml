@@ -548,7 +548,8 @@
             android:label="@string/menu_cms_messaging_title" />
         <activity
             android:name=".cms.messaging.XmsView"
-            android:label="@string/menu_cms_messaging_title" />
+            android:label="@string/menu_cms_messaging_title"
+            android:launchMode="singleTop" />
         <activity
             android:name=".cms.messaging.InitiateMmsTransfer"
         />
