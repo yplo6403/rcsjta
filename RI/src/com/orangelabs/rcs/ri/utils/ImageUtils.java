@@ -92,11 +92,6 @@ public class ImageUtils {
                 if (LogUtils.isActive) {
                     Log.w(LOGTAG, "OutOfMemoryError: options.inSampleSize= " + options.inSampleSize);
                 }
-            } catch (RuntimeException e) {
-                /* With LG: runtimeException */
-                if (LogUtils.isActive) {
-                    Log.e(LOGTAG, "RuntimeException. options.inSampleSize= " + options.inSampleSize);
-                }
             }
         }
         return null;

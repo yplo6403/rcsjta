@@ -69,6 +69,11 @@ public class InitiateMmsTransfer extends RcsActivity {
     private ListView mListView;
     private Button mSendBtn;
     private List<MmsPartDataObject> mMmsParts;
+    private Button mSelectParts;
+
+    private static final String[] ALLOWED_MIME_TYPES = {
+            "image/*", "video/*"
+    };
 
     // TODO manage option menu to enable content reselection
 
@@ -128,6 +133,16 @@ public class InitiateMmsTransfer extends RcsActivity {
                 }
             }
         });
+
+        mSelectParts = (Button) findViewById(R.id.SelectPartButton);
+        mSelectParts.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                setTitle(getString(R.string.title_send_mms, mContact.toString()));
+                FileUtils.openFiles(InitiateMmsTransfer.this, ALLOWED_MIME_TYPES, PICK_IMAGE_REQUEST);
+            }
+        });
     }
 
     private void processIntent(Intent intent) {
@@ -143,10 +158,7 @@ public class InitiateMmsTransfer extends RcsActivity {
         }
         mContact = contact;
         setTitle(getString(R.string.title_send_mms, mContact.toString()));
-        String[] mimeTypes = {
-                "image/*", "video/*"
-        };
-        FileUtils.openFiles(this, mimeTypes, PICK_IMAGE_REQUEST);
+        FileUtils.openFiles(this, ALLOWED_MIME_TYPES, PICK_IMAGE_REQUEST);
     }
 
     @Override

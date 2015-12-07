@@ -31,8 +31,10 @@ import com.gsma.services.rcs.history.HistoryLog;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
+import com.orangelabs.rcs.ri.utils.BitmapCache;
+import com.orangelabs.rcs.ri.utils.BitmapLoader;
 import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.ImageUtils;
+import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
 
@@ -42,6 +44,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.support.v4.util.LruCache;
 import android.support.v4.widget.CursorAdapter;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -78,6 +81,7 @@ public class TalkCursorAdapter extends CursorAdapter {
     private final LinearLayout.LayoutParams mImageParams;
     private final Activity mActivity;
     private LayoutInflater mInflater;
+    private BitmapCache bitmapCache;
 
     /**
      * Constructor
@@ -92,6 +96,8 @@ public class TalkCursorAdapter extends CursorAdapter {
         int size100Dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, mContext
                 .getResources().getDisplayMetrics());
         mImageParams = new LinearLayout.LayoutParams(size100Dp, size100Dp);
+
+        bitmapCache = BitmapCache.getInstance();
 
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "ConversationCursorAdapter create");
@@ -257,7 +263,7 @@ public class TalkCursorAdapter extends CursorAdapter {
         StringBuilder progress = new StringBuilder(filename);
         long filesize = cursor.getLong(holder.getColumnFilesizeIdx());
         long transferred = cursor.getLong(holder.getColumnTransferredIdx());
-        ImageView imageView = holder.getFileImageView();
+        final ImageView imageView = holder.getFileImageView();
         if (filesize != transferred) {
             holder.getProgressText().setText(
                     progress.append(" : ").append(Utils.getProgressLabel(transferred, filesize))
@@ -272,44 +278,59 @@ public class TalkCursorAdapter extends CursorAdapter {
                     String filePath = FileUtils.getPath(mContext, file);
                     Bitmap imageBitmap = null;
                     if (filePath != null) {
-                        // TODO do not perform on UI thread and use memory cache
-                        imageBitmap = ImageUtils.getImageBitmap2Display(filePath, MAX_IMAGE_WIDTH,
-                                MAX_IMAGE_HEIGHT);
-                    }
-                    if (imageBitmap != null) {
-                        imageView.setImageBitmap(imageBitmap);
-                        imageView.setLayoutParams(mImageParams);
+                        LruCache<String, BitmapLoader.BitmapCacheInfo> memoryCache = bitmapCache
+                                .getMemoryCache();
+                        BitmapLoader.BitmapCacheInfo bitmapCacheInfo = memoryCache.get(filePath);
+                        if (bitmapCacheInfo == null) {
+                            ImageBitmapLoader loader = new ImageBitmapLoader(mContext, memoryCache,
+                                    MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT,
+                                    new BitmapLoader.SetViewCallback() {
+                                        @Override
+                                        public void loadView(BitmapLoader.BitmapCacheInfo cacheInfo) {
+                                            imageView.setImageBitmap(cacheInfo.getBitmap());
+                                            imageView.setLayoutParams(mImageParams);
+                                        }
+                                    });
+                            loader.execute(filePath);
+                        } else {
+                            imageBitmap = bitmapCacheInfo.getBitmap();
+                        }
+                        if (imageBitmap != null) {
+                            imageView.setImageBitmap(imageBitmap);
+                            imageView.setLayoutParams(mImageParams);
+                        } else {
+                            imageView.setImageResource(R.drawable.ri_filetransfer_on);
+                        }
+                        final String number = cursor.getString(holder.getColumnContactIdx());
+                        imageView.setOnClickListener(new View.OnClickListener() {
+
+                            @Override
+                            public void onClick(View v) {
+                                String toast;
+                                if (Direction.INCOMING == dir) {
+                                    toast = mActivity.getString(R.string.toast_image_in, filename,
+                                            number);
+                                } else {
+                                    toast = mActivity.getString(R.string.toast_image_out, filename,
+                                            number);
+                                }
+                                Utils.showPictureAndExit(mActivity, file, toast);
+                            }
+                        });
                     } else {
+                        // TODO create thumbnail for video
                         imageView.setImageResource(R.drawable.ri_filetransfer_on);
                     }
-                    final String number = cursor.getString(holder.getColumnContactIdx());
-                    imageView.setOnClickListener(new View.OnClickListener() {
-
-                        @Override
-                        public void onClick(View v) {
-                            String toast;
-                            if (Direction.INCOMING == dir) {
-                                toast = mActivity.getString(R.string.toast_image_in, filename,
-                                        number);
-                            } else {
-                                toast = mActivity.getString(R.string.toast_image_out, filename,
-                                        number);
-                            }
-                            Utils.showPictureAndExit(mActivity, file, toast);
-                        }
-                    });
                 } else {
-                    // TODO create thumbnail for video
-                    imageView.setImageResource(R.drawable.ri_filetransfer_on);
+                    imageView.setImageResource(R.drawable.ri_filetransfer_off);
                 }
-            } else {
-                imageView.setImageResource(R.drawable.ri_filetransfer_off);
+                holder.getProgressText().setText(
+                        progress.append(" (")
+                                .append(FileUtils.humanReadableByteCount(filesize, true))
+                                .append(")").toString());
             }
-            holder.getProgressText().setText(
-                    progress.append(" (").append(FileUtils.humanReadableByteCount(filesize, true))
-                            .append(")").toString());
+            holder.getStatusText().setText(getRcsFileTransferStatus(cursor, holder));
         }
-        holder.getStatusText().setText(getRcsFileTransferStatus(cursor, holder));
     }
 
     private void bindRcsChatOutView(View view, Cursor cursor) {

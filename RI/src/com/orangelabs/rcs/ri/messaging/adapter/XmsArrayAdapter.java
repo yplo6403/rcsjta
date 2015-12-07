@@ -20,12 +20,15 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
+import com.orangelabs.rcs.ri.utils.BitmapCache;
+import com.orangelabs.rcs.ri.utils.BitmapLoader;
 import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.ImageUtils;
+import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.support.v4.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,20 +43,22 @@ import java.util.List;
  */
 public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
 
-    private static final int MAX_IMAGE_WIDTH = 100;
-    private static final int MAX_IMAGE_HEIGHT = 100;
+    private static final int MAX_IMAGE_WIDTH = 50;
+    private static final int MAX_IMAGE_HEIGHT = 50;
 
     // TODO manage item selection listener to view image
 
     private final Context mCtx;
     private final int mResourceRowLayout;
     private final LayoutInflater mInflater;
+    private BitmapCache bitmapCache;
 
     public XmsArrayAdapter(Context ctx, int resourceRowLayout, List<MmsPartDataObject> items) {
         super(ctx, 0, items);
         mCtx = ctx;
         mResourceRowLayout = resourceRowLayout;
         mInflater = LayoutInflater.from(mCtx);
+        bitmapCache = BitmapCache.getInstance();
     }
 
     @Override
@@ -75,9 +80,22 @@ public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
             if (FileUtils.isImageType(item.getMimeType())) {
                 String filePath = FileUtils.getPath(mCtx, item.getFile());
                 if (filePath != null) {
-                    // TODO do not perform on UI thread and use memory cache
-                    fileIcon = ImageUtils.getImageBitmap2Display(filePath, MAX_IMAGE_WIDTH,
-                            MAX_IMAGE_HEIGHT);
+                    LruCache<String, BitmapLoader.BitmapCacheInfo> memoryCache = bitmapCache
+                            .getMemoryCache();
+                    BitmapLoader.BitmapCacheInfo bitmapCacheInfo = memoryCache.get(filePath);
+                    if (bitmapCacheInfo == null) {
+                        ImageBitmapLoader loader = new ImageBitmapLoader(mCtx, memoryCache,
+                                MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT,
+                                new BitmapLoader.SetViewCallback() {
+                                    @Override
+                                    public void loadView(BitmapLoader.BitmapCacheInfo cacheInfo) {
+                                        holder.mImageView.setImageBitmap(cacheInfo.getBitmap());
+                                    }
+                                });
+                        loader.execute(filePath);
+                    } else {
+                        fileIcon = bitmapCacheInfo.getBitmap();
+                    }
                 }
             }
             if (fileIcon == null) {

@@ -420,6 +420,8 @@
     <string name="toast_image_in">Image %1$s received from contact %2$s</string>
     <string name="toast_image_out">Image %1$s sent to contact %2$s</string>
     <string name="menu_delete_xms">Delete XMS</string>
+    <string name="hint_type_subject">Enter the subject</string>
+    <string name="menu_select_part">Select attachment</string>
 
     <!-- States -->
 
