@@ -138,7 +138,7 @@ public class XmsIntentService extends IntentService {
         } else {
             title = getString(R.string.title_recv_mms, displayName);
         }
-        Notification notif = buildNotification(contentIntent, title, message.getBody());
+        Notification notif = buildNotification(contentIntent, title, message.getContent());
         mChatPendingIntentManager.postNotification(uniqueId, notif);
     }
 

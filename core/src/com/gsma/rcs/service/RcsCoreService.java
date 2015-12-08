@@ -22,15 +22,6 @@
 
 package com.gsma.rcs.service;
 
-import android.app.Service;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
-
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.utils.MmsUtils;
@@ -81,6 +72,15 @@ import com.gsma.services.rcs.sharing.geoloc.IGeolocSharingService;
 import com.gsma.services.rcs.sharing.image.IImageSharingService;
 import com.gsma.services.rcs.sharing.video.IVideoSharingService;
 import com.gsma.services.rcs.upload.IFileUploadService;
+
+import android.app.Service;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
 
 import java.io.IOException;
 import java.security.KeyStoreException;
@@ -169,7 +169,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mMessagingLog = MessagingLog.createInstance(mLocalContentResolver, mRcsSettings);
         mContactManager = ContactManager.createInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
-        mXmsLog = XmsLog.createInstance(mContentResolver, mLocalContentResolver);
+        mXmsLog = XmsLog.createInstance(mLocalContentResolver);
         mImapLog = ImapLog.createInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
@@ -242,10 +242,7 @@ public class RcsCoreService extends Service implements CoreListener {
                         sLogger.debug(e.getMessage());
                     }
 
-                } catch (ContactManagerException e) {
-                    sLogger.error("Unable to stop IMS core!", e);
-
-                } catch (PayloadException e) {
+                } catch (ContactManagerException | PayloadException e) {
                     sLogger.error("Unable to stop IMS core!", e);
 
                 } catch (RuntimeException e) {
@@ -284,7 +281,7 @@ public class RcsCoreService extends Service implements CoreListener {
                 .getInstance(this);
         if (!contactUtil.isMyCountryCodeDefined()) {
             if (logActivated) {
-                sLogger.debug("Can't instanciate RCS core service, Reason : Country code not defined!");
+                sLogger.debug("Can't instantiate RCS core service, Reason : Country code not defined!");
             }
             stopSelf();
             return;
@@ -312,7 +309,8 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver, core.getXmsManager(), core.getCmsManager());
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver,
+                    core.getXmsManager(), core.getCmsManager());
 
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
@@ -577,11 +575,10 @@ public class RcsCoreService extends Service implements CoreListener {
         if (sLogger.isActivated()) {
             sLogger.debug("Handle event core started");
         }
-
         Core core = Core.getInstance();
         core.getImService().onCoreLayerStarted();
         core.getRichcallService().onCoreLayerStarted();
-
+        core.getCmsService().onCoreLayerStarted();
         IntentUtils.sendBroadcastEvent(mCtx, RcsService.ACTION_SERVICE_UP);
     }
 

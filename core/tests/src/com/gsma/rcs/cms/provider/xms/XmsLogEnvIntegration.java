@@ -62,7 +62,7 @@ public class XmsLogEnvIntegration {
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
             int nativeThreadIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID);
             int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-            int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BODY);
+            int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
             int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
             int directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
             int readStatusIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
@@ -75,8 +75,8 @@ public class XmsLogEnvIntegration {
                         RcsService.Direction.valueOf(cursor.getInt(directionIdx)),
                         ReadStatus.valueOf(cursor.getInt(readStatusIdx)),
                         cursor.getLong(dateIdx),
-                        cursor.getLong(nativeProviderIdIdx),
-                        cursor.getLong(nativeThreadIdIdx)
+                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx),
+                        cursor.isNull(nativeThreadIdIdx) ? null :cursor.getLong(nativeThreadIdIdx)
                 ));
             }
             return messages;

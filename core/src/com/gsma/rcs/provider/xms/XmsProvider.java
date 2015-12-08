@@ -75,9 +75,9 @@ public class XmsProvider extends ContentProvider {
      */
     private static final String[] XMS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS = new String[] {
             XmsData.KEY_BASECOLUMN_ID, XmsData.KEY_MESSAGE_ID, XmsData.KEY_CONTACT,
-            XmsData.KEY_BODY, XmsData.KEY_MIME_TYPE, XmsData.KEY_DIRECTION, XmsData.KEY_TIMESTAMP,
-            XmsData.KEY_TIMESTAMP_SENT, XmsData.KEY_TIMESTAMP_DELIVERED, XmsData.KEY_STATE,
-            XmsData.KEY_REASON_CODE, XmsData.KEY_READ_STATUS
+            XmsData.KEY_CONTENT, XmsData.KEY_MIME_TYPE, XmsData.KEY_DIRECTION,
+            XmsData.KEY_TIMESTAMP, XmsData.KEY_TIMESTAMP_SENT, XmsData.KEY_TIMESTAMP_DELIVERED,
+            XmsData.KEY_STATE, XmsData.KEY_REASON_CODE, XmsData.KEY_READ_STATUS
     };
 
     private static final Set<String> XMS_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS = new HashSet<>(
@@ -455,7 +455,7 @@ public class XmsProvider extends ContentProvider {
                     + XmsData.KEY_BASECOLUMN_ID + " INTEGER NOT NULL,"
                     + XmsData.KEY_CONTACT + " TEXT NOT NULL,"
                     + XmsData.KEY_CHAT_ID + " TEXT NOT NULL,"
-                    + XmsData.KEY_BODY + " TEXT,"
+                    + XmsData.KEY_CONTENT + " TEXT,"
                     + XmsData.KEY_MIME_TYPE + " INTEGER NOT NULL,"
                     + XmsData.KEY_DIRECTION + " INTEGER NOT NULL,"
                     + XmsData.KEY_TIMESTAMP + " INTEGER NOT NULL,"

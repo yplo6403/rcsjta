@@ -53,7 +53,7 @@ public class XmsPersistedStorageAccessor {
 
     private RcsService.ReadStatus mRead;
 
-    private String mBody;
+    private String mContent;
 
     private String mNativeId;
 
@@ -70,7 +70,7 @@ public class XmsPersistedStorageAccessor {
         mContact = sms.getContact();
         mDirection = sms.getDirection();
         mMimeType = sms.getMimeType();
-        mBody = sms.getBody();
+        mContent = sms.getBody();
         mTimestamp = sms.getTimestamp();
         mCorrelator = sms.getCorrelator();
         mChatId = sms.getChatId();
@@ -112,8 +112,8 @@ public class XmsPersistedStorageAccessor {
             if (mMimeType == null) {
                 mMimeType = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_MIME_TYPE));
             }
-            if (mBody == null) {
-                mBody = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_BODY));
+            if (mContent == null) {
+                mContent = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT));
             }
             if (mTimestamp == null) {
                 mTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP));
@@ -134,7 +134,8 @@ public class XmsPersistedStorageAccessor {
                 mNativeId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID));
             }
             if (mNativeThreadId == null) {
-                mNativeThreadId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID));
+                mNativeThreadId = cursor.getString(cursor
+                        .getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID));
             }
 
             if (mCorrelator == null) {
@@ -174,15 +175,15 @@ public class XmsPersistedStorageAccessor {
         return mMimeType;
     }
 
-    public String getBody() {
+    public String getContent() {
         /*
          * Utilizing cache here as mime type can't be changed in persistent storage after entry
          * insertion anyway so no need to query for it multiple times.
          */
-        if (mBody == null) {
+        if (mContent == null) {
             cacheData();
         }
-        return mBody;
+        return mContent;
     }
 
     public long getTimestamp() {
@@ -259,14 +260,15 @@ public class XmsPersistedStorageAccessor {
 
     public String getNativeThreadId() {
         /*
-         * Utilizing cache here as native thread ID can't be changed in persistent storage after entry
-         * insertion anyway so no need to query for it multiple times.
+         * Utilizing cache here as native thread ID can't be changed in persistent storage after
+         * entry insertion anyway so no need to query for it multiple times.
          */
         if (mNativeThreadId == null) {
             cacheData();
         }
         return mNativeThreadId;
     }
+
     public String getMessageCorrelator() {
         /*
          * Utilizing cache here as message correlator can't be changed in persistent storage after

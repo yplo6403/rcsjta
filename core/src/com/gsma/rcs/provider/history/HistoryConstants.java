@@ -244,7 +244,7 @@ import java.util.Set;
         columnMapping
                 .put(HistoryLogData.KEY_TIMESTAMP_DELIVERED, XmsMessageLog.TIMESTAMP_DELIVERED);
         columnMapping.put(HistoryLogData.KEY_READ_STATUS, XmsMessageLog.READ_STATUS);
-        columnMapping.put(HistoryLogData.KEY_CONTENT, XmsMessageLog.BODY);
+        columnMapping.put(HistoryLogData.KEY_CONTENT, XmsMessageLog.CONTENT);
         return columnMapping;
     }
 }

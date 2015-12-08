@@ -28,33 +28,43 @@ public class SmsDataObject extends XmsDataObject {
 
     private final String mCorrelator;
 
+    private final String mBody;
+
     public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, long timestamp, long nativeId, long nativeThreadId) {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId, nativeThreadId);
+            RcsService.Direction dir, long timestamp, Long nativeId, Long nativeThreadId) {
+        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId,
+                nativeThreadId);
+        mBody = body;
         mCorrelator = HeaderCorrelatorUtils.buildHeader(mBody);
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-                         RcsService.Direction dir,  ReadStatus readStatus, long timestamp, long nativeId, long nativeThreadId) {
+            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
+            Long nativeThreadId) {
         this(messageId, contact, body, dir, timestamp, nativeId, nativeThreadId);
         mReadStatus = readStatus;
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-                         RcsService.Direction dir, long timestamp, ReadStatus readStatus) {
-        this(messageId, contact, body, dir, timestamp, 0,0);
+            RcsService.Direction dir, long timestamp, ReadStatus readStatus) {
+        this(messageId, contact, body, dir, timestamp, (Long) null, null);
         mReadStatus = readStatus;
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-                         RcsService.Direction dir, long timestamp, ReadStatus readStatus, String messageCorrelator) {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, 0,0);
+            RcsService.Direction dir, long timestamp, ReadStatus readStatus,
+            String messageCorrelator) {
+        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, null, null);
         mReadStatus = readStatus;
         mCorrelator = messageCorrelator;
+        mBody = body;
     }
 
-    @Override
     public String getCorrelator() {
         return mCorrelator;
+    }
+
+    public String getBody() {
+        return mBody;
     }
 }

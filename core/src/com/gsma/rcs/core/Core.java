@@ -122,7 +122,8 @@ public class Core {
     public static Core createCore(Context ctx, CoreListener listener, RcsSettings rcsSettings,
             ContentResolver contentResolver, LocalContentResolver localContentResolver,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) throws IOException, KeyStoreException {
+            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) throws IOException,
+            KeyStoreException {
         if (sInstance != null) {
             return sInstance;
         }
@@ -189,16 +190,17 @@ public class Core {
 
         mXmsManager = new XmsManager(ctx, contentResolver);
         mCmsManager = new CmsManager(ctx, imapLog, xmsLog, rcsSettings);
+        // TODO FG never start in constructor
         mCmsManager.start();
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
+        // TODO FG never start in constructor
         backgroundThread.start();
 
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
 
         /* Create the IMS module */
-        mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings,
-                contactManager, messagingLog, historyLog, richCallHistory, mAddressBookManager,
-                xmsLog);
+        mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
+                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog);
 
         if (logActivated) {
             sLogger.info("Terminal core is created with success");

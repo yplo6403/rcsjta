@@ -20,6 +20,10 @@
 
 package com.gsma.rcs.xms;
 
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.contact.ContactId;
+
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -28,22 +32,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Telephony;
 import android.provider.Telephony.TextBasedSmsColumns;
 import android.telephony.SmsManager;
 
-import com.gsma.rcs.utils.IdGenerator;
-import com.gsma.rcs.utils.MimeManager;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.contact.ContactId;
-
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
@@ -56,18 +51,15 @@ public class XmsManager {
     private static final String KEY_TRANSACTION_ID = "trans_id";
     private static final String KEY_PART_ID = "part_id";
     private static final String KEY_SMS_URI = "sms_uri";
-    private static String DEFAULT_PACKAGE_ANDROID_MMS = "com.android.mms";
     private final ContentResolver mContentResolver;
     private final Context mCtx;
     private ReceiveSmsEventSent mReceiveSmsEventSent;
     private ReceiveSmsEventDelivered mReceiveSmsEventDelivered;
 
-    private Boolean mPackageAndroidMmsExists;
-
     /**
      * Constructor
      *
-     * @param ctx             The context
+     * @param ctx The context
      * @param contentResolver The content resolver
      */
     public XmsManager(Context ctx, ContentResolver contentResolver) {
@@ -109,8 +101,7 @@ public class XmsManager {
             smsSentIntent.putExtra(KEY_SMS_URI, smsUri.toString());
             smsDeliveredIntent.putExtra(KEY_SMS_URI, smsUri.toString());
         }
-        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
-                smsSentIntent, 0);
+        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0, smsSentIntent, 0);
         PendingIntent mDeliveredPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
                 smsDeliveredIntent, 0);
         ArrayList<String> parts = smsManager.divideMessage(text);
@@ -126,117 +117,29 @@ public class XmsManager {
                 deliveredPIs.add(mDeliveredPendingIntent);
             }
             if (sLogger.isActivated()) {
-                sLogger.debug("Sending split message of " + text.length()
-                        + " characters into " + parts.size() + " parts.");
+                sLogger.debug("Sending split message of " + text.length() + " characters into "
+                        + parts.size() + " parts.");
             }
-            smsManager.sendMultipartTextMessage(contact.toString(), null, parts,
-                    sentPIs, deliveredPIs);
+            smsManager.sendMultipartTextMessage(contact.toString(), null, parts, sentPIs,
+                    deliveredPIs);
         } else {
             if (sLogger.isActivated()) {
                 sLogger.debug("sendTextMessage to " + contact + " text='" + text
                         + "' with transactionId=" + transactionId);
             }
-            smsManager.sendTextMessage(contact.toString(), null, text,
-                    mSentPendingIntent, mDeliveredPendingIntent);
+            smsManager.sendTextMessage(contact.toString(), null, text, mSentPendingIntent,
+                    mDeliveredPendingIntent);
         }
 
     }
 
-    public void sendMms(final ContactId contact, final String text, final ArrayList<Uri> files) {
-        Intent intent = new Intent();
-        if (files.size() == 1) {
-            Uri file = files.get(0);
-            intent.setAction(Intent.ACTION_SEND);
-            intent.putExtra(Intent.EXTRA_STREAM, file);
-            String mimeType = mContentResolver.getType(file);
-            intent.setType(mimeType);
-            if (sLogger.isActivated()) {
-                sLogger.debug("sendMms Uri=" + file + " mime-type=" + mimeType);
-            }
-        } else {
-            intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, files);
-            String[] mimeTypes = getMimeTypes(files);
-            String mimeType = getSyntheticMimeType(mimeTypes);
-            intent.setType(mimeType);
-            if (sLogger.isActivated()) {
-                sLogger.debug("sendMms Uri=" + files + " mime-type=" + mimeType);
-            }
-        }
-        intent.putExtra("address", contact.toString());
-        if (text != null) {
-            intent.putExtra("sms_body", text);
-        }
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(mCtx);
-            intent.setPackage(defaultSmsPackageName);
-        } else {
-            // TODO this may not work on some devices
-            if (mPackageAndroidMmsExists) {
-                intent.setPackage(DEFAULT_PACKAGE_ANDROID_MMS);
-            }
-        }
-        if (sLogger.isActivated()) {
-            sLogger.debug("sendMms " + intent + " to contact=" + contact + " text='"
-                    + text + "'");
-        }
-        mCtx.startActivity(intent);
-    }
-
-    private String[] getMimeTypes(ArrayList<Uri> files) {
-        Set<String> mimeTypes = new HashSet<>();
-        for (Uri file : files) {
-            mimeTypes.add(mContentResolver.getType(file));
-        }
-        return mimeTypes.toArray(new String[mimeTypes.size()]);
-    }
-
-    private String getSyntheticMimeType(String[] mimeTypes) {
-        int imageMimeType = 0;
-        int videoMimeType = 0;
-        for (String mimeType : mimeTypes) {
-            if (MimeManager.isImageType(mimeType)) {
-                imageMimeType++;
-                continue;
-            }
-            if (MimeManager.isVideoType(mimeType)) {
-                videoMimeType++;
-            }
-        }
-        if (imageMimeType > 0 && videoMimeType > 0) {
-            /* both video and image */
-            return "*/*";
-        }
-        if (imageMimeType == 1 || videoMimeType == 1) {
-            /* single either image or video */
-            return mimeTypes[0];
-        }
-        if (videoMimeType > 1) {
-            /* multiple videos */
-            return "video/*";
-        }
-        if (imageMimeType > 1) {
-            /* multiple images */
-            return "image/*";
-        }
-        return null;
+    public void sendMms(final ContactId contact, final String subject, final String text,
+            final ArrayList<Uri> files) {
+        // TODO
     }
 
     public void initialize() {
-        mPackageAndroidMmsExists = isPackageExisted(DEFAULT_PACKAGE_ANDROID_MMS);
     }
-
-    private boolean isPackageExisted(String targetPackage) {
-        PackageManager pm = mCtx.getPackageManager();
-        try {
-            pm.getPackageInfo(targetPackage, PackageManager.GET_META_DATA);
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
-        }
-        return true;
-    }
-
 
     private class ReceiveSmsEventSent extends BroadcastReceiver {
         @Override

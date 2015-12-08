@@ -136,8 +136,8 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
                     direction,
                     ReadStatus.READ,
                     System.currentTimeMillis(),
-                    0,
-                    0);
+                    null,
+                    null);
             SmsDataObject[] messages = new SmsDataObject[number];
             for(int i=0;i<number;i++){
                 messages[i] = sms;

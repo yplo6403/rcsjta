@@ -152,7 +152,7 @@ public class SmsIntegrationUtils {
 
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[]{
-                new SmsDataObject(IdGenerator.generateMessageID(),contact2, "Hi 2!", Direction.OUTGOING, RcsService.ReadStatus.READ, System.currentTimeMillis()+2000,2l , 1 ),
+                new SmsDataObject(IdGenerator.generateMessageID(),contact2, "Hi 2!", Direction.OUTGOING, RcsService.ReadStatus.READ, System.currentTimeMillis()+2000,2l , 1L ),
                 new SmsDataObject(IdGenerator.generateMessageID(),contact2, "Ciao 2", Direction.OUTGOING, RcsService.ReadStatus.READ, System.currentTimeMillis()+2000,2l , 1l ),
         };
 

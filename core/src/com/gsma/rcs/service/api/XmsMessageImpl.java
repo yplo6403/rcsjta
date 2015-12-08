@@ -18,9 +18,11 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.IXmsMessage;
+import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.os.RemoteException;
@@ -28,7 +30,7 @@ import android.os.RemoteException;
 /**
  * Created by Philippe LEMORDANT on 13/11/2015.
  */
-public class XmsMessageImpl extends IXmsMessage.Stub {
+public class XmsMessageImpl extends IXmsMessage.Stub implements MmsSessionListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsMessageImpl.class.getSimpleName());
     private final String mXmsId;
@@ -198,9 +200,9 @@ public class XmsMessageImpl extends IXmsMessage.Stub {
     }
 
     @Override
-    public String getBody() throws RemoteException {
+    public String getContent() throws RemoteException {
         try {
-            return mPersistedStorage.getBody();
+            return mPersistedStorage.getContent();
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {
@@ -231,4 +233,18 @@ public class XmsMessageImpl extends IXmsMessage.Stub {
         }
     }
 
+    @Override
+    public void onTransferError(XmsMessage.ReasonCode reason, ContactId contact) {
+        // TODO
+    }
+
+    @Override
+    public void onTransferred(ContactId contact) {
+        // TODO
+    }
+
+    @Override
+    public void onTransferStarted(ContactId contact) {
+        // TODO
+    }
 }

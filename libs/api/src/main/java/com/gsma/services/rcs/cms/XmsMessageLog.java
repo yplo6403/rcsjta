@@ -69,12 +69,14 @@ public class XmsMessageLog {
      */
     public static final String CONTACT = "contact";
     /**
-     * The name of the column containing the XMS message body.
+     * The name of the column containing the XMS message content.
+     * In case of SMS, content is set to the body text message.
+     * In case of MMS, content is set to the subject.
      * <p/>
      * Type: TEXT
      * </P>
      */
-    public static final String BODY = "body";
+    public static final String CONTENT = "content";
     /**
      * The name of the column containing the MIME-TYPE of the message.
      * <p/>

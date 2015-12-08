@@ -304,11 +304,12 @@ public final class CmsService extends RcsService {
      *
      * @param contact The remote contact
 	 * @param files The list of file URIs (image or video)
-	 * @param message The text message 
+     * @param subject The subject
+	 * @param body The body text message
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void sendMultimediaMessage(ContactId contact, List<Uri> files, String message) throws RcsGenericException, RcsServiceNotAvailableException {
+    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject, String body) throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -316,7 +317,8 @@ public final class CmsService extends RcsService {
             for (Uri file : files) {
                 tryToGrantUriPermissionToStackServices(file);
             }
-            mApi.sendMultimediaMessage(contact, files, message);
+            IXmsMessage xms = mApi.sendMultimediaMessage(contact, files, subject, body);
+            return new XmsMessage(xms);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);

@@ -18,19 +18,16 @@
 
 package com.gsma.rcs.service.api;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-import android.os.RemoteException;
-import android.text.TextUtils;
-
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
+import com.gsma.rcs.core.ims.service.cms.mms.OriginatingMmsSession;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.service.broadcaster.CmsEventBroadcaster;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.FileUtils;
+import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.rcs.xms.XmsManager;
@@ -40,9 +37,15 @@ import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
 import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import java.util.ArrayList;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+import android.os.RemoteException;
+import android.text.TextUtils;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +68,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
     private final Object lock = new Object();
     private final CmsService mCmsService;
 
-    private final Map<String, IXmsMessage> mXmsMessageCache = new HashMap<>();
+    private final Map<String, XmsMessageImpl> mXmsMessageCache = new HashMap<>();
     private final XmsLog mXmsLog;
     private final ContentResolver mContentResolver;
     private final Context mContext;
@@ -76,7 +79,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-                          ContentResolver contentResolver, XmsManager xmsManager, CmsManager cmsManager) {
+            ContentResolver contentResolver, XmsManager xmsManager, CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -166,7 +169,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.info("Sync One-to-One conversation for contact " + contact);
+                    sLogger.info("Sync One-to-One conversation for contact ".concat(contact
+                            .toString()));
                 }
                 try {
                     mCmsService.syncOneToOneConversation(contact);
@@ -179,7 +183,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
                      * eventually lead to exit the system and thus can bring the whole system down,
                      * which is not intended.
                      */
-                    sLogger.error("Failed to synchronize One-to-One conversation for contact " + contact, e);
+                    sLogger.error("Failed to synchronize One-to-One conversation for contact "
+                            .concat(contact.toString()), e);
                 }
             }
         });
@@ -210,7 +215,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
                      * eventually lead to exit the system and thus can bring the whole system down,
                      * which is not intended.
                      */
-                    sLogger.error("Failed to synchronize group conversation for chat ID " + chatId, e);
+                    sLogger.error("Failed to synchronize group conversation for chat ID " + chatId,
+                            e);
                 }
             }
         });
@@ -253,15 +259,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
             sLogger.info("Get XMS message ".concat(messageId));
         }
         try {
-            IXmsMessage xmsMessage = mXmsMessageCache.get(messageId);
-            if (xmsMessage != null) {
-                return xmsMessage;
-            }
-            XmsPersistedStorageAccessor accessor = new XmsPersistedStorageAccessor(mXmsLog,
-                    messageId);
-            IXmsMessage result = new XmsMessageImpl(messageId, accessor);
-            mXmsMessageCache.put(messageId, result);
-            return result;
+            return getOrCreateXmsMessage(messageId);
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {
@@ -273,6 +271,17 @@ public class CmsServiceImpl extends ICmsService.Stub {
             sLogger.error(ExceptionUtil.getFullStackTrace(e));
             throw new ServerApiGenericException(e);
         }
+    }
+
+    public XmsMessageImpl getOrCreateXmsMessage(String messageId) {
+        XmsMessageImpl xmsMessage = mXmsMessageCache.get(messageId);
+        if (xmsMessage != null) {
+            return xmsMessage;
+        }
+        XmsPersistedStorageAccessor accessor = new XmsPersistedStorageAccessor(mXmsLog, messageId);
+        XmsMessageImpl result = new XmsMessageImpl(messageId, accessor);
+        mXmsMessageCache.put(messageId, result);
+        return result;
     }
 
     @Override
@@ -287,22 +296,21 @@ public class CmsServiceImpl extends ICmsService.Stub {
             mXmsManager.sendSms(contact, text);
 
         } catch (RuntimeException e) {
-                    /*
-                     * Normally we are not allowed to catch runtime exceptions as these are genuine
-                     * bugs which should be handled/fixed within the code. However the cases when we
-                     * are executing operations on a thread unhandling such exceptions will
-                     * eventually lead to exit the system and thus can bring the whole system down,
-                     * which is not intended.
-                     */
+            /*
+             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+             * which should be handled/fixed within the code. However the cases when we are
+             * executing operations on a thread unhandling such exceptions will eventually lead to
+             * exit the system and thus can bring the whole system down, which is not intended.
+             */
             sLogger.error("Failed to send SMS!", e);
         }
     }
 
     @Override
-    public void sendMultimediaMessage(final ContactId contact, List<Uri> files, final String text)
-            throws RemoteException {
+    public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
+            final String subject, final String body) throws RemoteException {
         if (sLogger.isActivated()) {
-            sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + text);
+            sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + body);
         }
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
@@ -310,24 +318,29 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (files == null || files.isEmpty()) {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
         }
-        final ArrayList<Uri> uris = getValidatedUris(files);
+        checkUris(files);
         try {
-            mXmsManager.sendMms(contact, text, uris);
+            final String mMessageId = IdGenerator.generateMessageID();
+            final long timestamp = System.currentTimeMillis();
+            mXmsLog.addMms(new MmsDataObject(mContext, null, mMessageId, contact, subject, body,
+                    RcsService.Direction.OUTGOING, timestamp, files, null));
+            XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
+            mCmsService.tryToDequeueMmsMessages();
+            return mms;
 
-        } catch (RuntimeException e) {
-                        /*
-                         * Normally we are not allowed to catch runtime exceptions as these are
-                         * genuine bugs which should be handled/fixed within the code. However the
-                         * cases when we are executing operations on a thread unhandling such
-                         * exceptions will eventually lead to exit the system and thus can bring the
-                         * whole system down, which is not intended.
-                         */
-            sLogger.error("Failed to send MMS!", e);
+        } catch (ServerApiBaseException e) {
+            if (!e.shouldNotBeLogged()) {
+                sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            }
+            throw e;
+
+        } catch (Exception e) {
+            sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            throw new ServerApiGenericException(e);
         }
     }
 
-    private ArrayList<Uri> getValidatedUris(List<Uri> files) {
-        ArrayList<Uri> uris = new ArrayList<>();
+    private void checkUris(List<Uri> files) {
         for (Uri file : files) {
             if (!FileUtils.isReadFromUriPossible(mContext, file)) {
                 throw new ServerApiIllegalArgumentException("file '" + file.toString()
@@ -340,9 +353,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
                             + "' has invalid mime-type: '" + mimeType + "'!");
                 }
             }
-            uris.add(file);
         }
-        return uris;
     }
 
     @Override
@@ -363,7 +374,8 @@ public class CmsServiceImpl extends ICmsService.Stub {
                             }
                         }
                     } else {
-                        sLogger.warn("Cannot mark as read: message ID'" + messageId + "' not found!");
+                        sLogger.warn("Cannot mark as read: message ID'" + messageId
+                                + "' not found!");
                     }
 
                 } catch (RuntimeException e) {
@@ -515,18 +527,59 @@ public class CmsServiceImpl extends ICmsService.Stub {
         mCmsBroadcaster.broadcastGroupConversationSynchronized(chatId);
     }
 
-    public void broadcastMessageStateChanged(ContactId contact, String mimeType, String msgId,
-                                             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
-        mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, msgId, state,
-                reasonCode);
-    }
-
     public void broadcastNewMessage(String mimeType, String msgId) {
         mXmsMessageBroadcaster.broadcastNewMessage(mimeType, msgId);
     }
 
     public void broadcastMessageDeleted(ContactId contact, Set<String> messageIds) {
         mXmsMessageBroadcaster.broadcastMessageDeleted(contact, messageIds);
+    }
+
+    /**
+     * Dequeue MMS
+     *
+     * @param mmsId The message ID
+     * @param contact The remote contact
+     * @param subject The subject
+     * @param parts The MMS attachement parts
+     */
+    public void dequeueMmsMessage(String mmsId, ContactId contact, String subject,
+            Set<MmsDataObject.MmsPart> parts) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Dequeue MMS ID=".concat(mmsId));
+        }
+        long timestamp = System.currentTimeMillis();
+        /* For outgoing MMS transfer, timestampSent = timestamp */
+        OriginatingMmsSession session = new OriginatingMmsSession(mXmsLog, mmsId, contact, subject,
+                parts);
+        XmsMessageImpl xmsMessage = getOrCreateXmsMessage(mmsId);
+        session.addListener(xmsMessage);
+        setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
+        mCmsService.scheduleImOperation(session);
+    }
+
+    public void setXmsStateAndReasonCode(String messageId, String mimeType, ContactId contact,
+            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+        if (mXmsLog.setStateAndReasonCode(messageId, state, reasonCode)) {
+            mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
+                    state, reasonCode);
+        }
+
+    }
+
+    public void setXmsStateAndTimestamp(String mmsId, ContactId contact, XmsMessage.State state,
+            long timestamp, long timestampSent) {
+        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED,
+                timestamp, timestampSent)) {
+            broadcastMessageStateChanged(contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, mmsId,
+                    state, XmsMessage.ReasonCode.UNSPECIFIED);
+        }
+    }
+
+    public void broadcastMessageStateChanged(ContactId contact, String mimeType, String msgId,
+            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+        mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, msgId, state,
+                reasonCode);
     }
 
 }

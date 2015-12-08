@@ -131,7 +131,6 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                 continue;
             }
             for(MmsDataObject mmsData : mmsDataObjects){
-                try {
                     mXmsLog.addMms(mmsData);
                     mImapLog.addMessage(new MessageData(
                             CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
@@ -142,11 +141,6 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                             mmsData.getMessageId(),
                             mmsData.getNativeProviderId()
                     ));
-                } catch (RemoteException e) {//TODO FGI exception handling
-                    e.printStackTrace();
-                } catch (OperationApplicationException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
@@ -189,6 +183,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
             CursorUtil.assertCursorIsNotNull(cursor, XmsMessageLog.CONTENT_URI);
             int nativeIdIdx = cursor.getColumnIndex(XmsData.KEY_NATIVE_ID);
             while(cursor.moveToNext()){
+                // TODO consider null value for native ID
                 ids.add(cursor.getLong(nativeIdIdx));
             }
             return ids;
@@ -357,7 +352,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
         finally {
             CursorUtil.close(cursor);
         }
-
+        String subject = null; // TODO
         Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
         while(iter.hasNext()){
             Entry<ContactId, List<MmsPart>> entry = iter.next();
@@ -366,6 +361,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                     mmsId,
                     messageIds.get(contact),
                     contact,
+                    subject,
                     textContent,
                     direction,
                     readStatus,

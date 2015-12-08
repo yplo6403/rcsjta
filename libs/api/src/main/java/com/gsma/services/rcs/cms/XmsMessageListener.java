@@ -35,7 +35,7 @@ public abstract class XmsMessageListener {
      * Callback called when the XMS message state/reasonCode is changed.
      *
      * @param contact    Contact ID
-     * @param mimeType   mime type
+     * @param mimeType   Mime type
      * @param messageId  Id of XMS message
      * @param state      State of the XMS message
      * @param reasonCode Reason code
@@ -49,7 +49,7 @@ public abstract class XmsMessageListener {
      * specific contact.
      *
      * @param contact    Contact ID
-     * @param messageIds ids of those deleted XMS messages
+     * @param messageIds IDs of those deleted XMS messages
      */
     public abstract void onDeleted(ContactId contact, Set<String> messageIds);
 }

@@ -41,26 +41,33 @@ public class XmsMessage {
          */
         QUEUED(0),
         /**
+         * The message is being sent.
+         */
+        SENDING(1),
+        /**
          * The message is sent.
          */
-        SENT(1),
+        SENT(2),
         /**
-         * The message has failed.
+         * The message transfer has failed.
          */
-        FAILED(2),
+        FAILED(3),
         /**
          * The message has been delivered to the remote.
          */
-        DELIVERED(3),
+        DELIVERED(4),
         /**
-         * The message is being displayed.
+         * The message is displayed.
          */
-        DISPLAYED(4),
+        DISPLAYED(5),
         /**
          * The message is being received.
          */
-        RECEIVED(5)
-        ;
+        RECEIVING(6),
+        /**
+         * The message is received.
+         */
+        RECEIVED(7);
 
         private static SparseArray<State> mValueToEnum = new SparseArray<>();
 
@@ -214,9 +221,9 @@ public class XmsMessage {
      * Gets the direction of the XMS message
      *
      * @return Direction
-     * @see RcsService.Direction
      * @throws RcsPersistentStorageException
      * @throws RcsGenericException
+     * @see RcsService.Direction
      */
     public RcsService.Direction getDirection() throws RcsPersistentStorageException, RcsGenericException {
         try {
@@ -334,15 +341,17 @@ public class XmsMessage {
     }
 
     /**
-     * Gets the body text message
+     * Gets the content text message. <br>
+     * If the message is a SMS, content is set to the body text.
+     * If the message is a MMS, content is set to the subject.
      *
      * @return String
      * @throws RcsPersistentStorageException
      * @throws RcsGenericException
      */
-    public String getBody() throws RcsPersistentStorageException, RcsGenericException {
+    public String getContent() throws RcsPersistentStorageException, RcsGenericException {
         try {
-            return mIXmsMessage.getBody();
+            return mIXmsMessage.getContent();
 
         } catch (Exception e) {
             RcsPersistentStorageException.assertException(e);

@@ -82,7 +82,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
                 XmsData.KEY_MESSAGE_ID,
                 XmsData.KEY_NATIVE_ID,
                 XmsData.KEY_CONTACT,
-                XmsData.KEY_BODY,
+                XmsData.KEY_CONTENT,
                 XmsData.KEY_TIMESTAMP,
                 XmsData.KEY_DIRECTION,
                 XmsData.KEY_READ_STATUS,
@@ -262,7 +262,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
 
             private SmsViewHolder(View view, Cursor cursor){
                 contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BODY);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
                 dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
                 directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
                 mContent = (TextView) view.findViewById(R.id.rcs_cms_toolkit_xms_content);

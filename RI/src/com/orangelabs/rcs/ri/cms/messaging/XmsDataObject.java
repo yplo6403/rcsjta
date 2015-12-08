@@ -35,41 +35,41 @@ import android.database.Cursor;
  */
 public class XmsDataObject {
 
-    // @formatter:on
+    // @formatter:off
     private static final String[] PROJECTION = {
-            XmsMessageLog.MIME_TYPE, XmsMessageLog.BODY, XmsMessageLog.CONTACT,
+            XmsMessageLog.MIME_TYPE, XmsMessageLog.CONTENT, XmsMessageLog.CONTACT,
             XmsMessageLog.TIMESTAMP
     };
-    // @formatter:off
+    // @formatter:on
 
     private static final String SELECTION = XmsMessageLog.MESSAGE_ID + "=?";
     private final String mMessageId;
     private final String mMimeType;
     private final ContactId mContact;
     private final long mTimestamp;
-    private final String mBody;
+    private final String mContent;
 
-    public XmsDataObject(String messageId, String body, String mimeType,
-                         ContactId contact, long timestamp) {
+    public XmsDataObject(String messageId, String content, String mimeType, ContactId contact,
+            long timestamp) {
         mMessageId = messageId;
         mMimeType = mimeType;
         mContact = contact;
         mTimestamp = timestamp;
-        mBody = body;
+        mContent = content;
     }
 
     /**
      * Gets instance of XMS message from XmsMessageLog provider
      *
-     * @param ctx       the context
+     * @param ctx the context
      * @param messageId the message ID
      * @return instance or null if entry not found
      */
     public static XmsDataObject getXms(Context ctx, String messageId) {
         Cursor cursor = null;
         try {
-            cursor = ctx.getContentResolver().query(XmsMessageLog.CONTENT_URI, PROJECTION, SELECTION,
-                    new String[] {
+            cursor = ctx.getContentResolver().query(XmsMessageLog.CONTENT_URI, PROJECTION,
+                    SELECTION, new String[] {
                         messageId
                     }, null);
             if (!cursor.moveToNext()) {
@@ -77,14 +77,14 @@ public class XmsDataObject {
             }
             int mimeTypeIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
             int timestampIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP);
-            int bodyIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.BODY);
+            int contentIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT);
             int contactIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
-                String mimeType = cursor.getString(mimeTypeIdx);
-                String body = cursor.getString(bodyIdx);
-                String number = cursor.getString(contactIdx);
-                ContactId contact = ContactUtil.formatContact(number);
+            String mimeType = cursor.getString(mimeTypeIdx);
+            String content = cursor.getString(contentIdx);
+            String number = cursor.getString(contactIdx);
+            ContactId contact = ContactUtil.formatContact(number);
             long timestamp = cursor.getLong(timestampIdx);
-            return new XmsDataObject(messageId,body,mimeType,contact,timestamp);
+            return new XmsDataObject(messageId, content, mimeType, contact, timestamp);
 
         } finally {
             if (cursor != null) {
@@ -101,8 +101,8 @@ public class XmsDataObject {
         return mMimeType;
     }
 
-    public String getBody() {
-        return mBody;
+    public String getContent() {
+        return mContent;
     }
 
     public ContactId getContact() {
@@ -113,12 +113,10 @@ public class XmsDataObject {
         return mTimestamp;
     }
 
-    @Override public String toString() {
-    return "XmsDataObject{" +
-            "mMessageId='" + mMessageId + '\'' +
-            ", mMimeType='" + mMimeType + '\'' +
-            ", mContact=" + mContact +
-            ", mTimestamp=" + mTimestamp +
-            ", mBody='" + mBody + '\'' +
-            '}';
-}}
+    @Override
+    public String toString() {
+        return "XmsDataObject{" + "messageId='" + mMessageId + '\'' + ", mimeType='" + mMimeType
+                + '\'' + ", contact=" + mContact + ", timestamp=" + mTimestamp + ", content='"
+                + mContent + '\'' + '}';
+    }
+}

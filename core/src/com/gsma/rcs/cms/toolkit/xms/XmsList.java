@@ -67,7 +67,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             XmsData.KEY_BASECOLUMN_ID,
             XmsData.KEY_NATIVE_ID,
             XmsData.KEY_CONTACT,
-            XmsData.KEY_BODY,
+            XmsData.KEY_CONTENT,
             XmsData.KEY_TIMESTAMP,
             XmsData.KEY_DIRECTION,
             XmsData.KEY_READ_STATUS
@@ -428,7 +428,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
                 baseIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BASECOLUMN_ID);
                 nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
                 contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_BODY);
+                contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
                 dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
                 directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
                 readIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);

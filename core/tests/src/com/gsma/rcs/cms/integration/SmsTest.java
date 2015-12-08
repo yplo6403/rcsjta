@@ -35,7 +35,6 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
-import com.gsma.rcs.utils.ContactUtil;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapMessageMetadata;
 import com.sonymobile.rcs.imap.Part;
@@ -47,11 +46,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 public class SmsTest extends AndroidTestCase{
-
-    private final static Logger sLogger = Logger.getLogger(BasicSyncStrategy.class.getSimpleName());
 
     private XmsLogEnvIntegration mXmsLogEnvIntegration;
     private RcsSettings mSettings;
@@ -68,7 +64,7 @@ public class SmsTest extends AndroidTestCase{
         Context context = getContext();                
         mSettings = RcsSettingsMock.getRcsSettings(context);
         mImapLog = ImapLog.createInstance(context);
-        mXmsLog = XmsLog.createInstance(context.getContentResolver(), new LocalContentResolver(context));
+        mXmsLog = XmsLog.createInstance(new LocalContentResolver(context));
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
         XmsEventListener smsEventHandler = new XmsEventListener(context, mImapLog, mXmsLog, mSettings);
         mLocalStorage = new LocalStorage(mImapLog);

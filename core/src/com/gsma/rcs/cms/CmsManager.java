@@ -1,4 +1,4 @@
-
+// TODO add copyright
 package com.gsma.rcs.cms;
 
 import android.content.Context;

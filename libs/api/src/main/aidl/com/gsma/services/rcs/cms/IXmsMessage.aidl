@@ -26,7 +26,7 @@ interface IXmsMessage {
 
     boolean isRead();
 
-    String getBody();
+    String getContent();
 
     String getChatId();
 

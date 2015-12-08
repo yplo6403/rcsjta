@@ -73,7 +73,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     private static final String[] PROJECTION = new String[] {
         XmsMessageLog.BASECOLUMN_ID,
         XmsMessageLog.CONTACT,
-        XmsMessageLog.BODY,
+        XmsMessageLog.CONTENT,
         XmsMessageLog.MIME_TYPE,
         XmsMessageLog.TIMESTAMP
     };
@@ -186,8 +186,8 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             } else {
                 holder.contactText.setText(getString(R.string.label_cms_mms_contact, displayName));
             }
-            String body = truncate(cursor.getString(holder.columnBody));
-            holder.contentText.setText((body == null) ? "" : body);
+            String content = truncate(cursor.getString(holder.columnContent));
+            holder.contentText.setText((content == null) ? "" : content);
             holder.contentText.setVisibility(View.VISIBLE);
         }
     }
@@ -207,7 +207,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     private class XmsMessageListItemViewHolder {
         int columnContact;
 
-        int columnBody;
+        int columnContent;
 
         int columnMimeType;
 
@@ -221,7 +221,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
 
         XmsMessageListItemViewHolder(View base, Cursor cursor) {
             columnContact = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
-            columnBody = cursor.getColumnIndexOrThrow(XmsMessageLog.BODY);
+            columnContent = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT);
             columnMimeType = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
             columnTimestamp = cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP);
 

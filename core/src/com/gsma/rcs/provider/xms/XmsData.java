@@ -53,9 +53,9 @@ public class XmsData {
     public static final String KEY_CONTACT = XmsMessageLog.CONTACT;
 
     /**
-     * Body text of the message (SMS or MMS)
+     * COntent text of the message (body for SMS or subject for MMS)
      */
-    public static final String KEY_BODY = XmsMessageLog.BODY;
+    public static final String KEY_CONTENT = XmsMessageLog.CONTENT;
 
     /**
      * Multipurpose Internet Mail Extensions (MIME) type of message
@@ -107,7 +107,6 @@ public class XmsData {
      * Native provider thread id (MMS or SMS)
      */
     public static final String KEY_NATIVE_THREAD_ID = "native_thread_id";
-
 
     /**
      * Message correlator

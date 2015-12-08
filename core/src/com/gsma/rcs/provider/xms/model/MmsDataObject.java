@@ -18,10 +18,6 @@
 
 package com.gsma.rcs.provider.xms.model;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.net.Uri;
-
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.MimeManager;
@@ -30,7 +26,10 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import java.io.File;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.net.Uri;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,22 +41,28 @@ public class MmsDataObject extends XmsDataObject {
      * The MMS Identifier created by the native SMS/MMS application.
      */
     private final String mMmsId;
+    private final String mSubject;
+    private final String mBody;
 
-    public MmsDataObject(String mmsId, String messageId, ContactId contact,
-            String body, RcsService.Direction dir, ReadStatus readStatus, long timestamp, long nativeId, long nativeThreadId, List<MmsPart> mmsPart) {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp,
+    public MmsDataObject(String mmsId, String messageId, ContactId contact, String subject,
+            String body, RcsService.Direction dir, ReadStatus readStatus, long timestamp,
+            long nativeId, long nativeThreadId, List<MmsPart> mmsPart) {
+        super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, nativeThreadId);
         mMmsId = mmsId;
         mReadStatus = readStatus;
         mMmsPart = mmsPart;
+        mSubject = subject;
+        mBody = body;
     }
 
     public MmsDataObject(Context ctx, String mmsId, String messageId, ContactId contact,
-                         String body, RcsService.Direction dir, long timestamp, List<Uri> files, long nativeId)
-            throws IOException {
-        super(messageId, contact, body, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp,
-                nativeId,0);
+            String subject, String body, RcsService.Direction dir, long timestamp, List<Uri> files,
+            Long nativeId) throws IOException {
+        super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
+                nativeId, null);
         mMmsId = mmsId;
+        mSubject = subject;
         mMmsPart = new ArrayList<>();
         ContentResolver contentResolver = ctx.getContentResolver();
         for (Uri file : files) {
@@ -72,13 +77,29 @@ public class MmsDataObject extends XmsDataObject {
             mMmsPart.add(new MmsPart(messageId, contact, mimeType, filename, fileSize, file
                     .toString(), fileIcon));
         }
+        mBody = body;
         if (body != null) {
             mMmsPart.add(new MmsPart(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, null,
                     null, body, null));
         }
     }
+
     public String getMmsId() {
         return mMmsId;
+    }
+
+    public String getSubject() {
+        return mSubject;
+    }
+
+    @Override
+    public String getCorrelator() {
+        return null;
+    }
+
+    @Override
+    public String getBody() {
+        return mBody;
     }
 
     public List<MmsPart> getMmsPart() {
@@ -101,8 +122,7 @@ public class MmsDataObject extends XmsDataObject {
             mMimeType = mimeType;
             mFileName = fileName;
             mFileSize = fileSize;
-            if(MimeManager.isApplicationType(mimeType) ||
-                    MimeManager.isTextType(mimeType)){
+            if (MimeManager.isApplicationType(mimeType) || MimeManager.isTextType(mimeType)) {
                 mBody = data;
                 mFile = null;
             } else {
@@ -145,5 +165,6 @@ public class MmsDataObject extends XmsDataObject {
         public Long getFileSize() {
             return mFileSize;
         }
+
     }
 }

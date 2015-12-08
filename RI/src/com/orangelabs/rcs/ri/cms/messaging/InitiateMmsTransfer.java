@@ -69,7 +69,6 @@ public class InitiateMmsTransfer extends RcsActivity {
     private ListView mListView;
     private Button mSendBtn;
     private List<MmsPartDataObject> mMmsParts;
-    private Button mSelectParts;
 
     private static final String[] ALLOWED_MIME_TYPES = {
             "image/*", "video/*"
@@ -119,14 +118,16 @@ public class InitiateMmsTransfer extends RcsActivity {
                     showMessageThenExit(R.string.label_service_not_available);
                     return;
                 }
-                EditText editText = (EditText) findViewById(R.id.messageEdit);
-                String text = editText.getText().toString();
+                EditText bodyText = (EditText) findViewById(R.id.messageEdit);
+                String body = bodyText.getText().toString();
+                EditText subjectText = (EditText) findViewById(R.id.subjectEdit);
+                String subject = subjectText.getText().toString();
                 List<Uri> files = new ArrayList<>();
                 try {
                     for (MmsPartDataObject mmsPart : mMmsParts) {
                         files.add(mmsPart.getFile());
                     }
-                    cmsService.sendMultimediaMessage(mContact, files, text);
+                    cmsService.sendMultimediaMessage(mContact, files, subject, body);
 
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
@@ -134,13 +135,14 @@ public class InitiateMmsTransfer extends RcsActivity {
             }
         });
 
-        mSelectParts = (Button) findViewById(R.id.SelectPartButton);
-        mSelectParts.setOnClickListener(new View.OnClickListener() {
+        Button selectParts = (Button) findViewById(R.id.SelectPartButton);
+        selectParts.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 setTitle(getString(R.string.title_send_mms, mContact.toString()));
-                FileUtils.openFiles(InitiateMmsTransfer.this, ALLOWED_MIME_TYPES, PICK_IMAGE_REQUEST);
+                FileUtils.openFiles(InitiateMmsTransfer.this, ALLOWED_MIME_TYPES,
+                        PICK_IMAGE_REQUEST);
             }
         });
     }
