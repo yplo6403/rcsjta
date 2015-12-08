@@ -98,6 +98,7 @@ public class CmsService extends ImsService {
     @Override
     public void start() {
         setServiceStarted(true);
+        tryToDequeueMmsMessages();
     }
 
     @Override
@@ -194,7 +195,6 @@ public class CmsService extends ImsService {
                             }
                             Set<MmsDataObject.MmsPart> parts = mXmsLog.getParts(id);
                             mCmsServiceImpl.dequeueMmsMessage(id, contact, subject, parts);
-
                         }
                     } finally {
                         CursorUtil.close(cursor);
