@@ -11,6 +11,7 @@ import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.PartData;
 import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -19,6 +20,7 @@ import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.ImageUtils;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
@@ -118,8 +120,8 @@ public class XmsDataObjectFactory {
         return smsDataObject;
     }
 
-    public static MmsDataObject createMmsDataObject(Context context, ImapMmsMessage imapMessage) {
-
+    public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
+            ImapMmsMessage imapMessage) {
         Part body = imapMessage.getRawMessage().getBody();
         String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
@@ -142,7 +144,7 @@ public class XmsDataObjectFactory {
             String fileName = "";
             long fileLength = 0l;
             byte[] fileIcon = null;
-            if (MmsUtils.CONTENT_TYPE_IMAGE.contains(contentType)) {
+            if (MmsUtils.sContentTypeImage.contains(contentType)) {
                 byte[] data;
                 if (Constants.HEADER_BASE64.equals(multipart.getContentTransferEncoding())) {
                     data = Base64.decodeBase64(multipart.getContent().getBytes());
@@ -153,7 +155,9 @@ public class XmsDataObjectFactory {
                 content = uri.toString();
                 fileName = FileUtils.getFileName(context, uri);
                 fileLength = data.length;
-                fileIcon = MmsUtils.createThumb(context.getContentResolver(), uri);
+                long maxIconSize = rcsSettings.getMaxFileIconSize();
+                fileIcon = ImageUtils.tryGetThumbnail(context, uri, maxIconSize);
+
             } else if (Constants.CONTENT_TYPE_TEXT.equals(contentType)) {
                 content = multipart.getContent();
             }

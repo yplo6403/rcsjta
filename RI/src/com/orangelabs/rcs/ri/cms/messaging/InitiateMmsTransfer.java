@@ -20,10 +20,12 @@ package com.orangelabs.rcs.ri.cms.messaging;
 
 import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
-import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsGenericException;
+import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
@@ -36,6 +38,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -123,15 +126,20 @@ public class InitiateMmsTransfer extends RcsActivity {
                 EditText subjectText = (EditText) findViewById(R.id.subjectEdit);
                 String subject = subjectText.getText().toString();
                 List<Uri> files = new ArrayList<>();
-                try {
-                    for (MmsPartDataObject mmsPart : mMmsParts) {
-                        files.add(mmsPart.getFile());
-                    }
-                    cmsService.sendMultimediaMessage(mContact, files, subject, body);
-
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
+                for (MmsPartDataObject mmsPart : mMmsParts) {
+                    files.add(mmsPart.getFile());
                 }
+                /*
+                 * The MMS sending is performed in background because the API returns a message
+                 * instance only once it is persisted and to persist MMS, the core stack computes
+                 * the file icon for image attached files.
+                 */
+                SendMmsTask sendMmsTask = new SendMmsTask(cmsService, mContact, files, subject,
+                        body);
+                sendMmsTask.execute();
+                Utils.displayLongToast(InitiateMmsTransfer.this,
+                        getString(R.string.mms_sent, mContact.toString()));
+                InitiateMmsTransfer.this.finish();
             }
         });
 
@@ -225,4 +233,32 @@ public class InitiateMmsTransfer extends RcsActivity {
         }
     }
 
+    private class SendMmsTask extends AsyncTask<Void, Void, Void> {
+        private final CmsService mCmsService;
+        private final ContactId mContact;
+        private final List<Uri> mFiles;
+        private final String mSubject;
+        private final String mBody;
+
+        public SendMmsTask(CmsService cmsService, ContactId contact, List<Uri> files,
+                String subject, String body) {
+            mCmsService = cmsService;
+            mContact = contact;
+            mFiles = files;
+            mSubject = subject;
+            mBody = body;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                mCmsService.sendMultimediaMessage(mContact, mFiles, mSubject, mBody);
+
+            } catch (RcsGenericException | RcsServiceNotAvailableException e) {
+                Log.e(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+            return null;
+        }
+
+    }
 }

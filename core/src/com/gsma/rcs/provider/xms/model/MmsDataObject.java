@@ -18,15 +18,14 @@
 
 package com.gsma.rcs.provider.xms.model;
 
-import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.utils.FileUtils;
+import com.gsma.rcs.utils.ImageUtils;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 
@@ -58,13 +57,12 @@ public class MmsDataObject extends XmsDataObject {
 
     public MmsDataObject(Context ctx, String mmsId, String messageId, ContactId contact,
             String subject, String body, RcsService.Direction dir, long timestamp, List<Uri> files,
-            Long nativeId) throws IOException {
+            Long nativeId, long maxFileIconSize) throws IOException {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, null);
         mMmsId = mmsId;
         mSubject = subject;
         mMmsPart = new ArrayList<>();
-        ContentResolver contentResolver = ctx.getContentResolver();
         for (Uri file : files) {
             String filename = FileUtils.getFileName(ctx, file);
             long fileSize = FileUtils.getFileSize(ctx, file);
@@ -72,7 +70,7 @@ public class MmsDataObject extends XmsDataObject {
             String mimeType = MimeManager.getInstance().getMimeType(extension);
             byte[] fileIcon = null;
             if (MimeManager.isImageType(mimeType)) {
-                fileIcon = MmsUtils.createThumb(contentResolver, file);
+                fileIcon = ImageUtils.tryGetThumbnail(ctx, file, maxFileIconSize);
             }
             mMmsPart.add(new MmsPart(messageId, contact, mimeType, filename, fileSize, file
                     .toString(), fileIcon));

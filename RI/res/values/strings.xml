@@ -422,6 +422,8 @@
     <string name="menu_delete_xms">Delete XMS</string>
     <string name="hint_type_subject">Enter the subject</string>
     <string name="menu_select_part">Select attachment</string>
+    <string name="mms_sent">MMS sent to %1$s</string>
+    <string name="subject_label">Subject:</string>
 
     <!-- States -->
 

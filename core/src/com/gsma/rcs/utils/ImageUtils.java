@@ -1,52 +1,41 @@
-/*
- * ******************************************************************************
- *  * Software Name : RCS IMS Stack
- *  *
- *  * Copyright (C) 2010 France Telecom S.A.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *  *****************************************************************************
- */
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
-package com.orangelabs.rcs.ri.utils;
+package com.gsma.rcs.utils;
 
+import com.gsma.rcs.utils.logger.Logger;
+
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
-import android.util.Log;
+import android.net.Uri;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class ImageUtils {
 
-    private static final String LOGTAG = com.orangelabs.rcs.ri.utils.LogUtils
-            .getTag(ImageUtils.class.getSimpleName());
+    private static final int ICON_HEIGHT = 100;
+    private static final int ICON_WIDTH = ICON_HEIGHT;
 
-    /**
-     * Get the image bitmap from Image filename. If required, the image resolution is reduced and
-     * rotation is performed.
-     *
-     * @param imageFilename the image filename
-     * @return the bitmap
-     */
-    public static Bitmap getImageBitmap2Display(String imageFilename) {
-        BitmapFactory.Options options = readImageOptions(imageFilename);
-        if (options.outHeight > options.outWidth) {
-            return getImageBitmap2Display(imageFilename, 256, 128);// if landscape
-        }
-        return getImageBitmap2Display(imageFilename, 128, 256);// if portrait
-    }
+    private static Logger sLogger = Logger.getLogger(ImageUtils.class.getSimpleName());
 
     private static BitmapFactory.Options readImageOptions(String imageFilename) {
         /*
@@ -60,16 +49,46 @@ public class ImageUtils {
         return options;
     }
 
-    public static Bitmap getImageBitmap2Display(String imageFilename, int reqWidth, int reqHeight) {
+    private static byte[] getCompressedBitmap(String path, Bitmap image, long maxSize) {
+        /* Compress the file to be under the limit */
+        int quality = 100;
+        ByteArrayOutputStream out;
+        long size;
+        do {
+            out = new ByteArrayOutputStream();
+            image.compress(Bitmap.CompressFormat.JPEG, quality, out);
+            try {
+                out.flush();
+                out.close();
+            } catch (IOException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.warn("Failed to compress bitmap");
+                }
+                return null;
+            }
+            size = out.size();
+            quality -= 10;
+        } while (size > maxSize);
+        if (sLogger.isActivated()) {
+            sLogger.warn("Compress image " + path + " with quality " + (quality + 10) + "/100");
+        }
+        return out.toByteArray();
+    }
+
+    public static byte[] tryGetThumbnail(Context ctx, Uri file, long maxSize) {
+        String imageFilename = FileUtils.getPath(ctx, file);
+        if (imageFilename == null) {
+            return null;
+        }
         BitmapFactory.Options options = readImageOptions(imageFilename);
         /* Calculate the reduction factor */
-        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+        options.inSampleSize = calculateInSampleSize(options, ICON_WIDTH, ICON_HEIGHT);
         options.inJustDecodeBounds = false;
         int loopCount = 1;
         for (; loopCount++ <= 4;) {
             try {
-                if (LogUtils.isActive) {
-                    Log.i(LOGTAG, "bitmap: " + imageFilename + " Sample factor: "
+                if (sLogger.isActivated()) {
+                    sLogger.debug("bitmap: " + imageFilename + " Sample factor: "
                             + options.inSampleSize);
                 }
                 /* Rotate image is orientation is not 0 degree */
@@ -79,17 +98,19 @@ public class ImageUtils {
                 }
                 int degree = getExifOrientation(imageFilename);
                 if (degree == 0) {
-                    return bitmapTmp;
+                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
                 }
-                return rotateBitmap(bitmapTmp, degree);
-
+                bitmapTmp = rotateBitmap(bitmapTmp, degree);
+                if (bitmapTmp != null) {
+                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                }
             } catch (OutOfMemoryError e) {
                 /*
                  * If an OutOfMemoryError occurred, we continue with for loop and next inSampleSize
                  * value
                  */
-                if (LogUtils.isActive) {
-                    Log.w(LOGTAG, "OutOfMemoryError: options.inSampleSize= " + options.inSampleSize);
+                if (sLogger.isActivated()) {
+                    sLogger.warn("OutOfMemoryError: options.inSampleSize= " + options.inSampleSize);
                 }
                 options.inSampleSize++;
             }
@@ -158,8 +179,8 @@ public class ImageUtils {
             }
             return 0;
         } catch (IOException ex) {
-            if (LogUtils.isActive) {
-                Log.w(LOGTAG, "Cannot read exif", ex);
+            if (sLogger.isActivated()) {
+                sLogger.warn("Cannot read exif", ex);
             }
             return 0;
         }
@@ -174,8 +195,8 @@ public class ImageUtils {
      * @return bitmap
      */
     private static Bitmap rotateBitmap(Bitmap b, int degrees) {
-        if (LogUtils.isActive) {
-            Log.d(LOGTAG, "Rotate bitmap degrees: " + degrees);
+        if (sLogger.isActivated()) {
+            sLogger.debug("Rotate bitmap degrees: " + degrees);
         }
         Matrix m = new Matrix();
         m.setRotate(degrees, (float) b.getWidth() / 2, (float) b.getHeight() / 2);
@@ -187,9 +208,9 @@ public class ImageUtils {
             }
             return b;
         } catch (OutOfMemoryError ex) {
-            if (LogUtils.isActive) {
+            if (sLogger.isActivated()) {
                 // We have no memory to rotate. Return the original bitmap.
-                Log.w(LOGTAG, "OutOfMemoryError: cannot rotate image");
+                sLogger.warn("OutOfMemoryError: cannot rotate image");
             }
             System.gc();
             return b;

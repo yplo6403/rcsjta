@@ -21,6 +21,7 @@ package com.gsma.rcs.service.api;
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.core.ims.service.cms.mms.OriginatingMmsSession;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -74,12 +75,14 @@ public class CmsServiceImpl extends ICmsService.Stub {
     private final Context mContext;
     private final XmsManager mXmsManager;
     private final CmsManager mCmsManager;
+    private final RcsSettings mRcsSettings;
 
     /**
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            ContentResolver contentResolver, XmsManager xmsManager, CmsManager cmsManager) {
+            RcsSettings rcsSettings, ContentResolver contentResolver, XmsManager xmsManager,
+            CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -87,6 +90,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
         mCmsService = cmsService;
         mCmsService.register(this);
         mXmsLog = xmsLog;
+        mRcsSettings = rcsSettings;
         mContentResolver = contentResolver;
         mXmsManager = xmsManager;
         mCmsManager = cmsManager;
@@ -320,10 +324,11 @@ public class CmsServiceImpl extends ICmsService.Stub {
         }
         checkUris(files);
         try {
-            final String mMessageId = IdGenerator.generateMessageID();
-            final long timestamp = System.currentTimeMillis();
+            String mMessageId = IdGenerator.generateMessageID();
+            long timestamp = System.currentTimeMillis();
+            long maxFileIconSize = mRcsSettings.getMaxFileIconSize();
             mXmsLog.addMms(new MmsDataObject(mContext, null, mMessageId, contact, subject, body,
-                    RcsService.Direction.OUTGOING, timestamp, files, null));
+                    RcsService.Direction.OUTGOING, timestamp, files, null, maxFileIconSize));
             XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
             mCmsService.tryToDequeueMmsMessages();
             return mms;

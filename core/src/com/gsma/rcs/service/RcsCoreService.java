@@ -309,8 +309,8 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mContentResolver,
-                    core.getXmsManager(), core.getCmsManager());
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mRcsSettings,
+                    mContentResolver, core.getXmsManager(), core.getCmsManager());
 
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();

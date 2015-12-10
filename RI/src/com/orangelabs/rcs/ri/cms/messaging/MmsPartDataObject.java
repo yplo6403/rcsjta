@@ -18,16 +18,17 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
+import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.cms.XmsMessageLog;
+import com.gsma.services.rcs.contact.ContactId;
+
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-
-import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.cms.XmsMessageLog;
-import com.gsma.services.rcs.contact.ContactId;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -66,6 +67,13 @@ public class MmsPartDataObject {
 
     public static final long INVALID_ID = -1;
 
+    @Override
+    public String toString() {
+        return "MmsPartDataObject{" + "messageId='" + mMessageId + '\'' + ", mimeType='"
+                + mMimeType + '\'' + ", filename='" + mFilename + '\'' + ", fileSize=" + mFileSize
+                + ", body='" + mBody + '\'' + ", file=" + mFile + ", contact=" + mContact + '}';
+    }
+
     public MmsPartDataObject(Context ctx, Uri file, ContactId contact) throws IOException {
         mId = INVALID_ID;
         mMessageId = null;
@@ -86,7 +94,8 @@ public class MmsPartDataObject {
         mFilename = filename;
         mFileSize = fileSize;
         mContact = contact;
-        if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(content)) {
+        if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)
+                || XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
             mBody = content;
             mFile = null;
             mFileIcon = null;
@@ -108,6 +117,7 @@ public class MmsPartDataObject {
         if (sContentResolver == null) {
             sContentResolver = ctx.getContentResolver();
         }
+        Set<MmsPartDataObject> result = new HashSet<>();
         Cursor cursor = null;
         try {
             cursor = sContentResolver.query(MmsPartLog.CONTENT_URI, PROJECTION, SELECTION,
@@ -115,9 +125,8 @@ public class MmsPartDataObject {
                         messageId
                     }, null);
             if (!cursor.moveToFirst()) {
-                return null;
+                return result;
             }
-            Set<MmsPartDataObject> result = new HashSet<>();
             int idColumnIdx = cursor.getColumnIndexOrThrow(MmsPartLog.BASECOLUMN_ID);
             int mimeTypeIdx = cursor.getColumnIndexOrThrow(MmsPartLog.MIME_TYPE);
             int filenameIdx = cursor.getColumnIndexOrThrow(MmsPartLog.FILENAME);

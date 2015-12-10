@@ -33,8 +33,9 @@ import android.widget.TextView;
  */
 public class MmsViewHolder extends BasicViewHolder {
     private final LinearLayout mImagesLayout;
-    private final TextView mContentText;
-    private final int mColumnContentIdx;
+    private final TextView mSubjectText;
+    private final int mColumnSubjectIdx;
+    private final TextView mBodyText;
     private final int mColumnIdIdx;
 
     /**
@@ -47,18 +48,23 @@ public class MmsViewHolder extends BasicViewHolder {
         super(base, cursor);
         /* Save column indexes */
         mColumnIdIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
-        mColumnContentIdx = cursor.getColumnIndexOrThrow(HistoryLog.CONTENT);
+        mColumnSubjectIdx = cursor.getColumnIndexOrThrow(HistoryLog.CONTENT);
         /* Save children views */
-        mContentText = (TextView) base.findViewById(R.id.content_text);
+        mSubjectText = (TextView) base.findViewById(R.id.subject_text);
         mImagesLayout = (LinearLayout) base.findViewById(R.id.mms_images_layout);
+        mBodyText = (TextView) base.findViewById(R.id.body_text);
     }
 
-    public TextView getContentText() {
-        return mContentText;
+    public TextView getSubjectText() {
+        return mSubjectText;
     }
 
-    public int getColumnContentIdx() {
-        return mColumnContentIdx;
+    public int getColumnSubjectIdx() {
+        return mColumnSubjectIdx;
+    }
+
+    public TextView getBodyText() {
+        return mBodyText;
     }
 
     public int getColumnIdIdx() {

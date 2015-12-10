@@ -55,8 +55,10 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     /**
      * Default constructor
      *
-     * @param imapLog
-     * @param xmsLog
+     * @param context The context
+     * @param imapLog The IMAP log accessor
+     * @param xmsLog The XMS log accessor
+     * @param settings The RCS settings accessor
      */
     public XmsEventListener(Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings settings) {
         mContext = context;
@@ -254,6 +256,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         mXmsLog.updateState(messageId, state);
         synchronized (mXmsMessageEventBroadcaster) {
             for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                // TODO not used
                 Set<String> messageIds = new HashSet<>();
                 messageIds.add(messageId);
                 listener.broadcastMessageStateChanged(
@@ -301,6 +304,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 mImapLog.updateReadStatus(messageType, messageId,
                         MessageData.ReadStatus.READ_REPORT_REQUESTED);
                 mXmsLog.markMessageAsRead(messageId);
+                // TODO not used
                 Set<String> messageIds = new HashSet<>();
                 messageIds.add(messageId);
                 synchronized (mXmsMessageEventBroadcaster) {
@@ -504,7 +508,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             return messageId;
         } else if (MessageType.MMS == messageType) {
             MmsDataObject mmsDataObject = XmsDataObjectFactory.createMmsDataObject(mContext,
-                    (ImapMmsMessage) message);
+                    mSettings, (ImapMmsMessage) message);
             mXmsLog.addMms(mmsDataObject);
             String messageId = mmsDataObject.getMessageId();
             if (RcsService.ReadStatus.UNREAD == mmsDataObject.getReadStatus()) {

@@ -1,27 +1,6 @@
 
 package com.gsma.rcs.cms.observer;
 
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
-import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
-import com.gsma.rcs.cms.utils.MmsUtils;
-import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
-import com.gsma.rcs.utils.IdGenerator;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.RcsService.Direction;
-import com.gsma.services.rcs.RcsService.ReadStatus;
-import com.gsma.services.rcs.cms.XmsMessage.State;
-import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
-import com.gsma.services.rcs.contact.ContactId;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.ContentObserver;
@@ -32,6 +11,30 @@ import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.BaseMmsColumns;
 import android.provider.Telephony.TextBasedSmsColumns;
+
+import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
+import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
+import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.ImageUtils;
+import com.gsma.rcs.utils.MimeManager;
+import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
+import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
+import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,8 +53,9 @@ public class XmsObserver implements INativeXmsEventListener {
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
-    private Context mContext;
-    private ContentResolver mContentResolver;
+    private final Context mContext;
+    private final ContentResolver mContentResolver;
+    private final RcsSettings mRcsSettings;
     private XmsContentObserver mXmsContentObserver;
 
     private class XmsContentObserver extends ContentObserver {
@@ -128,13 +132,10 @@ public class XmsObserver implements INativeXmsEventListener {
             mSmsIds = currentSmsIds;
             if (diff == -1) {
                 onDeleteNativeSms(Long.parseLong(uri.getLastPathSegment()));
-                return;
             } else if (diff == 1) {
                 handleNewSms(uri);
-                return;
             } else { // sms update status
                 handleSmsUpdateStatus(uri);
-                return;
             }
         }
 
@@ -173,7 +174,6 @@ public class XmsObserver implements INativeXmsEventListener {
                 } else {
                     onOutgoingSms(smsDataObject);
                 }
-                return;
             } finally {
                 CursorUtil.close(cursor);
             }
@@ -192,7 +192,6 @@ public class XmsObserver implements INativeXmsEventListener {
                 int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
                 int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
                 onMessageStateChanged(_id, MimeType.TEXT_MESSAGE, type, status);
-                return;
             } finally {
                 CursorUtil.close(cursor);
             }
@@ -266,8 +265,7 @@ public class XmsObserver implements INativeXmsEventListener {
                     PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
                     if (phoneNumber == null) {
                         if (sLogger.isActivated()) {
-                            sLogger.info(new StringBuilder("Bad format for contact : ").append(
-                                    address).toString());
+                            sLogger.info("Bad format for contact : " + address);
                         }
                         continue;
                     }
@@ -313,9 +311,13 @@ public class XmsObserver implements INativeXmsEventListener {
                     String data = cursor.getString(dataIdx);
                     if (data != null) {
                         content = Part.URI.concat(cursor.getString(_idIdx));
-                        byte[] bytes = MmsUtils.getContent(mContentResolver, Uri.parse(content));
+                        Uri file = Uri.parse(content);
+                        byte[] bytes = MmsUtils.getContent(mContentResolver,file );
                         fileSize = bytes.length;
-                        fileIcon = MmsUtils.createThumb(bytes);
+                        if (MimeManager.isImageType(contentType)) {
+                           long maxIconSize = mRcsSettings.getMaxFileIconSize();
+                           fileIcon = ImageUtils.tryGetThumbnail(mContext, file, maxIconSize);
+                        }
                     } else {
                         content = text;
                     }
@@ -386,7 +388,7 @@ public class XmsObserver implements INativeXmsEventListener {
         private boolean checkDeleteConversationEvent(Map<Long, Boolean> currentConversations) {
 
             boolean eventChecked = false;
-            Set<Long> deletedConversations = new HashSet(mConversations.keySet());
+            Set<Long> deletedConversations = new HashSet<>(mConversations.keySet());
             deletedConversations.removeAll(currentConversations.keySet());
             for (Long conversation : deletedConversations) {
                 onDeleteNativeConversation(conversation);
@@ -420,7 +422,7 @@ public class XmsObserver implements INativeXmsEventListener {
 
         private Set<Long> getSmsIds() {
             Cursor cursor = null;
-            Set<Long> ids = new HashSet();
+            Set<Long> ids = new HashSet<>();
             try {
                 cursor = mContentResolver.query(Sms.URI, Sms.PROJECTION_ID,
                         Sms.WHERE_CONTACT_NOT_NULL, null, BaseMmsColumns._ID);
@@ -437,7 +439,7 @@ public class XmsObserver implements INativeXmsEventListener {
 
         private Set<String> getMmsIds() {
             Cursor cursor = null;
-            Set<String> ids = new HashSet();
+            Set<String> ids = new HashSet<>();
             try {
                 cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID, Mms.WHERE, null,
                         BaseMmsColumns._ID);
@@ -453,9 +455,10 @@ public class XmsObserver implements INativeXmsEventListener {
         }
     }
 
-    public XmsObserver(Context context) {
+    public XmsObserver(Context context, RcsSettings rcsSettings) {
         mContext = context;
         mContentResolver = mContext.getContentResolver();
+        mRcsSettings = rcsSettings;
     }
 
     /**

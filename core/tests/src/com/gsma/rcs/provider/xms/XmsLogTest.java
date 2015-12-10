@@ -103,7 +103,7 @@ public class XmsLogTest extends InstrumentationTestCase {
 
     protected void tearDown() throws Exception {
         super.tearDown();
-        mXmsLog.deleteAllEntries();
+        mXmsLog.deleteXmsMessage(mMessageId);
     }
 
     public void testSmsMessage() {
@@ -152,7 +152,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         files.add(mUriCat2);
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
-                timestamp, files, null);
+                timestamp, files, null, 50000L);
         mXmsLog.addMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -222,7 +222,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         long timestamp = System.currentTimeMillis();
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
-                timestamp, new ArrayList<Uri>(), null);
+                timestamp, new ArrayList<Uri>(), null,50000L);
         mXmsLog.addMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(1, cursor.getCount());

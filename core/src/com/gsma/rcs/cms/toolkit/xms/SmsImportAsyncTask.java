@@ -2,11 +2,9 @@ package com.gsma.rcs.cms.toolkit.xms;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.RemoteException;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.BaseMmsColumns;
@@ -32,6 +30,8 @@ import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.ImageUtils;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
@@ -69,22 +69,25 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
     private final String[] PROJECTION_IDS = new String[]{
             BaseColumns._ID};
 
-    private static final String SELECTION_CONTACT_NOT_NULL = new StringBuilder(TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
-    static final String SELECTION_BASE_ID = new StringBuilder(BaseColumns._ID).append("=?").append(" AND ").append(SELECTION_CONTACT_NOT_NULL).toString();
+    private static final String SELECTION_CONTACT_NOT_NULL = TextBasedSmsColumns.ADDRESS + " is not null";
+    static final String SELECTION_BASE_ID = BaseColumns._ID + "=?" + " AND " + SELECTION_CONTACT_NOT_NULL;
 
-    private ContentResolver mContentResolver;
-    private XmsLog mXmsLog;
-    private ImapLog mImapLog;
-    private RcsSettings mSettings;
-
-    private ImportTaskListener mListener;
+    private final Context mCtx;
+    private final ContentResolver mContentResolver;
+    private final XmsLog mXmsLog;
+    private final ImapLog mImapLog;
+    private final RcsSettings mSettings;
+    private final ImportTaskListener mListener;
     
     /**
-     * @param context 
-     * @param xmsLog
-     * @param listener 
+     * @param context The context
+     * @param settings The RCS settings accessor
+     * @param xmsLog The XMS log accessor
+     * @param imapLog The IMAP log accessor
+     * @param listener The import task listener
      */
     public SmsImportAsyncTask(Context context,RcsSettings settings, XmsLog xmsLog, ImapLog imapLog, ImportTaskListener listener ){
+        mCtx = context;
         mContentResolver = context.getContentResolver();
         mXmsLog = xmsLog;
         mImapLog = imapLog;
@@ -147,7 +150,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
 
     private Set<Long> getSmsNativeIds(){
         Cursor cursor = null;
-        Set<Long> ids = new HashSet<Long>();
+        Set<Long> ids = new HashSet<>();
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_IDS, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor,sSmsUri);
@@ -162,7 +165,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
 
     private Set<Long> getMmsNativeIds(){
         Cursor cursor = null;
-        Set<Long> ids = new HashSet<Long>();
+        Set<Long> ids = new HashSet<>();
         try {
             cursor = mContentResolver.query(sMmsUri, PROJECTION_IDS, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor,sMmsUri);
@@ -253,7 +256,8 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
         ReadStatus readStatus;
         Cursor cursor = null;
         try{
-            cursor = mContentResolver.query(XmsObserverUtils.Mms.URI, null, new StringBuilder(XmsObserverUtils.Mms.WHERE).append(" AND ").append(BaseColumns._ID).append("=?").toString(), new String[]{String.valueOf(id)}, Telephony.BaseMmsColumns._ID);
+            // TODO use constant string
+            cursor = mContentResolver.query(XmsObserverUtils.Mms.URI, null, Mms.WHERE + " AND " + BaseColumns._ID + "=?", new String[]{String.valueOf(id)}, Telephony.BaseMmsColumns._ID);
             CursorUtil.assertCursorIsNotNull(cursor, XmsObserverUtils.Mms.URI);
             if (!cursor.moveToNext()) {
                 return mmsDataObject;
@@ -286,7 +290,7 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                 PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
                 if(phoneNumber == null){
                     if(sLogger.isActivated()){
-                        sLogger.info(new StringBuilder("Bad format for contact : ").append(address).toString());
+                        sLogger.info("Bad format for contact : " + address);
                     }
                     continue;
                 }
@@ -323,9 +327,13 @@ public class SmsImportAsyncTask extends AsyncTask<String,String,Boolean> {
                 String data = cursor.getString(dataIdx);
                 if(data != null){
                     content = Part.URI.concat(cursor.getString(_idIdx));
-                    byte[] bytes = MmsUtils.getContent(mContentResolver, Uri.parse(content));
+                    Uri file =  Uri.parse(content);
+                    byte[] bytes = MmsUtils.getContent(mContentResolver,file);
                     fileSize = bytes.length;
-                    fileIcon = MmsUtils.createThumb(bytes);
+                    if (MimeManager.isImageType(contentType)) {
+                        long maxIconSize = mSettings.getMaxFileIconSize();
+                        fileIcon = ImageUtils.tryGetThumbnail(mCtx, file, maxIconSize);
+                    }
                 }
                 else{
                     content = text;

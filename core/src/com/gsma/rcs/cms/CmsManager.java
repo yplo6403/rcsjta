@@ -46,7 +46,7 @@ public class CmsManager implements IRcsXmsEventListener {
         new ProviderSynchronizer(mContext, mRcsSettings, mXmsLog, mImapLog).execute();
 
         // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(mContext);
+        mXmsObserver = new XmsObserver(mContext, mRcsSettings);
 
         // instantiate  XmsEventListener in charge of handling xms events from XmsObserver
         mNewXmsEventListener = new XmsEventListener(mContext, mImapLog, mXmsLog, mRcsSettings);

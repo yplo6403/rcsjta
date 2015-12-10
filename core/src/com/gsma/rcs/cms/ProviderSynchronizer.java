@@ -29,6 +29,8 @@ import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.ImageUtils;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
@@ -68,17 +70,19 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
 
     private static final String SELECTION_CONTACT_NOT_NULL = new StringBuilder(TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
     static final String SELECTION_BASE_ID = new StringBuilder(BaseColumns._ID).append("=?").append(" AND ").append(SELECTION_CONTACT_NOT_NULL).toString();
+    private final Context mCtx;
 
-    private ContentResolver mContentResolver;
-    private XmsLog mXmsLog;
-    private ImapLog mImapLog;
-    private RcsSettings mSettings;
+    private final ContentResolver mContentResolver;
+    private final XmsLog mXmsLog;
+    private final ImapLog mImapLog;
+    private final RcsSettings mSettings;
 
     private List<Long> mNativeIds;
     private List<Long> mNativeReadIds;
 
-    public ProviderSynchronizer(Context context, RcsSettings settings, XmsLog xmsLog, ImapLog imapLog) {
-        mContentResolver = context.getContentResolver();
+    public ProviderSynchronizer(Context ctx, RcsSettings settings, XmsLog xmsLog, ImapLog imapLog) {
+        mCtx = ctx;
+        mContentResolver = ctx.getContentResolver();
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
@@ -323,7 +327,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                 PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
                 if (phoneNumber == null) {
                     if (sLogger.isActivated()) {
-                        sLogger.info(new StringBuilder("Bad format for contact : ").append(address).toString());
+                        sLogger.info("Bad format for contact : " + address);
                     }
                     continue;
                 }
@@ -362,7 +366,10 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                     content = Part.URI.concat(cursor.getString(_idIdx));
                     byte[] bytes = MmsUtils.getContent(mContentResolver, Uri.parse(content));
                     fileSize = bytes.length;
-                    fileIcon = MmsUtils.createThumb(bytes);
+                    if (MimeManager.isImageType(contentType)) {
+                        long maxFileIcon = mSettings.getMaxFileIconSize();
+                        fileIcon = ImageUtils.tryGetThumbnail(mCtx, Uri.parse(content), maxFileIcon);
+                    }
                 } else {
                     content = text;
                 }

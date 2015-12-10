@@ -378,21 +378,26 @@ public class TalkCursorAdapter extends CursorAdapter {
                 DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
                         DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
         String mmsId = cursor.getString(holder.getColumnIdIdx());
-        holder.getContentText().setText(cursor.getString(holder.getColumnContentIdx()));
+        String subject = cursor.getString(holder.getColumnSubjectIdx());
+        holder.getSubjectText().setText(subject);
         holder.getStatusText().setText(getXmsStatus(cursor, holder));
-        holder.getImagesLayout().removeAllViews();
-
+        TextView bodyText = holder.getBodyText();
+        bodyText.setText("");
         /*
          * A ListView (ScrollView) in a Listview (ScrollView) isn't possible on Android without
          * major bugs, Google says to not do it. You could have a LinearLayout inside of your list
          * item (with its orientation set to vertical) and manually use addView() to add views to
          * the LinearLayout that will be displayed with the layout's set orientation.
          */
+        holder.getImagesLayout().removeAllViewsInLayout();
         for (MmsPartDataObject mmsPart : MmsPartDataObject.getParts(mContext, mmsId)) {
-            String mimeTye = mmsPart.getMimeType();
-            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeTye)
-                    || XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeTye)) {
+            String mimeType = mmsPart.getMimeType();
+            if (XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
                 /* discard mms body or application/smil content */
+                continue;
+            }
+            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)) {
+                bodyText.setText(mmsPart.getBody());
                 continue;
             }
             View mmsItemView = mInflater.inflate(R.layout.mms_list_item, holder.getImagesLayout(),
@@ -400,6 +405,7 @@ public class TalkCursorAdapter extends CursorAdapter {
             ImageView imageView = (ImageView) mmsItemView.findViewById(R.id.image);
             TextView filenameText = (TextView) mmsItemView.findViewById(R.id.FileName);
             TextView fileSizeText = (TextView) mmsItemView.findViewById(R.id.FileSize);
+
             byte[] fileIcon = mmsPart.getFileIcon();
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
