@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.utils;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.Context;
@@ -76,46 +77,49 @@ public class ImageUtils {
     }
 
     public static byte[] tryGetThumbnail(Context ctx, Uri file, long maxSize) {
-        String imageFilename = FileUtils.getPath(ctx, file);
-        if (imageFilename == null) {
+        try {
+            String imageFilename = FileUtils.getPath(ctx, file);
+            BitmapFactory.Options options = readImageOptions(imageFilename);
+            /* Calculate the reduction factor */
+            options.inSampleSize = calculateInSampleSize(options, ICON_WIDTH, ICON_HEIGHT);
+            options.inJustDecodeBounds = false;
+            int loopCount = 1;
+            for (; loopCount++ <= 4;) {
+                try {
+                    if (sLogger.isActivated()) {
+                        sLogger.debug("bitmap: " + imageFilename + " Sample factor: "
+                                + options.inSampleSize);
+                    }
+                    /* Rotate image is orientation is not 0 degree */
+                    Bitmap bitmapTmp = BitmapFactory.decodeFile(imageFilename, options);
+                    if (bitmapTmp == null) {
+                        return null;
+                    }
+                    int degree = getExifOrientation(imageFilename);
+                    if (degree == 0) {
+                        return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                    }
+                    bitmapTmp = rotateBitmap(bitmapTmp, degree);
+                    if (bitmapTmp != null) {
+                        return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                    }
+                } catch (OutOfMemoryError e) {
+                    /*
+                     * If an OutOfMemoryError occurred, we continue with for loop and next
+                     * inSampleSize value
+                     */
+                    if (sLogger.isActivated()) {
+                        sLogger.warn("OutOfMemoryError: options.inSampleSize= "
+                                + options.inSampleSize);
+                    }
+                    options.inSampleSize++;
+                }
+            }
+            return null;
+        } catch (FileAccessException e) {
+            sLogger.warn("Failed to crete thumbnail for : " + file);
             return null;
         }
-        BitmapFactory.Options options = readImageOptions(imageFilename);
-        /* Calculate the reduction factor */
-        options.inSampleSize = calculateInSampleSize(options, ICON_WIDTH, ICON_HEIGHT);
-        options.inJustDecodeBounds = false;
-        int loopCount = 1;
-        for (; loopCount++ <= 4;) {
-            try {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("bitmap: " + imageFilename + " Sample factor: "
-                            + options.inSampleSize);
-                }
-                /* Rotate image is orientation is not 0 degree */
-                Bitmap bitmapTmp = BitmapFactory.decodeFile(imageFilename, options);
-                if (bitmapTmp == null) {
-                    return null;
-                }
-                int degree = getExifOrientation(imageFilename);
-                if (degree == 0) {
-                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
-                }
-                bitmapTmp = rotateBitmap(bitmapTmp, degree);
-                if (bitmapTmp != null) {
-                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
-                }
-            } catch (OutOfMemoryError e) {
-                /*
-                 * If an OutOfMemoryError occurred, we continue with for loop and next inSampleSize
-                 * value
-                 */
-                if (sLogger.isActivated()) {
-                    sLogger.warn("OutOfMemoryError: options.inSampleSize= " + options.inSampleSize);
-                }
-                options.inSampleSize++;
-            }
-        }
-        return null;
     }
 
     /**

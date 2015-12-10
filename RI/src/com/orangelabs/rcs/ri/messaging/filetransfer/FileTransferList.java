@@ -25,8 +25,8 @@ import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
-
 import com.gsma.services.rcs.history.HistoryLog;
+
 import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
 import com.orangelabs.rcs.ri.R;
@@ -300,8 +300,8 @@ public class FileTransferList extends RcsFragmentActivity implements
             State state = transfer.getState();
             if (transfer.isAllowedToResendTransfer()) {
                 menu.add(0, MENU_ITEM_RESEND, 1, R.string.menu_resend_message);
-            } else if (Direction.OUTGOING == transfer.getDirection() ||
-                    (State.TRANSFERRED == state) || (State.DISPLAYED == state)) {
+            } else if (Direction.OUTGOING == transfer.getDirection()
+                    || (State.TRANSFERRED == state) || (State.DISPLAYED == state)) {
                 if (FileUtils.isImageType(transfer.getMimeType())) {
                     menu.add(0, MENU_ITEM_VIEW, 1, R.string.menu_view_message);
                 }
@@ -347,17 +347,20 @@ public class FileTransferList extends RcsFragmentActivity implements
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "onContextItemSelected view ftId=".concat(transferId));
                     }
-                    String uri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
-                    String filename = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILENAME));
+                    String uri = cursor.getString(cursor
+                            .getColumnIndexOrThrow(FileTransferLog.FILE));
+                    String filename = cursor.getString(cursor
+                            .getColumnIndexOrThrow(FileTransferLog.FILENAME));
                     Direction dir = Direction.valueOf(cursor.getInt(cursor
                             .getColumnIndex(HistoryLog.DIRECTION)));
-                    String number = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
+                    String number = cursor.getString(cursor
+                            .getColumnIndexOrThrow(FileTransferLog.CONTACT));
                     Uri file = Uri.parse(uri);
                     String toast;
                     if (Direction.INCOMING == dir) {
-                        toast = getString(R.string.toast_image_in, filename, number);
+                        toast = getString(R.string.mms_image_in, filename, number);
                     } else {
-                        toast = getString(R.string.toast_image_out, filename, number);
+                        toast = getString(R.string.mms_image_out, filename, number);
                     }
                     Utils.showPictureAndExit(this, file, toast);
                     return true;

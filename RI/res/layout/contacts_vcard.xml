@@ -35,6 +35,12 @@
             android:layout_marginLeft="5dip"
             android:layout_marginRight="5dip"
             android:text="@string/label_show_vcard" />
+
+        <Button
+            android:id="@+id/select_btn"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:text="@string/label_sel_vcard" />
     </TableLayout>
 
 </ScrollView>

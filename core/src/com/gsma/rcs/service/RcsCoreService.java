@@ -25,7 +25,6 @@ package com.gsma.rcs.service;
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
@@ -312,7 +311,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
             CmsManager cmsManager = core.getCmsManager();
             cmsManager.start();
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mRcsSettings, mContentResolver,
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mRcsSettings,
                     core.getXmsManager(), cmsManager);
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();

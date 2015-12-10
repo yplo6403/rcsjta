@@ -40,6 +40,7 @@ import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -308,10 +309,10 @@ public class TalkCursorAdapter extends CursorAdapter {
                             public void onClick(View v) {
                                 String toast;
                                 if (Direction.INCOMING == dir) {
-                                    toast = mActivity.getString(R.string.toast_image_in, filename,
+                                    toast = mActivity.getString(R.string.mms_image_in, filename,
                                             number);
                                 } else {
-                                    toast = mActivity.getString(R.string.toast_image_out, filename,
+                                    toast = mActivity.getString(R.string.mms_image_out, filename,
                                             number);
                                 }
                                 Utils.showPictureAndExit(mActivity, file, toast);
@@ -391,7 +392,7 @@ public class TalkCursorAdapter extends CursorAdapter {
          */
         holder.getImagesLayout().removeAllViewsInLayout();
         for (MmsPartDataObject mmsPart : MmsPartDataObject.getParts(mContext, mmsId)) {
-            String mimeType = mmsPart.getMimeType();
+            final String mimeType = mmsPart.getMimeType();
             if (XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
                 /* discard mms body or application/smil content */
                 continue;
@@ -405,7 +406,9 @@ public class TalkCursorAdapter extends CursorAdapter {
             ImageView imageView = (ImageView) mmsItemView.findViewById(R.id.image);
             TextView filenameText = (TextView) mmsItemView.findViewById(R.id.FileName);
             TextView fileSizeText = (TextView) mmsItemView.findViewById(R.id.FileSize);
-
+            final ContactId contact = mmsPart.getContact();
+            final Uri file = mmsPart.getFile();
+            final String filename = mmsPart.getFilename();
             byte[] fileIcon = mmsPart.getFileIcon();
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
@@ -418,22 +421,30 @@ public class TalkCursorAdapter extends CursorAdapter {
                 filenameText.setText(mmsPart.getFilename());
                 fileSizeText.setVisibility(View.VISIBLE);
                 fileSizeText.setText(FileUtils.humanReadableByteCount(mmsPart.getFileSize(), true));
+
+                imageView.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setDataAndType(file, mimeType);
+                        mActivity.startActivity(intent);
+                    }
+                });
+
             } else {
                 Bitmap imageBitmap = BitmapFactory.decodeByteArray(fileIcon, 0, fileIcon.length);
                 imageView.setImageBitmap(imageBitmap);
-                final String filename = mmsPart.getFilename();
-                final ContactId contact = mmsPart.getContact();
-                final Uri file = mmsPart.getFile();
                 imageView.setOnClickListener(new View.OnClickListener() {
 
                     @Override
                     public void onClick(View v) {
                         String toast;
                         if (VIEW_TYPE_MMS_IN == viewType) {
-                            toast = mActivity.getString(R.string.toast_image_in, filename,
+                            toast = mActivity.getString(R.string.mms_image_in, filename,
                                     contact.toString());
                         } else {
-                            toast = mActivity.getString(R.string.toast_image_out, filename,
+                            toast = mActivity.getString(R.string.mms_image_out, filename,
                                     contact.toString());
                         }
                         Utils.showPictureAndExit(mActivity, file, toast);

@@ -28,6 +28,7 @@ import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
@@ -37,17 +38,21 @@ import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.contacts.ContactVCard;
 import com.orangelabs.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
 import com.orangelabs.rcs.ri.messaging.chat.ChatView;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
+import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -67,8 +72,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -135,6 +142,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     private XmsMessageListener mXmsMessageListener;
     private ChatCursorObserver mObserver;
     private EditText mComposeText;
+    private static final int SELECT_VCARD = 0;
+    private ContactUtil mContactUtil;
 
     /**
      * Forge intent to start XmsView activity
@@ -208,6 +217,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
         startMonitorServices(ConnectionManager.RcsServiceName.CMS,
                 ConnectionManager.RcsServiceName.CONTACT);
+
+        mContactUtil = ContactUtil.getInstance(this);
 
         initialize();
         mCmsService = getCmsApi();
@@ -395,10 +406,67 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != RESULT_OK) {
+            return;
+        }
+
+        switch (requestCode) {
+            case SELECT_VCARD:
+                Uri vcard = data.getParcelableExtra(ContactVCard.EXTRA_VCARD);
+                String number = data.getStringExtra(ContactVCard.EXTRA_CONTACT);
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Selected VCARD " + vcard + " for contact " + number);
+                }
+                try {
+                    ContactId contact = mContactUtil.formatContact(number);
+                    List vCards = new ArrayList<>();
+                    vCards.add(vcard);
+                    mCmsService.sendMultimediaMessage(contact, vCards, null, null);
+                } catch (RcsServiceException e) {
+                    showException(e);
+                }
+                break;
+        }
+    }
+
+    private void selectMimeType() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.menu_add_parts));
+        final String[] choices;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            choices = getResources().getStringArray(R.array.mms_select_parts);
+        } else {
+            choices = getResources().getStringArray(R.array.mms_select_part);
+        }
+        builder.setItems(choices, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Select to add file of mime type " + choices[which]);
+                }
+                switch (which) {
+                    case 0:
+                        startActivity(InitiateMmsTransfer.forgeStartIntent(XmsView.this, mContact,
+                                "image/*"));
+                        break;
+                    case 1:
+                        startActivityForResult(ContactVCard.forgeIntentSelectVcard(XmsView.this),
+                                SELECT_VCARD);
+                        break;
+                    default:
+                        showMessage(getString(R.string.err_not_implemented, choices[which]));
+                }
+            }
+        });
+        builder.show();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.menu_send_mms:
-                startActivity(InitiateMmsTransfer.forgeStartIntent(this, mContact));
+            case R.id.select_parts:
+                selectMimeType();
                 break;
             case R.id.menu_delete_xms:
                 try {

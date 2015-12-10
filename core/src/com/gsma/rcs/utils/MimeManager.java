@@ -63,9 +63,9 @@ public class MimeManager {
      * Creates a new MIME-type map.
      */
     private MimeManager() {
-        mimeTypeToExtensionMap = new HashMap<String, String>();
-        extensionToMimeTypeMap = new HashMap<String, String>();
-        imageMimeTypeSet = new HashSet<String>();
+        mimeTypeToExtensionMap = new HashMap<>();
+        extensionToMimeTypeMap = new HashMap<>();
+        imageMimeTypeSet = new HashSet<>();
     }
 
     /**
@@ -128,13 +128,8 @@ public class MimeManager {
      * @return True if there is a MIME-type entry in the map
      */
     public boolean isMimeTypeSupported(String mimeType) {
-        if (mimeType.equals("*")) { // Changed by Deutsche Telekom AG
-            return true;
-        }
-        if (TextUtils.isEmpty(mimeType)) {
-            return false;
-        }
-        return mimeTypeToExtensionMap.containsKey(mimeType);
+        return "*".equals(mimeType) || !TextUtils.isEmpty(mimeType)
+                && mimeTypeToExtensionMap.containsKey(mimeType);
     }
 
     private String getMimeTypeFromMap(String extension) {
@@ -215,10 +210,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isImageType(String mime) {
-        if (mime.toLowerCase().startsWith("image/")) {
-            return true;
-        }
-        return false;
+        return mime.toLowerCase().startsWith("image/");
     }
 
     /**
@@ -228,10 +220,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isVideoType(String mime) {
-        if (mime.toLowerCase().startsWith("video/")) {
-            return true;
-        }
-        return false;
+        return mime.toLowerCase().startsWith("video/");
     }
 
     /**
@@ -241,10 +230,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isAudioType(String mime) {
-        if (mime.toLowerCase().startsWith("audio/")) {
-            return true;
-        }
-        return false;
+        return mime.toLowerCase().startsWith("audio/");
     }
 
     /**
@@ -254,10 +240,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isTextType(String mime) {
-        if (mime.toLowerCase().startsWith("text/")) {
-            return true;
-        }
-        return false;
+        return mime.toLowerCase().startsWith("text/");
     }
 
     /**
@@ -267,10 +250,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isApplicationType(String mime) {
-        if (mime.toLowerCase().startsWith("application/")) {
-            return true;
-        }
-        return false;
+        return mime.toLowerCase().startsWith("application/");
     }
 
     /**
@@ -280,10 +260,8 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isVCardType(String mime) {
-        if (mime.toLowerCase().equalsIgnoreCase("text/vcard")) {
-            return true;
-        }
-        return false;
+        mime = mime.toLowerCase();
+        return "text/vcard".equals(mime) || "text/x-vcard".equals(mime);
     }
 
     /**
@@ -293,9 +271,6 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isGeolocType(String mime) {
-        if (mime.toLowerCase().equalsIgnoreCase("application/vnd.gsma.rcspushlocation+xml")) {
-            return true;
-        }
-        return false;
+        return "application/vnd.gsma.rcspushlocation+xml".equals(mime.toLowerCase());
     }
 }

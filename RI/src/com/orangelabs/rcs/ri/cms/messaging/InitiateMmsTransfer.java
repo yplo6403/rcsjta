@@ -61,6 +61,7 @@ import java.util.List;
 public class InitiateMmsTransfer extends RcsActivity {
 
     private final static String EXTRA_CONTACT = "contact";
+    private static final String EXTRA_MIME_TYPE = "mimetype";
 
     private static final String SEND_MMS = "send_mms";
 
@@ -72,10 +73,7 @@ public class InitiateMmsTransfer extends RcsActivity {
     private ListView mListView;
     private Button mSendBtn;
     private List<MmsPartDataObject> mMmsParts;
-
-    private static final String[] ALLOWED_MIME_TYPES = {
-            "image/*", "video/*"
-    };
+    private String[] mMimeType;
 
     // TODO manage option menu to enable content reselection
 
@@ -84,13 +82,15 @@ public class InitiateMmsTransfer extends RcsActivity {
      *
      * @param ctx The context
      * @param contact The remote contact
+     * @param mimeType The mime type to attach
      * @return intent
      */
-    public static Intent forgeStartIntent(Context ctx, ContactId contact) {
+    public static Intent forgeStartIntent(Context ctx, ContactId contact, String mimeType) {
         Intent intent = new Intent(ctx, InitiateMmsTransfer.class);
         intent.setAction(SEND_MMS);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(EXTRA_CONTACT, (Parcelable) contact);
+        intent.putExtra(EXTRA_MIME_TYPE, mimeType);
         return intent;
     }
 
@@ -149,8 +149,7 @@ public class InitiateMmsTransfer extends RcsActivity {
             @Override
             public void onClick(View v) {
                 setTitle(getString(R.string.title_send_mms, mContact.toString()));
-                FileUtils.openFiles(InitiateMmsTransfer.this, ALLOWED_MIME_TYPES,
-                        PICK_IMAGE_REQUEST);
+                FileUtils.openFiles(InitiateMmsTransfer.this, mMimeType, PICK_IMAGE_REQUEST);
             }
         });
     }
@@ -166,9 +165,12 @@ public class InitiateMmsTransfer extends RcsActivity {
             }
             return;
         }
+        mMimeType = new String[] {
+            intent.getStringExtra(EXTRA_MIME_TYPE)
+        };
         mContact = contact;
         setTitle(getString(R.string.title_send_mms, mContact.toString()));
-        FileUtils.openFiles(this, ALLOWED_MIME_TYPES, PICK_IMAGE_REQUEST);
+        FileUtils.openFiles(this, mMimeType, PICK_IMAGE_REQUEST);
     }
 
     @Override

@@ -45,7 +45,6 @@ import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.os.RemoteException;
@@ -75,7 +74,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     private final Map<String, XmsMessageImpl> mXmsMessageCache = new HashMap<>();
     private final XmsLog mXmsLog;
-    private final ContentResolver mContentResolver;
     private final Context mContext;
     private final XmsManager mXmsManager;
     private final CmsManager mCmsManager;
@@ -85,7 +83,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            RcsSettings rcsSettings, ContentResolver contentResolver, XmsManager xmsManager,
+            RcsSettings rcsSettings, XmsManager xmsManager,
             CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
@@ -95,7 +93,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         mCmsService.register(this);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
-        mContentResolver = contentResolver;
         mXmsManager = xmsManager;
         mCmsManager = cmsManager;
         mCmsManager.registerXmsMessageEventBroadcaster(mXmsMessageBroadcaster);
@@ -356,11 +353,21 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                 throw new ServerApiIllegalArgumentException("file '" + file.toString()
                         + "' must refer to a file that exists and that is readable by stack!");
             }
-            String mimeType = mContentResolver.getType(file);
+            String fileName = FileUtils.getFileName(mContext, file);
+            if (fileName == null) {
+                throw new ServerApiIllegalArgumentException("Invalid Uri '" + file + "'!");
+            }
+            String extension = MimeManager.getFileExtension(fileName);
+            String mimeType = MimeManager.getInstance().getMimeType(extension);
+            if (mimeType == null) {
+                throw new ServerApiIllegalArgumentException("Invalid mime type for Uri '" + file + "'!");
+            }
             if (!MimeManager.isImageType(mimeType)) {
                 if (!MimeManager.isVideoType(mimeType)) {
-                    throw new ServerApiIllegalArgumentException("file '" + file.toString()
-                            + "' has invalid mime-type: '" + mimeType + "'!");
+                    if (!MimeManager.isVCardType(mimeType)) {
+                        throw new ServerApiIllegalArgumentException("file '" + file.toString()
+                                + "' has invalid mime-type: '" + mimeType + "'!");
+                    }
                 }
             }
         }

@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.utils;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -76,7 +77,7 @@ public class FileUtils {
         if (srcFile == null) {
             throw new IllegalArgumentException("Source is null");
         }
-        if (srcFile.exists() == false) {
+        if (!srcFile.exists()) {
             throw new FileNotFoundException("Source '" + srcFile + "' does not exist");
         }
         if (srcFile.isDirectory()) {
@@ -85,19 +86,19 @@ public class FileUtils {
         if (destDir == null) {
             throw new IllegalArgumentException("Destination is null");
         }
-        if (destDir.exists() == false) {
+        if (!destDir.exists()) {
             // Create directory if it does not exist
-            if (destDir.mkdir() == false) {
+            if (!destDir.mkdir()) {
                 throw new IOException("Destination '" + destDir + "' directory cannot be created");
             }
         } else {
-            if (destDir.isDirectory() == false) {
+            if (!destDir.isDirectory()) {
                 throw new IllegalArgumentException("Destination '" + destDir
                         + "' is not a directory");
             }
         }
         File destFile = new File(destDir, srcFile.getName());
-        if (destFile.exists() && destFile.canWrite() == false) {
+        if (destFile.exists() && !destFile.canWrite()) {
             throw new IOException("Destination '" + destFile + "' file exists but is read-only");
         }
         FileInputStream input = new FileInputStream(srcFile);
@@ -153,8 +154,7 @@ public class FileUtils {
      */
     public static void deleteDirectory(File dir) throws IOException {
         if (!dir.isDirectory()) {
-            throw new IllegalArgumentException(new StringBuilder(dir.getPath()).append(
-                    " should always be a directory!").toString());
+            throw new IllegalArgumentException(dir.getPath() + " should always be a directory!");
         }
         String[] children = dir.list();
         for (String childname : children) {
@@ -162,19 +162,16 @@ public class FileUtils {
             if (child.isDirectory()) {
                 deleteDirectory(child);
                 if (!child.delete()) {
-                    throw new IOException(new StringBuilder("Failed to delete file : ").append(
-                            child.getPath()).toString());
+                    throw new IOException("Failed to delete file : " + child.getPath());
                 }
             } else {
                 if (!child.delete()) {
-                    throw new IOException(new StringBuilder("Failed to delete file : ").append(
-                            child.getPath()).toString());
+                    throw new IOException("Failed to delete file : " + child.getPath());
                 }
             }
         }
         if (!dir.delete()) {
-            throw new IOException(new StringBuilder("Failed to delete directory : ").append(
-                    dir.getPath()).toString());
+            throw new IOException("Failed to delete directory : " + dir.getPath());
         }
     }
 
@@ -190,19 +187,19 @@ public class FileUtils {
         Cursor cursor = null;
         try {
             cursor = ctx.getContentResolver().query(file, null, null, null, null);
-            if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    String displayName = cursor.getString(cursor
-                            .getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
-                    return displayName;
-                }
-                throw new IllegalArgumentException("Error in retrieving file name from the URI");
+            switch (scheme) {
+                case ContentResolver.SCHEME_CONTENT:
+                    if (cursor != null && cursor.moveToFirst()) {
+                        return cursor.getString(cursor
+                                .getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
+                    }
+                    throw new IllegalArgumentException("Error in retrieving file name from the URI");
 
-            } else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
-                return file.getLastPathSegment();
+                case ContentResolver.SCHEME_FILE:
+                    return file.getLastPathSegment();
 
-            } else {
-                throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
+                default:
+                    throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
             }
         } finally {
             CursorUtil.close(cursor);
@@ -221,19 +218,19 @@ public class FileUtils {
         Cursor cursor = null;
         try {
             cursor = ctx.getContentResolver().query(file, null, null, null, null);
-            if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
-                if (cursor != null && cursor.moveToFirst()) {
-                    return Long.valueOf(
-                            cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)))
-                            .longValue();
-                }
-                throw new IllegalArgumentException("Error in retrieving file size form the URI");
+            switch (scheme) {
+                case ContentResolver.SCHEME_CONTENT:
+                    if (cursor != null && cursor.moveToFirst()) {
+                        return Long.valueOf(cursor.getString(cursor
+                                .getColumnIndexOrThrow(OpenableColumns.SIZE)));
+                    }
+                    throw new IllegalArgumentException("Error in retrieving file size form the URI");
 
-            } else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
-                return (new File(file.getPath())).length();
+                case ContentResolver.SCHEME_FILE:
+                    return (new File(file.getPath())).length();
 
-            } else {
-                throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
+                default:
+                    throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
             }
         } finally {
             CursorUtil.close(cursor);
@@ -242,59 +239,67 @@ public class FileUtils {
 
     /**
      * Test if the stack can read data from this Uri.
-     * 
-     * @param file
-     * @return
+     *
+     * @param ctx The context
+     * @param file The file URI
+     * @return True if URI is readable
      */
     public static boolean isReadFromUriPossible(Context ctx, Uri file) {
         String scheme = file.getScheme();
-        if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
-            InputStream stream = null;
-            try {
-                if (PackageManager.PERMISSION_GRANTED == ctx.checkUriPermission(file,
-                        Process.myPid(), Process.myUid(), Intent.FLAG_GRANT_READ_URI_PERMISSION)) {
+        switch (scheme) {
+            case ContentResolver.SCHEME_CONTENT:
+                InputStream stream = null;
+                try {
+                    if (PackageManager.PERMISSION_GRANTED == ctx
+                            .checkUriPermission(file, Process.myPid(), Process.myUid(),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION)) {
+                        return true;
+                    }
+                    stream = ctx.getContentResolver().openInputStream(file);
+                    stream.read();
                     return true;
+
+                } catch (SecurityException e) {
+                    sLogger.error("Failed to read from uri :" + file, e);
+                    return false;
+
+                } catch (IOException e) {
+                    if (sLogger.isActivated()) {
+                        sLogger.debug("Failed to read from uri :" + file + ", Message="
+                                + e.getMessage());
+                    }
+                    return false;
+
+                } finally {
+                    CloseableUtils.tryToClose(stream);
                 }
-                stream = ctx.getContentResolver().openInputStream(file);
-                stream.read();
-                return true;
-
-            } catch (SecurityException e) {
-                sLogger.error(new StringBuilder("Failed to read from uri :").append(file)
-                        .toString(), e);
-                return false;
-
-            } catch (IOException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug(new StringBuilder("Failed to read from uri :").append(file)
-                            .append(", Message=").append(e.getMessage()).toString());
+            case ContentResolver.SCHEME_FILE:
+                String path = file.getPath();
+                if (path == null) {
+                    sLogger.error("Failed to read from uri :".concat(file.toString()));
+                    return false;
                 }
-                return false;
+                try {
+                    return new File(path).canRead();
 
-            } finally {
-                CloseableUtils.tryToClose(stream);
-            }
-        } else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
-            String path = file.getPath();
-            if (path == null) {
-                sLogger.error("Failed to read from uri :".concat(file.toString()));
-                return false;
-            }
-            try {
-                return new File(path).canRead();
+                } catch (SecurityException e) {
+                    sLogger.error("Failed to read from uri :" + file, e);
+                    return false;
+                }
 
-            } catch (SecurityException e) {
-                sLogger.error(new StringBuilder("Failed to read from uri :").append(file)
-                        .toString(), e);
-                return false;
-            }
-
-        } else {
-            throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
+            default:
+                throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
         }
     }
 
-    public static String getPath(final Context context, final Uri uri) {
+    /**
+     * Get path from Uri
+     * 
+     * @param context The context
+     * @param uri the Uri
+     * @return the file path
+     */
+    public static String getPath(final Context context, final Uri uri) throws FileAccessException {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             // DocumentProvider
             if (DocumentsContract.isDocumentUri(context, uri)) {
@@ -349,7 +354,7 @@ public class FileUtils {
             /* File */
             return uri.getPath();
         }
-        return null;
+        throw new FileAccessException("Cannot resolve Uri '" + uri + "'!");
     }
 
     /**
