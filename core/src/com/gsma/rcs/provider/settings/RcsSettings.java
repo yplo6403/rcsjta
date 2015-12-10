@@ -410,10 +410,10 @@ public class RcsSettings {
      */
     public void setUserProfileImsUserName(ContactId contact) {
         writeContactId(RcsSettingsData.USERPROFILE_IMS_USERNAME, contact);
-        if(getCmsUserLogin().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN)){
+        if(contact!=null && getCmsUserLogin().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN)){
             setCmsUserLogin(contact.toString());
         }
-        if(getCmsUserPwd().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD)){
+        if(contact!=null && getCmsUserPwd().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD)){
             setCmsUserPwd(contact.toString());
         }
     }
@@ -1882,10 +1882,19 @@ public class RcsSettings {
     }
 
     /**
-     * Set the root directory for files
-     * 
-     * @param path Directory path
+     * Get the root directory for mms
+     *
+     * @return Directory path
      */
+    public String getMmsRootDirectory() {
+        return readString(RcsSettingsData.DIRECTORY_PATH_MMS);
+    }
+
+        /**
+         * Set the root directory for files
+         *
+         * @param path Directory path
+         */
     public void setFileRootDirectory(String path) {
         writeString(RcsSettingsData.DIRECTORY_PATH_FILES, path);
     }

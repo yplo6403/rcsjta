@@ -34,6 +34,7 @@ import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
@@ -61,7 +62,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             TextBasedSmsColumns.DATE_SENT,
             TextBasedSmsColumns.PROTOCOL,
             TextBasedSmsColumns.BODY,
-            TextBasedSmsColumns.READ};
+            TextBasedSmsColumns.READ,
+            TextBasedSmsColumns.TYPE,
+            TextBasedSmsColumns.STATUS};
 
     private final String[] PROJECTION_ID_READ = new String[]{
             BaseColumns._ID,
@@ -258,7 +261,8 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             String protocol = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.PROTOCOL));
             String body = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
             int read = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.READ));
-
+            int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
+            int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
             Direction direction = Direction.OUTGOING;
             if (protocol != null) {
                 direction = Direction.INCOMING;
@@ -279,6 +283,16 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                     threadId
             );
             smsDataObject.setTimestampDelivered(date_sent);
+            if(Direction.INCOMING == direction){
+                State state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
+                smsDataObject.setState(state);
+            }
+            else if (Direction.OUTGOING == direction){
+                State state = XmsObserverUtils.getSmsState(type, status);
+                if(state != null){
+                    smsDataObject.setState(state);
+                }
+            }
             return smsDataObject;
         } finally {
             CursorUtil.close(cursor);
@@ -341,12 +355,11 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
 
         // Get part
         Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
-        String textContent = null;
         try {
             cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION, Mms.Part.WHERE, new String[]{String.valueOf(id)}, null);
             CursorUtil.assertCursorIsNotNull(cursor, Mms.Part.URI);
             int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
-            int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.NAME);
+            int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_LOCATION);
             int contentTypeIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE);
             int textIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.TEXT);
             int dataIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part._DATA);
@@ -358,9 +371,6 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                 String content;
                 long fileSize = 0l;
                 byte[] fileIcon = null;
-                if (Constants.CONTENT_TYPE_TEXT.equals(contentType)) {
-                    textContent = text;
-                }
                 String data = cursor.getString(dataIdx);
                 if (data != null) {
                     content = Part.URI.concat(cursor.getString(_idIdx));
@@ -405,7 +415,6 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                     messageIds.get(contact),
                     contact,
                     subject,
-                    textContent,
                     direction,
                     readStatus,
                     date * 1000,
@@ -413,6 +422,14 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                     threadId,
                     entry.getValue()
             ));
+        }
+
+        State state = State.DISPLAYED;
+        if(Direction.INCOMING == direction){
+            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
+        }
+        for(MmsDataObject mms : mmsDataObject ){
+            mms.setState(state);
         }
         return mmsDataObject;
     }

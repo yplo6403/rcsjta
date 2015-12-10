@@ -48,6 +48,7 @@ import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeXmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
@@ -252,7 +253,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
     }
 

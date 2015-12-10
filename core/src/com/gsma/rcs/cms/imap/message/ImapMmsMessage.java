@@ -34,6 +34,7 @@ public class ImapMmsMessage implements IImapMessage {
             String to,
             String direction,
             long date,
+            String subject,
             String conversationId,
             String contributionId,
             String imdnMessageId,
@@ -60,6 +61,9 @@ public class ImapMmsMessage implements IImapMessage {
         cpimHeaders.addHeader(Constants.HEADER_FROM, from);
         cpimHeaders.addHeader(Constants.HEADER_TO, to);
         cpimHeaders.addHeader(Constants.HEADER_DATE_TIME, DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
+        if(subject!=null){
+            cpimHeaders.addHeader(Constants.HEADER_SUBJECT, subject);
+        }
         cpimHeaders.addHeader("NS", "imdn <urn:ietf:params:imdn>");
         cpimHeaders.addHeader("NS", "rcs <http://www.gsma.com>");
         cpimHeaders.addHeader("imdn.Message-ID", imdnMessageId);

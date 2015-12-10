@@ -32,20 +32,21 @@ public interface MmsSessionListener {
      *
      * @param reason The reason code
      * @param contact The remote contact
+     * @param mmsId The messageId
      */
-    void onTransferError(XmsMessage.ReasonCode reason, ContactId contact);
+    void onMmsTransferError(XmsMessage.ReasonCode reason, ContactId contact, String mmsId);
 
     /**
      * MMS transferred
      * 
      * @param contact The remote contact
      */
-    void onTransferred(ContactId contact);
+    void onMmsTransferred(ContactId contact, String mmsId);
 
     /**
      * MMS transfer is started
      *
      * @param contact The remote contact
      */
-    public void onTransferStarted(ContactId contact);
+    void onMmsTransferStarted(ContactId contact, String mmsId);
 }

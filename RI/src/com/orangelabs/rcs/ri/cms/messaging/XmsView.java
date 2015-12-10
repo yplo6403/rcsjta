@@ -408,6 +408,15 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
                     showException(e);
                 }
                 break;
+            case R.id.menu_sync_xms:
+                try {
+                    mCmsService.syncOneToOneConversation(mContact);
+
+                } catch (RcsServiceException e) {
+                    showException(e);
+                }
+                break;
+
         }
         return true;
     }

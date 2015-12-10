@@ -56,8 +56,6 @@ public class ListStatusCmdHandler extends CmdHandler {
 
     @Override
     public void handlePart(Part part) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

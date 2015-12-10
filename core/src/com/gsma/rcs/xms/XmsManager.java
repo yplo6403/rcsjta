@@ -20,10 +20,6 @@
 
 package com.gsma.rcs.xms;
 
-import com.gsma.rcs.utils.IdGenerator;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.contact.ContactId;
-
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -37,6 +33,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Telephony.TextBasedSmsColumns;
 import android.telephony.SmsManager;
+
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
 
@@ -101,9 +101,9 @@ public class XmsManager {
             smsSentIntent.putExtra(KEY_SMS_URI, smsUri.toString());
             smsDeliveredIntent.putExtra(KEY_SMS_URI, smsUri.toString());
         }
-        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0, smsSentIntent, 0);
+        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0, smsSentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         PendingIntent mDeliveredPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
-                smsDeliveredIntent, 0);
+                smsDeliveredIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         ArrayList<String> parts = smsManager.divideMessage(text);
 
         /* Message too large for a single SMS, but may be sent as a multi-part SMS */
@@ -131,11 +131,6 @@ public class XmsManager {
                     mDeliveredPendingIntent);
         }
 
-    }
-
-    public void sendMms(final ContactId contact, final String subject, final String text,
-            final ArrayList<Uri> files) {
-        // TODO
     }
 
     public void initialize() {
@@ -265,5 +260,4 @@ public class XmsManager {
             }
         }
     }
-
 }

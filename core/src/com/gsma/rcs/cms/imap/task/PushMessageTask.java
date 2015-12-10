@@ -133,12 +133,13 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                 IImapMessage imapMessage = null;
 
                 if(message instanceof SmsDataObject){
+                    SmsDataObject sms = (SmsDataObject)message;
                     imapMessage = new ImapSmsMessage(
                             from,
                             to,
                             direction,
-                            message.getTimestamp(),
-                            message.getBody(),
+                            sms.getTimestamp(),
+                            sms.getBody(),
                             UUID.randomUUID().toString(),
                             UUID.randomUUID().toString(),
                             "" + message.getTimestamp());
@@ -151,6 +152,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                             to,
                             direction,
                             mms.getTimestamp(),
+                            mms.getSubject(),
                             UUID.randomUUID().toString(),
                             UUID.randomUUID().toString(),
                             "" + mms.getTimestamp(),

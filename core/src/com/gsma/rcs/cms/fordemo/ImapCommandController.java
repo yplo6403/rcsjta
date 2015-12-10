@@ -23,6 +23,7 @@ import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.Iterator;
@@ -138,7 +139,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
     }
 
@@ -242,6 +243,11 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
             return;
         }
         updateFlags();
+    }
+
+    @Override
+    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType, State state) {
+
     }
 
     @Override

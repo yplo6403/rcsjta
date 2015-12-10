@@ -26,7 +26,7 @@ public interface IRemoteEventHandler {
      * @param message
      * @return messageId
      */
-    String onRemoteNewMessage(MessageType messageType, IImapMessage message);
+    String onRemoteNewMessage(MessageType messageType, IImapMessage message) throws ImapHeaderFormatException;
     
     /**
      * This method checks if the message is already present in local storage.
@@ -34,5 +34,5 @@ public interface IRemoteEventHandler {
      * @param message
      * @return messageId or null if the message is not present in local storage
      */
-    String getMessageId(MessageType messageType, IImapMessage message);
+    String getMessageId(MessageType messageType, IImapMessage message) throws ImapHeaderFormatException;
 }

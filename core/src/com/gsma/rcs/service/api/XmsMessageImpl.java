@@ -30,7 +30,7 @@ import android.os.RemoteException;
 /**
  * Created by Philippe LEMORDANT on 13/11/2015.
  */
-public class XmsMessageImpl extends IXmsMessage.Stub implements MmsSessionListener {
+public class XmsMessageImpl extends IXmsMessage.Stub {
 
     private static final Logger sLogger = Logger.getLogger(XmsMessageImpl.class.getSimpleName());
     private final String mXmsId;
@@ -233,18 +233,4 @@ public class XmsMessageImpl extends IXmsMessage.Stub implements MmsSessionListen
         }
     }
 
-    @Override
-    public void onTransferError(XmsMessage.ReasonCode reason, ContactId contact) {
-        // TODO
-    }
-
-    @Override
-    public void onTransferred(ContactId contact) {
-        // TODO
-    }
-
-    @Override
-    public void onTransferStarted(ContactId contact) {
-        // TODO
-    }
 }

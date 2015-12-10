@@ -5,6 +5,9 @@ import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.Mms;
 import android.provider.Telephony.Mms.Part;
+import android.provider.Telephony.TextBasedSmsColumns;
+
+import com.gsma.services.rcs.cms.XmsMessage.State;
 
 import java.util.Arrays;
 import java.util.List;
@@ -68,7 +71,7 @@ public class XmsObserverUtils{
                     Telephony.BaseMmsColumns._ID,
                     Telephony.Mms.Part.CONTENT_TYPE,
                     Telephony.Mms.Part.TEXT,
-                    Telephony.Mms.Part.NAME,
+                    Telephony.Mms.Part.CONTENT_LOCATION,
                     Telephony.Mms.Part._DATA,
             };
             public static final String WHERE = new StringBuilder(Telephony.Mms.Part.MSG_ID).append("=?").toString();
@@ -83,5 +86,22 @@ public class XmsObserverUtils{
                 BaseColumns._ID,
                 Telephony.BaseMmsColumns.READ
         };
+    }
+
+    public static State getSmsState(int type, int status){
+        if(type == TextBasedSmsColumns.MESSAGE_TYPE_FAILED){
+            return State.FAILED;
+        }
+
+        if(type == TextBasedSmsColumns.MESSAGE_TYPE_SENT){
+            if(status == TextBasedSmsColumns.STATUS_NONE ||
+                    status == TextBasedSmsColumns.STATUS_PENDING){
+                return State.SENT;
+            }
+            else if (status == TextBasedSmsColumns.STATUS_COMPLETE){
+                return State.DELIVERED;
+            }
+        }
+        return null;
     }
 }

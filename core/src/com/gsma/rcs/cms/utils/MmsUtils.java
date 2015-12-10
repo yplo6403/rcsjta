@@ -2,6 +2,7 @@
 package com.gsma.rcs.cms.utils;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.CloseableUtils;
 import com.gsma.rcs.utils.MimeManager;
 
@@ -18,9 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MmsUtils {
-
-    public static final String MMS_DIRECTORY_PATH = Environment.getExternalStorageDirectory()
-            + "/rcs/mms";
 
     public static final List<String> sContentTypeImage = Arrays.asList(
             Constants.CONTENT_TYPE_IMAGE_JPG, Constants.CONTENT_TYPE_IMAGE_JPEG,
@@ -47,9 +45,9 @@ public class MmsUtils {
         }
     }
 
-    public static Uri saveContent(String contentType, String contentId, byte[] data) {
+    public static Uri saveContent(RcsSettings rcsSettings, String contentType, String contentId, byte[] data) {
 
-        String fileName = MMS_DIRECTORY_PATH + File.separator + contentId + "_"
+        String fileName = rcsSettings.getMmsRootDirectory() + File.separator + contentId + "_"
                 + DateUtils.getMmsFileDate(System.currentTimeMillis()) + "."
                 + MimeManager.getInstance().getExtensionFromMimeType(contentType);
         FileOutputStream fos = null;

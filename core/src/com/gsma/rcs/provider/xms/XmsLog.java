@@ -76,6 +76,8 @@ public class XmsLog {
     private static final String SELECTION_XMS_CONTACT_DIRECTION_CORRELATOR = SELECTION_XMS_CONTACT
             + " AND " + SELECTION_XMS_DIRECTION + " AND " + SELECTION_XMS_CORRELATOR + " AND "
             + SELECTION_XMS_SMS;
+    private static final String SELECTION_XMS_CONTACT_UNREAD = SELECTION_XMS_CONTACT + " AND " + SELECTION_UNREAD;
+
     private static final Logger sLogger = Logger.getLogger(XmsLog.class.getSimpleName());
 
     private static final String SELECTION_QUEUED_MMS = XmsData.KEY_STATE + "="
@@ -282,6 +284,7 @@ public class XmsLog {
         }
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
+        values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
 
         if (mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
                 values, null, null) < 1) {
@@ -309,15 +312,14 @@ public class XmsLog {
 
     public void markConversationAsRead(ContactId contactId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("Marking message as read Id=" + contactId.toString());
+            sLogger.debug("Marking conversation as read contact=" + contactId.toString());
         }
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
+        values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
 
-        if (mLocalContentResolver.update(XmsData.CONTENT_URI, values, SELECTION_XMS_CONTACT,
-                new String[] {
-                    contactId.toString()
-                }) < 1) {
+        if (mLocalContentResolver.update(XmsData.CONTENT_URI,
+                values, SELECTION_XMS_CONTACT_UNREAD, new String[]{contactId.toString()}) < 1) {
             if (sLogger.isActivated()) {
                 sLogger.warn("There was no message with msgId '" + contactId.toString()
                         + "' to mark as read.");

@@ -224,15 +224,12 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onMessageStateChanged:" + nativeProviderId + "," + mimeType + "," + type
-                    + "," + status);
-        }
-
-        State state = getState(type, status);
-        if (state == null) {
-            return;
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+        if(sLogger.isActivated()){
+            sLogger.debug(new StringBuilder("onMessageStateChanged:")
+                    .append(nativeProviderId).append(",")
+                    .append(mimeType).append(",")
+                    .append(state).toString());
         }
 
         String contact = null;
@@ -264,22 +261,6 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                         state, ReasonCode.UNSPECIFIED);
             }
         }
-    }
-
-    private State getState(int type, int status) {
-        if (type == TextBasedSmsColumns.MESSAGE_TYPE_FAILED) {
-            return State.FAILED;
-        }
-
-        if (type == TextBasedSmsColumns.MESSAGE_TYPE_SENT) {
-            if (status == TextBasedSmsColumns.STATUS_NONE
-                    || status == TextBasedSmsColumns.STATUS_PENDING) {
-                return State.SENT;
-            } else if (status == TextBasedSmsColumns.STATUS_COMPLETE) {
-                return State.DELIVERED;
-            }
-        }
-        return null;
     }
 
     @Override
@@ -441,6 +422,25 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
+    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType, State state) {
+        if(sLogger.isActivated()){
+            sLogger.debug(new StringBuilder("onMessageStateChanged:")
+                    .append(messageId).append(",")
+                    .append(mimeType).append(",")
+                    .append(state).toString());
+        }
+
+        mXmsLog.updateState(messageId, state);
+        synchronized (mXmsMessageEventBroadcaster){
+            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
+                Set<String> messageIds = new HashSet<>();
+                messageIds.add(messageId);
+                listener.broadcastMessageStateChanged(contact, mimeType, messageId, state, ReasonCode.UNSPECIFIED);
+            }
+        }
+    }
+
+    @Override
     public void onDeleteAll() {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteAll");
@@ -455,12 +455,17 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             sLogger.debug("onRemoteReadEvent");
         }
         mXmsLog.markMessageAsRead(messageId);
-        synchronized (mXmsMessageEventBroadcaster) {
+        String contact = mXmsLog.getContact(messageId);
+        if(contact ==null){ // message is no more present in db
+            return;
+        }
+        synchronized (mXmsMessageEventBroadcaster){
             for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                listener.broadcastMessageStateChanged(ContactUtil
-                        .createContactIdFromTrustedData(mXmsLog.getContact(messageId)),
-                        MessageType.SMS == messageType ? MimeType.TEXT_MESSAGE
-                                : MimeType.MULTIMEDIA_MESSAGE, messageId, State.DISPLAYED,
+                listener.broadcastMessageStateChanged(
+                        ContactUtil.createContactIdFromTrustedData(contact),
+                        MessageType.SMS == messageType ? MimeType.TEXT_MESSAGE : MimeType.MULTIMEDIA_MESSAGE,
+                        messageId,
+                        State.DISPLAYED,
                         ReasonCode.UNSPECIFIED);
             }
         }
@@ -471,8 +476,11 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         if (sLogger.isActivated()) {
             sLogger.debug("onRemoteDeleteEvent");
         }
-        ContactId contactId = ContactUtil.createContactIdFromTrustedData(mXmsLog
-                .getContact(messageId));
+        String contact = mXmsLog.getContact(messageId);
+        if(contact == null){ // message is no more present in db
+            return;
+        }
+        ContactId contactId = ContactUtil.createContactIdFromTrustedData(contact);
         mXmsLog.deleteXmsMessage(messageId);
         Set<String> messageIds = new HashSet<>();
         messageIds.add(messageId);
@@ -484,7 +492,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public String onRemoteNewMessage(MessageType messageType, IImapMessage message) {
+    public String onRemoteNewMessage(MessageType messageType, IImapMessage message) throws ImapHeaderFormatException {
         if (sLogger.isActivated()) {
             sLogger.debug("onRemoteNewMessage");
         }
@@ -524,7 +532,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public String getMessageId(MessageType messageType, IImapMessage message) {
+    public String getMessageId(MessageType messageType, IImapMessage message)  throws ImapHeaderFormatException {
 
         // check if an entry already exist in imapData provider
         MessageData messageData = mImapLog.getMessage(message.getFolder(), message.getUid());

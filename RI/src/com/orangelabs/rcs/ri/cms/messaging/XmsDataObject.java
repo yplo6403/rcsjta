@@ -20,6 +20,7 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
+import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -38,7 +39,7 @@ public class XmsDataObject {
     // @formatter:off
     private static final String[] PROJECTION = {
             XmsMessageLog.MIME_TYPE, XmsMessageLog.CONTENT, XmsMessageLog.CONTACT,
-            XmsMessageLog.TIMESTAMP
+            XmsMessageLog.TIMESTAMP, XmsMessageLog.DIRECTION
     };
     // @formatter:on
 
@@ -48,14 +49,16 @@ public class XmsDataObject {
     private final ContactId mContact;
     private final long mTimestamp;
     private final String mContent;
+    private final Direction mDirection;
 
-    public XmsDataObject(String messageId, String content, String mimeType, ContactId contact,
-            long timestamp) {
+    public XmsDataObject(String messageId, String content, String mimeType,
+                         ContactId contact, long timestamp, Direction direction) {
         mMessageId = messageId;
         mMimeType = mimeType;
         mContact = contact;
         mTimestamp = timestamp;
         mContent = content;
+        mDirection = direction;
     }
 
     /**
@@ -79,12 +82,14 @@ public class XmsDataObject {
             int timestampIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP);
             int contentIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT);
             int contactIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
+            int directionIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.DIRECTION);
             String mimeType = cursor.getString(mimeTypeIdx);
             String content = cursor.getString(contentIdx);
             String number = cursor.getString(contactIdx);
             ContactId contact = ContactUtil.formatContact(number);
             long timestamp = cursor.getLong(timestampIdx);
-            return new XmsDataObject(messageId, content, mimeType, contact, timestamp);
+            Direction direction = Direction.valueOf(cursor.getInt(directionIdx));
+            return new XmsDataObject(messageId,content,mimeType,contact,timestamp, direction);
 
         } finally {
             if (cursor != null) {
@@ -113,10 +118,20 @@ public class XmsDataObject {
         return mTimestamp;
     }
 
+    public Direction getDirection(){
+        return mDirection;
+    }
+
     @Override
     public String toString() {
-        return "XmsDataObject{" + "messageId='" + mMessageId + '\'' + ", mimeType='" + mMimeType
-                + '\'' + ", contact=" + mContact + ", timestamp=" + mTimestamp + ", content='"
-                + mContent + '\'' + '}';
+        final StringBuilder sb = new StringBuilder("XmsDataObject{");
+        sb.append("mMessageId='").append(mMessageId).append('\'');
+        sb.append(", mMimeType='").append(mMimeType).append('\'');
+        sb.append(", mContact=").append(mContact);
+        sb.append(", mTimestamp=").append(mTimestamp);
+        sb.append(", mContent='").append(mContent).append('\'');
+        sb.append(", mDirection=").append(mDirection);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.orangelabs.mms">
+
+    <uses-sdk
+        android:minSdkVersion="12"
+        android:targetSdkVersion="22" />
+</manifest>

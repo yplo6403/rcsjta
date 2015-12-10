@@ -55,11 +55,8 @@ public class CmsService extends ImsService {
     private final XmsLog mXmsLog;
     private CmsServiceImpl mCmsServiceImpl;
     private final Core mCore;
-
     private final Context mContext;
-    private final CmsManager mCmsManager;
     private final RcsSettings mRcsSettings;
-    private final LocalStorage mLocalStorage;
 
     /**
      * Constructor
@@ -76,9 +73,7 @@ public class CmsService extends ImsService {
         mContext = context;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mXmsLog = xmsLog;
-        mCmsManager = parent.getCore().getCmsManager();
         mRcsSettings = rcsSettings;
-        mLocalStorage = mCmsManager.getLocalStorage();
         mCore = core;
     }
 
@@ -128,7 +123,8 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS");
                 }
                 // TODO catch and log exception at this level
-                new Synchronizer(mContext, mRcsSettings, mLocalStorage).syncAll();
+                LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                new Synchronizer(mContext, mRcsSettings, localStorage).syncAll();
                 mCmsServiceImpl.broadcastAllSynchronized();
             }
         });
@@ -142,7 +138,8 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
                 // TODO catch and log exception at this level
-                new Synchronizer(mContext, mRcsSettings, mLocalStorage).syncFolder(CmsUtils
+                LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                new Synchronizer(mContext, mRcsSettings, localStorage).syncFolder(CmsUtils
                         .contactToCmsFolder(mRcsSettings, contact));
                 mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
             }
@@ -162,10 +159,9 @@ public class CmsService extends ImsService {
                     if (logActivated) {
                         sLogger.debug("Execute task to dequeue MMS");
                     }
-                    // TODO check network connectivity and not IMS connection
-                    if (!ServerApiUtils.isImsConnected()) {
+                    if (!ServerApiUtils.isMmsConnectionAvailable(mContext)) {
                         if (logActivated) {
-                            sLogger.debug("IMS not connected, exiting dequeue task to dequeue MMS");
+                            sLogger.debug("MMS mobile connection not available, exiting dequeue task to dequeue MMS");
                         }
                         return;
                     }

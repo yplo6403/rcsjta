@@ -2,6 +2,7 @@ package com.gsma.rcs.cms.event;
 
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 public interface INativeXmsEventListener {
@@ -14,7 +15,7 @@ public interface INativeXmsEventListener {
     void onOutgoingMms(MmsDataObject message);
     void onDeleteNativeMms(String mmsId);
 
-    void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status);
+    void onMessageStateChanged(Long nativeProviderId, String mimeType, State state);
 
     void onReadNativeConversation(long nativeThreadId);
     void onDeleteNativeConversation(long nativeThreadId);

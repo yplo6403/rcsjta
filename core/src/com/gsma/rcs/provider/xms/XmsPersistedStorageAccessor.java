@@ -19,6 +19,8 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.ContactUtil;
@@ -65,15 +67,20 @@ public class XmsPersistedStorageAccessor {
 
     private String mChatId;
 
-    public XmsPersistedStorageAccessor(XmsLog xmsLog, XmsDataObject sms) {
-        this(xmsLog, sms.getMessageId());
-        mContact = sms.getContact();
-        mDirection = sms.getDirection();
-        mMimeType = sms.getMimeType();
-        mContent = sms.getBody();
-        mTimestamp = sms.getTimestamp();
-        mCorrelator = sms.getCorrelator();
-        mChatId = sms.getChatId();
+    public XmsPersistedStorageAccessor(XmsLog xmsLog, XmsDataObject xms) {
+        this(xmsLog, xms.getMessageId());
+        mContact = xms.getContact();
+        mDirection = xms.getDirection();
+        mMimeType = xms.getMimeType();
+        if(xms instanceof SmsDataObject){
+            mContent = ((SmsDataObject)xms).getBody();
+            mCorrelator = ((SmsDataObject)xms).getCorrelator();
+        } else if (xms instanceof MmsDataObject){
+            mCorrelator = null;
+            mContent = ((MmsDataObject)xms).getSubject();
+        }
+        mTimestamp = xms.getTimestamp();
+        mChatId = xms.getChatId();
     }
 
     public XmsPersistedStorageAccessor(XmsLog xmsLog, String xmsId) {

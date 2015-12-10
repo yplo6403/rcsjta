@@ -56,6 +56,7 @@ import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -463,7 +464,6 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
 
     @Override
     public void onDeleteNativeSms(long nativeProviderId) {
-        // TODO Auto-generated method stub   
     }
 
     @Override
@@ -486,7 +486,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
     }
 
@@ -497,8 +497,6 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
 
     @Override
     public void onDeleteNativeConversation(long nativeThreadId) {
-        // TODO Auto-generated method stub
-        
     }
     
     @Override

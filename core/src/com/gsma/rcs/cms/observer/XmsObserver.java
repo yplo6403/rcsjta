@@ -49,7 +49,7 @@ public class XmsObserver implements INativeXmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
 
-    private List<INativeXmsEventListener> mNewXmsEventListeners = new ArrayList<>();
+    private List<INativeXmsEventListener> mXmsEventListeners = new ArrayList<>();
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
@@ -166,12 +166,19 @@ public class XmsObserver implements INativeXmsEventListener {
                 if (protocol == null) {
                     direction = Direction.OUTGOING;
                 }
-                SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(),
-                        contactId, body, direction, date, _id, threadId);
+                SmsDataObject smsDataObject = new SmsDataObject(
+                        IdGenerator.generateMessageID(),
+                        contactId,
+                        body,
+                        direction,
+                        date,
+                        _id,
+                        threadId);
                 if (Direction.INCOMING == direction) {
                     smsDataObject.setState(State.RECEIVED);
                     onIncomingSms(smsDataObject);
                 } else {
+                    smsDataObject.setReadStatus(ReadStatus.READ);
                     onOutgoingSms(smsDataObject);
                 }
             } finally {
@@ -191,7 +198,7 @@ public class XmsObserver implements INativeXmsEventListener {
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
                 int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
-                onMessageStateChanged(_id, MimeType.TEXT_MESSAGE, type, status);
+                onMessageStateChanged(_id, MimeType.TEXT_MESSAGE,  XmsObserverUtils.getSmsState(type, status));
             } finally {
                 CursorUtil.close(cursor);
             }
@@ -225,7 +232,7 @@ public class XmsObserver implements INativeXmsEventListener {
             // check if we have all infos in database about mms message
             Long id, threadId, date;
             id = date = -1l;
-            String mmsId;
+            String mmsId, subject;
             Direction direction = Direction.INCOMING;
             Set<ContactId> contacts = new HashSet<>();
             try {
@@ -238,6 +245,7 @@ public class XmsObserver implements INativeXmsEventListener {
                 id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 threadId = cursor.getLong(cursor.getColumnIndex(BaseMmsColumns.THREAD_ID));
                 mmsId = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID));
+                subject = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
                 int messageType = cursor.getInt(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_TYPE));
                 if (128 == messageType) {
                     direction = Direction.OUTGOING;
@@ -255,8 +263,8 @@ public class XmsObserver implements INativeXmsEventListener {
                     type = Mms.Addr.TO;
                 }
                 cursor = mContentResolver.query(Uri.parse(String.format(Mms.Addr.URI, id)),
-                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[] {
-                            String.valueOf(type)
+                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[]{
+                                String.valueOf(type)
                         }, null);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.Addr.URI);
                 int adressIdx = cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS);
@@ -282,18 +290,13 @@ public class XmsObserver implements INativeXmsEventListener {
             }
 
             mMmsIds = mmsIds;
-
             // Get part
             Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
-            String textContent = null;
             try {
-                cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
-                        Mms.Part.WHERE, new String[] {
-                            String.valueOf(id)
-                        }, null);
+                cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION, Mms.Part.WHERE, new String[]{String.valueOf(id)}, null);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.Part.URI);
                 int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
-                int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.NAME);
+                int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_LOCATION);
                 int contentTypeIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE);
                 int textIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.TEXT);
                 int dataIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part._DATA);
@@ -305,9 +308,6 @@ public class XmsObserver implements INativeXmsEventListener {
                     String content;
                     long fileSize = 0l;
                     byte[] fileIcon = null;
-                    if (Constants.CONTENT_TYPE_TEXT.equals(contentType)) {
-                        textContent = text;
-                    }
                     String data = cursor.getString(dataIdx);
                     if (data != null) {
                         content = Part.URI.concat(cursor.getString(_idIdx));
@@ -336,19 +336,28 @@ public class XmsObserver implements INativeXmsEventListener {
                 CursorUtil.close(cursor);
             }
 
-            String subject = null; // TODO
-
+            ReadStatus readStatus = (Direction.INCOMING == direction ? ReadStatus.UNREAD : ReadStatus.READ);
             Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
             while (iter.hasNext()) {
                 Entry<ContactId, List<MmsPart>> entry = iter.next();
                 ContactId contact = entry.getKey();
-                MmsDataObject mmsDataObject = new MmsDataObject(mmsId, messageIds.get(contact),
-                        contact, subject, textContent, direction, ReadStatus.UNREAD, date * 1000,
-                        id, threadId, entry.getValue());
+                MmsDataObject mmsDataObject = new MmsDataObject(
+                        mmsId,
+                        messageIds.get(contact),
+                        contact,
+                        subject,
+                        direction,
+                        readStatus,
+                        date * 1000,
+                        id,
+                        threadId,
+                        entry.getValue()
+                );
                 if (Direction.INCOMING == direction) {
                     mmsDataObject.setState(State.RECEIVED);
                     onIncomingMms(mmsDataObject);
                 } else {
+                    mmsDataObject.setState(State.DISPLAYED);
                     onOutgoingMms(mmsDataObject);
                 }
             }
@@ -479,19 +488,19 @@ public class XmsObserver implements INativeXmsEventListener {
         // unregister content observer
         mContentResolver.unregisterContentObserver(mXmsContentObserver);
         mXmsContentObserver = null;
-        mNewXmsEventListeners.clear();
-        mNewXmsEventListeners = null;
+        mXmsEventListeners.clear();
+        mXmsEventListeners = null;
     }
 
     public void registerListener(INativeXmsEventListener listener) {
-        synchronized (mNewXmsEventListeners) {
-            mNewXmsEventListeners.add(listener);
+        synchronized (mXmsEventListeners) {
+            mXmsEventListeners.add(listener);
         }
     }
 
     public void unregisterListener(INativeXmsEventListener listener) {
-        synchronized (mNewXmsEventListeners) {
-            mNewXmsEventListeners.remove(listener);
+        synchronized (mXmsEventListeners) {
+            mXmsEventListeners.remove(listener);
         }
     }
 
@@ -502,8 +511,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeSms : ".concat(String.valueOf(nativeProviderId)));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onDeleteNativeSms(nativeProviderId);
             }
         }
@@ -514,8 +523,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeMms : ".concat(mmsId));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onDeleteNativeMms(mmsId);
             }
         }
@@ -526,8 +535,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeConversation : " + nativeThreadId);
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onDeleteNativeConversation(nativeThreadId);
             }
         }
@@ -538,8 +547,8 @@ public class XmsObserver implements INativeXmsEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("onReadNativeConversation : " + nativeThreadId);
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onReadNativeConversation(nativeThreadId);
             }
         }
@@ -549,10 +558,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onIncomingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onIncomingSms(message);
             }
         }
@@ -562,10 +571,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onOutgoingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onOutgoingSms(message);
             }
         }
@@ -575,10 +584,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onIncomingMms(MmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onIncomingMms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onIncomingMms(message);
             }
         }
@@ -588,21 +597,26 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onOutgoingMms(MmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingMms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mNewXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
         }
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
                 listener.onOutgoingMms(message);
             }
         }
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, int type, int status) {
-        synchronized (mNewXmsEventListeners) {
-            for (INativeXmsEventListener listener : mNewXmsEventListeners) {
-                listener.onMessageStateChanged(nativeProviderId, mimeType, type, status);
+    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+        if(state == null) {
+            return;
+        }
+        synchronized (mXmsEventListeners) {
+            for (INativeXmsEventListener listener : mXmsEventListeners) {
+                listener.onMessageStateChanged(nativeProviderId, mimeType, state);
             }
         }
     }
+
+
 }

@@ -20,6 +20,7 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
+import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
@@ -129,6 +130,11 @@ public class XmsIntentService extends IntentService {
             }
             return;
         }
+
+        if(Direction.OUTGOING == message.getDirection()){ // no notif for outgoing msg
+            return;
+        }
+
         PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         String displayName = RcsContactUtil.getInstance(this).getDisplayName(contact);

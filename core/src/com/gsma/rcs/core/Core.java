@@ -188,10 +188,8 @@ public class Core {
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
 
-        mXmsManager = new XmsManager(ctx, contentResolver);
         mCmsManager = new CmsManager(ctx, imapLog, xmsLog, rcsSettings);
-        // TODO FG never start in constructor
-        mCmsManager.start();
+        mXmsManager = new XmsManager(ctx, contentResolver);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         // TODO FG never start in constructor
         backgroundThread.start();

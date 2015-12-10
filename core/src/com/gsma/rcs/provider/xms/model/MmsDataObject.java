@@ -41,10 +41,9 @@ public class MmsDataObject extends XmsDataObject {
      */
     private final String mMmsId;
     private final String mSubject;
-    private final String mBody;
 
     public MmsDataObject(String mmsId, String messageId, ContactId contact, String subject,
-            String body, RcsService.Direction dir, ReadStatus readStatus, long timestamp,
+            RcsService.Direction dir, ReadStatus readStatus, long timestamp,
             long nativeId, long nativeThreadId, List<MmsPart> mmsPart) {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, nativeThreadId);
@@ -52,7 +51,6 @@ public class MmsDataObject extends XmsDataObject {
         mReadStatus = readStatus;
         mMmsPart = mmsPart;
         mSubject = subject;
-        mBody = body;
     }
 
     public MmsDataObject(Context ctx, String mmsId, String messageId, ContactId contact,
@@ -75,7 +73,6 @@ public class MmsDataObject extends XmsDataObject {
             mMmsPart.add(new MmsPart(messageId, contact, mimeType, filename, fileSize, file
                     .toString(), fileIcon));
         }
-        mBody = body;
         if (body != null) {
             mMmsPart.add(new MmsPart(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, null,
                     null, body, null));
@@ -88,16 +85,6 @@ public class MmsDataObject extends XmsDataObject {
 
     public String getSubject() {
         return mSubject;
-    }
-
-    @Override
-    public String getCorrelator() {
-        return null;
-    }
-
-    @Override
-    public String getBody() {
-        return mBody;
     }
 
     public List<MmsPart> getMmsPart() {

@@ -23,7 +23,7 @@
 //    public PushMessageTaskMock(BasicImapService imapService, XmsLog xmsLog, ImapLog imapLog, String myNumber,
 //            PushMessageTaskListener callback) {
 //        super(imapService, xmsLog, imapLog, myNumber, callback);
-//        // TODO Auto-generated constructor stub
+//
 //    }
 //
 //    @Override

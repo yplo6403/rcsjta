@@ -2,6 +2,7 @@
 package com.gsma.rcs.provider.xms.model;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.ImapHeaderFormatException;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.message.mime.MmsMimeMessage;
@@ -10,6 +11,7 @@ import com.gsma.rcs.cms.imap.message.mime.SmsMimeMessage;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.ims.service.presence.pidf.Contact;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.PartData;
@@ -18,14 +20,18 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.ImageUtils;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
+import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 
+import com.gsma.services.rcs.contact.ContactId;
 import com.sonymobile.rcs.imap.Part;
 
 import android.content.Context;
@@ -47,7 +53,7 @@ public class XmsDataObjectFactory {
             }
             String mimeType = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MIME_TYPE));
             String contact = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT));
-            String body = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTENT));
+            String content = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTENT));
             Direction direction = Direction.valueOf(cursor.getInt(cursor
                     .getColumnIndex(XmsData.KEY_DIRECTION)));
             ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(cursor
@@ -56,14 +62,21 @@ public class XmsDataObjectFactory {
 
             if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
                 xmsDataObject = new SmsDataObject(messageId,
-                        ContactUtil.createContactIdFromTrustedData(contact), body, direction, date,
+                        ContactUtil.createContactIdFromTrustedData(contact), content, direction, date,
                         readStatus);
             } else {
-                String subject = null; // TODO
                 String mmsId = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MMS_ID));
+                List<MmsDataObject.MmsPart> mmsParts = createMmsPart(xmsLog, messageId);
+                String body = null;
+                for(MmsPart mmsPart : mmsParts){ // search for body
+                    if(MimeType.TEXT_MESSAGE.equals(mmsPart.getMimeType())){
+                        body = mmsPart.getBody();
+                        break;
+                    }
+                }
                 xmsDataObject = new MmsDataObject(mmsId, messageId,
-                        ContactUtil.createContactIdFromTrustedData(contact), subject, body,
-                        direction, readStatus, date, 0l, 0l, createMmsPart(xmsLog, messageId));
+                        ContactUtil.createContactIdFromTrustedData(contact), content,
+                        direction, readStatus, date, 0l, 0l,mmsParts );
             }
             return xmsDataObject;
         } finally {
@@ -95,48 +108,62 @@ public class XmsDataObjectFactory {
         }
     }
 
-    public static SmsDataObject createSmsDataObject(ImapSmsMessage imapMessage) {
+    public static SmsDataObject createSmsDataObject(ImapSmsMessage imapMessage) throws ImapHeaderFormatException {
 
         Part body = imapMessage.getRawMessage().getBody();
         String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
-        String contact;
+        String header;
         if (Constants.DIRECTION_RECEIVED.equals(directionStr)) {
             direction = Direction.INCOMING;
-            contact = CmsUtils.headerToContact(body.getHeader(Constants.HEADER_FROM));
+            header = body.getHeader(Constants.HEADER_FROM);
         } else {
             direction = Direction.OUTGOING;
-            contact = CmsUtils.headerToContact(body.getHeader(Constants.HEADER_TO));
+            header = body.getHeader(Constants.HEADER_TO);
         }
-        SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(),
-                ContactUtil.createContactIdFromTrustedData(contact),
-                ((SmsMimeMessage) imapMessage.getPart()).getBodyPart(), direction,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE),
-                        DateUtils.CMS_IMAP_DATE_FORMAT), imapMessage.isSeen() ? ReadStatus.READ
-                        : ReadStatus.UNREAD, body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
-        if (Direction.INCOMING == direction) {
-            smsDataObject.setState(State.RECEIVED);
+        ContactId contactId = CmsUtils.headerToContact(header);
+        if(contactId == null){
+            throw new ImapHeaderFormatException("Bad format for header : " + header );
         }
+        ReadStatus readStatus = imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD;
+        SmsDataObject smsDataObject = new SmsDataObject(
+                IdGenerator.generateMessageID(),
+                contactId,
+                ((SmsMimeMessage)imapMessage.getPart()).getBodyPart(),
+                direction,
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
+                readStatus,
+                body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
+        State state;
+        if(Direction.INCOMING == direction){
+            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
+        }
+        else{
+            state = State.SENT;
+        }
+        smsDataObject.setState(state);
         return smsDataObject;
     }
 
     public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
-            ImapMmsMessage imapMessage) {
+            ImapMmsMessage imapMessage) throws ImapHeaderFormatException {
         Part body = imapMessage.getRawMessage().getBody();
         String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
-        String contact;
+        String header;
         if (Constants.DIRECTION_RECEIVED.equals(directionStr)) {
             direction = Direction.INCOMING;
-            contact = CmsUtils.headerToContact(body.getHeader(Constants.HEADER_FROM));
+            header = body.getHeader(Constants.HEADER_FROM);
         } else {
             direction = Direction.OUTGOING;
-            contact = CmsUtils.headerToContact(body.getHeader(Constants.HEADER_TO));
+            header = body.getHeader(Constants.HEADER_TO);
         }
-
+        ContactId contactId = CmsUtils.headerToContact(header);
+        if(contactId == null){
+            throw new ImapHeaderFormatException("Bad format for header : " + header );
+        }
         String messageId = IdGenerator.generateMessageID();
         MmsMimeMessage mmsMimeMessage = (MmsMimeMessage) imapMessage.getPart();
-        String textContent = null;
         List<MmsPart> mmsParts = new ArrayList<>();
         for (MultiPart multipart : mmsMimeMessage.getMimebody().getMultiParts()) {
             String contentType = multipart.getContentType();
@@ -151,7 +178,7 @@ public class XmsDataObjectFactory {
                 } else {
                     data = multipart.getContent().getBytes();
                 }
-                Uri uri = MmsUtils.saveContent(contentType, multipart.getContentId(), data);
+                Uri uri = MmsUtils.saveContent(rcsSettings, contentType, multipart.getContentId(), data);
                 content = uri.toString();
                 fileName = FileUtils.getFileName(context, uri);
                 fileLength = data.length;
@@ -162,22 +189,33 @@ public class XmsDataObjectFactory {
                 content = multipart.getContent();
             }
 
-            mmsParts.add(new MmsDataObject.MmsPart(messageId, ContactUtil
-                    .createContactIdFromTrustedData(contact), contentType, fileName, fileLength,
+            mmsParts.add(new MmsDataObject.MmsPart(messageId,
+                    contactId,
+                    contentType, fileName, fileLength,
                     content, fileIcon));
         }
 
-        String subject = null; // TODO
+        ReadStatus readStatus = imapMessage.isSeen()? ReadStatus.READ : ReadStatus.UNREAD;
         MmsDataObject mmsDataObject = new MmsDataObject(
-                body.getHeader(Constants.HEADER_MESSAGE_ID), messageId,
-                ContactUtil.createContactIdFromTrustedData(contact), subject, textContent,
-                direction, imapMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE),
-                        DateUtils.CMS_IMAP_DATE_FORMAT), 0, 0, mmsParts);
-
+                body.getHeader(Constants.HEADER_MESSAGE_ID),
+                messageId,
+                contactId,
+                body.getHeader(Constants.HEADER_SUBJECT),
+                direction,
+                readStatus,
+                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE), DateUtils.CMS_IMAP_DATE_FORMAT),
+                0,
+                0,
+                mmsParts
+                );
+        State state;
         if (Direction.INCOMING == direction) {
-            mmsDataObject.setState(State.RECEIVED);
+            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
         }
+        else{
+            state = State.SENT;
+        }
+        mmsDataObject.setState(state);
         return mmsDataObject;
     }
 }

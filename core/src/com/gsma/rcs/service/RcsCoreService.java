@@ -23,6 +23,7 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
+import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.core.Core;
@@ -309,9 +310,10 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mRcsSettings,
-                    mContentResolver, core.getXmsManager(), core.getCmsManager());
-
+            CmsManager cmsManager = core.getCmsManager();
+            cmsManager.start();
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mXmsLog, mRcsSettings, mContentResolver,
+                    core.getXmsManager(), cmsManager);
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 
@@ -327,8 +329,7 @@ public class RcsCoreService extends Service implements CoreListener {
             FileFactory.createDirectory(mRcsSettings.getPhotoRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getVideoRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getFileRootDirectory());
-            // TODO FGI use rcsSettings instead
-            FileFactory.createDirectory(MmsUtils.MMS_DIRECTORY_PATH);
+            FileFactory.createDirectory(mRcsSettings.getMmsRootDirectory());
 
             // Init CPU manager
             mCpuManager = new CpuManager(mRcsSettings);

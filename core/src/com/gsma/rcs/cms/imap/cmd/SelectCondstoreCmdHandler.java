@@ -55,13 +55,10 @@ public class SelectCondstoreCmdHandler extends CmdHandler {
 
     @Override
     public void handlePart(Part part) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public Object getResult() {
-        // TODO Auto-generated method stub
         return null;
     }
 }

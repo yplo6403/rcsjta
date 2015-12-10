@@ -20,6 +20,7 @@ package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
+import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.core.ims.service.cms.mms.OriginatingMmsSession;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -38,7 +39,10 @@ import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
 import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
+import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
+import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
@@ -57,7 +61,7 @@ import java.util.Set;
  *
  * @author Philippe LEMORDANT
  */
-public class CmsServiceImpl extends ICmsService.Stub {
+public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
     private final CmsEventBroadcaster mCmsBroadcaster = new CmsEventBroadcaster();
@@ -345,6 +349,7 @@ public class CmsServiceImpl extends ICmsService.Stub {
         }
     }
 
+
     private void checkUris(List<Uri> files) {
         for (Uri file : files) {
             if (!FileUtils.isReadFromUriPossible(mContext, file)) {
@@ -553,13 +558,11 @@ public class CmsServiceImpl extends ICmsService.Stub {
         if (sLogger.isActivated()) {
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
-        long timestamp = System.currentTimeMillis();
         /* For outgoing MMS transfer, timestampSent = timestamp */
-        OriginatingMmsSession session = new OriginatingMmsSession(mXmsLog, mmsId, contact, subject,
+        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mContentResolver, mXmsLog, mmsId, contact, subject,
                 parts);
-        XmsMessageImpl xmsMessage = getOrCreateXmsMessage(mmsId);
-        session.addListener(xmsMessage);
-        setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
+        session.addListener(this);
+        session.addListener(mCmsManager);
         mCmsService.scheduleImOperation(session);
     }
 
@@ -569,7 +572,6 @@ public class CmsServiceImpl extends ICmsService.Stub {
             mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
                     state, reasonCode);
         }
-
     }
 
     public void setXmsStateAndTimestamp(String mmsId, ContactId contact, XmsMessage.State state,
@@ -587,4 +589,19 @@ public class CmsServiceImpl extends ICmsService.Stub {
                 reasonCode);
     }
 
+    @Override
+    public void onMmsTransferError(ReasonCode reason, ContactId contact, String mmsId) {
+        setXmsStateAndReasonCode(mmsId, MimeType.MULTIMEDIA_MESSAGE, contact, State.FAILED, reason);
+    }
+
+    @Override
+    public void onMmsTransferred(ContactId contact, String mmsId) {
+        setXmsStateAndReasonCode(mmsId, MimeType.MULTIMEDIA_MESSAGE, contact, State.SENT, ReasonCode.UNSPECIFIED);
+    }
+
+    @Override
+    public void onMmsTransferStarted(ContactId contact, String mmsId) {
+        long timestamp = System.currentTimeMillis();
+        setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
+    }
 }

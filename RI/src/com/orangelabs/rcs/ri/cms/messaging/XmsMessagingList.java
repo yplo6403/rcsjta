@@ -18,6 +18,7 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.XmsMessage;
@@ -38,6 +39,8 @@ import com.orangelabs.rcs.ri.utils.Utils;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.LoaderManager;
@@ -75,7 +78,8 @@ public class XmsMessagingList extends RcsFragmentActivity implements
         XmsMessageLog.CONTACT,
         XmsMessageLog.CONTENT,
         XmsMessageLog.MIME_TYPE,
-        XmsMessageLog.TIMESTAMP
+        XmsMessageLog.TIMESTAMP,
+        XmsMessageLog.READ_STATUS
     };
     // @formatter:on
 
@@ -189,6 +193,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             String content = truncate(cursor.getString(holder.columnContent));
             holder.contentText.setText((content == null) ? "" : content);
             holder.contentText.setVisibility(View.VISIBLE);
+            holder.showAsNew(cursor.getInt(holder.columnReadStatus)==0);
         }
     }
 
@@ -213,6 +218,10 @@ public class XmsMessagingList extends RcsFragmentActivity implements
 
         int columnTimestamp;
 
+        int columnReadStatus;
+
+        int defaultColor;
+
         TextView contactText;
 
         TextView contentText;
@@ -224,10 +233,20 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             columnContent = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT);
             columnMimeType = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
             columnTimestamp = cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP);
-
+            columnReadStatus = cursor.getColumnIndexOrThrow(XmsMessageLog.READ_STATUS);
             contactText = (TextView) base.findViewById(R.id.line1);
             contentText = (TextView) base.findViewById(R.id.line2);
             dateText = (TextView) base.findViewById(R.id.date);
+            defaultColor = contactText.getTextColors().getDefaultColor();
+        }
+
+        void showAsNew(boolean isNew){
+            int color = isNew ? Color.GREEN : defaultColor;
+            int style = isNew ? (Typeface.BOLD | Typeface.ITALIC) : Typeface.NORMAL;
+            contactText.setTypeface(null, style);
+            contactText.setTextColor(color);
+            contentText.setTypeface(null, style);
+            contentText.setTextColor(color);
         }
     }
 
@@ -257,6 +276,21 @@ public class XmsMessagingList extends RcsFragmentActivity implements
                     }
                     mCmsService.deleteXmsMessages();
 
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                }
+                break;
+            case R.id.menu_sync_xms:
+                /* Start a sync with CMS*/
+                if (!isServiceConnected(RcsServiceName.CMS)) {
+                    showMessage(R.string.label_service_not_available);
+                    break;
+                }
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "start a sync");
+                }
+                try {
+                    mCmsService.syncAll();
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
                 }

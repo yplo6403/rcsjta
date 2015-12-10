@@ -22,9 +22,15 @@
 
 package com.gsma.rcs.service.api;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.util.Log;
+
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.ims.network.ImsConnectionManager;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
 import com.gsma.services.rcs.RcsServiceRegistration;
+import com.orange.labs.mms.priv.utils.Constants;
 
 /**
  * Server API utils
@@ -62,6 +68,16 @@ public class ServerApiUtils {
         }
         ImsNetworkInterface networkInterface = core.getImsModule().getCurrentNetworkInterface();
         return networkInterface != null && networkInterface.isRegistered();
+    }
+
+    /**
+     * Is mobile connection available
+     *
+     * @return Boolean
+     */
+    public static boolean isMmsConnectionAvailable(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS).isAvailable();
     }
 
     /**

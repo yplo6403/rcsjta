@@ -30,6 +30,7 @@ public class Constants {
     public static final String HEADER_SEP = ": ";
     public static final String HEADER_FROM = "From";
     public static final String HEADER_TO = "To";
+    public static final String HEADER_SUBJECT = "Subject";
     public static final String HEADER_MESSAGE_CONTEXT = "Message-Context";
     public static final String HEADER_MESSAGE_CORRELATOR = "Message-Correlator";
     public static final String HEADER_MESSAGE_ID = "Message-ID";

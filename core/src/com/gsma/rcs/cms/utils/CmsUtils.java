@@ -1,7 +1,10 @@
 package com.gsma.rcs.cms.utils;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.ImapHeaderFormatException;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.StringUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -33,11 +36,17 @@ public class CmsUtils {
         return contact;
     }
 
-    public static String headerToContact(String header){
+    public static ContactId headerToContact(String header) {
+        //TODO FGI : use regexp to extract phone number from header
         String contact = header;
-        if(header.startsWith(Constants.TEL_PREFIX)){
+        if (header.startsWith(Constants.TEL_PREFIX)) {
             contact = header.substring(Constants.TEL_PREFIX.length());
         }
-        return contact;
+
+        PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(contact);
+        if (phoneNumber == null) {
+            return null;
+        }
+        return ContactUtil.createContactIdFromValidatedData(phoneNumber);
     }
 }

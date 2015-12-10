@@ -12,6 +12,7 @@
     <string name="label_confirm_close">Do you confirm ?\nThis will close the session.</string>
     <string name="menu_close_session">Quit</string>
     <string name="menu_clear_log">Clear log</string>
+    <string name="menu_sync_xms">Sync</string>
     <string name="label_file_size">Size: %1$s Kb</string>
     <string name="label_command_in_progress">Command in progress…</string>
     <string name="label_session_not_found">Session not found</string>

@@ -129,10 +129,6 @@ public abstract class XmsDataObject {
         mReadStatus = readStatus;
     }
 
-    abstract public String getCorrelator();
-
-    abstract public String getBody();
-
     public String getChatId() {
         return mChatId;
     }

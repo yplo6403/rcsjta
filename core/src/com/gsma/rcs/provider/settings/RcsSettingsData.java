@@ -1230,6 +1230,13 @@ public class RcsSettingsData {
             .getExternalStorageDirectory() + "/rcs/files/";
 
     /**
+     * Directory path for files
+     */
+    public static final String DIRECTORY_PATH_MMS = "DirectoryPathMms";
+    /* package private */static final String DEFAULT_DIRECTORY_PATH_MMS = Environment
+            .getExternalStorageDirectory() + "/rcs/mms/";
+
+    /**
      * Secure MSRP over Wi-Fi
      */
     public static final String SECURE_MSRP_OVER_WIFI = "SecureMsrpOverWifi";
