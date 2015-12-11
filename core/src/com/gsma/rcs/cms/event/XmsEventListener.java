@@ -116,12 +116,6 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, message.getMessageId(), message.getNativeProviderId()));
-
-        synchronized (mXmsMessageEventBroadcaster) {
-            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                listener.broadcastNewMessage(message.getMimeType(), message.getMessageId());
-            }
-        }
     }
 
     @Override
@@ -186,12 +180,6 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
                 message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
-
-        synchronized (mXmsMessageEventBroadcaster) {
-            for (IXmsMessageEventBroadcaster listener : mXmsMessageEventBroadcaster) {
-                listener.broadcastNewMessage(message.getMimeType(), message.getMessageId());
-            }
-        }
     }
 
     @Override

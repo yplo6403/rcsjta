@@ -20,7 +20,7 @@ package com.orange.labs.mms.priv;
 /**
  * A generic exception that is thrown by the Mms client.
  */
-public class MmsException extends Exception {
+public abstract class MmsException extends Exception {
     private static final long serialVersionUID = -7323249827281485390L;
 
     /**

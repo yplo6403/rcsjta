@@ -131,10 +131,6 @@ public class XmsIntentService extends IntentService {
             return;
         }
 
-        if(Direction.OUTGOING == message.getDirection()){ // no notif for outgoing msg
-            return;
-        }
-
         PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         String displayName = RcsContactUtil.getInstance(this).getDisplayName(contact);

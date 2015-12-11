@@ -88,12 +88,12 @@ public class OriginatingMmsSession implements Runnable, MmsSessionListener {
     @Override
     public void run() {
         boolean success = false;
+        boolean logActivated = sLogger.isActivated();
+        if (logActivated) {
+            sLogger.debug("Send MMS ID " + mMmsId + " to contact " + mContact + " subject='"
+                    + mSubject + "'");
+        }
         try {
-            boolean logActivated = sLogger.isActivated();
-            if (logActivated) {
-                sLogger.debug("Send MMS ID " + mMmsId + " to contact " + mContact + " subject='"
-                        + mSubject + "'");
-            }
             onMmsTransferStarted(mContact, mMmsId);
             MmsMessage msg = new MmsMessage();
             msg.addTo(mContact.toString());
@@ -134,6 +134,10 @@ public class OriginatingMmsSession implements Runnable, MmsSessionListener {
             }
 
         } catch (MmsException | FileNotFoundException e) {
+            if(logActivated){
+                sLogger.debug(e.getMessage());
+                e.printStackTrace();
+            }
             ReasonCode reasonCode = ReasonCode.FAILED_MMS_ERROR_UNSPECIFIED;
             if(e instanceof MmsApnConfigException){
                 reasonCode = ReasonCode.FAILED_MMS_ERROR_INVALID_APN;

@@ -21,6 +21,7 @@ package com.orange.labs.mms.priv.utils;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.NetworkInfo.State;
 import android.util.Log;
 
 import com.orange.labs.mms.priv.MmsApnConfigException;
@@ -35,6 +36,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Properties;
@@ -58,7 +60,6 @@ public final class NetworkUtils {
         try {
             if (result != 0) {
                 NetworkInfo info = mConnMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS);
-
                 dumpNetworkInfo(info);
 
                 while (!info.isConnected()) {
@@ -119,56 +120,12 @@ public final class NetworkUtils {
      */
     public static boolean sendMessage(MmsApn apn, byte[] encodedMessage) throws MmsException
     {
-        try {
-            URL url = new URL(apn.mmsc);
-            Properties systemProperties = System.getProperties();
-
-            // Set-up proxy
-            if (apn.isProxySet) {
-                if (Constants.DEBUG)
-                    Log.d(Constants.TAG, "[MMS Sender] Setting up proxy (" + apn.proxyHost + ":" + apn.proxyPort + ")");
-
-                systemProperties.setProperty("http.proxyHost", apn.proxyHost);
-                systemProperties.setProperty("http.proxyPort", apn.proxyPort.equals("") ? "80" : apn.proxyPort);
+        try{
+            HttpURLConnection connection = getConnection(apn, encodedMessage.length);
+            if(connection == null){
+                connection = getConnection(apn, encodedMessage.length);
             }
 
-            systemProperties.setProperty("http.keepAlive", "false");
-            systemProperties.setProperty("http.agent", "Android-Mms/2.0");
-
-            // Open connection
-            HttpURLConnection connection;
-
-            connection = (HttpURLConnection) url.openConnection();
-
-            // Use the URL connection for output
-            connection.setUseCaches(false);
-            connection.setDoOutput(true);
-
-            // Set redirection rules
-            HttpURLConnection.setFollowRedirects(true);
-            connection.setInstanceFollowRedirects(true);
-
-            // Set the timeouts
-            connection.setConnectTimeout(25000);
-            connection.setReadTimeout(25000);
-
-            // Sends the request
-            if (Constants.DEBUG) Log.d(Constants.TAG, "[MMS Sender] Setting up headers");
-            connection.setRequestProperty("Content-Type", "application/vnd.wap.mms-message");
-            connection.setRequestProperty("Content-Length", Integer.toString(encodedMessage.length));
-            connection.setRequestProperty("Accept", "*/*, application/vnd.wap.mms-message, application/vnd.wap.sic");
-            connection.setRequestProperty("x-wap-profile", "http://www.google.com/oha/rdf/ua-profile-kila.xml");
-            connection.setRequestProperty("Accept-Language", "fr-FR, en-US");
-
-            // Post method
-            connection.setRequestMethod("POST");
-
-            // Connect to the MMSC
-            if (Constants.DEBUG) Log.d(Constants.TAG, "[MMS Sender] Connecting to APN " + apn.mmsc);
-            connection.connect();
-
-            //try
-            //{
             // Upload mms as bytes array
             if (Constants.DEBUG)
                 Log.d(Constants.TAG, "[MMS Sender] Uploading MMS data (Size: " + encodedMessage.length + ")");
@@ -208,7 +165,6 @@ public final class NetworkUtils {
                     // Close the connection
                     if (Constants.DEBUG) Log.d(Constants.TAG, "[MMS Sender] Disconnecting ...");
                     connection.disconnect();
-
                     // Try to decode the response code
                     MmsDecoder parser = new MmsDecoder(responseArray);
                     parser.parse();
@@ -240,6 +196,60 @@ public final class NetworkUtils {
         }
     }
 
+    private static HttpURLConnection getConnection(MmsApn apn, int contentLength) throws MalformedURLException, IOException{
+
+        URL url = new URL(apn.mmsc);
+        Properties systemProperties = System.getProperties();
+
+        // Set-up proxy
+        if (apn.isProxySet) {
+            if (Constants.DEBUG)
+                Log.d(Constants.TAG, "[MMS Sender] Setting up proxy (" + apn.proxyHost + ":" + apn.proxyPort + ")");
+
+            systemProperties.setProperty("http.proxyHost", apn.proxyHost);
+            systemProperties.setProperty("http.proxyPort", apn.proxyPort.equals("") ? "80" : apn.proxyPort);
+        }
+
+        systemProperties.setProperty("http.keepAlive", "false");
+        systemProperties.setProperty("http.agent", "Android-Mms/2.0");
+
+        // Open connection
+        HttpURLConnection connection;
+
+        connection = (HttpURLConnection) url.openConnection();
+
+        // Use the URL connection for output
+        connection.setUseCaches(false);
+        connection.setDoOutput(true);
+
+        // Set redirection rules
+        HttpURLConnection.setFollowRedirects(true);
+        connection.setInstanceFollowRedirects(true);
+
+        // Set the timeouts
+        connection.setConnectTimeout(25000);
+        connection.setReadTimeout(25000);
+
+        // Sends the request
+        if (Constants.DEBUG) Log.d(Constants.TAG, "[MMS Sender] Setting up headers");
+        connection.setRequestProperty("Content-Type", "application/vnd.wap.mms-message");
+        connection.setRequestProperty("Content-Length", Integer.toString(contentLength));
+        connection.setRequestProperty("Accept", "*/*, application/vnd.wap.mms-message, application/vnd.wap.sic");
+        connection.setRequestProperty("x-wap-profile", "http://www.google.com/oha/rdf/ua-profile-kila.xml");
+        connection.setRequestProperty("Accept-Language", "fr-FR, en-US");
+
+        // Post method
+        connection.setRequestMethod("POST");
+
+        // Connect to the MMSC
+        if (Constants.DEBUG) Log.d(Constants.TAG, "[MMS Sender] Connecting to APN " + apn.mmsc);
+        try{
+            connection.connect();
+            return connection;
+        }catch(SocketException se){
+            return null;
+        }
+    }
 
     /**
      * Try to stop the MMS connecitivity
