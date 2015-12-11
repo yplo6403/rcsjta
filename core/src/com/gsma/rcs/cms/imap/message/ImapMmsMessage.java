@@ -73,6 +73,7 @@ public class ImapMmsMessage implements IImapMessage {
         for(MmsPart mmsPart : mmsParts){
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getBody();
+            String contentId = mmsPart.getFileName();
             String transferEncoding = null;
             if(MimeManager.isImageType(mimeType)){ // base 64
                 byte[] bytes = MmsUtils.getContent(context.getContentResolver(), mmsPart.getFile());
@@ -82,7 +83,7 @@ public class ImapMmsMessage implements IImapMessage {
                 transferEncoding = Constants.HEADER_BASE64;
                 content = Base64.encodeBase64ToString(bytes);
             }
-            mimeBody.addMultiPart(mmsPart.getMimeType(),null, transferEncoding, content);
+            mimeBody.addMultiPart(mmsPart.getMimeType(),contentId, transferEncoding, content);
         }
         mimeMessage.setBodyPart(mimeBody);
     }

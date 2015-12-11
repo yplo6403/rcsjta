@@ -34,6 +34,7 @@ import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.rcs.xms.XmsManager;
 import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.ICmsService;
 import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
 import com.gsma.services.rcs.cms.IXmsMessage;
@@ -328,8 +329,10 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = System.currentTimeMillis();
             long maxFileIconSize = mRcsSettings.getMaxFileIconSize();
-            mXmsLog.addMms(new MmsDataObject(mContext, null, mMessageId, contact, subject, body,
-                    RcsService.Direction.OUTGOING, timestamp, files, null, maxFileIconSize));
+            MmsDataObject mmsDataObject = new MmsDataObject(mContext, null, mMessageId, contact, subject, body,
+                    RcsService.Direction.OUTGOING, timestamp, files, null, maxFileIconSize);
+            mmsDataObject.setReadStatus(ReadStatus.READ);
+            mXmsLog.addMms(mmsDataObject);
             XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
             mCmsService.tryToDequeueMmsMessages();
             return mms;
