@@ -43,7 +43,7 @@ import com.orange.labs.mms.priv.utils.MmsApn;
 import com.orange.labs.mms.priv.utils.MmsEncoderUtils;
 import com.orange.labs.mms.priv.utils.NetworkUtils;
 
-import java.io.FileNotFoundException;
+import java.io.FileNotFoundException; 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -67,17 +67,16 @@ public class OriginatingMmsSession implements Runnable, MmsSessionListener {
 
     /**
      * @param context context
-     * @param contentResolver contentResolver
      * @param xmsLog The XMS log accessor
      * @param mmsId The message ID
      * @param contact The remote contact
      * @param subject The subject
      * @param parts The MMS attachment parts
      */
-    public OriginatingMmsSession(Context context, ContentResolver contentResolver, XmsLog xmsLog, String mmsId, ContactId contact, String subject,
+    public OriginatingMmsSession(Context context, XmsLog xmsLog, String mmsId, ContactId contact, String subject,
             Set<MmsDataObject.MmsPart> parts) {
         mContext = context;
-        mContentResolver = contentResolver;
+        mContentResolver = context.getContentResolver();
         mXmsLog = xmsLog;
         mMmsId = mmsId;
         mContact = contact;

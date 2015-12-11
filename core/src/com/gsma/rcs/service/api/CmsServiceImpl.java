@@ -83,8 +83,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            RcsSettings rcsSettings, XmsManager xmsManager,
-            CmsManager cmsManager) {
+            RcsSettings rcsSettings, XmsManager xmsManager, CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -315,7 +314,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
             final String subject, final String body) throws RemoteException {
         if (sLogger.isActivated()) {
-            sLogger.debug("sendMultimediaMessage contact=" + contact + " text=" + body);
+            sLogger.debug("send MMS to " + contact + " subject='" + subject + "' body='" + body
+                    + "'");
         }
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
@@ -323,8 +323,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (files == null || files.isEmpty()) {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
         }
-        checkUris(files);
         try {
+            checkUris(files);
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = System.currentTimeMillis();
             long maxFileIconSize = mRcsSettings.getMaxFileIconSize();
@@ -346,7 +346,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
     }
 
-
     private void checkUris(List<Uri> files) {
         for (Uri file : files) {
             if (!FileUtils.isReadFromUriPossible(mContext, file)) {
@@ -360,7 +359,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             String extension = MimeManager.getFileExtension(fileName);
             String mimeType = MimeManager.getInstance().getMimeType(extension);
             if (mimeType == null) {
-                throw new ServerApiIllegalArgumentException("Invalid mime type for Uri '" + file + "'!");
+                throw new ServerApiIllegalArgumentException("Invalid mime type for Uri '" + file
+                        + "'!");
             }
             if (!MimeManager.isImageType(mimeType)) {
                 if (!MimeManager.isVideoType(mimeType)) {
@@ -558,7 +558,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * @param mmsId The message ID
      * @param contact The remote contact
      * @param subject The subject
-     * @param parts The MMS attachement parts
+     * @param parts The MMS attachment parts
      */
     public void dequeueMmsMessage(String mmsId, ContactId contact, String subject,
             Set<MmsDataObject.MmsPart> parts) {
@@ -566,8 +566,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
         /* For outgoing MMS transfer, timestampSent = timestamp */
-        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mContentResolver, mXmsLog, mmsId, contact, subject,
-                parts);
+        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mXmsLog, mmsId,
+                contact, subject, parts);
         session.addListener(this);
         session.addListener(mCmsManager);
         mCmsService.scheduleImOperation(session);
@@ -603,7 +603,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        setXmsStateAndReasonCode(mmsId, MimeType.MULTIMEDIA_MESSAGE, contact, State.SENT, ReasonCode.UNSPECIFIED);
+        setXmsStateAndReasonCode(mmsId, MimeType.MULTIMEDIA_MESSAGE, contact, State.SENT,
+                ReasonCode.UNSPECIFIED);
     }
 
     @Override
