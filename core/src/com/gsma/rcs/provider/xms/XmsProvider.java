@@ -73,6 +73,18 @@ public class XmsProvider extends ContentProvider {
     /**
      * Strings to allow projection for exposed URI to a set of columns.
      */
+    private static final String[] PARTS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS = new String[] {
+            PartData.KEY_PART_ID, PartData.KEY_MESSAGE_ID, XmsData.KEY_CONTACT,
+            PartData.KEY_CONTENT, PartData.KEY_MIME_TYPE, PartData.KEY_FILENAME,
+            PartData.KEY_FILESIZE, PartData.KEY_FILEICON
+    };
+
+    private static final Set<String> PARTS_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS = new HashSet<>(
+            Arrays.asList(PARTS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS));
+
+    /**
+     * Strings to allow projection for exposed URI to a set of columns.
+     */
     private static final String[] XMS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS = new String[] {
             XmsData.KEY_BASECOLUMN_ID, XmsData.KEY_MESSAGE_ID, XmsData.KEY_CONTACT,
             XmsData.KEY_CONTENT, XmsData.KEY_MIME_TYPE, XmsData.KEY_DIRECTION,
@@ -151,6 +163,20 @@ public class XmsProvider extends ContentProvider {
             return keySelectionArg;
         }
         return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+    }
+
+    private String[] restrictPartsProjectionToExternallyDefinedColumns(String[] projection)
+            throws UnsupportedOperationException {
+        if (projection == null || projection.length == 0) {
+            return PARTS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS;
+        }
+        for (String projectedColumn : projection) {
+            if (!PARTS_COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS.contains(projectedColumn)) {
+                throw new UnsupportedOperationException("No visibility to the accessed column "
+                        + projectedColumn + "!");
+            }
+        }
+        return projection;
     }
 
     private String[] restrictXmsProjectionToExternallyDefinedColumns(String[] projection)
@@ -236,8 +262,9 @@ public class XmsProvider extends ContentProvider {
                     //$FALL-THROUGH$
                 case UriType.Part.PART:
                     db = mOpenHelper.getReadableDatabase();
-                    cursor = db.query(TABLE_PART, projection, selection, selectionArgs, null, null,
-                            sort);
+                    cursor = db.query(TABLE_PART,
+                            restrictPartsProjectionToExternallyDefinedColumns(projection),
+                            selection, selectionArgs, null, null, sort);
                     CursorUtil.assertCursorIsNotNull(cursor, uri);
                     cursor.setNotificationUri(getContext().getContentResolver(), uri);
                     return cursor;
@@ -502,7 +529,8 @@ public class XmsProvider extends ContentProvider {
                     + PartData.KEY_FILENAME + " TEXT,"
                     + PartData.KEY_FILESIZE + " INTEGER,"
                     + PartData.KEY_CONTENT + " TEXT NOT NULL,"
-                    + PartData.KEY_FILEICON + " BYTES BLOB)");
+                    + PartData.KEY_FILEICON + " BYTES BLOB,"
+                    + PartData.KEY_COMPRESSED + " BYTES BLOB)");
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +
                     " ON " + TABLE_PART + '(' + PartData.KEY_MESSAGE_ID + ')');

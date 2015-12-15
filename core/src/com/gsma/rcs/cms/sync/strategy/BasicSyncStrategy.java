@@ -1,8 +1,6 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
-import android.content.Context;
-
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
@@ -14,19 +12,17 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISyncProcessor;
 import com.gsma.rcs.cms.sync.SyncProcessorImpl;
-import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.gsma.services.rcs.contact.ContactId;
 import com.sonymobile.rcs.cpm.ms.impl.sync.AbstractSyncStrategy;
 import com.sonymobile.rcs.cpm.ms.sync.MutableReport;
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
+
+import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,8 +50,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
      * @param imapService
      * @param localStorageHandler
      */
-    public BasicSyncStrategy(Context context, RcsSettings rcsSettings, BasicImapService imapService,
-            LocalStorage localStorageHandler) {
+    public BasicSyncStrategy(Context context, RcsSettings rcsSettings,
+            BasicImapService imapService, LocalStorage localStorageHandler) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mImapService = imapService;
@@ -63,14 +59,15 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
     }
 
     /**
-     * Execute a full sync 
+     * Execute a full sync
      */
     public void execute() {
-        execute((String)null);
+        execute((String) null);
     }
-    
+
     /**
      * Execute a sync for only one folder
+     * 
      * @param folderName
      */
     public void execute(String folderName) {
@@ -87,7 +84,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
             for (ImapFolder remoteFolder : mImapService.listStatus()) {
                 String remoteFolderName = remoteFolder.getName();
-                if(folderName!=null && !remoteFolderName.equals(folderName)){
+                if (folderName != null && !remoteFolderName.equals(folderName)) {
                     continue;
                 }
                 FolderData localFolder = localFolders.get(remoteFolderName);
@@ -98,34 +95,35 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                     startRemoteSynchro(localFolder, remoteFolder);
                     mLocalStorageHandler.applyFolderChange(DataUtils.toFolderData(remoteFolder));
                 }
-                
+
                 // sync CMS with local change
-                List<FlagChange> flagChanges = mLocalStorageHandler.getLocalFlagChanges(remoteFolderName);
-                mSynchronizer.syncLocalFlags(flagChanges);            
-                mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);                
+                List<FlagChange> flagChanges = mLocalStorageHandler
+                        .getLocalFlagChanges(remoteFolderName);
+                mSynchronizer.syncLocalFlags(flagChanges);
+                mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
             }
-            
-            //TODO FGI
-            // Demo purpose only 
+
+            // TODO FGI
+            // Demo purpose only
             // push on CMS server, messages that are marked as PUSH_requested in database
             // try to get an instance of XmsLog
             XmsLog xmsLog = XmsLog.getInstance();
             ImapLog imapLog = ImapLog.getInstance();
-            if(xmsLog!=null &&
-                    imapLog!=null
-                    ){
+            if (xmsLog != null && imapLog != null) {
                 List<XmsDataObject> messagesToPush = new ArrayList<>();
-                for(MessageData messageData : imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)){
-                    XmsDataObject xms = XmsDataObjectFactory.createXmsDataObject(xmsLog, messageData.getMessageId());
-                    if(xms != null){
+                for (MessageData messageData : imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)) {
+                    XmsDataObject xms = xmsLog.getXmsDataObject(messageData.getMessageId());
+                    if (xms != null) {
                         messagesToPush.add(xms);
                     }
                 }
-                if(!messagesToPush.isEmpty()){
-                    PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings, mImapService, xmsLog, imapLog, null);
+                if (!messagesToPush.isEmpty()) {
+                    PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
+                            mImapService, xmsLog, imapLog, null);
                     pushMessageTask.pushMessages(messagesToPush);
-                    Iterator<Entry<String,Integer>> iter = pushMessageTask.getCreatedUids().entrySet().iterator();
-                    while(iter.hasNext()) {
+                    Iterator<Entry<String, Integer>> iter = pushMessageTask.getCreatedUids()
+                            .entrySet().iterator();
+                    while (iter.hasNext()) {
                         Entry<String, Integer> entry = iter.next();
                         String baseId = entry.getKey();
                         Integer uid = entry.getValue();
@@ -135,10 +133,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
 
             mExecutionResult = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            sLogger.error(e.getMessage());
-        } catch (ImapException e) {
+        } catch (IOException | ImapException e) {
             e.printStackTrace();
             sLogger.error(e.getMessage());
         }
@@ -147,6 +142,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             sLogger.debug("<<< BasicSyncStrategy.execute ");
         }
     }
+
     /**
      * @param report
      */
@@ -173,8 +169,9 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
         List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);
         Set<Integer> uids = mLocalStorageHandler.filterNewMessages(messages);
-        
-        List<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(), uids);
+
+        List<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(),
+                uids);
         mLocalStorageHandler.createMessages(newMessages);
 
     }

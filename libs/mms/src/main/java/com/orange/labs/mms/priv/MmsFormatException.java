@@ -27,8 +27,9 @@ public class MmsFormatException extends MmsException {
      * Creates a new MmsConnectivityException with the specified detail message.
      *
      * @param message the detail message.
+     * @param cause the cause
      */
-    public MmsFormatException(String message) {
-        super(message);
+    public MmsFormatException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

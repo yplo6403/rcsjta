@@ -21,6 +21,8 @@ package com.gsma.rcs.utils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.utils.logger.Logger;
 
+import com.orange.labs.mms.priv.MmsFileSizeException;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -34,7 +36,14 @@ import java.io.IOException;
 public class ImageUtils {
 
     private static final int ICON_HEIGHT = 100;
-    private static final int ICON_WIDTH = ICON_HEIGHT;
+    private static final int ICON_WIDTH = 100;
+    /**
+     * The quality parameter which is used to compress JPEG images.
+     */
+    public static final int IMAGE_COMPRESSION_QUALITY = 100;
+    public static final int MINIMUM_IMAGE_COMPRESSION_QUALITY = 10;
+
+    private static final int NUMBER_OF_RESIZE_ATTEMPTS = 4;
 
     private static Logger sLogger = Logger.getLogger(ImageUtils.class.getSimpleName());
 
@@ -50,9 +59,10 @@ public class ImageUtils {
         return options;
     }
 
-    private static byte[] getCompressedBitmap(String path, Bitmap image, long maxSize) {
+    private static byte[] getCompressedBitmap(String path, Bitmap image, long maxSize)
+            throws MmsFileSizeException {
         /* Compress the file to be under the limit */
-        int quality = 100;
+        int quality = IMAGE_COMPRESSION_QUALITY;
         ByteArrayOutputStream out;
         long size;
         do {
@@ -62,18 +72,62 @@ public class ImageUtils {
                 out.flush();
                 out.close();
             } catch (IOException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("Failed to compress bitmap");
-                }
-                return null;
+                throw new MmsFileSizeException("Failed to compress image " + path);
             }
             size = out.size();
             quality -= 10;
-        } while (size > maxSize);
+        } while (size > maxSize && quality > MINIMUM_IMAGE_COMPRESSION_QUALITY);
+        if (quality < MINIMUM_IMAGE_COMPRESSION_QUALITY) {
+            throw new MmsFileSizeException("Failed to compress image " + path
+                    + " : quality too low! maxSize=" + maxSize);
+        }
         if (sLogger.isActivated()) {
-            sLogger.warn("Compress image " + path + " with quality " + (quality + 10) + "/100");
+            sLogger.warn("Compress image " + path + " quality=" + (quality + 10) + "/100. maxSize="
+                    + maxSize + " shrinkedSize=" + size);
         }
         return out.toByteArray();
+    }
+
+    public static byte[] compressImage(Context ctx, Uri image, long maxSize, int maxWidth,
+            int maxHeight) throws MmsFileSizeException, FileAccessException {
+        String imageFilename = FileUtils.getPath(ctx, image);
+        BitmapFactory.Options options = readImageOptions(imageFilename);
+        /* Calculate the reduction factor */
+        options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight);
+        options.inJustDecodeBounds = false;
+        int loopCount = 1;
+        for (; loopCount++ <= NUMBER_OF_RESIZE_ATTEMPTS;) {
+            try {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("bitmap: " + imageFilename + " Sample factor="
+                            + options.inSampleSize);
+                }
+                /* Rotate image is orientation is not 0 degree */
+                Bitmap bitmapTmp = BitmapFactory.decodeFile(imageFilename, options);
+                if (bitmapTmp == null) {
+                    return null;
+                }
+                int degree = getExifOrientation(imageFilename);
+                if (degree == 0) {
+                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                }
+                bitmapTmp = rotateBitmap(bitmapTmp, degree);
+                if (bitmapTmp != null) {
+                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                }
+            } catch (OutOfMemoryError e) {
+                /*
+                 * If an OutOfMemoryError occurred, we continue with for loop and next inSampleSize
+                 * value
+                 */
+                if (sLogger.isActivated()) {
+                    sLogger.warn("OutOfMemoryError: options.inSampleSize= " + options.inSampleSize);
+                }
+                options.inSampleSize++;
+            }
+        }
+        throw new MmsFileSizeException("Failed to compress image " + image
+                + " : too many attempts! maxSize=" + maxSize);
     }
 
     public static byte[] tryGetThumbnail(Context ctx, Uri file, long maxSize) {
@@ -116,7 +170,7 @@ public class ImageUtils {
                 }
             }
             return null;
-        } catch (FileAccessException e) {
+        } catch (FileAccessException | MmsFileSizeException e) {
             sLogger.warn("Failed to crete thumbnail for : " + file);
             return null;
         }

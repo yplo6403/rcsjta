@@ -681,13 +681,11 @@
     <string-array name="mms_select_parts">
         <item>Add images</item>
         <item>Add a contact</item>
-        <item>Add a video</item>
     </string-array>
 
     <string-array name="mms_select_part">
         <item>Add an image</item>
         <item>Add a contact</item>
-        <item>Add a video</item>
     </string-array>
 
 </resources>

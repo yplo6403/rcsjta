@@ -1,7 +1,6 @@
 // TODO add copyright
-package com.gsma.rcs.cms;
 
-import android.content.Context;
+package com.gsma.rcs.cms;
 
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.event.IRcsXmsEventListener;
@@ -19,15 +18,13 @@ import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
-import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.content.Context;
 
 public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
@@ -41,12 +38,14 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
     private ImapCommandController mImapCommandController;
 
     /**
-     * Instantiate the Cms CmsManager
+     * Constructor of CmsManager
      *
-     * @param context
-     * @return CmsManager
+     * @param context The context
+     * @param imapLog The IMAP log accessor
+     * @param xmsLog The XMS log accessor
+     * @param rcsSettings THE RCS settings accessor
      */
-    public CmsManager (Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings rcsSettings) {
+    public CmsManager(Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings rcsSettings) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mImapLog = imapLog;
@@ -54,26 +53,27 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
     }
 
     public void start() {
-
         // execute sync between providers with async task
         new ProviderSynchronizer(mContext, mRcsSettings, mXmsLog, mImapLog).execute();
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext, mRcsSettings);
 
-        // instantiate  XmsEventListener in charge of handling xms events from XmsObserver
+        // instantiate XmsEventListener in charge of handling xms events from XmsObserver
         mXmsEventListener = new XmsEventListener(mContext, mImapLog, mXmsLog, mRcsSettings);
         mXmsObserver.registerListener(mXmsEventListener);
 
-        // instantiate  LocalStorage in charge of handling events relatives to IMAP sync
+        // instantiate LocalStorage in charge of handling events relatives to IMAP sync
         mLocalStorage = new LocalStorage(mImapLog);
         mLocalStorage.registerRemoteEventHandler(MessageType.SMS, mXmsEventListener);
         mLocalStorage.registerRemoteEventHandler(MessageType.MMS, mXmsEventListener);
-        //mLocalStorage.registerRemoteEventHandler(MessageType.ONETOONE, tobedefined);
-        //mLocalStorage.registerRemoteEventHandler(MessageType.GC, tobedefined);
+        // mLocalStorage.registerRemoteEventHandler(MessageType.ONETOONE, tobedefined);
+        // mLocalStorage.registerRemoteEventHandler(MessageType.GC, tobedefined);
 
-        // instantiate ImapCommandController in charge of Pushing messages and updating flags with Imap command
-        mImapCommandController = new ImapCommandController(mContext, mRcsSettings,mLocalStorage, mImapLog, mXmsLog);
+        // instantiate ImapCommandController in charge of Pushing messages and updating flags with
+        // Imap command
+        mImapCommandController = new ImapCommandController(mContext, mRcsSettings, mLocalStorage,
+                mImapLog, mXmsLog);
         mXmsObserver.registerListener(mImapCommandController);
 
         // start content observer on native SMS/MMS content provider
@@ -85,111 +85,115 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
-        //TODO FGI : Fix me : when the core is stopped while a background task is still processing (IMAP sync)
-//        if(mLocalStorage!=null){
-//            mLocalStorage.removeListeners();
-//            mLocalStorage = null;
-//        }
-//        mXmsEventListener = null;
-//        mImapCommandController = null;
+        // TODO FGI : Fix me : when the core is stopped while a background task is still processing
+        // (IMAP sync)
+        // if(mLocalStorage!=null){
+        // mLocalStorage.removeListeners();
+        // mLocalStorage = null;
+        // }
+        // mXmsEventListener = null;
+        // mImapCommandController = null;
     }
 
     /**
-     * @param listener
+     * @param listener The listener
      */
     public void registerSmsObserverListener(INativeXmsEventListener listener) {
-        if(mXmsObserver != null){
+        if (mXmsObserver != null) {
             mXmsObserver.registerListener(listener);
         }
     }
 
     /**
-     * @param listener
+     * @param listener The listener
      */
     public void unregisterSmsObserverListener(INativeXmsEventListener listener) {
-        if(mXmsObserver != null){
+        if (mXmsObserver != null) {
             mXmsObserver.unregisterListener(listener);
         }
     }
 
     @Override
     public void onReadRcsMessage(String messageId) {
-        if(mXmsEventListener != null){
+        if (mXmsEventListener != null) {
             mXmsEventListener.onReadRcsMessage(messageId);
         }
-        if(mImapCommandController != null) {
+        if (mImapCommandController != null) {
             mImapCommandController.onReadRcsMessage(messageId);
         }
     }
 
     @Override
     public void onDeleteRcsMessage(String messageId) {
-        if(mXmsEventListener != null) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.onDeleteRcsMessage(messageId);
         }
-        if(mImapCommandController != null) {
+        if (mImapCommandController != null) {
             mImapCommandController.onDeleteRcsMessage(messageId);
         }
     }
 
     @Override
     public void onReadRcsConversation(ContactId contact) {
-        if(mXmsEventListener != null) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.onReadRcsConversation(contact);
         }
-        if(mImapCommandController != null) {
+        if (mImapCommandController != null) {
             mImapCommandController.onReadRcsConversation(contact);
         }
     }
 
     @Override
     public void onDeleteRcsConversation(ContactId contact) {
-        if(mXmsEventListener != null) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.onDeleteRcsConversation(contact);
         }
-        if(mImapCommandController != null) {
+        if (mImapCommandController != null) {
             mImapCommandController.onDeleteRcsConversation(contact);
         }
     }
 
     @Override
-    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType, State state) {
-        if(mXmsEventListener != null) {
+    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType,
+            State state) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.onMessageStateChanged(contact, messageId, mimeType, state);
         }
     }
 
     @Override
     public void onDeleteAll() {
-        if(mXmsEventListener != null) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.onDeleteAll();
         }
-        if(mImapCommandController != null) {
+        if (mImapCommandController != null) {
             mImapCommandController.onDeleteAll();
         }
     }
 
-    public void registerXmsMessageEventBroadcaster(XmsMessageEventBroadcaster xmsMessageEventBroadcaster){
-        if(mXmsEventListener != null){
+    public void registerXmsMessageEventBroadcaster(
+            XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.registerBroadcaster(xmsMessageEventBroadcaster);
         }
     }
 
-    public void unregisterXmsMessageEventBroadcaster(XmsMessageEventBroadcaster xmsMessageEventBroadcaster){
-        if(mXmsEventListener != null){
+    public void unregisterXmsMessageEventBroadcaster(
+            XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+        if (mXmsEventListener != null) {
             mXmsEventListener.unregisterBroadcaster(xmsMessageEventBroadcaster);
         }
     }
 
-    public Context getContext(){
+    public Context getContext() {
         return mContext;
     }
 
-    public XmsLog getXmsLog(){
+    public XmsLog getXmsLog() {
         return mXmsLog;
     }
 
-    public LocalStorage getLocalStorage(){
+    public LocalStorage getLocalStorage() {
         return mLocalStorage;
     }
 
@@ -200,20 +204,16 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
 
-        mImapLog.addMessage(new MessageData(
-                CmsUtils.contactToCmsFolder(mRcsSettings,contact),
-                ReadStatus.READ,
-                MessageData.DeleteStatus.NOT_DELETED,
+        mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mRcsSettings, contact),
+                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
                 mRcsSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS,
-                mmsId,
-                null));
+                MessageType.MMS, mmsId, null));
 
-        if(mImapCommandController != null ){
-            MmsDataObject mms = (MmsDataObject)XmsDataObjectFactory.createXmsDataObject(mXmsLog, mmsId);
-            if(Direction.INCOMING == mms.getDirection()){
+        if (mImapCommandController != null) {
+            MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
+            if (Direction.INCOMING == mms.getDirection()) {
                 mImapCommandController.onIncomingMms(mms);
-            }else{
+            } else {
                 mImapCommandController.onOutgoingMms(mms);
             }
         }

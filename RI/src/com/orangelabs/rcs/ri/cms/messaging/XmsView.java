@@ -413,15 +413,15 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
         switch (requestCode) {
             case SELECT_VCARD:
-                Uri vcard = data.getParcelableExtra(ContactVCard.EXTRA_VCARD);
+                Uri vCard = data.getParcelableExtra(ContactVCard.EXTRA_VCARD);
                 String number = data.getStringExtra(ContactVCard.EXTRA_CONTACT);
                 if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "Selected VCARD " + vcard + " for contact " + number);
+                    Log.d(LOGTAG, "Selected VCARD " + vCard + " for contact " + number);
                 }
                 try {
                     ContactId contact = mContactUtil.formatContact(number);
-                    List vCards = new ArrayList<>();
-                    vCards.add(vcard);
+                    List<Uri> vCards = new ArrayList<>();
+                    vCards.add(vCard);
                     mCmsService.sendMultimediaMessage(contact, vCards, null, null);
                 } catch (RcsServiceException e) {
                     showException(e);

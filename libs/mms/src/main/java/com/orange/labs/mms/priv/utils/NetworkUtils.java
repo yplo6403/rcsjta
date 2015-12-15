@@ -50,7 +50,7 @@ public final class NetworkUtils {
      * @param context : Current application context
      * @return true if the connectivity was made, false otherwise
      */
-    public static boolean startMmsConnectivity(Context context) throws MmsException {
+    public static boolean startMmsConnectivity(Context context) throws MmsConnectivityException {
         // Get the phone connectivity manager
         ConnectivityManager mConnMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -118,8 +118,7 @@ public final class NetworkUtils {
      * @param encodedMessage : MMS message as PDU
      * @return true if the message was correctly sent, false otherwise
      */
-    public static boolean sendMessage(MmsApn apn, byte[] encodedMessage) throws MmsException
-    {
+    public static boolean sendMessage(MmsApn apn, byte[] encodedMessage) throws MmsApnConfigException, MmsHttpException {
         try{
             HttpURLConnection connection = getConnection(apn, encodedMessage.length);
             if(connection == null){
@@ -270,7 +269,7 @@ public final class NetworkUtils {
      * @return The current status of the connectivity
      * @throws Exception Throws an exception if the MMS connectivity isn't available
      */
-    private static int beginMmsConnectivity(ConnectivityManager connMgr) throws MmsException {
+    private static int beginMmsConnectivity(ConnectivityManager connMgr) throws MmsConnectivityException {
         if (Constants.DEBUG)
             Log.d(Constants.TAG, "[CONNECTIVITY] startUsingNetworkFeature: MOBILE, enableMMS");
         int result = connMgr.startUsingNetworkFeature(ConnectivityManager.TYPE_MOBILE, "enableMMS");

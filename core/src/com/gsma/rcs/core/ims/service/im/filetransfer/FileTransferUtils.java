@@ -95,7 +95,7 @@ public class FileTransferUtils {
      * 
      * @param file Uri of the image
      * @param fileIconId the identifier of the file icon
-     * @param rcsSettings
+     * @param rcsSettings The RCS settings accessor
      * @return the content of the file icon
      * @throws FileAccessException
      */
@@ -154,8 +154,7 @@ public class FileTransferUtils {
             return fileIcon;
 
         } catch (IOException e) {
-            throw new FileAccessException(new StringBuilder("Failed to create icon for uri : ")
-                    .append(file).toString(), e);
+            throw new FileAccessException("Failed to create icon for uri : " + file, e);
 
         } finally {
             CloseableUtils.tryToClose(in);
@@ -188,7 +187,7 @@ public class FileTransferUtils {
      * Extract file icon from incoming INVITE request
      * 
      * @param request Request
-     * @param rcsSettings
+     * @param rcsSettings The RCS settings accessor
      * @return fileIcon the file icon content persisted on disk
      * @throws FileAccessException
      */
@@ -243,13 +242,7 @@ public class FileTransferUtils {
                     rcsSettings).parse();
             return ftHttpParser.getFtInfo();
 
-        } catch (ParserConfigurationException e) {
-            throw new PayloadException("Can't parse FT HTTP document!", e);
-
-        } catch (SAXException e) {
-            throw new PayloadException("Can't parse FT HTTP document!", e);
-
-        } catch (ParseFailureException e) {
+        } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
             throw new PayloadException("Can't parse FT HTTP document!", e);
 
         }
@@ -306,7 +299,7 @@ public class FileTransferUtils {
     /**
      * Create HTTP file transfer info xml
      * 
-     * @param fileTransferData
+     * @param fileTransferData The file transfer HTTP info
      * @return String
      */
     public static String createHttpFileTransferXml(FileTransferHttpInfoDocument fileTransferData) {

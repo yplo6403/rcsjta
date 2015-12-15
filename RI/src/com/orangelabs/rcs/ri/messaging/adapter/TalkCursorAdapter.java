@@ -21,6 +21,7 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 import com.gsma.services.rcs.Geoloc;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.chat.ChatLog;
+import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
@@ -393,11 +394,11 @@ public class TalkCursorAdapter extends CursorAdapter {
         holder.getImagesLayout().removeAllViewsInLayout();
         for (MmsPartDataObject mmsPart : MmsPartDataObject.getParts(mContext, mmsId)) {
             final String mimeType = mmsPart.getMimeType();
-            if (XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
+            if (MmsPartLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
                 /* discard mms body or application/smil content */
                 continue;
             }
-            if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)) {
+            if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)) {
                 bodyText.setText(mmsPart.getBody());
                 continue;
             }

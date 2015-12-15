@@ -41,6 +41,7 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -413,5 +414,20 @@ public class FileUtils {
      */
     private static boolean isGooglePhotosUri(Uri uri) {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
+    }
+
+    public static byte[] getContent(String path) throws IOException {
+        File file = new File(path);
+        int size = (int) file.length();
+        byte[] bytes = new byte[size];
+        BufferedInputStream buf = null;
+        try {
+            buf = new BufferedInputStream(new FileInputStream(file));
+            buf.read(bytes, 0, bytes.length);
+            return bytes;
+
+        } finally {
+            CloseableUtils.tryToClose(buf);
+        }
     }
 }

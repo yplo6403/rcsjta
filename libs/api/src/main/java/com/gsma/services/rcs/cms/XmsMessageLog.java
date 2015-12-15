@@ -156,11 +156,6 @@ public class XmsMessageLog {
          */
         public static final String MULTIMEDIA_MESSAGE = "application/mms";
 
-        /**
-         * MIME-type of SMS messages
-         */
-        public static final String APPLICATION_SMIL = "application/smil";
-
     }
 
 }

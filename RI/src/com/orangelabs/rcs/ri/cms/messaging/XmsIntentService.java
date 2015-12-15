@@ -20,7 +20,6 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
-import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;

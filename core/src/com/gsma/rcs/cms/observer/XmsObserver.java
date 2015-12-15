@@ -1,18 +1,6 @@
 
 package com.gsma.rcs.cms.observer;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Handler;
-import android.provider.BaseColumns;
-import android.provider.Telephony;
-import android.provider.Telephony.BaseMmsColumns;
-import android.provider.Telephony.TextBasedSmsColumns;
-
-import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
@@ -35,6 +23,17 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Handler;
+import android.provider.BaseColumns;
+import android.provider.Telephony;
+import android.provider.Telephony.BaseMmsColumns;
+import android.provider.Telephony.TextBasedSmsColumns;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,14 +165,8 @@ public class XmsObserver implements INativeXmsEventListener {
                 if (protocol == null) {
                     direction = Direction.OUTGOING;
                 }
-                SmsDataObject smsDataObject = new SmsDataObject(
-                        IdGenerator.generateMessageID(),
-                        contactId,
-                        body,
-                        direction,
-                        date,
-                        _id,
-                        threadId);
+                SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(),
+                        contactId, body, direction, date, _id, threadId);
                 if (Direction.INCOMING == direction) {
                     smsDataObject.setState(State.RECEIVED);
                     onIncomingSms(smsDataObject);
@@ -198,7 +191,8 @@ public class XmsObserver implements INativeXmsEventListener {
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
                 int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
-                onMessageStateChanged(_id, MimeType.TEXT_MESSAGE,  XmsObserverUtils.getSmsState(type, status));
+                onMessageStateChanged(_id, MimeType.TEXT_MESSAGE,
+                        XmsObserverUtils.getSmsState(type, status));
             } finally {
                 CursorUtil.close(cursor);
             }
@@ -263,8 +257,8 @@ public class XmsObserver implements INativeXmsEventListener {
                     type = Mms.Addr.TO;
                 }
                 cursor = mContentResolver.query(Uri.parse(String.format(Mms.Addr.URI, id)),
-                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[]{
-                                String.valueOf(type)
+                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[] {
+                            String.valueOf(type)
                         }, null);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.Addr.URI);
                 int adressIdx = cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS);
@@ -293,7 +287,10 @@ public class XmsObserver implements INativeXmsEventListener {
             // Get part
             Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
             try {
-                cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION, Mms.Part.WHERE, new String[]{String.valueOf(id)}, null);
+                cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
+                        Mms.Part.WHERE, new String[] {
+                            String.valueOf(id)
+                        }, null);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.Part.URI);
                 int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
                 int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_LOCATION);
@@ -305,54 +302,50 @@ public class XmsObserver implements INativeXmsEventListener {
                     String contentType = cursor.getString(contentTypeIdx);
                     String text = cursor.getString(textIdx);
                     String filename = cursor.getString(filenameIdx);
-                    String content;
-                    long fileSize = 0l;
-                    byte[] fileIcon = null;
                     String data = cursor.getString(dataIdx);
                     if (data != null) {
-                        content = Part.URI.concat(cursor.getString(_idIdx));
-                        Uri file = Uri.parse(content);
-                        byte[] bytes = MmsUtils.getContent(mContentResolver,file );
-                        fileSize = bytes.length;
+                        Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
+                        byte[] bytes = MmsUtils.getContent(mContentResolver, file);
+                        Long fileSize = (long) bytes.length;
+                        byte[] fileIcon = null;
                         if (MimeManager.isImageType(contentType)) {
-                           long maxIconSize = mRcsSettings.getMaxFileIconSize();
-                           fileIcon = ImageUtils.tryGetThumbnail(mContext, file, maxIconSize);
+                            long maxIconSize = mRcsSettings.getMaxFileIconSize();
+                            fileIcon = ImageUtils.tryGetThumbnail(mContext, file, maxIconSize);
+                        }
+                        for (ContactId contact : contacts) {
+                            List<MmsPart> mmsPart = mmsParts.get(contact);
+                            if (mmsPart == null) {
+                                mmsPart = new ArrayList<>();
+                                mmsParts.put(contact, mmsPart);
+                            }
+                            mmsPart.add(new MmsPart(messageIds.get(contact), contact, filename,
+                                    fileSize, file, fileIcon));
                         }
                     } else {
-                        content = text;
-                    }
-
-                    for (ContactId contact : contacts) {
-                        List<MmsPart> mmsPart = mmsParts.get(contact);
-                        if (mmsPart == null) {
-                            mmsPart = new ArrayList<>();
-                            mmsParts.put(contact, mmsPart);
+                        for (ContactId contact : contacts) {
+                            List<MmsPart> mmsPart = mmsParts.get(contact);
+                            if (mmsPart == null) {
+                                mmsPart = new ArrayList<>();
+                                mmsParts.put(contact, mmsPart);
+                            }
+                            mmsPart.add(new MmsPart(messageIds.get(contact), contact, contentType,
+                                    text));
                         }
-                        mmsPart.add(new MmsPart(messageIds.get(contact), contact, contentType,
-                                filename, fileSize, content, fileIcon));
                     }
                 }
             } finally {
                 CursorUtil.close(cursor);
             }
 
-            ReadStatus readStatus = (Direction.INCOMING == direction ? ReadStatus.UNREAD : ReadStatus.READ);
+            ReadStatus readStatus = (Direction.INCOMING == direction ? ReadStatus.UNREAD
+                    : ReadStatus.READ);
             Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
             while (iter.hasNext()) {
                 Entry<ContactId, List<MmsPart>> entry = iter.next();
                 ContactId contact = entry.getKey();
-                MmsDataObject mmsDataObject = new MmsDataObject(
-                        mmsId,
-                        messageIds.get(contact),
-                        contact,
-                        subject,
-                        direction,
-                        readStatus,
-                        date * 1000,
-                        id,
-                        threadId,
-                        entry.getValue()
-                );
+                MmsDataObject mmsDataObject = new MmsDataObject(mmsId, messageIds.get(contact),
+                        contact, subject, direction, readStatus, date * 1000, id, threadId,
+                        entry.getValue());
                 if (Direction.INCOMING == direction) {
                     mmsDataObject.setState(State.RECEIVED);
                     onIncomingMms(mmsDataObject);
@@ -608,7 +601,7 @@ public class XmsObserver implements INativeXmsEventListener {
 
     @Override
     public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
-        if(state == null) {
+        if (state == null) {
             return;
         }
         synchronized (mXmsEventListeners) {
@@ -617,6 +610,5 @@ public class XmsObserver implements INativeXmsEventListener {
             }
         }
     }
-
 
 }

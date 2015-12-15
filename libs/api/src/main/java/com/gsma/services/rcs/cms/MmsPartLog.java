@@ -93,4 +93,21 @@ public class MmsPartLog {
      * </P>
      */
     public static final String CONTACT = "contact";
+
+    /**
+     * Message MIME-types
+     */
+    public static class MimeType {
+
+        /**
+         * MIME-type of body part
+         */
+        public static final String TEXT_MESSAGE = "text/plain";
+
+        /**
+         * MIME-type of SMIL part
+         */
+        public static final String APPLICATION_SMIL = "application/smil";
+
+    }
 }

@@ -22,10 +22,13 @@ import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
@@ -76,7 +79,8 @@ public class XmsLog {
     private static final String SELECTION_XMS_CONTACT_DIRECTION_CORRELATOR = SELECTION_XMS_CONTACT
             + " AND " + SELECTION_XMS_DIRECTION + " AND " + SELECTION_XMS_CORRELATOR + " AND "
             + SELECTION_XMS_SMS;
-    private static final String SELECTION_XMS_CONTACT_UNREAD = SELECTION_XMS_CONTACT + " AND " + SELECTION_UNREAD;
+    private static final String SELECTION_XMS_CONTACT_UNREAD = SELECTION_XMS_CONTACT + " AND "
+            + SELECTION_UNREAD;
 
     private static final Logger sLogger = Logger.getLogger(XmsLog.class.getSimpleName());
 
@@ -318,8 +322,10 @@ public class XmsLog {
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
         values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
 
-        if (mLocalContentResolver.update(XmsData.CONTENT_URI,
-                values, SELECTION_XMS_CONTACT_UNREAD, new String[]{contactId.toString()}) < 1) {
+        if (mLocalContentResolver.update(XmsData.CONTENT_URI, values, SELECTION_XMS_CONTACT_UNREAD,
+                new String[] {
+                    contactId.toString()
+                }) < 1) {
             if (sLogger.isActivated()) {
                 sLogger.warn("There was no message with msgId '" + contactId.toString()
                         + "' to mark as read.");
@@ -349,11 +355,14 @@ public class XmsLog {
 
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsPart()) {
             String mimeType = mmsPart.getMimeType();
-            String content = mmsPart.getBody();
+            String content = mmsPart.getContentText();
             if (content == null) {
                 content = mmsPart.getFile().toString();
             }
             values.clear();
+            if (sLogger.isActivated()) {
+                sLogger.debug("Insert part: " + mmsPart);
+            }
             values.put(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId());
             values.put(PartData.KEY_CONTACT, contact);
             values.put(PartData.KEY_MIME_TYPE, mimeType);
@@ -361,6 +370,7 @@ public class XmsLog {
             values.put(PartData.KEY_FILESIZE, mmsPart.getFileSize());
             values.put(PartData.KEY_CONTENT, content);
             values.put(PartData.KEY_FILEICON, mmsPart.getFileIcon());
+            values.put(PartData.KEY_COMPRESSED, mmsPart.getCompressed());
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
     }
@@ -503,6 +513,35 @@ public class XmsLog {
                 values, null, null) > 0;
     }
 
+    public XmsDataObject getXmsDataObject(String messageId) {
+        Cursor cursor = null;
+        try {
+            cursor = getXmsMessage(messageId);
+            if (!cursor.moveToNext()) {
+                return null;
+            }
+            String mimeType = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MIME_TYPE));
+            String number = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT));
+            ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
+            String content = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTENT));
+            Direction dir = Direction.valueOf(cursor.getInt(cursor
+                    .getColumnIndex(XmsData.KEY_DIRECTION)));
+            ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(cursor
+                    .getColumnIndex(XmsData.KEY_READ_STATUS)));
+            long date = cursor.getLong(cursor.getColumnIndex(XmsData.KEY_TIMESTAMP));
+            if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
+                return new SmsDataObject(messageId, contact, content, dir, date, readStatus);
+            } else {
+                String mmsId = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MMS_ID));
+                List<MmsDataObject.MmsPart> mmsParts = new ArrayList<>(getParts(messageId));
+                return new MmsDataObject(mmsId, messageId, contact, content, dir, readStatus, date,
+                        null, null, mmsParts);
+            }
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
     public Set<MmsDataObject.MmsPart> getParts(String mmsId) {
         Cursor cursor = null;
         Set<MmsDataObject.MmsPart> parts = new HashSet<>();
@@ -518,18 +557,33 @@ public class XmsLog {
             int filenameIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILENAME);
             int fileSizeIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILESIZE);
             int fileiconIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILEICON);
+            int compressedIdx = cursor.getColumnIndexOrThrow(PartData.KEY_COMPRESSED);
             do {
                 String number = cursor.getString(contactIdx);
                 ContactId contact = com.gsma.rcs.utils.ContactUtil
                         .createContactIdFromTrustedData(number);
-                MmsDataObject.MmsPart partData = new MmsDataObject.MmsPart(
-                        cursor.getString(messageIdIdx), contact, cursor.getString(mimeTypeIdx),
-                        cursor.getString(filenameIdx), cursor.isNull(fileSizeIdx) ? null
-                                : cursor.getLong(fileSizeIdx), cursor.getString(contentIdx),
-                        cursor.getBlob(fileiconIdx));
+                String mimeType = cursor.getString(mimeTypeIdx);
+                MmsDataObject.MmsPart partData;
+                if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)
+                        || MmsPartLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
+                    partData = new MmsDataObject.MmsPart(cursor.getString(messageIdIdx), contact,
+                            mimeType, cursor.getString(contentIdx));
+                } else {
+                    Long fileSize = cursor.isNull(fileSizeIdx) ? null : cursor.getLong(fileSizeIdx);
+                    byte[] fileIcon = cursor.isNull(fileiconIdx) ? null : cursor
+                            .getBlob(fileiconIdx);
+                    Uri file = Uri.parse(cursor.getString(contentIdx));
+                    partData = new MmsDataObject.MmsPart(cursor.getString(messageIdIdx), contact,
+                            cursor.getString(filenameIdx), fileSize, file, fileIcon);
+                    byte[] compressed = cursor.isNull(compressedIdx) ? null : cursor
+                            .getBlob(compressedIdx);
+                    partData.setCompressed(compressed);
+                }
                 parts.add(partData);
+
             } while (cursor.moveToNext());
             return parts;
+
         } finally {
             CursorUtil.close(cursor);
         }

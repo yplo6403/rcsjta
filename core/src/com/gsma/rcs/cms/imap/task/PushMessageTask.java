@@ -1,9 +1,6 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import android.content.Context;
-import android.os.AsyncTask;
-
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
@@ -20,11 +17,14 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
+
+import android.content.Context;
+import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,21 +40,22 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
 
     private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
 
-    /*package private*/ final PushMessageTaskListener mListener;
-    /*package private*/ final BasicImapService mImapService;
-    /*package private*/ final RcsSettings mRcsSettings;
-    /*package private*/ final Context mContext;
-    /*package private*/ final XmsLog mXmsLog;
-    /*package private*/ final ImapLog mImapLog;
+    /* package private */final PushMessageTaskListener mListener;
+    /* package private */final BasicImapService mImapService;
+    /* package private */final RcsSettings mRcsSettings;
+    /* package private */final Context mContext;
+    /* package private */final XmsLog mXmsLog;
+    /* package private */final ImapLog mImapLog;
 
-    /*package private*/ final Map<String,Integer> mCreatedUidsMap = new HashMap<>();
+    /* package private */final Map<String, Integer> mCreatedUidsMap = new HashMap<>();
 
     /**
      * @param imapService
-     * @param xmsLog 
+     * @param xmsLog
      * @param listener
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings,  BasicImapService imapService, XmsLog xmsLog, ImapLog imapLog, PushMessageTaskListener listener) {
+    public PushMessageTask(Context context, RcsSettings rcsSettings, BasicImapService imapService,
+            XmsLog xmsLog, ImapLog imapLog, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mImapService = imapService;
@@ -72,27 +73,26 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
             currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
 
             List<XmsDataObject> messagesToPush = new ArrayList<>();
-            for(MessageData messageData : mImapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)){
-                XmsDataObject xms = XmsDataObjectFactory.createXmsDataObject(mXmsLog, messageData.getMessageId());
-                if(xms != null){
+            for (MessageData messageData : mImapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)) {
+                XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
+                if (xms != null) {
                     messagesToPush.add(xms);
                 }
             }
-            if(messagesToPush.isEmpty()){
+            if (messagesToPush.isEmpty()) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("no message to push");
                 }
                 return null;
             }
-                mImapService.init();
-                return pushMessages(messagesToPush);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        finally {
+            mImapService.init();
+            return pushMessages(messagesToPush);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
             Thread.currentThread().setName(currentName);
-            ImapServiceManager.releaseService(mImapService);    
+            ImapServiceManager.releaseService(mImapService);
         }
     }
 
@@ -132,41 +132,26 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
 
                 IImapMessage imapMessage = null;
 
-                if(message instanceof SmsDataObject){
-                    SmsDataObject sms = (SmsDataObject)message;
-                    imapMessage = new ImapSmsMessage(
-                            from,
-                            to,
-                            direction,
-                            sms.getTimestamp(),
-                            sms.getBody(),
-                            UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(),
-                            "" + message.getTimestamp());
-                }
-                else if(message instanceof MmsDataObject) {
+                if (message instanceof SmsDataObject) {
+                    SmsDataObject sms = (SmsDataObject) message;
+                    imapMessage = new ImapSmsMessage(from, to, direction, sms.getTimestamp(),
+                            sms.getBody(), UUID.randomUUID().toString(), UUID.randomUUID()
+                                    .toString(), "" + message.getTimestamp());
+                } else if (message instanceof MmsDataObject) {
                     MmsDataObject mms = (MmsDataObject) message;
-                    imapMessage = new ImapMmsMessage(
-                            mContext,
-                            from,
-                            to,
-                            direction,
-                            mms.getTimestamp(),
-                            mms.getSubject(),
-                            UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(),
-                            "" + mms.getTimestamp(),
-                            mms.getMmsId(),
+                    imapMessage = new ImapMmsMessage(mContext, from, to, direction,
+                            mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(),
+                            UUID.randomUUID().toString(), "" + mms.getTimestamp(), mms.getMmsId(),
                             mms.getMmsPart());
                 }
-                String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, message.getContact());
+                String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings,
+                        message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
                     mImapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
                 }
                 mImapService.selectCondstore(remoteFolder);
-                int uid = mImapService.append(remoteFolder, flags,
-                        imapMessage.getPart());
+                int uid = mImapService.append(remoteFolder, flags, imapMessage.getPart());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
         } catch (IOException | ImapException e) {
@@ -175,7 +160,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
         return true;
     }
 
-    public Map<String,Integer> getCreatedUids(){
+    public Map<String, Integer> getCreatedUids() {
         return mCreatedUidsMap;
     }
 
@@ -194,6 +179,6 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
         /**
          * @param uidsMap
          */
-        void onPushMessageTaskCallbackExecuted(Map<String,Integer> uidsMap);
+        void onPushMessageTaskCallbackExecuted(Map<String, Integer> uidsMap);
     }
 }

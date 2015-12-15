@@ -27,6 +27,7 @@ import android.os.Environment;
 import android.os.RemoteException;
 import android.test.InstrumentationTestCase;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
@@ -38,6 +39,7 @@ import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
+import com.orange.labs.mms.priv.MmsFileSizeException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -63,7 +65,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     private String mFileName2;
     private Long mFileSize1;
     private Long mFileSize2;
-
+ 
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getInstrumentation().getContext();
@@ -145,7 +147,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         cursor.close();
     }
 
-    public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException {
+    public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException, MmsFileSizeException, FileAccessException {
         long timestamp = System.currentTimeMillis();
         List<Uri> files = new ArrayList<>();
         files.add(mUriCat1);
@@ -195,12 +197,12 @@ public class XmsLogTest extends InstrumentationTestCase {
             assertEquals(mMessageId, part.getMessageId());
             mimeType = part.getMimeType();
             if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)) {
-                assertEquals("MMS test message", part.getBody());
+                assertEquals("MMS test message", part.getContentText());
                 assertEquals(null, part.getFileName());
                 assertEquals(null, part.getFileIcon());
                 assertEquals(null, part.getFileSize());
             } else {
-                assertEquals(null, part.getBody());
+                assertEquals(null, part.getContentText());
                 assertNotNull(part.getFileIcon());
                 String fileName = part.getFileName();
                 if (fileName.equals(mFileName1)) {
@@ -218,7 +220,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     }
 
     public void testDeleteMmsMessageId() throws RemoteException, OperationApplicationException,
-            IOException {
+            IOException, MmsFileSizeException, FileAccessException {
         long timestamp = System.currentTimeMillis();
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,

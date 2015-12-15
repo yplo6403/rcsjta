@@ -18,71 +18,66 @@
 
 package com.gsma.rcs.core.ims.service.cms.mms;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 
-import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
-import com.gsma.rcs.service.api.CmsServiceImpl;
-import com.gsma.rcs.utils.MimeManager;
+import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.contact.ContactId;
 import com.orange.labs.mms.MmsMessage;
 import com.orange.labs.mms.priv.MmsApnConfigException;
 import com.orange.labs.mms.priv.MmsConnectivityException;
-import com.orange.labs.mms.priv.MmsException;
-import com.orange.labs.mms.priv.MmsFileSizeException;
 import com.orange.labs.mms.priv.MmsFormatException;
 import com.orange.labs.mms.priv.MmsHttpException;
-import com.orange.labs.mms.priv.MmsIOException;
+import com.orange.labs.mms.priv.PartMMS;
+import com.orange.labs.mms.priv.parser.MmsEncodedMessage;
 import com.orange.labs.mms.priv.utils.MmsApn;
-import com.orange.labs.mms.priv.utils.MmsEncoderUtils;
 import com.orange.labs.mms.priv.utils.NetworkUtils;
 
-import java.io.FileNotFoundException; 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Created by yplo6403 on 07/12/2015.
  */
-public class OriginatingMmsSession implements Runnable, MmsSessionListener {
+public final class OriginatingMmsSession implements Runnable, MmsSessionListener {
 
     private static final Logger sLogger = Logger.getLogger(OriginatingMmsSession.class
             .getSimpleName());
 
     private final Context mContext;
-    private final ContentResolver mContentResolver;
     private final String mMmsId;
     private final ContactId mContact;
     private final String mSubject;
-    private final XmsLog mXmsLog;
     private final Set<MmsDataObject.MmsPart> mParts;
     private final List<MmsSessionListener> mListeners;
+    private final RcsSettings mRcsSettings;
 
     /**
      * @param context context
-     * @param xmsLog The XMS log accessor
      * @param mmsId The message ID
      * @param contact The remote contact
      * @param subject The subject
      * @param parts The MMS attachment parts
+     * @param rcsSettings The RCS settings accessor
      */
-    public OriginatingMmsSession(Context context, XmsLog xmsLog, String mmsId, ContactId contact, String subject,
-            Set<MmsDataObject.MmsPart> parts) {
+    public OriginatingMmsSession(Context context, String mmsId, ContactId contact, String subject,
+            Set<MmsDataObject.MmsPart> parts, RcsSettings rcsSettings) {
         mContext = context;
-        mContentResolver = context.getContentResolver();
-        mXmsLog = xmsLog;
         mMmsId = mmsId;
         mContact = contact;
         mSubject = subject;
         mParts = parts;
         mListeners = new ArrayList<>();
+        mRcsSettings = rcsSettings;
     }
 
     @Override
@@ -95,66 +90,71 @@ public class OriginatingMmsSession implements Runnable, MmsSessionListener {
         }
         try {
             onMmsTransferStarted(mContact, mMmsId);
-            MmsMessage msg = new MmsMessage();
-            msg.addTo(mContact.toString());
-            msg.setSubject(mSubject);
-            for(MmsPart part : mParts){
+            List<PartMMS> partsMms = new ArrayList<>();
+            for (MmsPart part : mParts) {
                 String mimeType = part.getMimeType();
-                if(MimeManager.isImageType(mimeType)){
-                    msg.attachBitmap(BitmapFactory.decodeStream(mContentResolver.openInputStream(part.getFile())));
+                byte[] content;
+                String body = part.getContentText();
+                if (body != null) {
+                    content = body.getBytes();
+                } else {
+                    content = part.getCompressed();
+                    if (content == null) {
+                        String filePath = FileUtils.getPath(mContext, part.getFile());
+                        try {
+                            content = FileUtils.getContent(filePath);
+                        } catch (IOException e) {
+                            throw new FileAccessException("Failed to read part: " + filePath, e);
+                        }
+                    }
                 }
-                else{
-                    msg.attach(mimeType, part.getBody().getBytes());
-                }
+                partsMms.add(new PartMMS(mimeType, content));
             }
-            byte[] encMsg = MmsEncoderUtils.encodeMessage(msg);
+            MmsMessage msg = new MmsMessage(mRcsSettings.getUserProfileImsUserName(),
+                                        Collections.singletonList(mContact), mSubject, partsMms);
+
+            MmsEncodedMessage mmsEncodedMessage = new MmsEncodedMessage(msg);
             NetworkUtils.startMmsConnectivity(mContext);
             // Get APNs
             List<MmsApn> apns = MmsApn.getMmsAPNs(mContext);
             // For each APN, try to send the message
-            for (MmsApn apn :apns)
-            {
-                if(logActivated){
-                    sLogger.debug("Trying apn : " + apn.toString());
+            for (MmsApn apn : apns) {
+                if (logActivated) {
+                    sLogger.debug("Trying APN : " + apn.toString());
                 }
                 // Check the route
                 String routeHost = apn.isProxySet ? apn.proxyHost : Uri.parse(apn.mmsc).getHost();
                 if (NetworkUtils.ensureRoute(mContext, routeHost)) {
-                    success = NetworkUtils.sendMessage(apn, encMsg);
-                    if(success){
+                    success = NetworkUtils.sendMessage(apn, mmsEncodedMessage.encode());
+                    if (success) {
                         break;
                     }
                 }
             }
-            if(success){
+            if (success) {
                 onMmsTransferred(mContact, mMmsId);
-            }
-            else{
+            } else {
                 onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_UNABLE_CONNECT_MMS, mContact, mMmsId);
             }
 
-        } catch (MmsException | FileNotFoundException e) {
-            if(logActivated){
-                sLogger.debug(e.getMessage());
-                e.printStackTrace();
-            }
-            ReasonCode reasonCode = ReasonCode.FAILED_MMS_ERROR_UNSPECIFIED;
-            if(e instanceof MmsApnConfigException){
-                reasonCode = ReasonCode.FAILED_MMS_ERROR_INVALID_APN;
-            }
-            else if (e instanceof MmsConnectivityException){
-                reasonCode = ReasonCode.FAILED_MMS_ERROR_UNABLE_CONNECT_MMS;
-            }
-            else if(e instanceof MmsFileSizeException || e instanceof MmsFormatException){
-                reasonCode = ReasonCode.FAILED_ERROR_GENERIC_FAILURE;
-            }
-            else if( e instanceof MmsHttpException || e instanceof MmsIOException){
-                reasonCode = ReasonCode.FAILED_MMS_ERROR_HTTP_FAILURE;
-            }
-            else if( e instanceof MmsIOException){
-                reasonCode = ReasonCode.FAILED_MMS_ERROR_IO_ERROR;
-            }
-            onMmsTransferError(reasonCode, mContact, mMmsId);
+        } catch (MmsApnConfigException e) {
+            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_INVALID_APN, mContact, mMmsId);
+
+        } catch (MmsConnectivityException e) {
+            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_UNABLE_CONNECT_MMS, mContact, mMmsId);
+
+        } catch (MmsFormatException e) {
+            sLogger.error("Failed to format MMS!", e);
+            onMmsTransferError(ReasonCode.FAILED_ERROR_GENERIC_FAILURE, mContact, mMmsId);
+
+        } catch (MmsHttpException e) {
+            sLogger.error("Failed to send MMS over HTTP!", e);
+            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_HTTP_FAILURE, mContact, mMmsId);
+
+        } catch (FileAccessException e) {
+            sLogger.error("Cannot find MMS part!", e);
+            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_PART_NOT_FOUND, mContact, mMmsId);
+
         } catch (RuntimeException e) {
             /*
              * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
@@ -163,8 +163,9 @@ public class OriginatingMmsSession implements Runnable, MmsSessionListener {
              * exit the system and thus can bring the whole system down, which is not intended.
              */
             sLogger.error("Failed to send MMS!", e);
-        }
-        finally {
+            onMmsTransferError(ReasonCode.UNSPECIFIED, mContact, mMmsId);
+
+        } finally {
             NetworkUtils.endConnectivity(mContext);
         }
     }

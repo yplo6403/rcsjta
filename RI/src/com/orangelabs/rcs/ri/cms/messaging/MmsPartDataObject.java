@@ -19,7 +19,6 @@
 package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.ri.utils.ContactUtil;
@@ -94,8 +93,8 @@ public class MmsPartDataObject {
         mFilename = filename;
         mFileSize = fileSize;
         mContact = contact;
-        if (XmsMessageLog.MimeType.TEXT_MESSAGE.equals(mimeType)
-                || XmsMessageLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
+        if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)
+                || MmsPartLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
             mBody = content;
             mFile = null;
             mFileIcon = null;

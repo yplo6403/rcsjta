@@ -19,8 +19,6 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.cms.XmsMessageLog;
-import com.gsma.services.rcs.contact.ContactId;
 
 import android.net.Uri;
 
@@ -72,4 +70,9 @@ public class PartData {
      * ContactId formatted number of remote contact.
      */
     public static final String KEY_CONTACT = MmsPartLog.CONTACT;
+
+    /**
+     * Byte array of the compressed file image.
+     */
+    public static final String KEY_COMPRESSED = "compressed";
 }

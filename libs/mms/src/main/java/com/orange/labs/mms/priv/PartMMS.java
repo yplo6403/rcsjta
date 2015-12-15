@@ -18,24 +18,21 @@
 
 package com.orange.labs.mms.priv;
 
-public final class PartMMS
-{
-	private String mimeType = null;
-	private byte[] content = null;
-	
-	public PartMMS(String mimeType, byte[] content)
-	{
-		this.mimeType = mimeType;
-		this.content = content;
-	}
-	
-	public String getMimeType()
-	{
-		return this.mimeType;
-	}
-	
-	public byte[] getContent()
-	{
-		return this.content;
-	}
+public final class PartMMS {
+
+    private final String mMimeType;
+    private final byte[] mContent;
+
+    public PartMMS(String mimeType, byte[] content) {
+        mMimeType = mimeType;
+        mContent = content;
+    }
+
+    public String getMimeType() {
+        return mMimeType;
+    }
+
+    public byte[] getContent() {
+        return mContent;
+    }
 }

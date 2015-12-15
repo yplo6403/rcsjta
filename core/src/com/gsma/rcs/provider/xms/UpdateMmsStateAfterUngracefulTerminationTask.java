@@ -58,8 +58,7 @@ public class UpdateMmsStateAfterUngracefulTerminationTask implements Runnable {
                     ContactId contact = ContactUtil.createContactIdFromTrustedData(contactNumber);
                     mCmsServiceImpl.setXmsStateAndReasonCode(mmsId,
                             XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, contact,
-                            XmsMessage.State.FAILED,
-                            XmsMessage.ReasonCode.FAILED_MMS_ERROR_UNSPECIFIED);
+                            XmsMessage.State.FAILED, XmsMessage.ReasonCode.UNSPECIFIED);
                 }
             } catch (RuntimeException e) {
                 /*

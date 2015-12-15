@@ -329,8 +329,9 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = System.currentTimeMillis();
             long maxFileIconSize = mRcsSettings.getMaxFileIconSize();
-            MmsDataObject mmsDataObject = new MmsDataObject(mContext, null, mMessageId, contact, subject, body,
-                    RcsService.Direction.OUTGOING, timestamp, files, null, maxFileIconSize);
+            MmsDataObject mmsDataObject = new MmsDataObject(mContext, null, mMessageId, contact,
+                    subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
+                    maxFileIconSize);
             mmsDataObject.setReadStatus(ReadStatus.READ);
             mXmsLog.addMms(mmsDataObject);
             XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
@@ -569,8 +570,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
         /* For outgoing MMS transfer, timestampSent = timestamp */
-        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mXmsLog, mmsId,
-                contact, subject, parts);
+        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact,
+                subject, parts, mRcsSettings);
         session.addListener(this);
         session.addListener(mCmsManager);
         mCmsService.scheduleImOperation(session);
