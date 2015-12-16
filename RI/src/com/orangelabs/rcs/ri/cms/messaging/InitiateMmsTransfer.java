@@ -20,12 +20,9 @@ package com.orangelabs.rcs.ri.cms.messaging;
 
 import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
-import com.gsma.services.rcs.RcsGenericException;
-import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
@@ -135,11 +132,19 @@ public class InitiateMmsTransfer extends RcsActivity {
                  * the file icon for image attached files.
                  */
                 SendMmsTask sendMmsTask = new SendMmsTask(cmsService, mContact, files, subject,
-                        body);
+                        body, new SendMmsTask.TaskCompleted() {
+                            @Override
+                            public void onTaskComplete(final Exception result) {
+                                if (result != null) {
+                                    InitiateMmsTransfer.this.showExceptionThenExit(result);
+                                } else {
+                                    Utils.displayLongToast(InitiateMmsTransfer.this,
+                                            getString(R.string.mms_sent, mContact.toString()));
+                                    InitiateMmsTransfer.this.finish();
+                                }
+                            }
+                        });
                 sendMmsTask.execute();
-                Utils.displayLongToast(InitiateMmsTransfer.this,
-                        getString(R.string.mms_sent, mContact.toString()));
-                InitiateMmsTransfer.this.finish();
             }
         });
 
@@ -235,32 +240,43 @@ public class InitiateMmsTransfer extends RcsActivity {
         }
     }
 
-    private class SendMmsTask extends AsyncTask<Void, Void, Void> {
+    private static class SendMmsTask extends AsyncTask<Void, Void, Exception> {
         private final CmsService mCmsService;
         private final ContactId mContact;
         private final List<Uri> mFiles;
         private final String mSubject;
         private final String mBody;
+        private final TaskCompleted mTaskCompleted;
 
         public SendMmsTask(CmsService cmsService, ContactId contact, List<Uri> files,
-                String subject, String body) {
+                String subject, String body, TaskCompleted taskCompleted) {
             mCmsService = cmsService;
             mContact = contact;
             mFiles = files;
             mSubject = subject;
             mBody = body;
+            mTaskCompleted = taskCompleted;
         }
 
         @Override
-        protected Void doInBackground(Void... params) {
+        protected Exception doInBackground(Void... params) {
             try {
                 mCmsService.sendMultimediaMessage(mContact, mFiles, mSubject, mBody);
-
-            } catch (RcsGenericException | RcsServiceNotAvailableException e) {
-                Log.e(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+                return null;
+            } catch (Exception e) {
+                return e;
             }
-            return null;
         }
 
+        @Override
+        protected void onPostExecute(Exception result) {
+            if (mTaskCompleted != null) {
+                mTaskCompleted.onTaskComplete(result);
+            }
+        }
+
+        public interface TaskCompleted {
+            void onTaskComplete(Exception result);
+        }
     }
 }

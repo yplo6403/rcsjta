@@ -56,6 +56,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.provider.Telephony;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -70,7 +71,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -178,7 +178,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.xms_talk_view);
+        setContentView(R.layout.chat_view);
 
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(XmsMessageLog.HISTORYLOG_MEMBER_ID);
@@ -192,9 +192,9 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
             return;
         }
 
-        mComposeText = (EditText) findViewById(R.id.messageEdit);
+        mComposeText = (EditText) findViewById(R.id.userText);
         /* Set send button listener */
-        Button sendBtn = (Button) findViewById(R.id.SendButton);
+        Button sendBtn = (Button) findViewById(R.id.send_button);
         sendBtn.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -207,11 +207,8 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         mAdapter = new TalkCursorAdapter(this);
 
         /* Associate the list adapter with the ListView. */
-        ListView listView = (ListView) findViewById(R.id.talkListView);
+        ListView listView = (ListView) findViewById(android.R.id.list);
         listView.setAdapter(mAdapter);
-
-        TextView emptyView = (TextView) findViewById(android.R.id.empty);
-        listView.setEmptyView(emptyView);
 
         registerForContextMenu(listView);
 
@@ -434,11 +431,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.menu_add_parts));
         final String[] choices;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            choices = getResources().getStringArray(R.array.mms_select_parts);
-        } else {
-            choices = getResources().getStringArray(R.array.mms_select_part);
-        }
+        choices = getResources().getStringArray(R.array.mms_select_parts);
         builder.setItems(choices, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -465,8 +458,21 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.select_parts:
-                selectMimeType();
+            case R.id.menu_send_mms:
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                    Uri _uri = Uri.parse("tel:" + mContact.toString());
+                    Intent sendIntent = new Intent(Intent.ACTION_VIEW, _uri);
+                    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+                        String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(this);
+                        sendIntent.setPackage(defaultSmsPackageName);
+                    }
+                    sendIntent.putExtra("address", mContact.toString());
+                    sendIntent.putExtra("sms_body", "");
+                    sendIntent.setType("vnd.android-dir/mms-sms");
+                    startActivity(sendIntent);
+                } else {
+                    selectMimeType();
+                }
                 break;
             case R.id.menu_delete_xms:
                 try {

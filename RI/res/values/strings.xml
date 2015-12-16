@@ -425,7 +425,8 @@
     <string name="menu_select_part">Select attachment</string>
     <string name="mms_sent">MMS sent to %1$s</string>
     <string name="subject_label">Subject:</string>
-    <string name="menu_add_parts">Add attachment</string>
+    <string name="menu_send_mms">Send MMS</string>
+     <string name="menu_add_parts">Select attachment</string>
     <string name="err_not_implemented">Option \'%1$s\' not implemented yet</string>
     <string name="label_sel_vcard">Send visit card</string>
 
@@ -679,11 +680,6 @@
     </string-array>
 
     <string-array name="mms_select_parts">
-        <item>Add images</item>
-        <item>Add a contact</item>
-    </string-array>
-
-    <string-array name="mms_select_part">
         <item>Add an image</item>
         <item>Add a contact</item>
     </string-array>
