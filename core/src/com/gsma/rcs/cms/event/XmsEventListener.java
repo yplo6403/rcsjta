@@ -539,7 +539,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
             // take the first message which s not synchronized with CMS server (have no uid)
             for (String id : ids) {
                 Integer uid = mImapLog.getUidForXmsMessage(id);
-                if (uid == null || uid == 0) {
+                if (uid == null ) {
                     return id;
                 }
             }

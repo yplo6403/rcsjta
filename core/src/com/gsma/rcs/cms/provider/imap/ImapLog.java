@@ -29,9 +29,6 @@ public class ImapLog {
 
     private final LocalContentResolver mLocalContentResolver;
 
-    private static final String SORT_BY_UID_ASC = new StringBuilder(
-            MessageData.KEY_UID).append(" ASC").toString();
-    
     private static final String[] PROJECTION_ID = new String[] {
             BaseColumns._ID
     };
@@ -40,14 +37,14 @@ public class ImapLog {
     };
 
     // Folder table
-    private static final class Folder{
+    static final class Folder{
 
-        private static final String SELECTION_NAME = new StringBuilder(FolderData.KEY_NAME)
+        static final String SELECTION_NAME = new StringBuilder(FolderData.KEY_NAME)
                 .append("=?").toString();
     }
 
     // Message table
-    private static final class Message{
+    static final class Message{
 
         private static final String PROJECTION_MAX_UID = new StringBuilder().append("MAX(").append(MessageData.KEY_UID).append(")").toString();
 
@@ -58,7 +55,7 @@ public class ImapLog {
         };
 
 
-        private static final String SELECTION_FOLDER_NAME = new StringBuilder(MessageData.KEY_FOLDER_NAME).append("=?").toString();
+        static final String SELECTION_FOLDER_NAME = new StringBuilder(MessageData.KEY_FOLDER_NAME).append("=?").toString();
         private static final String SELECTION_UID = new StringBuilder(MessageData.KEY_UID).append("=?").toString();
 
         private static final String SELECTION_MESSAGE_TYPE = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("=?").toString();
@@ -76,8 +73,8 @@ public class ImapLog {
         private static final String SELECTION_SMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.SMS).append("'").toString();
         private static final String SELECTION_MMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.MMS).append("'").toString();
         private static final String SELECTION_XMS = new StringBuilder("(").append(SELECTION_SMS).append(" OR ").append(SELECTION_MMS).append(")").toString();
-        private static final String SELECTION_FOLDER_NAME_UID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_UID).toString();
-        private static final String SELECTION_FOLDER_NAME_MESSAGEID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        static final String SELECTION_FOLDER_NAME_UID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_UID).toString();
+        static final String SELECTION_FOLDER_NAME_MESSAGEID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_XMS_MESSAGEID = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
 
         private static final String SELECTION_XMS_PUSH_STATUS = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_PUSH_STATUS).toString();
@@ -155,32 +152,7 @@ public class ImapLog {
         mLocalContentResolver.update(uri, values, null, null);
     }
 
-    /**
-     * Get folder by name
-     * 
-     * @param folderName
-     * @return FolderData
-     */
-    public FolderData getFolder(String folderName) {
-        Cursor cursor = null;
-        try {
-            cursor = mLocalContentResolver.query(FolderData.CONTENT_URI, null, Folder.SELECTION_NAME,
-                    new String[] {
-                            folderName
-            }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, FolderData.CONTENT_URI);
-            if (!cursor.moveToFirst()) {
-                return null;
-            }
 
-            return new FolderData(folderName,
-                    cursor.getInt(cursor.getColumnIndexOrThrow(FolderData.KEY_NEXT_UID)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(FolderData.KEY_HIGHESTMODSEQ)),
-                    cursor.getInt(cursor.getColumnIndexOrThrow(FolderData.KEY_UID_VALIDITY)));
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
 
     /**
      * Get folders data
@@ -361,40 +333,8 @@ public class ImapLog {
                     MessageType.valueOf(cursor
                             .getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_TYPE))),
                     cursor.getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID)),
-                    cursor.getLong(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)
-                    ));
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Get message by folderName and messageId
-     * 
-     * @param folderName
-     * @param messageId
-     * @return MessageData
-     */
-    public MessageData getMessage(String folderName, String messageId) {
-        Cursor cursor = null;
-        try {
-            cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null,
-                    Message.SELECTION_FOLDER_NAME_MESSAGEID, new String[] {
-                            folderName, messageId
-            }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
-            if (!cursor.moveToFirst()) {
-                return null;
-            }
-            return new MessageData(folderName,
-                    cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_UID)),
-                    ReadStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_READ_STATUS))),
-                    DeleteStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_DELETE_STATUS))),
-                    PushStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_PUSH_STATUS))),
-                    MessageType.valueOf(cursor
-                            .getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_TYPE))),
-                    cursor.getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID)),
-                    cursor.getLong(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)));
+                    cursor.isNull(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)) ? null : cursor.getLong(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)))
+                    ;
         } finally {
             CursorUtil.close(cursor);
         }
@@ -426,53 +366,6 @@ public class ImapLog {
 
     /**
      * Get messages by folderName
-     * 
-     * @param folderName
-     * @return MessageData
-     */
-    public Map<Integer, MessageData> getMessages(String folderName) {
-        Cursor cursor = null;
-        Map<Integer, MessageData> messages = new HashMap<Integer, MessageData>();
-        try {
-            cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null,
-                    Message.SELECTION_FOLDER_NAME, new String[] {
-                            folderName
-            }, SORT_BY_UID_ASC);
-            CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
-
-            int uidIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_UID);
-            int folderIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_FOLDER_NAME);
-            int seenIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_READ_STATUS);
-            int deletedIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_DELETE_STATUS);
-            int pushIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_PUSH_STATUS);
-            int messageTypeIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_TYPE);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
-            int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
-
-            while (cursor.moveToNext()) {
-                Integer uid = cursor.getInt(uidIdx);
-                if(uid==0){
-                    continue;
-                }
-                messages.put(uid,
-                        new MessageData(
-                                cursor.getString(folderIdx),
-                                uid,
-                                ReadStatus.valueOf(cursor.getInt(seenIdx)),
-                                DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
-                                PushStatus.valueOf(cursor.getInt(pushIdx)),
-                                MessageType.valueOf(cursor.getString(messageTypeIdx)),
-                                cursor.getString(messageIdIdx),
-                                cursor.getLong(nativeProviderIdIdx)));
-            }
-            return messages;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Get messages by folderName
      *
      * @param folderName
      * @return MessageData
@@ -497,16 +390,16 @@ public class ImapLog {
             int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
             while (cursor.moveToNext()) {
-                Integer uid = cursor.getInt(uidIdx);
                 messages.add(new MessageData(
                         cursor.getString(folderIdx),
-                        uid,
+                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx),
                         ReadStatus.valueOf(cursor.getInt(seenIdx)),
                         DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
                         PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)),
                         cursor.getString(messageIdIdx),
-                        cursor.getLong(nativeProviderIdIdx)));
+                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx))
+                );
 
             }
             return messages;
@@ -539,16 +432,16 @@ public class ImapLog {
             int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
             while (cursor.moveToNext()) {
-                Integer uid = cursor.getInt(uidIdx);
                 messages.add(new MessageData(
                         cursor.getString(folderIdx),
-                        uid,
+                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx),
                         ReadStatus.valueOf(cursor.getInt(seenIdx)),
                         DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
                         PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)),
                         cursor.getString(messageIdIdx),
-                        cursor.getLong(nativeProviderIdIdx)));
+                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx))
+                );
 
             }
             return messages;
@@ -581,16 +474,16 @@ public class ImapLog {
             int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
             while (cursor.moveToNext()) {
-                Integer uid = cursor.getInt(uidIdx);
                 messages.add(new MessageData(
                         cursor.getString(folderIdx),
-                        uid,
+                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx),
                         ReadStatus.valueOf(cursor.getInt(seenIdx)),
                         DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
                         PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)),
                         cursor.getString(messageIdIdx),
-                        cursor.getLong(nativeProviderIdIdx)));
+                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx))
+                );
 
             }
             return messages;
@@ -623,56 +516,16 @@ public class ImapLog {
             int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
             while (cursor.moveToNext()) {
-                Integer uid = cursor.getInt(uidIdx);
                 messages.add(new MessageData(
                         cursor.getString(folderIdx),
-                        uid,
+                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx),
                         ReadStatus.valueOf(cursor.getInt(seenIdx)),
                         DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
                         PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)),
                         cursor.getString(messageIdIdx),
-                        cursor.getLong(nativeProviderIdIdx)));
-
-            }
-            return messages;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Get messages
-     * 
-     * @return MessageData
-     */
-    public Map<Integer, MessageData> getMessages() {
-        Cursor cursor = null;
-        Map<Integer, MessageData> messages = new HashMap<Integer, MessageData>();
-        try {
-            cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
-
-            int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
-            int uidIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_UID);
-            int folderIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_FOLDER_NAME);
-            int seenIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_READ_STATUS);
-            int deletedIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_DELETE_STATUS);
-            int pushIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_PUSH_STATUS);
-            int messageTypeIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_TYPE);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
-            int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID);
-            while (cursor.moveToNext()) {
-                messages.put(cursor.getInt(idIdx),
-                        new MessageData(
-                                cursor.getString(folderIdx),
-                                cursor.getInt(uidIdx),
-                                ReadStatus.valueOf(cursor.getInt(seenIdx)),
-                                DeleteStatus.valueOf(cursor.getInt(deletedIdx)),
-                                PushStatus.valueOf(cursor.getInt(pushIdx)),
-                                MessageType.valueOf(cursor.getString(messageTypeIdx)),
-                                cursor.getString(messageIdIdx),
-                                cursor.getLong(nativeProviderIdIdx)));
+                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx))
+                );
 
             }
             return messages;
@@ -713,8 +566,9 @@ public class ImapLog {
             cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, PROJECTION_UID,
                     Message.SELECTION_XMS_MESSAGEID, new String[] {baseId}, null);
             CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
+            int uidIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_UID);
             if (cursor.moveToFirst()) {
-                return cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_UID));
+                return cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx);
             }
             return null;
 
@@ -794,19 +648,7 @@ public class ImapLog {
                 new String[]{messageType.toString()});
     }
 
-    /**
-     * Remove a message
-     * 
-     * @param folderName
-     * @param uid
-     * @return int
-     */
-    public int removeMessage(String folderName, Integer uid) {
-        return mLocalContentResolver.delete(MessageData.CONTENT_URI, Message.SELECTION_FOLDER_NAME_UID,
-                new String[] {
-                        folderName, String.valueOf(uid)
-        });
-    }
+
 
     /**
      * Remove messages from a folder

@@ -74,12 +74,12 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
         Map<String, List<Integer>>  folderUidsMap = new HashMap<>();
         for (MessageData messageData : mImapLog.getMessages(ReadStatus.READ_REPORT_REQUESTED)) {
             Integer uid = messageData.getUid();
-            if (uid==MessageData.INVALID_UID) {
+            if (uid == null) {
                 continue;
             }
             String folderName = messageData.getFolder();
             List<Integer> uids = folderUidsMap.get(folderName);
-            if(uids==null){
+            if(uids == null){
                 uids = new ArrayList<>();
                 folderUidsMap.put(folderName, uids);
             }
@@ -102,11 +102,11 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
         for (MessageData messageData : mImapLog.getMessages(MessageData.DeleteStatus.DELETED_REPORT_REQUESTED)) {
             String folderName = messageData.getFolder();
             Integer uid = messageData.getUid();
-            if (uid==MessageData.INVALID_UID) {
+            if (uid == null) {
                 continue;
             }
             List<Integer> uids = folderUidsMap.get(folderName);
-            if(uids==null){
+            if(uids == null){
                 uids = new ArrayList<>();
                 folderUidsMap.put(folderName, uids);
             }

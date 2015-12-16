@@ -247,7 +247,6 @@ public final class MessageData {
         }
     }
 
-    public static final Integer INVALID_UID = 0;
     private String mFolder;
     private Integer mUid;
     private ReadStatus mReadStatus;

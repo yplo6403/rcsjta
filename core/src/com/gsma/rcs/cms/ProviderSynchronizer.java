@@ -300,6 +300,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
         Long threadId, date;
         date = -1l;
         String mmsId;
+        String subject;
         Direction direction = Direction.INCOMING;
         Set<ContactId> contacts = new HashSet<>();
         ReadStatus readStatus;
@@ -316,10 +317,12 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             }
             threadId = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.THREAD_ID));
             mmsId = cursor.getString(cursor.getColumnIndex(Telephony.BaseMmsColumns.MESSAGE_ID));
+
             readStatus = cursor.getInt(cursor.getColumnIndex(Telephony.BaseMmsColumns.READ)) == 0 ? ReadStatus.UNREAD
                     : ReadStatus.READ;
             int messageType = cursor.getInt(cursor
                     .getColumnIndex(Telephony.BaseMmsColumns.MESSAGE_TYPE));
+            subject = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
             if (128 == messageType) {
                 direction = Direction.OUTGOING;
             }
@@ -379,6 +382,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                 String text = cursor.getString(textIdx);
                 String filename = cursor.getString(filenameIdx);
                 String data = cursor.getString(dataIdx);
+                if(contentType==null){ //skip MMS with null content type
+                    return mmsDataObject;
+                }
                 if (data != null) {
                     Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
                     byte[] bytes = MmsUtils.getContent(mContentResolver, file);
@@ -407,14 +413,12 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                         mmsPart.add(new MmsPart(messageIds.get(contact), contact, contentType, text));
                     }
                 }
-
             }
         } finally {
             CursorUtil.close(cursor);
         }
 
         Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
-        String subject = null;// TODO
         while (iter.hasNext()) {
             Entry<ContactId, List<MmsPart>> entry = iter.next();
             ContactId contact = entry.getKey();

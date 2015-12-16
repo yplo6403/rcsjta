@@ -4,7 +4,6 @@ import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.cms.sync.strategy.FlagChange.Operation;
-import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.IdGenerator;
@@ -17,12 +16,10 @@ import com.sonymobile.rcs.imap.Flag;
 public class SmsIntegrationUtils {
     
     public static class Test1{
-        
+
         public static ContactId contact  = ContactUtil.createContactIdFromTrustedData("+33640332858");
         public static String folderName = "Default/tel:+33640332858";
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.UNREAD;
-        public static ReadStatus imapReadStatus = ReadStatus.UNREAD;
-        public static DeleteStatus imapDeleteStatus = DeleteStatus.NOT_DELETED;
 
         public static SmsDataObject[] conversation = new SmsDataObject[]{
                 new SmsDataObject(IdGenerator.generateMessageID(),contact, "Hello!", Direction.INCOMING,  System.currentTimeMillis()-4000,1l , 1l),
@@ -61,8 +58,6 @@ public class SmsIntegrationUtils {
         };
 
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.READ;
-        public static ReadStatus imapReadStatus = ReadStatus.READ;
-        public static DeleteStatus imapDeleteStatus = DeleteStatus.NOT_DELETED;
 
         public static SmsDataObject[] conversation = new SmsDataObject[]{
                 new SmsDataObject(IdGenerator.generateMessageID(),contactId, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()-4000,1l , 1l),
@@ -75,10 +70,6 @@ public class SmsIntegrationUtils {
     public static class Test7{
 
         public static ContactId contactId  = ContactUtil.createContactIdFromTrustedData("+33640332858");
-        public static FlagChange[] flagChangesDeleted = new FlagChange[]{
-                new FlagChange(Test1.folderName,1,Flag.Deleted, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName,2,Flag.Deleted, Operation.ADD_FLAG),
-        };
 
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.UNREAD;
         public static ReadStatus imapReadStatus = ReadStatus.UNREAD;
@@ -100,7 +91,7 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_remote = new SmsDataObject[]{
                 new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l ),
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l ),
+                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l ),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[]{
@@ -119,14 +110,12 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_remote = new SmsDataObject[]{
                 new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l),
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l),
+                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello", Direction.INCOMING, readStatus, System.currentTimeMillis()+3000,2l , 1l),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[]{
                 new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l),
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+3000,3l , 1l),
-
         };
 
     }
@@ -160,14 +149,6 @@ public class SmsIntegrationUtils {
                 new SmsDataObject(IdGenerator.generateMessageID(),contact3, "Hello 3!", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(),contact3, "Bye 3", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l),
         };
-
-        public static SmsDataObject[] conversation_remote = new SmsDataObject[]{
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING,readStatus, System.currentTimeMillis()+1000,1l , 1l),
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+2000,2l , 1l),
-                new SmsDataObject(IdGenerator.generateMessageID(),Test1.contact, "Hello!", Direction.INCOMING, readStatus, System.currentTimeMillis()+3000,3l , 1l),
-
-        };
-
     }
     
     public static class TestLoad {
@@ -179,7 +160,7 @@ public class SmsIntegrationUtils {
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.UNREAD;
 
         public static SmsDataObject[] conversation_1 = new SmsDataObject[]{
-                new SmsDataObject(IdGenerator.generateMessageID(),contact3, "Hello !", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l),
+                new SmsDataObject(IdGenerator.generateMessageID(),contact1, "Hello !", Direction.INCOMING, readStatus, System.currentTimeMillis()+1000,1l , 1l),
         };
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[]{

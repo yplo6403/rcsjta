@@ -6,11 +6,14 @@ import android.database.Cursor;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.XmsData;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
@@ -18,11 +21,9 @@ import java.util.List;
 
 public class XmsLogEnvIntegration {
 
-    static final String[] PROJECTION_COUNT = new String[] {"count(*)"};
-
     private static final String SORT_BY_DATE_DESC = new StringBuilder(XmsData.KEY_TIMESTAMP).append(" DESC").toString();
 
-    private static final String SELECTION_XMS_CONTACT = XmsData.KEY_CONTACT + "=?";
+    private static final String SELECTION_XMS_CONTACT = XmsData.KEY_CONTACT + "=?" + " AND " + XmsData.KEY_MIME_TYPE + "=?";
 
     protected final LocalContentResolver mLocalContentResolver;
 
@@ -51,14 +52,15 @@ public class XmsLogEnvIntegration {
      * @param contact
      * @return SmsData
      */
-    public List<SmsDataObject> getMessages(ContactId contact) {
+    public List getMessages(String mimeType, ContactId contact) {
 
-        List<SmsDataObject> messages = new ArrayList<>();
+        List<XmsDataObject> messages = new ArrayList<>();
         Cursor cursor = null;
         try {
-            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null, SELECTION_XMS_CONTACT,new String[]{contact.toString()},SORT_BY_DATE_DESC);
+            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null, SELECTION_XMS_CONTACT,new String[]{contact.toString(), mimeType},SORT_BY_DATE_DESC);
             CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
 
+            int messageIdIdx= cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
             int nativeThreadIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID);
             int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
@@ -66,42 +68,39 @@ public class XmsLogEnvIntegration {
             int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
             int directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
             int readStatusIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
-
+            int mmsIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MMS_ID);
+            List<MmsPart> parts = new ArrayList<>();
             while (cursor.moveToNext()) {
-                messages.add(new SmsDataObject(
-                        IdGenerator.generateMessageID(),
-                        ContactUtil.createContactIdFromTrustedData(cursor.getString(contactIdx)),
-                        cursor.getString(contentIdx),
-                        RcsService.Direction.valueOf(cursor.getInt(directionIdx)),
-                        ReadStatus.valueOf(cursor.getInt(readStatusIdx)),
-                        cursor.getLong(dateIdx),
-                        cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx),
-                        cursor.isNull(nativeThreadIdIdx) ? null :cursor.getLong(nativeThreadIdIdx)
-                ));
+                if(MimeType.TEXT_MESSAGE.equals(mimeType)){
+                    messages.add(new SmsDataObject(
+                            cursor.getString(messageIdIdx),
+                            ContactUtil.createContactIdFromTrustedData(cursor.getString(contactIdx)),
+                            cursor.getString(contentIdx),
+                            RcsService.Direction.valueOf(cursor.getInt(directionIdx)),
+                            ReadStatus.valueOf(cursor.getInt(readStatusIdx)),
+                            cursor.getLong(dateIdx),
+                            cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx),
+                            cursor.isNull(nativeThreadIdIdx) ? null :cursor.getLong(nativeThreadIdIdx)
+                    ));
+                }
+                else{
+                    messages.add(new MmsDataObject(
+                            cursor.getString(mmsIdIdx),
+                            cursor.getString(messageIdIdx),
+                            ContactUtil.createContactIdFromTrustedData(cursor.getString(contactIdx)),
+                            cursor.getString(contentIdx),
+                            RcsService.Direction.valueOf(cursor.getInt(directionIdx)),
+                            ReadStatus.valueOf(cursor.getInt(readStatusIdx)),
+                            cursor.getLong(dateIdx),
+                            cursor.isNull(nativeProviderIdIdx) ? null : cursor.getLong(nativeProviderIdIdx),
+                            cursor.isNull(nativeThreadIdIdx) ? null :cursor.getLong(nativeThreadIdIdx),
+                            parts
+                    ));
+                }
             }
             return messages;
         } finally {
             CursorUtil.close(cursor);
         }
-    }
-
-    /**
-     * @return if the content provider is empty
-     */
-    public Boolean isEmpty(){
-
-        Cursor cursor = null;
-        try {
-            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, PROJECTION_COUNT, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-            if (cursor.moveToFirst()) {
-                return cursor.getInt(0)==0;
-            }
-            return null;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-
-
     }
 }

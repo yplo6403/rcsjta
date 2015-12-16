@@ -208,7 +208,7 @@ public class LocalStorage implements ISyncProcessorHandler {
         List<Integer> deletedUids = new ArrayList<>();
         for (MessageData messageData : mImapLog.getMessages(folder, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.DELETED_REPORT_REQUESTED)) {
             Integer uid = messageData.getUid();
-            if (uid != MessageData.INVALID_UID) {
+            if (uid != null ) {
                 if (ReadStatus.READ_REPORT_REQUESTED == messageData.getReadStatus()) {
                     readUids.add(uid);
                 }

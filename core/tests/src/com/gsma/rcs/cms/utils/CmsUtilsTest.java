@@ -11,6 +11,10 @@ import junit.framework.Assert;
 
 public class CmsUtilsTest extends AndroidTestCase{
 
+    protected void setUp() throws Exception {
+        super.setUp();
+        com.gsma.services.rcs.contact.ContactUtil.getInstance(getContext());
+    }
     public void test(){
 
         RcsSettings rcsSettings = RcsSettingsMock.getRcsSettings(getContext());
@@ -20,8 +24,8 @@ public class CmsUtilsTest extends AndroidTestCase{
 
         Assert.assertEquals("Default/tel:+33600112233",CmsUtils.contactToCmsFolder(rcsSettings, contactId));
         Assert.assertEquals("tel:+33600112233", CmsUtils.contactToHeader(contactId));
-        Assert.assertEquals("+33600112233", CmsUtils.headerToContact(header));
-        Assert.assertEquals("+33600112233", CmsUtils.cmsFolderToContact(rcsSettings,cmsFolder));
+        Assert.assertEquals("+33600112233", CmsUtils.headerToContact(header).toString());
+        Assert.assertEquals("+33600112233", CmsUtils.cmsFolderToContact(rcsSettings,cmsFolder).toString());
     }
 
 }

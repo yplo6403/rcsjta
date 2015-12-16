@@ -473,7 +473,7 @@ public class XmsLog {
         try {
             cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
                     SELECTION_XMS_CONTACT_DIRECTION_CORRELATOR, new String[] {
-                            contact, direction.toString(), correlator
+                            contact, String.valueOf(direction.toInt()), correlator
                     }, SORT_BY_DATE_DESC);
             CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
             int messageIdIdx = cursor.getColumnIndex(XmsData.KEY_MESSAGE_ID);

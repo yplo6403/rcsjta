@@ -12,7 +12,8 @@ import java.util.Map;
 
 public class ImapLogTest extends AndroidTestCase {
 
-    private ImapLog mImapLog;    
+    private ImapLog mImapLog;
+	private ImapLogEnvIntegration mImapLogEnvIntegration;
     private Context mContext;
     
     private FolderData[] mFolders;
@@ -22,7 +23,8 @@ public class ImapLogTest extends AndroidTestCase {
         super.setUp();
         mContext = getContext();
         mImapLog = ImapLog.createInstance(mContext);
-        
+		mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(mContext);
+
         mFolders = new FolderData[] {
         		new FolderData("folder1",1,123,1),
         		new FolderData("folder2",1,1234,1),
@@ -51,10 +53,10 @@ public class ImapLogTest extends AndroidTestCase {
     public void testAddFolder() {    	
     	FolderData folder;    	
     	mImapLog.addFolder(mFolders[0]);    	
-    	folder = mImapLog.getFolder(mFolders[0].getName());
+    	folder = mImapLogEnvIntegration.getFolder(mFolders[0].getName());
     	assertEquals(mFolders[0], folder);
     	
-    	folder = mImapLog.getFolder("dummy");
+    	folder = mImapLogEnvIntegration.getFolder("dummy");
     	assertNull(folder);
     }
     
@@ -103,7 +105,7 @@ public class ImapLogTest extends AndroidTestCase {
     	FolderData folder;
     	mImapLog.addFolder(mFolders[0]);
     	
-    	folder = mImapLog.getFolder(mFolders[0].getName());
+    	folder = mImapLogEnvIntegration.getFolder(mFolders[0].getName());
     	assertEquals(mFolders[0], folder);
     	
     	mImapLog.addFolder(new FolderData(
@@ -113,7 +115,7 @@ public class ImapLogTest extends AndroidTestCase {
     			0
     			));
     	
-    	folder = mImapLog.getFolder(mFolders[0].getName());
+    	folder = mImapLogEnvIntegration.getFolder(mFolders[0].getName());
     	assertEquals(1,mImapLog.getFolders().size());
     	assertEquals(Integer.valueOf(0), folder.getModseq());
     	assertEquals(Integer.valueOf(0), folder.getNextUid());
@@ -147,24 +149,24 @@ public class ImapLogTest extends AndroidTestCase {
     
     public void testGetMessages() {
     	
-    	Map<Integer, MessageData> messages = mImapLog.getMessages();    	
+    	Map<Integer, MessageData> messages = mImapLogEnvIntegration.getMessages();
         assertEquals(0, messages.size());
 
     	for(int i=0; i< mMessages.length; i++){
     		mImapLog.addMessage(mMessages[i]);
-    		assertEquals(i+1, mImapLog.getMessages().size());
+    		assertEquals(i+1, mImapLogEnvIntegration.getMessages().size());
     	} 
         
-    	messages = mImapLog.getMessages(mFolders[0].getName()); 
+    	messages = mImapLogEnvIntegration.getMessages(mFolders[0].getName());
     	assertEquals(1,messages.size());
     	assertEquals(mMessages[0],messages.get(mMessages[0].getUid()));
 
-    	messages = mImapLog.getMessages(mFolders[1].getName()); 
+    	messages = mImapLogEnvIntegration.getMessages(mFolders[1].getName());
     	assertEquals(2,messages.size());
     	assertEquals(mMessages[1],messages.get(mMessages[1].getUid()));
     	assertEquals(mMessages[2],messages.get(mMessages[2].getUid()));
 
-    	messages = mImapLog.getMessages(mFolders[2].getName()); 
+    	messages = mImapLogEnvIntegration.getMessages(mFolders[2].getName());
     	assertEquals(3,messages.size());
     	assertEquals(mMessages[3],messages.get(mMessages[3].getUid()));
     	assertEquals(mMessages[4],messages.get(mMessages[4].getUid()));
@@ -175,7 +177,7 @@ public class ImapLogTest extends AndroidTestCase {
     	} 
     	
         for(int i=0; i< mMessages.length; i++){
-            assertEquals(mMessages[i],mImapLog.getMessage(mMessages[i].getFolder(),mMessages[i].getMessageId()));         
+            assertEquals(mMessages[i],mImapLogEnvIntegration.getMessage(mMessages[i].getFolder(),mMessages[i].getMessageId()));
         } 
 
         for(int i=0; i< mMessages.length; i++){
@@ -188,8 +190,6 @@ public class ImapLogTest extends AndroidTestCase {
         
     }
 
-
-    
     public void testUpdateMessage() {    	
     	MessageData message;
     	mImapLog.addMessage(mMessages[0]);
@@ -207,7 +207,7 @@ public class ImapLogTest extends AndroidTestCase {
     			"messageId1",null));
     	
     	message = mImapLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());    	
-    	assertEquals(1,mImapLog.getMessages().size());
+    	assertEquals(1,mImapLogEnvIntegration.getMessages().size());
 		assertEquals(DeleteStatus.DELETED,message.getDeleteStatus());
 		assertEquals(ReadStatus.READ, message.getReadStatus());
     	assertEquals(MessageType.MMS, message.getMessageType());
@@ -218,11 +218,11 @@ public class ImapLogTest extends AndroidTestCase {
     	for(MessageData message : mMessages){
     		mImapLog.addMessage(message);	
     	}    	
-    	assertEquals(mMessages.length, mImapLog.getMessages().size());
+    	assertEquals(mMessages.length, mImapLogEnvIntegration.getMessages().size());
 
     	for(int i=0; i<mMessages.length; i++){
-    		mImapLog.removeMessage(mMessages[i].getFolder(), mMessages[i].getUid());
-    		assertEquals(mMessages.length-(i+1), mImapLog.getMessages().size());
+			mImapLogEnvIntegration.removeMessage(mMessages[i].getFolder(), mMessages[i].getUid());
+    		assertEquals(mMessages.length-(i+1), mImapLogEnvIntegration.getMessages().size());
     	}    	
 
     }
@@ -232,9 +232,9 @@ public class ImapLogTest extends AndroidTestCase {
     	for(MessageData message : mMessages){
     		mImapLog.addMessage(message);	
     	}    	
-    	assertEquals(mMessages.length, mImapLog.getMessages().size());    	
-    	mImapLog.removeMessages();;
-    	assertEquals(0, mImapLog.getMessages().size());
+    	assertEquals(mMessages.length, mImapLogEnvIntegration.getMessages().size());
+    	mImapLog.removeMessages();
+    	assertEquals(0, mImapLogEnvIntegration.getMessages().size());
     }
 
 }

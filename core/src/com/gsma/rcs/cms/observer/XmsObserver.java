@@ -14,6 +14,7 @@ import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
+import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.ImageUtils;
 import com.gsma.rcs.utils.MimeManager;
@@ -202,7 +203,6 @@ public class XmsObserver implements INativeXmsEventListener {
          * This method checks MMS events: - incoming MMS - outgoing MMS - delete MMS
          */
         private boolean checkMmsEvents() {
-
             Set<String> mmsIds = getMmsIds();
             int diff = mmsIds.size() - mMmsIds.size();
             if (diff == 0) {
@@ -280,7 +280,7 @@ public class XmsObserver implements INativeXmsEventListener {
             }
 
             if (contacts.isEmpty()) {
-                return false;
+                return true;
             }
 
             mMmsIds = mmsIds;
@@ -303,6 +303,9 @@ public class XmsObserver implements INativeXmsEventListener {
                     String text = cursor.getString(textIdx);
                     String filename = cursor.getString(filenameIdx);
                     String data = cursor.getString(dataIdx);
+                    if(contentType == null){ // skip MMS message with null content type
+                        return true;
+                    }
                     if (data != null) {
                         Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
                         byte[] bytes = MmsUtils.getContent(mContentResolver, file);
