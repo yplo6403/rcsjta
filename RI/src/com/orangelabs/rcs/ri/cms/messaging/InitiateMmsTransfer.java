@@ -139,7 +139,7 @@ public class InitiateMmsTransfer extends RcsActivity {
                                     InitiateMmsTransfer.this.showExceptionThenExit(result);
                                 } else {
                                     Utils.displayLongToast(InitiateMmsTransfer.this,
-                                            getString(R.string.mms_sent, mContact.toString()));
+                                            getString(R.string.mms_sending, mContact.toString()));
                                     InitiateMmsTransfer.this.finish();
                                 }
                             }

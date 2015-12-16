@@ -299,6 +299,26 @@ public final class CmsService extends RcsService {
         }
     }
 
+    /**
+     * Returns true if it's possible and allowed to send MMS messages right now, else returns false.
+     *
+     * @return boolean
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public boolean isAllowedToSendMultimediaMessage() throws RcsServiceNotAvailableException,
+            RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            return mApi.isAllowedToSendMultimediaMessage();
+
+        } catch (Exception e) {
+            throw new RcsGenericException(e);
+        }
+    }
+
 	/**
      * Sends a MMS message
      *

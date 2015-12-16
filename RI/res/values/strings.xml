@@ -423,7 +423,7 @@
     <string name="menu_delete_xms">Delete all XMS</string>
     <string name="hint_type_subject">Enter the subject</string>
     <string name="menu_select_part">Select attachment</string>
-    <string name="mms_sent">MMS sent to %1$s</string>
+    <string name="mms_sending">Sending MMS to %1$s</string>
     <string name="subject_label">Subject:</string>
     <string name="menu_send_mms">Send MMS</string>
      <string name="menu_add_parts">Select attachment</string>

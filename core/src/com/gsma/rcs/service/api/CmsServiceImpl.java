@@ -48,10 +48,13 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,6 +82,9 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     private final XmsManager mXmsManager;
     private final CmsManager mCmsManager;
     private final RcsSettings mRcsSettings;
+
+    public static final String[] BLACK_LISTED_MODELS = new String[] { "LG-H955" };
+    public static final Set<String> sBlackListedModel = new HashSet<>(Arrays.asList(BLACK_LISTED_MODELS));
 
     /**
      * Constructor
@@ -308,6 +314,17 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
              * exit the system and thus can bring the whole system down, which is not intended.
              */
             sLogger.error("Failed to send SMS!", e);
+        }
+    }
+
+    @Override
+    public boolean isAllowedToSendMultimediaMessage() throws RemoteException {
+        try {
+            return !sBlackListedModel.contains(Build.MODEL) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+
+        } catch (RuntimeException e) {
+            sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            throw new ServerApiGenericException(e);
         }
     }
 

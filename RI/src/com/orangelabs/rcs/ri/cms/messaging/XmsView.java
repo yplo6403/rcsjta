@@ -457,40 +457,36 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_send_mms:
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    Uri _uri = Uri.parse("tel:" + mContact.toString());
-                    Intent sendIntent = new Intent(Intent.ACTION_VIEW, _uri);
-                    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-                        String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(this);
-                        sendIntent.setPackage(defaultSmsPackageName);
+        try {
+            switch (item.getItemId()) {
+                case R.id.menu_send_mms:
+                    if (!mCmsService.isAllowedToSendMultimediaMessage()) {
+                        Uri _uri = Uri.parse("tel:" + mContact.toString());
+                        Intent sendIntent = new Intent(Intent.ACTION_VIEW, _uri);
+                        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
+                            String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(this);
+                            sendIntent.setPackage(defaultSmsPackageName);
+                        }
+                        sendIntent.putExtra("address", mContact.toString());
+                        sendIntent.putExtra("sms_body", "");
+                        sendIntent.setType("vnd.android-dir/mms-sms");
+                        startActivity(sendIntent);
+                    } else {
+                        selectMimeType();
                     }
-                    sendIntent.putExtra("address", mContact.toString());
-                    sendIntent.putExtra("sms_body", "");
-                    sendIntent.setType("vnd.android-dir/mms-sms");
-                    startActivity(sendIntent);
-                } else {
-                    selectMimeType();
-                }
-                break;
-            case R.id.menu_delete_xms:
-                try {
+                    break;
+
+                case R.id.menu_delete_xms:
                     mCmsService.deleteXmsMessages(mContact);
+                    break;
 
-                } catch (RcsServiceException e) {
-                    showException(e);
-                }
-                break;
-            case R.id.menu_sync_xms:
-                try {
+                case R.id.menu_sync_xms:
                     mCmsService.syncOneToOneConversation(mContact);
+                    break;
 
-                } catch (RcsServiceException e) {
-                    showException(e);
-                }
-                break;
-
+            }
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
         }
         return true;
     }
