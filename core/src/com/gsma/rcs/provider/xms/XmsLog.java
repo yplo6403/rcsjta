@@ -23,6 +23,7 @@ import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
@@ -223,7 +224,11 @@ public class XmsLog {
         if (cursor == null) {
             return null;
         }
-        return XmsMessage.State.valueOf(getDataAsInteger(cursor));
+        Integer state = getDataAsInteger(cursor);
+        if (state == null) {
+            throw new ServerApiPersistentStorageException("State is null for ID=" + xmsId);
+        }
+        return XmsMessage.State.valueOf(state);
     }
 
     public RcsService.ReadStatus getReadStatus(String xmsId) {
@@ -234,7 +239,11 @@ public class XmsLog {
         if (cursor == null) {
             return null;
         }
-        return RcsService.ReadStatus.valueOf(getDataAsInteger(cursor));
+        Integer status = getDataAsInteger(cursor);
+        if (status == null) {
+            throw new ServerApiPersistentStorageException("Read status is null for ID=" + xmsId);
+        }
+        return RcsService.ReadStatus.valueOf(status);
     }
 
     private Integer getDataAsInteger(Cursor cursor) {
@@ -257,7 +266,11 @@ public class XmsLog {
         if (cursor == null) {
             return null;
         }
-        return XmsMessage.ReasonCode.valueOf(getDataAsInteger(cursor));
+        Integer reason = getDataAsInteger(cursor);
+        if (reason == null) {
+            throw new ServerApiPersistentStorageException("Reason code is null for ID=" + xmsId);
+        }
+        return XmsMessage.ReasonCode.valueOf(reason);
     }
 
     public void addSms(SmsDataObject sms) {

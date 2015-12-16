@@ -251,7 +251,7 @@ public class FileUtils {
         if (sMimeTypeMapSingleton == null) {
             sMimeTypeMapSingleton = MimeTypeMap.getSingleton();
         }
-        return sMimeTypeMapSingleton.getMimeTypeFromExtension(extension);
+        return sMimeTypeMapSingleton.getMimeTypeFromExtension(extension.toLowerCase());
     }
 
     /**

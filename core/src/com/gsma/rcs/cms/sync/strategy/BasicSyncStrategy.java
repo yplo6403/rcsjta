@@ -1,3 +1,4 @@
+// FG add copyrights + javadoc
 
 package com.gsma.rcs.cms.sync.strategy;
 
@@ -12,6 +13,7 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISyncProcessor;
 import com.gsma.rcs.cms.sync.SyncProcessorImpl;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
@@ -26,7 +28,6 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -121,10 +122,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                     PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
                             mImapService, xmsLog, imapLog, null);
                     pushMessageTask.pushMessages(messagesToPush);
-                    Iterator<Entry<String, Integer>> iter = pushMessageTask.getCreatedUids()
-                            .entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Entry<String, Integer> entry = iter.next();
+                    for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
                         String baseId = entry.getKey();
                         Integer uid = entry.getValue();
                         imapLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
@@ -133,9 +131,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
 
             mExecutionResult = true;
-        } catch (IOException | ImapException e) {
-            e.printStackTrace();
-            sLogger.error(e.getMessage());
+        } catch (IOException | ImapException | FileAccessException e) {
+            sLogger.error(e.getMessage(), e);
         }
 
         if (logActivated) {
@@ -147,17 +144,13 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
      * @param report
      */
     public void execute(MutableReport report) {
-
         report.setProgress(15);
-
         execute();
-
         report.setProgress(100);
-
     }
 
     private void startRemoteSynchro(FolderData localFolder, ImapFolder remoteFolder)
-            throws IOException, ImapException {
+            throws IOException, ImapException, FileAccessException {
         String folderName = remoteFolder.getName();
 
         mSynchronizer.selectFolder(folderName);

@@ -1,3 +1,4 @@
+// TODO FG ad copyrights + javadoc
 
 package com.gsma.rcs.cms;
 
@@ -29,7 +30,6 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -63,6 +63,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             TextBasedSmsColumns.STATUS
     };
 
+    private static final String WHERE_INBOX_OR_SENT_WITH_ID = XmsObserverUtils.Mms.WHERE_INBOX_OR_SENT
+            + " AND " + BaseColumns._ID + "=?";
+
     private final String[] PROJECTION_ID_READ = new String[] {
             BaseColumns._ID, TextBasedSmsColumns.READ
     };
@@ -71,7 +74,6 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             + " is not null";
     static final String SELECTION_BASE_ID = BaseColumns._ID + "=?" + " AND "
             + SELECTION_CONTACT_NOT_NULL;
-    private final Context mCtx;
 
     private final ContentResolver mContentResolver;
     private final XmsLog mXmsLog;
@@ -81,9 +83,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
     private List<Long> mNativeIds;
     private List<Long> mNativeReadIds;
 
-    public ProviderSynchronizer(Context ctx, RcsSettings settings, XmsLog xmsLog, ImapLog imapLog) {
-        mCtx = ctx;
-        mContentResolver = ctx.getContentResolver();
+    public ProviderSynchronizer(ContentResolver resolver, RcsSettings settings, XmsLog xmsLog,
+            ImapLog imapLog) {
+        mContentResolver = resolver;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
@@ -241,7 +243,6 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
     }
 
     private SmsDataObject getSmsFromNativeProvider(Long id) {
-
         Cursor cursor = null;
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_SMS, SELECTION_BASE_ID,
@@ -306,11 +307,10 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
         ReadStatus readStatus;
         Cursor cursor = null;
         try {
-            cursor = mContentResolver.query(XmsObserverUtils.Mms.URI, null, new StringBuilder(
-                    XmsObserverUtils.Mms.WHERE).append(" AND ").append(BaseColumns._ID)
-                    .append("=?").toString(), new String[] {
-                String.valueOf(id)
-            }, Telephony.BaseMmsColumns._ID);
+            cursor = mContentResolver.query(XmsObserverUtils.Mms.URI, null,
+                    WHERE_INBOX_OR_SENT_WITH_ID, new String[] {
+                        String.valueOf(id)
+                    }, Telephony.BaseMmsColumns._ID);
             CursorUtil.assertCursorIsNotNull(cursor, XmsObserverUtils.Mms.URI);
             if (!cursor.moveToNext()) {
                 return mmsDataObject;
@@ -382,7 +382,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                 String text = cursor.getString(textIdx);
                 String filename = cursor.getString(filenameIdx);
                 String data = cursor.getString(dataIdx);
-                if(contentType==null){ //skip MMS with null content type
+                if (contentType == null) { // skip MMS with null content type
                     return mmsDataObject;
                 }
                 if (data != null) {
@@ -391,8 +391,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                     Long fileSize = (long) bytes.length;
                     byte[] fileIcon = null;
                     if (MimeManager.isImageType(contentType)) {
-                        long maxFileIcon = mSettings.getMaxFileIconSize();
-                        fileIcon = ImageUtils.tryGetThumbnail(mCtx, file, maxFileIcon);
+                        fileIcon = ImageUtils.tryGetThumbnail(mContentResolver, file);
                     }
                     for (ContactId contact : contacts) {
                         List<MmsPart> mmsPart = mmsParts.get(contact);
@@ -442,13 +441,13 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
         if (isActivated) {
             sLogger.info(" >>> start sync between providers ...");
         }
+        // TODO FG Use handler instead
         purgeDeletedMessages();
         syncSms();
         syncMms();
         if (isActivated) {
             sLogger.info(" <<< end of sync");
         }
-
         return true;
     }
 }

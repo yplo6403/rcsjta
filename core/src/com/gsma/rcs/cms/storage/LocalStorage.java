@@ -1,7 +1,7 @@
+// TODO FG: add copyrights + complete javadoc
 
 package com.gsma.rcs.cms.storage;
 
-import com.gsma.rcs.cms.event.ILocalEventHandler;
 import com.gsma.rcs.cms.event.IRemoteEventHandler;
 import com.gsma.rcs.cms.event.ImapHeaderFormatException;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
@@ -14,14 +14,14 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.sync.ISyncProcessorHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
-
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,7 +35,7 @@ public class LocalStorage implements ISyncProcessorHandler {
 
     private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
     protected ImapLog mImapLog;
-    /*package private*/ Map<MessageType, IRemoteEventHandler> mRemoteEventHandlers = new HashMap<MessageType, IRemoteEventHandler>();
+    /* package private */Map<MessageType, IRemoteEventHandler> mRemoteEventHandlers = new HashMap<>();
     private ImapMessageResolver mMessageResolver;
 
     public LocalStorage(ImapLog imapLog) {
@@ -70,9 +70,7 @@ public class LocalStorage implements ISyncProcessorHandler {
      */
     public Map<String, FolderData> getLocalFolders() {
         Map<String, FolderData> localFolders = mImapLog.getFolders();
-        Iterator<Entry<String, FolderData>> iter = localFolders.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<String, FolderData> entry = iter.next();
+        for (Entry<String, FolderData> entry : localFolders.entrySet()) {
             Integer maxUid = mImapLog.getMaxUidForMessages(entry.getKey());
             entry.getValue().setMaxUid(maxUid);
         }
@@ -90,9 +88,7 @@ public class LocalStorage implements ISyncProcessorHandler {
 
     @Override
     public void applyFlagChange(List<FlagChange> flagchanges) {
-        Iterator<FlagChange> iter = flagchanges.iterator();
-        while (iter.hasNext()) {
-            FlagChange fg = iter.next();
+        for (FlagChange fg : flagchanges) {
             String folder = fg.getFolder();
             boolean deleteFlag = fg.addDeletedFlag();
             boolean seenFlag = fg.addSeenFlag();
@@ -100,9 +96,10 @@ public class LocalStorage implements ISyncProcessorHandler {
                 MessageData msg = mImapLog.getMessage(folder, uid);
                 if (msg == null) {
                     if (sLogger.isActivated()) {
-                        sLogger.info(new StringBuilder("Can not find (").append(folder).append(",").append(uid).append(") in imap message provider").toString());
-                        continue;
+                        sLogger.info("Cannot find (" + folder + "," + uid
+                                + ") in imap message provider");
                     }
+                    continue;
                 }
                 MessageType messageType = msg.getMessageType();
                 IRemoteEventHandler storageHandler = mRemoteEventHandlers.get(messageType);
@@ -130,7 +127,7 @@ public class LocalStorage implements ISyncProcessorHandler {
 
     @Override
     public Set<Integer> filterNewMessages(List<ImapMessage> messages) {
-        Set<Integer> uids = new TreeSet<Integer>();
+        Set<Integer> uids = new TreeSet<>();
         for (ImapMessage msg : messages) {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
@@ -155,13 +152,8 @@ public class LocalStorage implements ISyncProcessorHandler {
                     if (isSeen) {
                         remoteEventHandler.onRemoteReadEvent(messageType, messageId);
                     }
-                    mImapLog.updateMessage(
-                            messageType,
-                            messageId,
-                            msg.getFolderPath(),
-                            msg.getUid(),
-                            isSeen,
-                            isDeleted);
+                    mImapLog.updateMessage(messageType, messageId, msg.getFolderPath(),
+                            msg.getUid(), isSeen, isDeleted);
                 }
             } catch (ImapHeaderFormatException e) {
                 if (sLogger.isActivated()) {
@@ -174,7 +166,7 @@ public class LocalStorage implements ISyncProcessorHandler {
     }
 
     @Override
-    public void createMessages(List<ImapMessage> messages) {
+    public void createMessages(List<ImapMessage> messages) throws FileAccessException {
         for (ImapMessage msg : messages) {
 
             MessageType messageType = mMessageResolver.resolveType(msg);
@@ -183,20 +175,22 @@ public class LocalStorage implements ISyncProcessorHandler {
                 continue;
             }
             try {
-                String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(messageType, resolvedMessage);
-                MessageData messageData = new MessageData(
-                        resolvedMessage.getFolder(),
-                        resolvedMessage.getUid(),
-                        resolvedMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD,
-                        resolvedMessage.isDeleted() ? DeleteStatus.DELETED : DeleteStatus.NOT_DELETED,
-                        PushStatus.PUSHED,
-                        messageType, messageId, null);
+                String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(
+                        messageType, resolvedMessage);
+                MessageData messageData = new MessageData(resolvedMessage.getFolder(),
+                        resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
+                                : ReadStatus.UNREAD,
+                        resolvedMessage.isDeleted() ? DeleteStatus.DELETED
+                                : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
+                        messageId, null);
                 mImapLog.addMessage(messageData);
+
             } catch (ImapHeaderFormatException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info("Unsupported imap message");
-                    sLogger.info(msg.toString());
-                }
+                // TODO: there is a wrongly formatted IMAP message on the CMS server
+                // DO not delivery until it is not fixed on the CMS server.
+                // TODO throw exception and discard IMAP messages.
+                sLogger.error("FIX ME: a badly formatted CMS message cannot be synchronized! ["
+                        + msg + "]", e);
             }
         }
     }
@@ -206,9 +200,10 @@ public class LocalStorage implements ISyncProcessorHandler {
         List<FlagChange> changes = new ArrayList<>();
         List<Integer> readUids = new ArrayList<>();
         List<Integer> deletedUids = new ArrayList<>();
-        for (MessageData messageData : mImapLog.getMessages(folder, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.DELETED_REPORT_REQUESTED)) {
+        for (MessageData messageData : mImapLog.getMessages(folder,
+                ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.DELETED_REPORT_REQUESTED)) {
             Integer uid = messageData.getUid();
-            if (uid != null ) {
+            if (uid != null) {
                 if (ReadStatus.READ_REPORT_REQUESTED == messageData.getReadStatus()) {
                     readUids.add(uid);
                 }
@@ -230,9 +225,7 @@ public class LocalStorage implements ISyncProcessorHandler {
      * @param flagChanges
      */
     public void finalizeLocalFlagChanges(List<FlagChange> flagChanges) {
-        Iterator<FlagChange> iter = flagChanges.iterator();
-        while (iter.hasNext()) {
-            FlagChange fg = iter.next();
+        for (FlagChange fg : flagChanges) {
             String folder = fg.getFolder();
             boolean seenFlag = fg.addSeenFlag();
             boolean deleteFlag = fg.addDeletedFlag();

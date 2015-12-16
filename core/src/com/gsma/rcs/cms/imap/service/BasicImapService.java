@@ -17,7 +17,6 @@ import com.sonymobile.rcs.imap.IoService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class BasicImapService extends DefaultImapService {
 
@@ -34,8 +33,8 @@ public class BasicImapService extends DefaultImapService {
      * @throws ImapException
      */
     public List<ImapFolder> listStatus() throws IOException, ImapException {
-        ListStatusCmdHandler handler = (ListStatusCmdHandler) CmdHandler
-                .getHandler(CommandType.LIST_STATUS, getCapabilities());
+        ListStatusCmdHandler handler = (ListStatusCmdHandler) CmdHandler.getHandler(
+                CommandType.LIST_STATUS, getCapabilities());
         writeCommand(handler.buildCommand());
         handler.handleLines(readToEndOfResponse());
         return handler.getResult();
@@ -54,7 +53,7 @@ public class BasicImapService extends DefaultImapService {
     }
 
     /**
-     * @param folderName 
+     * @param folderName
      * @param uid
      * @param changedSince
      * @return Set<FlagChange>
@@ -64,8 +63,8 @@ public class BasicImapService extends DefaultImapService {
     public List<FlagChange> fetchFlags(String folderName, Integer uid, Integer changedSince)
             throws IOException, ImapException {
 
-        FetchFlagCmdHandler handler = (FetchFlagCmdHandler) CmdHandler
-                .getHandler(CommandType.FETCH_FLAGS, getCapabilities(), folderName);
+        FetchFlagCmdHandler handler = (FetchFlagCmdHandler) CmdHandler.getHandler(
+                CommandType.FETCH_FLAGS, getCapabilities(), folderName);
         synchronized (getIoService()) {
             writeCommand(handler.buildCommand(uid, changedSince));
             String line;
@@ -89,11 +88,11 @@ public class BasicImapService extends DefaultImapService {
      * @throws ImapException
      * @throws IOException
      */
-    public List<ImapMessage> fetchHeaders(Integer fromUid, Integer toUid)
-            throws ImapException, IOException {
+    public List<ImapMessage> fetchHeaders(Integer fromUid, Integer toUid) throws ImapException,
+            IOException {
 
-        FetchHeaderCmdHandler handler = (FetchHeaderCmdHandler) CmdHandler
-                .getHandler(CommandType.FETCH_HEADERS, getCapabilities());
+        FetchHeaderCmdHandler handler = (FetchHeaderCmdHandler) CmdHandler.getHandler(
+                CommandType.FETCH_HEADERS, getCapabilities());
         synchronized (getIoService()) {
             writeCommand(handler.buildCommand(fromUid, toUid));
             String line;
@@ -138,8 +137,8 @@ public class BasicImapService extends DefaultImapService {
             checkResponseOk(line);
         }
         return (ImapMessage) handler.getResult();
-    } 
-    
+    }
+
     /**
      * @param uid
      * @return ImapMessage
@@ -168,5 +167,5 @@ public class BasicImapService extends DefaultImapService {
             checkResponseOk(line);
         }
         return messages;
-    }    
+    }
 }

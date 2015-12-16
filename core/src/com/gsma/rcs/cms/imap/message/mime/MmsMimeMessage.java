@@ -1,6 +1,8 @@
+
 package com.gsma.rcs.cms.imap.message.mime;
 
 import com.gsma.rcs.cms.Constants;
+
 import com.sonymobile.rcs.imap.Header;
 import com.sonymobile.rcs.imap.IPart;
 
@@ -45,6 +47,6 @@ public class MmsMimeMessage extends MimeMessage implements IPart {
     }
 
     public MmsMimeBody getMimebody() {
-        return(MmsMimeBody)mMimeBody;
+        return (MmsMimeBody) mMimeBody;
     }
 }

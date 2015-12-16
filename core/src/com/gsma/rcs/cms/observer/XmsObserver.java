@@ -8,13 +8,11 @@ import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
-import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.ImageUtils;
 import com.gsma.rcs.utils.MimeManager;
@@ -49,13 +47,11 @@ public class XmsObserver implements INativeXmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
 
-    private List<INativeXmsEventListener> mXmsEventListeners = new ArrayList<>();
+    private final List<INativeXmsEventListener> mXmsEventListeners = new ArrayList<>();
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
-    private final Context mContext;
     private final ContentResolver mContentResolver;
-    private final RcsSettings mRcsSettings;
     private XmsContentObserver mXmsContentObserver;
 
     private class XmsContentObserver extends ContentObserver {
@@ -82,22 +78,17 @@ public class XmsObserver implements INativeXmsEventListener {
             if (sLogger.isActivated()) {
                 sLogger.info("onChange method : " + uri);
             }
-
             if (uri == null) {
                 return;
             }
-
             synchronized (this) {
-
                 if (ignoreUri(uri)) { // not interested by this uri
                     return;
                 }
-
                 if (uri.toString().startsWith(Sms.URI.toString())) {
                     checkSmsEvents(uri);
                     return;
                 }
-
                 if (uri.toString().equals(MMS_SMS_URI.toString())) { // handle read notification and
                                                                      // delete
                     if (checkMmsEvents()) {
@@ -113,7 +104,6 @@ public class XmsObserver implements INativeXmsEventListener {
         }
 
         private boolean ignoreUri(Uri uri) {
-
             String uriStr = uri.toString();
             for (Uri smsUri : Sms.FILTERED_URIS) {
                 if (uriStr.startsWith(smsUri.toString())) {
@@ -144,10 +134,10 @@ public class XmsObserver implements INativeXmsEventListener {
             try {
                 cursor = mContentResolver.query(uri, Sms.PROJECTION, Sms.WHERE_CONTACT_NOT_NULL,
                         null, null);
+                CursorUtil.assertCursorIsNotNull(cursor, uri);
                 if (!cursor.moveToNext()) {
                     return;
                 }
-                CursorUtil.assertCursorIsNotNull(cursor, uri);
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 Long threadId = cursor
                         .getLong(cursor.getColumnIndex(TextBasedSmsColumns.THREAD_ID));
@@ -185,10 +175,10 @@ public class XmsObserver implements INativeXmsEventListener {
             try {
                 cursor = mContentResolver.query(uri, Sms.PROJECTION, Sms.WHERE_CONTACT_NOT_NULL,
                         null, null);
+                CursorUtil.assertCursorIsNotNull(cursor, uri);
                 if (!cursor.moveToNext()) {
                     return;
                 }
-                CursorUtil.assertCursorIsNotNull(cursor, uri);
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
                 int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
@@ -230,8 +220,8 @@ public class XmsObserver implements INativeXmsEventListener {
             Direction direction = Direction.INCOMING;
             Set<ContactId> contacts = new HashSet<>();
             try {
-                cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION, Mms.WHERE, null,
-                        BaseMmsColumns._ID);
+                cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION, Mms.WHERE_INBOX_OR_SENT,
+                        null, BaseMmsColumns._ID);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.URI);
                 if (!cursor.moveToLast()) {
                     return false;
@@ -303,7 +293,7 @@ public class XmsObserver implements INativeXmsEventListener {
                     String text = cursor.getString(textIdx);
                     String filename = cursor.getString(filenameIdx);
                     String data = cursor.getString(dataIdx);
-                    if(contentType == null){ // skip MMS message with null content type
+                    if (contentType == null) { // skip MMS message with null content type
                         return true;
                     }
                     if (data != null) {
@@ -312,8 +302,7 @@ public class XmsObserver implements INativeXmsEventListener {
                         Long fileSize = (long) bytes.length;
                         byte[] fileIcon = null;
                         if (MimeManager.isImageType(contentType)) {
-                            long maxIconSize = mRcsSettings.getMaxFileIconSize();
-                            fileIcon = ImageUtils.tryGetThumbnail(mContext, file, maxIconSize);
+                            fileIcon = ImageUtils.tryGetThumbnail(mContentResolver, file);
                         }
                         for (ContactId contact : contacts) {
                             List<MmsPart> mmsPart = mmsParts.get(contact);
@@ -342,9 +331,7 @@ public class XmsObserver implements INativeXmsEventListener {
 
             ReadStatus readStatus = (Direction.INCOMING == direction ? ReadStatus.UNREAD
                     : ReadStatus.READ);
-            Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry<ContactId, List<MmsPart>> entry = iter.next();
+            for (Entry<ContactId, List<MmsPart>> entry : mmsParts.entrySet()) {
                 ContactId contact = entry.getKey();
                 MmsDataObject mmsDataObject = new MmsDataObject(mmsId, messageIds.get(contact),
                         contact, subject, direction, readStatus, date * 1000, id, threadId,
@@ -446,8 +433,8 @@ public class XmsObserver implements INativeXmsEventListener {
             Cursor cursor = null;
             Set<String> ids = new HashSet<>();
             try {
-                cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID, Mms.WHERE, null,
-                        BaseMmsColumns._ID);
+                cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID,
+                        Mms.WHERE_INBOX_OR_SENT, null, BaseMmsColumns._ID);
                 CursorUtil.assertCursorIsNotNull(cursor, Mms.URI);
                 int idx = cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID);
                 while (cursor.moveToNext()) {
@@ -460,10 +447,8 @@ public class XmsObserver implements INativeXmsEventListener {
         }
     }
 
-    public XmsObserver(Context context, RcsSettings rcsSettings) {
-        mContext = context;
-        mContentResolver = mContext.getContentResolver();
-        mRcsSettings = rcsSettings;
+    public XmsObserver(Context context) {
+        mContentResolver = context.getContentResolver();
     }
 
     /**
@@ -485,7 +470,6 @@ public class XmsObserver implements INativeXmsEventListener {
         mContentResolver.unregisterContentObserver(mXmsContentObserver);
         mXmsContentObserver = null;
         mXmsEventListeners.clear();
-        mXmsEventListeners = null;
     }
 
     public void registerListener(INativeXmsEventListener listener) {

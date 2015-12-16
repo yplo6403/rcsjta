@@ -54,10 +54,11 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
     public void start() {
         // execute sync between providers with async task
-        new ProviderSynchronizer(mContext, mRcsSettings, mXmsLog, mImapLog).execute();
+        new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog)
+                .execute();
 
         // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(mContext, mRcsSettings);
+        mXmsObserver = new XmsObserver(mContext);
 
         // instantiate XmsEventListener in charge of handling xms events from XmsObserver
         mXmsEventListener = new XmsEventListener(mContext, mImapLog, mXmsLog, mRcsSettings);

@@ -1,11 +1,7 @@
+
 package com.gsma.rcs.cms.observer;
 
-import android.content.Context;
-import android.test.AndroidTestCase;
-
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.provider.LocalContentResolver;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -14,6 +10,9 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
+
+import android.content.Context;
+import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
@@ -25,10 +24,7 @@ import java.util.Map;
 public class MmsObserverTest extends AndroidTestCase {
 
     private Context mContext;
-    private RcsSettings mSettings;
-
     private ContactId contact1;
-
     private MmsDataObject incomingMms1;
     private MmsDataObject outgoingMms2;
     private MmsDataObject incomingMms3;
@@ -38,19 +34,25 @@ public class MmsObserverTest extends AndroidTestCase {
         super.setUp();
         mContext = getContext();
         contact1 = ContactUtil.getInstance(mContext).formatContact("+33600000001");
-        LocalContentResolver localContentResolver = new LocalContentResolver(mContext.getContentResolver());
-        mSettings = mSettings.createInstance(localContentResolver);
 
-        incomingMms1 = new MmsDataObject("mmsId1", "messageId1", contact1 , "subject", Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l, new ArrayList<MmsPart>());
-        outgoingMms2 = new MmsDataObject("mmsId2", "messageId2", contact1 , "subject", Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l, new ArrayList<MmsPart>());
-        incomingMms3 = new MmsDataObject("mmsId3", "messageId3", contact1 , "subject", Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l, new ArrayList<MmsPart>());
-        outgoingMms4 = new MmsDataObject("mmsId4", "messageId4", contact1 , "subject", Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l, new ArrayList<MmsPart>());
+        incomingMms1 = new MmsDataObject("mmsId1", "messageId1", contact1, "subject",
+                Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                new ArrayList<MmsPart>());
+        outgoingMms2 = new MmsDataObject("mmsId2", "messageId2", contact1, "subject",
+                Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                new ArrayList<MmsPart>());
+        incomingMms3 = new MmsDataObject("mmsId3", "messageId3", contact1, "subject",
+                Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                new ArrayList<MmsPart>());
+        outgoingMms4 = new MmsDataObject("mmsId4", "messageId4", contact1, "subject",
+                Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                new ArrayList<MmsPart>());
 
     }
 
-    public void test1(){
-
-        XmsObserver xmsObserver = new XmsObserver(mContext, mSettings);
+    // TODO FG give a comprehensible name to test
+    public void test1() {
+        XmsObserver xmsObserver = new XmsObserver(mContext);
         NativeMmsListenerMock nativeSmsListenerMock = new NativeMmsListenerMock();
         xmsObserver.registerListener(nativeSmsListenerMock);
 
@@ -62,7 +64,8 @@ public class MmsObserverTest extends AndroidTestCase {
         Assert.assertEquals(outgoingMms2, nativeSmsListenerMock.getMessage().get("mmsId2"));
 
         xmsObserver.onReadNativeConversation(1l);
-        Assert.assertEquals(ReadStatus.READ, nativeSmsListenerMock.getMessage().get("mmsId1").getReadStatus());
+        Assert.assertEquals(ReadStatus.READ, nativeSmsListenerMock.getMessage().get("mmsId1")
+                .getReadStatus());
 
         xmsObserver.onDeleteNativeMms("mmsId1");
         Assert.assertNull(nativeSmsListenerMock.getMessage().get("mmsId1"));
@@ -74,9 +77,9 @@ public class MmsObserverTest extends AndroidTestCase {
         Assert.assertNull(nativeSmsListenerMock.getMessage().get(incomingMms3.getMmsId()));
     }
 
-    public void test2(){
+    public void test2() {
 
-        XmsObserver xmsObserver = new XmsObserver(mContext, mSettings);
+        XmsObserver xmsObserver = new XmsObserver(mContext);
         NativeMmsListenerMock nativeMmsListenerMock = new NativeMmsListenerMock();
         xmsObserver.registerListener(nativeMmsListenerMock);
 
@@ -95,21 +98,20 @@ public class MmsObserverTest extends AndroidTestCase {
 
     private class NativeMmsListenerMock implements INativeXmsEventListener {
 
-        private Map<String,MmsDataObject> messagesByMmsId = new HashMap<>();
-        private Map<Long,List<MmsDataObject>> messagesByThreadId = new HashMap<>();
+        private Map<String, MmsDataObject> messagesByMmsId = new HashMap<>();
+        private Map<Long, List<MmsDataObject>> messagesByThreadId = new HashMap<>();
 
-        public NativeMmsListenerMock(){
+        public NativeMmsListenerMock() {
 
         }
 
-        public Map<String,MmsDataObject> getMessage(){
+        public Map<String, MmsDataObject> getMessage() {
             return messagesByMmsId;
         }
 
-        public List<MmsDataObject> getMessages(Long threadId){
+        public List<MmsDataObject> getMessages(Long threadId) {
             return messagesByThreadId.get(threadId);
         }
-
 
         @Override
         public void onIncomingSms(SmsDataObject message) {
@@ -132,7 +134,7 @@ public class MmsObserverTest extends AndroidTestCase {
             messagesByMmsId.put(mms.getMmsId(), mms);
 
             List<MmsDataObject> messages = messagesByThreadId.get(mms.getNativeThreadId());
-            if(messages==null){
+            if (messages == null) {
                 messages = new ArrayList<>();
                 messagesByThreadId.put(mms.getNativeThreadId(), messages);
             }
@@ -145,7 +147,7 @@ public class MmsObserverTest extends AndroidTestCase {
             messagesByMmsId.put(message.getMmsId(), message);
 
             List<MmsDataObject> sms = messagesByThreadId.get(message.getNativeThreadId());
-            if(sms==null){
+            if (sms == null) {
                 sms = new ArrayList<>();
                 messagesByThreadId.put(message.getNativeThreadId(), sms);
             }
@@ -165,7 +167,7 @@ public class MmsObserverTest extends AndroidTestCase {
 
         @Override
         public void onReadNativeConversation(long nativeThreadId) {
-            for(MmsDataObject mmsData : messagesByThreadId.get(nativeThreadId)){
+            for (MmsDataObject mmsData : messagesByThreadId.get(nativeThreadId)) {
                 mmsData.setReadStatus(ReadStatus.READ);
             }
         }

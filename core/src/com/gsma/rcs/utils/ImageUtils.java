@@ -23,18 +23,22 @@ import com.gsma.rcs.utils.logger.Logger;
 
 import com.orange.labs.mms.priv.MmsFileSizeException;
 
-import android.content.Context;
+import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class ImageUtils {
 
+    private static final int THUMB_SIZE = 100;
     private static final int ICON_HEIGHT = 100;
     private static final int ICON_WIDTH = 100;
     /**
@@ -88,10 +92,20 @@ public class ImageUtils {
         return out.toByteArray();
     }
 
-    public static byte[] compressImage(Context ctx, Uri image, long maxSize, int maxWidth,
-            int maxHeight) throws MmsFileSizeException, FileAccessException {
-        String imageFilename = FileUtils.getPath(ctx, image);
-        BitmapFactory.Options options = readImageOptions(imageFilename);
+    /**
+     * Compress image
+     * 
+     * @param imagePath the image path
+     * @param maxSize the maximum compressed image size
+     * @param maxWidth the maximum compressed image width
+     * @param maxHeight the maximum compressed image height
+     * @return the compressed image
+     * @throws MmsFileSizeException
+     * @throws FileAccessException
+     */
+    public static byte[] compressImage(String imagePath, long maxSize, int maxWidth, int maxHeight)
+            throws MmsFileSizeException, FileAccessException {
+        BitmapFactory.Options options = readImageOptions(imagePath);
         /* Calculate the reduction factor */
         options.inSampleSize = calculateInSampleSize(options, maxWidth, maxHeight);
         options.inJustDecodeBounds = false;
@@ -99,21 +113,20 @@ public class ImageUtils {
         for (; loopCount++ <= NUMBER_OF_RESIZE_ATTEMPTS;) {
             try {
                 if (sLogger.isActivated()) {
-                    sLogger.debug("bitmap: " + imageFilename + " Sample factor="
-                            + options.inSampleSize);
+                    sLogger.debug("bitmap: " + imagePath + " Sample factor=" + options.inSampleSize);
                 }
                 /* Rotate image is orientation is not 0 degree */
-                Bitmap bitmapTmp = BitmapFactory.decodeFile(imageFilename, options);
+                Bitmap bitmapTmp = BitmapFactory.decodeFile(imagePath, options);
                 if (bitmapTmp == null) {
                     return null;
                 }
-                int degree = getExifOrientation(imageFilename);
+                int degree = getExifOrientation(imagePath);
                 if (degree == 0) {
-                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                    return getCompressedBitmap(imagePath, bitmapTmp, maxSize);
                 }
                 bitmapTmp = rotateBitmap(bitmapTmp, degree);
                 if (bitmapTmp != null) {
-                    return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                    return getCompressedBitmap(imagePath, bitmapTmp, maxSize);
                 }
             } catch (OutOfMemoryError e) {
                 /*
@@ -126,14 +139,20 @@ public class ImageUtils {
                 options.inSampleSize++;
             }
         }
-        throw new MmsFileSizeException("Failed to compress image " + image
+        throw new MmsFileSizeException("Failed to compress image " + imagePath
                 + " : too many attempts! maxSize=" + maxSize);
     }
 
-    public static byte[] tryGetThumbnail(Context ctx, Uri file, long maxSize) {
+    /**
+     * Try to create a thumbnail from the image path
+     * 
+     * @param imagePath the image path
+     * @param maxSize the maximum thumbnail size
+     * @return the thumbnail or null if thumbnail creation fails
+     */
+    public static byte[] tryGetThumbnail(String imagePath, long maxSize) {
         try {
-            String imageFilename = FileUtils.getPath(ctx, file);
-            BitmapFactory.Options options = readImageOptions(imageFilename);
+            BitmapFactory.Options options = readImageOptions(imagePath);
             /* Calculate the reduction factor */
             options.inSampleSize = calculateInSampleSize(options, ICON_WIDTH, ICON_HEIGHT);
             options.inJustDecodeBounds = false;
@@ -141,21 +160,21 @@ public class ImageUtils {
             for (; loopCount++ <= 4;) {
                 try {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("bitmap: " + imageFilename + " Sample factor: "
+                        sLogger.debug("bitmap: " + imagePath + " Sample factor: "
                                 + options.inSampleSize);
                     }
                     /* Rotate image is orientation is not 0 degree */
-                    Bitmap bitmapTmp = BitmapFactory.decodeFile(imageFilename, options);
+                    Bitmap bitmapTmp = BitmapFactory.decodeFile(imagePath, options);
                     if (bitmapTmp == null) {
                         return null;
                     }
-                    int degree = getExifOrientation(imageFilename);
+                    int degree = getExifOrientation(imagePath);
                     if (degree == 0) {
-                        return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                        return getCompressedBitmap(imagePath, bitmapTmp, maxSize);
                     }
                     bitmapTmp = rotateBitmap(bitmapTmp, degree);
                     if (bitmapTmp != null) {
-                        return getCompressedBitmap(imageFilename, bitmapTmp, maxSize);
+                        return getCompressedBitmap(imagePath, bitmapTmp, maxSize);
                     }
                 } catch (OutOfMemoryError e) {
                     /*
@@ -170,8 +189,8 @@ public class ImageUtils {
                 }
             }
             return null;
-        } catch (FileAccessException | MmsFileSizeException e) {
-            sLogger.warn("Failed to crete thumbnail for : " + file);
+        } catch (MmsFileSizeException e) {
+            sLogger.warn("Failed to create thumbnail for : " + imagePath);
             return null;
         }
     }
@@ -275,4 +294,29 @@ public class ImageUtils {
         }
     }
 
+    /**
+     * Try to create thumbnail from URI
+     * 
+     * @param resolver the content resolver
+     * @param file the file Uri
+     * @return the thumbnail or null if thumbnail creation failed
+     */
+    public static byte[] tryGetThumbnail(ContentResolver resolver, Uri file) {
+        InputStream is = null;
+        try {
+            is = resolver.openInputStream(file);
+            Bitmap bitmap = ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(is),
+                    THUMB_SIZE, THUMB_SIZE);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            return baos.toByteArray();
+
+        } catch (FileNotFoundException e) {
+            sLogger.warn("Failed to create thumbnail for : " + file);
+            return null;
+
+        } finally {
+            CloseableUtils.tryToClose(is);
+        }
+    }
 }

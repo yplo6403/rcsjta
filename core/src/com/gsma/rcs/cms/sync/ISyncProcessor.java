@@ -9,7 +9,6 @@ import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -49,11 +48,11 @@ public interface ISyncProcessor {
      * @throws IOException
      * @throws ImapException
      */
-    List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
-            throws IOException, ImapException;
-    
+    List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids) throws IOException,
+            ImapException;
+
     /**
-     * @param flagChanges 
+     * @param flagChanges
      * @throws IOException
      * @throws ImapException
      */

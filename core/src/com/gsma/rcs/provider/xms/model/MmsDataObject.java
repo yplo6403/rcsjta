@@ -76,7 +76,8 @@ public class MmsDataObject extends XmsDataObject {
             String mimeType = MimeManager.getInstance().getMimeType(extension);
             byte[] fileIcon = null;
             if (MimeManager.isImageType(mimeType)) {
-                fileIcon = ImageUtils.tryGetThumbnail(ctx, file, maxFileIconSize);
+                String imageFilename = FileUtils.getPath(ctx, file);
+                fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxFileIconSize);
             }
             mMmsPart.add(new MmsPart(messageId, contact, filename, fileSize, file, fileIcon));
         }
@@ -115,7 +116,8 @@ public class MmsDataObject extends XmsDataObject {
             for (Map.Entry<MmsPart, Long> entry : imagesWithTargetSize.entrySet()) {
                 MmsPart part = entry.getKey();
                 Long maxSize = entry.getValue();
-                part.setCompressed(ImageUtils.compressImage(ctx, part.getFile(), maxSize,
+                String imageFilename = FileUtils.getPath(ctx, part.getFile());
+                part.setCompressed(ImageUtils.compressImage(imageFilename, maxSize,
                         MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT));
             }
         }

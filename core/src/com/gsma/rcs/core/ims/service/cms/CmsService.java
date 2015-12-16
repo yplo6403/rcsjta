@@ -19,7 +19,6 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
-import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.Synchronizer;
 import com.gsma.rcs.cms.utils.CmsUtils;
@@ -38,11 +37,14 @@ import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
+import com.sonymobile.rcs.imap.ImapException;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Handler;
 import android.os.HandlerThread;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -122,10 +124,15 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS");
                 }
-                // TODO catch and log exception at this level
-                LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
-                new Synchronizer(mContext, mRcsSettings, localStorage).syncAll();
-                mCmsServiceImpl.broadcastAllSynchronized();
+                try {
+                    // TODO catch and log exception at this level
+                    LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                    new Synchronizer(mContext, mRcsSettings, localStorage).syncAll();
+                    mCmsServiceImpl.broadcastAllSynchronized();
+
+                } catch (IOException | ImapException | RuntimeException e) {
+                    sLogger.error("Failed to sync CMS", e);
+                }
             }
         });
     }
@@ -137,11 +144,15 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
-                // TODO catch and log exception at this level
-                LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
-                new Synchronizer(mContext, mRcsSettings, localStorage).syncFolder(CmsUtils
-                        .contactToCmsFolder(mRcsSettings, contact));
-                mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
+                try {
+                    LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                    new Synchronizer(mContext, mRcsSettings, localStorage).syncFolder(CmsUtils
+                            .contactToCmsFolder(mRcsSettings, contact));
+                    mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
+
+                } catch (IOException | ImapException | RuntimeException e) {
+                    sLogger.error("Failed to sync conversation for contact " + contact, e);
+                }
             }
         });
     }

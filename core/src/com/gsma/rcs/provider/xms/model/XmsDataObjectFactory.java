@@ -11,6 +11,7 @@ import com.gsma.rcs.cms.imap.message.mime.SmsMimeMessage;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
@@ -67,7 +68,7 @@ public class XmsDataObjectFactory {
     }
 
     public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
-            ImapMmsMessage imapMessage) throws ImapHeaderFormatException {
+            ImapMmsMessage imapMessage) throws ImapHeaderFormatException, FileAccessException {
         Part body = imapMessage.getRawMessage().getBody();
         String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
@@ -102,7 +103,8 @@ public class XmsDataObjectFactory {
                 String fileName = FileUtils.getFileName(context, uri);
                 Long fileLength = (long) data.length;
                 long maxIconSize = rcsSettings.getMaxFileIconSize();
-                byte[] fileIcon = ImageUtils.tryGetThumbnail(context, uri, maxIconSize);
+                String imageFilename = FileUtils.getPath(context, uri);
+                byte[] fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxIconSize);
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
                         uri, fileIcon));
 

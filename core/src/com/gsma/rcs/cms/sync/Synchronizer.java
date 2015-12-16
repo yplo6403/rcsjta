@@ -1,6 +1,5 @@
-package com.gsma.rcs.cms.sync;
 
-import android.content.Context;
+package com.gsma.rcs.cms.sync;
 
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceManager;
@@ -9,7 +8,10 @@ import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.ImapException;
+
+import android.content.Context;
 
 import java.io.IOException;
 
@@ -21,7 +23,7 @@ public class Synchronizer {
     private final RcsSettings mRcsSettings;
     private final LocalStorage mLocalStorage;
 
-    public Synchronizer(Context context, RcsSettings rcsSettings, LocalStorage localStorage){
+    public Synchronizer(Context context, RcsSettings rcsSettings, LocalStorage localStorage) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mLocalStorage = localStorage;
@@ -39,40 +41,33 @@ public class Synchronizer {
         }
     }
 
-    public void syncFolder(String folder){
+    public void syncFolder(String folder) throws IOException, ImapException {
         BasicImapService imapService = getService();
-        if(imapService==null){
+        if (imapService == null) {
             return;
         }
         try {
             imapService.init();
-            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings, imapService, mLocalStorage, null);
+            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
+                    mRcsSettings, imapService, mLocalStorage, null);
             syncTask.syncFolder(folder);
-        } catch (IOException | ImapException e) {
-            if(sLogger.isActivated()){
-                sLogger.debug(e.getMessage());
-            }
-        }
-        finally {
+        } finally {
             ImapServiceManager.releaseService(imapService);
         }
     }
 
-    public void syncAll(){
+    public void syncAll() throws IOException, ImapException {
         BasicImapService imapService = getService();
-        if(imapService==null){
+        if (imapService == null) {
             return;
         }
         try {
             imapService.init();
-            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings, imapService, mLocalStorage, null);
+            // TODO FG do not use async task
+            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
+                    mRcsSettings, imapService, mLocalStorage, null);
             syncTask.syncAll();
-        } catch (IOException | ImapException e) {
-            if(sLogger.isActivated()){
-                sLogger.debug(e.getMessage());
-            }
-        }
-        finally {
+        } finally {
             ImapServiceManager.releaseService(imapService);
         }
     }
