@@ -83,8 +83,11 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     private final CmsManager mCmsManager;
     private final RcsSettings mRcsSettings;
 
-    public static final String[] BLACK_LISTED_MODELS = new String[] { "LG-H955" };
-    public static final Set<String> sBlackListedModel = new HashSet<>(Arrays.asList(BLACK_LISTED_MODELS));
+    public static final String[] BLACK_LISTED_MODELS = new String[] {
+        "LG-H955"
+    };
+    public static final Set<String> sBlackListedModel = new HashSet<>(
+            Arrays.asList(BLACK_LISTED_MODELS));
 
     /**
      * Constructor
@@ -320,7 +323,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     @Override
     public boolean isAllowedToSendMultimediaMessage() throws RemoteException {
         try {
-            return !sBlackListedModel.contains(Build.MODEL) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+            return !sBlackListedModel.contains(Build.MODEL)
+                    && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
 
         } catch (RuntimeException e) {
             sLogger.error(ExceptionUtil.getFullStackTrace(e));
@@ -340,6 +344,10 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
         if (files == null || files.isEmpty()) {
             throw new ServerApiIllegalArgumentException("files must not be null or empty!");
+        }
+        if (sBlackListedModel.contains(Build.MODEL)
+                || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            throw new ServerApiPermissionDeniedException("MMS cannot be sent from API!");
         }
         try {
             checkUris(files);

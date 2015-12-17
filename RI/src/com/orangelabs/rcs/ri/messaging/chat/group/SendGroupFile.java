@@ -41,8 +41,6 @@ import android.widget.TextView;
 
 import java.util.Set;
 
-import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
-
 /**
  * Send file to group
  * 

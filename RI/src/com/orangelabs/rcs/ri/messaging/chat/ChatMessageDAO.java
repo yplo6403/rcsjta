@@ -170,6 +170,9 @@ public class ChatMessageDAO {
             cursor = sContentResolver.query(
                     Uri.withAppendedPath(ChatLog.Message.CONTENT_URI, msgId), null, null, null,
                     null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query chat with ID=" + msgId);
+            }
             if (!cursor.moveToFirst()) {
                 return null;
             }

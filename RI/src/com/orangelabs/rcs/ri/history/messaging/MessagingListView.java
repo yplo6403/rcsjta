@@ -300,7 +300,9 @@ public class MessagingListView extends HistoryListView {
             Cursor cursor = null;
             try {
                 cursor = getContentResolver().query(uri, null, WHERE_CLAUSE, null, SORT_BY);
-
+                if (cursor == null) {
+                    throw new IllegalStateException("Cannot query History Log");
+                }
                 int columnChatId = cursor.getColumnIndexOrThrow(HistoryLog.CHAT_ID);
                 int columnTimestamp = cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP);
                 int columnProviderId = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);

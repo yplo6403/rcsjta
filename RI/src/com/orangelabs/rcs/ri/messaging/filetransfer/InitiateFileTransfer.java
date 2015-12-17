@@ -69,8 +69,6 @@ import android.widget.Toast;
 
 import java.util.Set;
 
-import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
-
 /**
  * Initiate file transfer
  * 

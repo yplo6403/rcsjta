@@ -329,7 +329,7 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject, String body) throws RcsGenericException, RcsServiceNotAvailableException, RcsPersistentStorageException {
+    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject, String body) throws RcsGenericException, RcsServiceNotAvailableException, RcsPersistentStorageException, RcsPermissionDeniedException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -343,6 +343,7 @@ public final class CmsService extends RcsService {
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             RcsPersistentStorageException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
             throw new RcsGenericException(e);
         }
     }

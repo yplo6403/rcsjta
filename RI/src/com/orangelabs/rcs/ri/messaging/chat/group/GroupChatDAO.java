@@ -123,6 +123,9 @@ public class GroupChatDAO {
             cursor = sContentResolver.query(
                     Uri.withAppendedPath(ChatLog.GroupChat.CONTENT_URI, chatId), null, null, null,
                     null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query group chat for ID=" + chatId);
+            }
             if (!cursor.moveToFirst()) {
                 return null;
             }

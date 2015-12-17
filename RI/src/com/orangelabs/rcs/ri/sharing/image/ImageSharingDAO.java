@@ -221,6 +221,9 @@ public class ImageSharingDAO implements Parcelable {
         try {
             cursor = resolver.query(Uri.withAppendedPath(ImageSharingLog.CONTENT_URI, sharingId),
                     null, null, null, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query sharing ID=" + sharingId);
+            }
             if (!cursor.moveToFirst()) {
                 throw new SQLException("Failed to find Image Sharing with ID: ".concat(sharingId));
             }

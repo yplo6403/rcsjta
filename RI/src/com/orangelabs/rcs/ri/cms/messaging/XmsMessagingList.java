@@ -18,7 +18,6 @@
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
-import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.XmsMessage;
@@ -193,7 +192,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             String content = truncate(cursor.getString(holder.columnContent));
             holder.contentText.setText((content == null) ? "" : content);
             holder.contentText.setVisibility(View.VISIBLE);
-            holder.showAsNew(cursor.getInt(holder.columnReadStatus)==0);
+            holder.showAsNew(cursor.getInt(holder.columnReadStatus) == 0);
         }
     }
 
@@ -240,7 +239,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
             defaultColor = contactText.getTextColors().getDefaultColor();
         }
 
-        void showAsNew(boolean isNew){
+        void showAsNew(boolean isNew) {
             int color = isNew ? Color.GREEN : defaultColor;
             int style = isNew ? (Typeface.BOLD | Typeface.ITALIC) : Typeface.NORMAL;
             contactText.setTypeface(null, style);
@@ -281,7 +280,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
                 }
                 break;
             case R.id.menu_sync_xms:
-                /* Start a sync with CMS*/
+                /* Start a sync with CMS */
                 if (!isServiceConnected(RcsServiceName.CMS)) {
                     showMessage(R.string.label_service_not_available);
                     break;

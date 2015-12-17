@@ -219,6 +219,9 @@ public class FileTransferDAO implements Parcelable {
             cursor = resolver.query(
                     Uri.withAppendedPath(FileTransferLog.CONTENT_URI, fileTransferId), null, null,
                     null, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query file transfer ID=" + fileTransferId);
+            }
             if (!cursor.moveToFirst()) {
                 throw new SQLException(
                         "Failed to find Filetransfer with ID: ".concat(fileTransferId));

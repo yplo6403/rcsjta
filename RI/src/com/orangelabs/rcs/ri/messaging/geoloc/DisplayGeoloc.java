@@ -133,6 +133,9 @@ public class DisplayGeoloc extends FragmentActivity implements OnMapReadyCallbac
             // TODO CR025 Geoloc sharing provider
             cursor = ctx.getContentResolver().query(Message.CONTENT_URI, QUERY_PROJECTION, where,
                     null, QUERY_SORT_ORDER);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query geoloc for contact=" + contact);
+            }
             if (!cursor.moveToNext()) {
                 return null;
             }
@@ -151,6 +154,9 @@ public class DisplayGeoloc extends FragmentActivity implements OnMapReadyCallbac
             // TODO CR025 Geoloc sharing provider
             cursor = ctx.getContentResolver().query(Message.CONTENT_URI, QUERY_PROJECTION,
                     QUERY_WHERE_CLAUSE, null, QUERY_SORT_ORDER);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query my geoloc");
+            }
             if (!cursor.moveToNext()) {
                 return null;
             }

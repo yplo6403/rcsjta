@@ -186,11 +186,10 @@ public class LocalStorage implements ISyncProcessorHandler {
                 mImapLog.addMessage(messageData);
 
             } catch (ImapHeaderFormatException e) {
-                // TODO: there is a wrongly formatted IMAP message on the CMS server
-                // DO not delivery until it is not fixed on the CMS server.
-                // TODO throw exception and discard IMAP messages.
-                sLogger.error("FIX ME: a badly formatted CMS message cannot be synchronized! ["
-                        + msg + "]", e);
+                /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
+                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                */
+                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
             }
         }
     }

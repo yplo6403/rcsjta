@@ -328,6 +328,10 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
         try {
             cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
                     UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query unread messages for contact="
+                        + contact);
+            }
             if (!cursor.moveToFirst()) {
                 return unReadMessageIDs;
             }

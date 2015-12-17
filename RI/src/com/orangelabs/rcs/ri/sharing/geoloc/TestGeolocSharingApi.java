@@ -77,6 +77,9 @@ public class TestGeolocSharingApi extends RcsListActivity {
                 try {
                     cursor = getContentResolver().query(CapabilitiesLog.CONTENT_URI, PROJECTION,
                             null, null, null);
+                    if (cursor == null) {
+                        throw new IllegalStateException("Cannot query capabilities");
+                    }
                     if (!cursor.moveToFirst()) {
                         showMessage(R.string.label_geoloc_not_found);
                         return;

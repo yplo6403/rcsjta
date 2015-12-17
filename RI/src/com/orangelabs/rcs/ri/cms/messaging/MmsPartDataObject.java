@@ -22,14 +22,12 @@ import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
 
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -73,12 +71,13 @@ public class MmsPartDataObject {
                 + ", body='" + mBody + '\'' + ", file=" + mFile + ", contact=" + mContact + '}';
     }
 
-    public MmsPartDataObject(Context ctx, Uri file, ContactId contact) throws IOException {
+    public MmsPartDataObject(String mimeType, Uri file, String filename, Long fileSize,
+            ContactId contact) {
         mId = INVALID_ID;
         mMessageId = null;
-        mFilename = FileUtils.getFileName(ctx, file);
-        mMimeType = FileUtils.getMimeType(mFilename);
-        mFileSize = FileUtils.getFileSize(ctx, file);
+        mFilename = filename;
+        mMimeType = mimeType;
+        mFileSize = fileSize;
         mBody = null;
         mFile = file;
         mContact = contact;

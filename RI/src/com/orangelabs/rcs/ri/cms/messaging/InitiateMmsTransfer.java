@@ -46,7 +46,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -178,65 +177,59 @@ public class InitiateMmsTransfer extends RcsActivity {
         FileUtils.openFiles(this, mMimeType, PICK_IMAGE_REQUEST);
     }
 
+    private void addImagePart( List<MmsPartDataObject> mmsParts, ContactId contact, Uri uri) {
+        String filename = FileUtils.getFileName(this,uri);
+        Long fileSize = FileUtils.getFileSize(this,uri);
+        String mimeType = FileUtils.getMimeType(filename);
+        if (mimeType != null && FileUtils.isImageType(mimeType)) {
+            takePersistableContentUriPermission(this, uri);
+            mmsParts.add(new MmsPartDataObject(mimeType, uri,  filename,fileSize, contact));
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK) {
-            try {
-                mMmsParts = new ArrayList<>();
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    ClipData clipData = data.getClipData();
-                    if (clipData != null) {
-                        for (int i = 0; i < clipData.getItemCount(); i++) {
-                            ClipData.Item item = clipData.getItemAt(i);
-                            Uri uri = item.getUri();
-                            takePersistableContentUriPermission(this, uri);
-                            mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
-                        }
-                    } else {
-                        Uri uri = data.getData();
-                        if (uri != null) {
-                            takePersistableContentUriPermission(this, uri);
-                            mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
-                        } else {
-                            return;
-                        }
+            mMmsParts = new ArrayList<>();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                ClipData clipData = data.getClipData();
+                if (clipData != null) {
+                    for (int i = 0; i < clipData.getItemCount(); i++) {
+                        ClipData.Item item = clipData.getItemAt(i);
+                        addImagePart(mMmsParts, mContact, item.getUri());
                     }
                 } else {
                     Uri uri = data.getData();
                     if (uri != null) {
-                        takePersistableContentUriPermission(this, uri);
-                        mMmsParts.add(new MmsPartDataObject(this, uri, mContact));
+                        addImagePart(mMmsParts, mContact, uri);
                     } else {
                         return;
                     }
                 }
-                if (mMmsParts.isEmpty()) {
-                    showMessage(R.string.err_select_file);
-                    mListView.setAdapter(null);
-                } else {
-                    XmsArrayAdapter adapter = new XmsArrayAdapter(this, R.layout.mms_list_item,
-                            mMmsParts);
-                    mListView.setAdapter(adapter);
-                    mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                            MmsPartDataObject mmsPart = (MmsPartDataObject) (parent.getAdapter())
-                                    .getItem(pos);
-                            String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(),
-                                    mContact.toString());
-                            Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(),
-                                    msg);
-                        }
-
-                    });
-                }
-                mSendBtn.setEnabled(true);
-
-            } catch (IOException e) {
-                showExceptionThenExit(e);
             }
+            if (mMmsParts.isEmpty()) {
+                showMessage(R.string.err_select_file);
+                mListView.setAdapter(null);
+            } else {
+                XmsArrayAdapter adapter = new XmsArrayAdapter(this, R.layout.mms_list_item,
+                        mMmsParts);
+                mListView.setAdapter(adapter);
+                mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+                        MmsPartDataObject mmsPart = (MmsPartDataObject) (parent.getAdapter())
+                                .getItem(pos);
+                        String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(),
+                                mContact.toString());
+                        Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(),
+                                msg);
+                    }
+
+                });
+            }
+            mSendBtn.setEnabled(true);
         }
     }
 

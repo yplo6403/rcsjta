@@ -117,6 +117,9 @@ public class GeolocSharingDAO {
             cursor = sContentResolver.query(
                     Uri.withAppendedPath(GeolocSharingLog.CONTENT_URI, sharingId), null, null,
                     null, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query sharing ID=" + sharingId);
+            }
             if (!cursor.moveToFirst()) {
                 return null;
             }

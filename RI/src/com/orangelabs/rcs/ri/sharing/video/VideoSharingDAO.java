@@ -180,6 +180,9 @@ public class VideoSharingDAO implements Parcelable {
         try {
             cursor = resolver.query(Uri.withAppendedPath(VideoSharingLog.CONTENT_URI, sharingId),
                     null, null, null, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query sharing ID=" + sharingId);
+            }
             if (!cursor.moveToFirst()) {
                 throw new SQLException("Failed to find Video Sharing with ID: ".concat(sharingId));
             }

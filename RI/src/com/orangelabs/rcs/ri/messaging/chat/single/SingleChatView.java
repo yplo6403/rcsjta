@@ -422,6 +422,10 @@ public class SingleChatView extends ChatView {
         try {
             cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
                     UNREADS_WHERE_CLAUSE, where_args, ORDER_CHAT_MSG);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query unread message for contact="
+                        + contact);
+            }
             if (!cursor.moveToFirst()) {
                 return unReadMessageIDs;
             }
@@ -533,6 +537,10 @@ public class SingleChatView extends ChatView {
                     PROJ_UNDELIVERED_MSG, SEL_UNDELIVERED_MESSAGES, new String[] {
                         contact.toString()
                     }, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query undelivered message for contact="
+                        + contact);
+            }
             if (!cursor.moveToFirst()) {
                 return messageIds;
             }
@@ -557,6 +565,10 @@ public class SingleChatView extends ChatView {
                     PROJ_UNDELIVERED_FT, SEL_UNDELIVERED_FTS, new String[] {
                         contact.toString()
                     }, null);
+            if (cursor == null) {
+                throw new IllegalStateException(
+                        "Cannot query undelivered file transfers for contact=" + contact);
+            }
             if (!cursor.moveToFirst()) {
                 return ids;
             }

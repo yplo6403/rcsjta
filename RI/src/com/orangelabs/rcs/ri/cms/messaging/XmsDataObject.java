@@ -51,8 +51,8 @@ public class XmsDataObject {
     private final String mContent;
     private final Direction mDirection;
 
-    public XmsDataObject(String messageId, String content, String mimeType,
-                         ContactId contact, long timestamp, Direction direction) {
+    public XmsDataObject(String messageId, String content, String mimeType, ContactId contact,
+            long timestamp, Direction direction) {
         mMessageId = messageId;
         mMimeType = mimeType;
         mContact = contact;
@@ -75,6 +75,9 @@ public class XmsDataObject {
                     SELECTION, new String[] {
                         messageId
                     }, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query XMS with ID=" + messageId);
+            }
             if (!cursor.moveToNext()) {
                 return null;
             }
@@ -89,7 +92,7 @@ public class XmsDataObject {
             ContactId contact = ContactUtil.formatContact(number);
             long timestamp = cursor.getLong(timestampIdx);
             Direction direction = Direction.valueOf(cursor.getInt(directionIdx));
-            return new XmsDataObject(messageId,content,mimeType,contact,timestamp, direction);
+            return new XmsDataObject(messageId, content, mimeType, contact, timestamp, direction);
 
         } finally {
             if (cursor != null) {
@@ -118,7 +121,7 @@ public class XmsDataObject {
         return mTimestamp;
     }
 
-    public Direction getDirection(){
+    public Direction getDirection() {
         return mDirection;
     }
 

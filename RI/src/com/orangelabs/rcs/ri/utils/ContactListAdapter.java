@@ -86,6 +86,9 @@ public class ContactListAdapter extends CursorAdapter {
         try {
             cursor = content.query(Phone.CONTENT_URI, PROJECTION_PHONE, WHERE_CLAUSE_PHONE, null,
                     null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query contact address book");
+            }
             Set<ContactId> treatedNumbers = new HashSet<>();
             MatrixCursor matrix = new MatrixCursor(PROJECTION_PHONE);
             if (defaultValue != null) {
@@ -147,6 +150,9 @@ public class ContactListAdapter extends CursorAdapter {
                 // Query all phone numbers
                 cursor = content.query(Phone.CONTENT_URI, PROJECTION_PHONE, WHERE_CLAUSE_PHONE,
                         null, null);
+                if (cursor == null) {
+                    throw new IllegalStateException("Cannot query contact address book");
+                }
                 Set<ContactId> treatedContactIDs = new HashSet<>();
                 int columnIdxId = cursor.getColumnIndexOrThrow(Phone._ID);
                 int columIdxLabel = cursor.getColumnIndexOrThrow(Phone.LABEL);
@@ -247,6 +253,9 @@ public class ContactListAdapter extends CursorAdapter {
         // Get contact name from contact id
         Cursor personCursor = context.getContentResolver().query(Contacts.CONTENT_URI,
                 PROJECTION_CONTACT, WHERE_CLAUSE_CONTACT, selectionArgs, null);
+        if (personCursor == null) {
+            throw new IllegalStateException("Cannot query contact address book");
+        }
         if (personCursor.moveToFirst()) {
             name = personCursor.getString(holder.columnID);
         }
