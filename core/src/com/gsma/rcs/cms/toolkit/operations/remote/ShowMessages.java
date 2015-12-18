@@ -127,12 +127,12 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
                  break;
              }
          FlagChange flagChange =  new FlagChange(message.getImapMessage().getFolderPath(), message.getImapMessage().getUid(), flag,  operation);
-         try {             
-            new UpdateFlagTask(
-                    ImapServiceManager.getService(mSettings),
+         try {
+             new Thread(new UpdateFlagTask(
+                     ImapServiceManager.getService(mSettings),
                      Arrays.asList(flagChange),
                      this
-                     ).execute();
+             )).start();
             mInProgressDialog.show();
         } catch (ImapServiceNotAvailableException e) {
             Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();

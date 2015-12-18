@@ -25,6 +25,8 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
@@ -52,16 +54,16 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         mXmsLog = xmsLog;
     }
 
-    public void start() {
-        // execute sync between providers with async task
-        new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog)
-                .execute();
+    public void start(Handler operationHandler, XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+        // execute sync between providers in handler
+        operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog));
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
 
         // instantiate XmsEventListener in charge of handling xms events from XmsObserver
         mXmsEventListener = new XmsEventListener(mContext, mImapLog, mXmsLog, mRcsSettings);
+        mXmsEventListener.registerBroadcaster(xmsMessageEventBroadcaster);
         mXmsObserver.registerListener(mXmsEventListener);
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
@@ -73,7 +75,7 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
         // instantiate ImapCommandController in charge of Pushing messages and updating flags with
         // Imap command
-        mImapCommandController = new ImapCommandController(mContext, mRcsSettings, mLocalStorage,
+        mImapCommandController = new ImapCommandController(operationHandler, mContext, mRcsSettings, mLocalStorage,
                 mImapLog, mXmsLog);
         mXmsObserver.registerListener(mImapCommandController);
 
@@ -86,14 +88,12 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
-        // TODO FGI : Fix me : when the core is stopped while a background task is still processing
-        // (IMAP sync)
-        // if(mLocalStorage!=null){
-        // mLocalStorage.removeListeners();
-        // mLocalStorage = null;
-        // }
-        // mXmsEventListener = null;
-        // mImapCommandController = null;
+         if(mLocalStorage!=null){
+             mLocalStorage.removeListeners();
+             mLocalStorage = null;
+         }
+         mXmsEventListener = null;
+         mImapCommandController = null;
     }
 
     /**
@@ -172,20 +172,6 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         }
     }
 
-    public void registerXmsMessageEventBroadcaster(
-            XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.registerBroadcaster(xmsMessageEventBroadcaster);
-        }
-    }
-
-    public void unregisterXmsMessageEventBroadcaster(
-            XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.unregisterBroadcaster(xmsMessageEventBroadcaster);
-        }
-    }
-
     public Context getContext() {
         return mContext;
     }
@@ -223,4 +209,5 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
     @Override
     public void onMmsTransferStarted(ContactId contact, String mmsId) {
     }
+
 }

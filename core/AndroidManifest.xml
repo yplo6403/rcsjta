@@ -267,7 +267,6 @@
         </activity>
         <activity android:name="com.gsma.rcs.cms.toolkit.delete.DeleteOperations" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.RemoteOperations" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.synchro.Synchronizer" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages" />
         <activity android:name="com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages" />
         <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsList" />

@@ -37,7 +37,7 @@ import java.util.UUID;
 /**
  *
  */
-public class PushMessageTask extends AsyncTask<String, String, Boolean> {
+public class PushMessageTask implements Runnable {
 
     private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
 
@@ -66,13 +66,8 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
     }
 
     @Override
-    protected Boolean doInBackground(String... params) {
-
-        Thread currentThread = Thread.currentThread();
-        String currentName = currentThread.getName();
+    public void run() {
         try {
-            currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
-
             List<XmsDataObject> messagesToPush = new ArrayList<>();
             for (MessageData messageData : mImapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)) {
                 XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
@@ -84,16 +79,16 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                 if (sLogger.isActivated()) {
                     sLogger.debug("no message to push");
                 }
-                return null;
             }
             mImapService.init();
-            return pushMessages(messagesToPush);
+            pushMessages(messagesToPush);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         } finally {
-            Thread.currentThread().setName(currentName);
             ImapServiceManager.releaseService(mImapService);
+            if (mListener != null) {
+                mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
+            }
         }
     }
 
@@ -163,13 +158,6 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
 
     public Map<String, Integer> getCreatedUids() {
         return mCreatedUidsMap;
-    }
-
-    @Override
-    protected void onPostExecute(Boolean result) {
-        if (mListener != null) {
-            mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
-        }
     }
 
     /**

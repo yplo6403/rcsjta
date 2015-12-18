@@ -13,7 +13,6 @@ import android.widget.ListView;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.toolkit.delete.DeleteOperations;
 import com.gsma.rcs.cms.toolkit.operations.RemoteOperations;
-import com.gsma.rcs.cms.toolkit.synchro.Synchronizer;
 import com.gsma.rcs.cms.toolkit.xms.XmsList;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -45,7 +44,6 @@ public class Toolkit extends ListActivity {
         String[] items = {
                 getString(R.string.menu_cms_toolkit_remote_operations),
                 getString(R.string.menu_cms_toolkit_delete),
-                getString(R.string.menu_cms_toolkit_synchronizer),
                 getString(R.string.menu_cms_toolkit_sms),
         };
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
@@ -70,13 +68,6 @@ public class Toolkit extends ListActivity {
                 break;
 
             case 2:
-                if(!checkSettings()){
-                    return;
-                }
-                startActivity(new Intent(this, Synchronizer.class));
-                break;
-                
-            case 3:
                 if(!checkSettings()){
                     return;
                 }
@@ -109,7 +100,7 @@ public class Toolkit extends ListActivity {
         return core;
     }
 
-    public static boolean checkCore(Context context,  Core core ){
+    public static boolean checkCore(Context context, Core core ){
         if(core != Core.getInstance()){
             AlertDialogUtils.showMessage(context, "You have to restart the Toolkit");
             return false;

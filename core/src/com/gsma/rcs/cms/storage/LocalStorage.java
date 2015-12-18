@@ -4,6 +4,7 @@ package com.gsma.rcs.cms.storage;
 
 import com.gsma.rcs.cms.event.IRemoteEventHandler;
 import com.gsma.rcs.cms.event.ImapHeaderFormatException;
+import com.gsma.rcs.cms.event.MissingImapHeaderException;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.provider.imap.FolderData;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
@@ -140,12 +141,14 @@ public class LocalStorage implements ISyncProcessorHandler {
                 }
                 IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType);
                 String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
+                boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
                 if (messageId == null) { // message not present in local storage
-                    uids.add(msg.getUid());
+                    if(!isDeleted){ // prevent from downloading a new deleted message
+                        uids.add(msg.getUid());
+                    }
                 } else {
                     // update flag for local message
                     boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
-                    boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
                     if (isDeleted) {
                         remoteEventHandler.onRemoteDeleteEvent(messageType, messageId);
                     }
@@ -156,10 +159,15 @@ public class LocalStorage implements ISyncProcessorHandler {
                             msg.getUid(), isSeen, isDeleted);
                 }
             } catch (ImapHeaderFormatException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info("Unsupported imap message");
-                    sLogger.info(msg.toString());
-                }
+                /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
+                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                */
+                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+            } catch (MissingImapHeaderException e) {
+                /* Missing mandatory header on the CMS server. Keep processing
+                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                */
+                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
             }
         }
         return uids;
@@ -187,6 +195,11 @@ public class LocalStorage implements ISyncProcessorHandler {
 
             } catch (ImapHeaderFormatException e) {
                 /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
+                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                */
+                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+            } catch (MissingImapHeaderException e) {
+                /* Missing mandatory header on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
                 sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);

@@ -136,7 +136,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
         setContentView(R.layout.rcs_cms_toolkit_xms_conversation_view);
 
         mRcsSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
-        mCmsManager = mCore.getCmsManager();
+        mCmsManager = mCore.getCmsService().getCmsManager();
         mXmsLog = mCmsManager.getXmsLog();
         mLocalStorage = mCmsManager.getLocalStorage();
         mContact = ContactUtil.createContactIdFromTrustedData(getIntent().getStringExtra(EXTRA_CONTACT));
@@ -167,14 +167,15 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                try {      
-                    new BasicSynchronizationTask(
+                try {
+                    new Thread(new BasicSynchronizationTask(
                             getApplicationContext(),
                             mRcsSettings,
                             ImapServiceManager.getService(mRcsSettings),
                             mLocalStorage,
+                            CmsUtils.contactToCmsFolder(mRcsSettings, mContact),
                             XmsConversationView.this
-                            ).execute(new String[]{CmsUtils.contactToCmsFolder(mRcsSettings, mContact)});
+                            )).start();
                 } catch (ImapServiceNotAvailableException e) {                
                     Toast.makeText(XmsConversationView.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
                 }                 
@@ -524,7 +525,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
 
     @Override
-    public void onBasicSynchronizationTaskExecuted(String[] params, Boolean result) {
+    public void onBasicSynchronizationTaskExecuted(Boolean result) {
         if(sLogger.isActivated()) {
             sLogger.info("onBasicSynchronizationTaskExecuted");
         }

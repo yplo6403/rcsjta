@@ -16,7 +16,8 @@ import android.os.AsyncTask;
 /**
  *
  */
-public class BasicSynchronizationTask extends AsyncTask<String, String, Boolean> {
+public class BasicSynchronizationTask implements Runnable {
+        
 
     private static final Logger sLogger = Logger.getLogger(BasicSynchronizationTask.class
             .getSimpleName());
@@ -26,7 +27,22 @@ public class BasicSynchronizationTask extends AsyncTask<String, String, Boolean>
     private final BasicSynchronizationTaskListener mListener;
     private final LocalStorage mLocalStorageHandler;
     private final BasicImapService mImapService;
-    private String[] mParams;
+    private final String mFolderName;
+
+    public BasicSynchronizationTask(
+            Context context,
+            RcsSettings rcsSettings,
+            BasicImapService imapService,
+            LocalStorage localStorageHandler,
+            String folderName,
+            BasicSynchronizationTaskListener listener) {
+        mContext = context;
+        mRcsSettings = rcsSettings;
+        mImapService = imapService;
+        mLocalStorageHandler = localStorageHandler;
+        mListener = listener;
+        mFolderName = folderName;
+    }
 
     /**
      * @param imapService
@@ -34,36 +50,37 @@ public class BasicSynchronizationTask extends AsyncTask<String, String, Boolean>
      * @param listener
      * @throws ImapServiceNotAvailableException
      */
-    public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            BasicImapService imapService, LocalStorage localStorageHandler,
+    public BasicSynchronizationTask(
+            Context context,
+            RcsSettings rcsSettings,
+            BasicImapService imapService,
+            LocalStorage localStorageHandler,
             BasicSynchronizationTaskListener listener) {
-        mContext = context;
-        mRcsSettings = rcsSettings;
-        mImapService = imapService;
-        mLocalStorageHandler = localStorageHandler;
-        mListener = listener;
+        this(context, rcsSettings, imapService, localStorageHandler, null, listener);
     }
 
     @Override
-    protected Boolean doInBackground(String... params) {
-        mParams = params;
-        Thread currentThread = Thread.currentThread();
-        String currentName = currentThread.getName();
-        currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
-        try {
-            mImapService.init();
-            if (params.length == 1) { // sync for only a conversation
-                return syncFolder(params[0]);
-            } else { // full sync
-                return syncAll();
+    public void run() {
+        boolean result = false;
+            try {
+                mImapService.init();
+                if(mFolderName == null){
+                    result = syncFolder(mFolderName);
+                } else{
+                    result = syncAll();
+                }
+            } catch (Exception e) {
+                if(sLogger.isActivated()){
+                    sLogger.debug(e.getMessage());
+                    e.printStackTrace();
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            Thread.currentThread().setName(currentName);
-            ImapServiceManager.releaseService(mImapService);
-        }
+            finally {
+                ImapServiceManager.releaseService(mImapService);
+                if(mListener!=null){
+                    mListener.onBasicSynchronizationTaskExecuted(result);
+                }
+            }
     }
 
     public boolean syncFolder(String folder) {
@@ -86,22 +103,14 @@ public class BasicSynchronizationTask extends AsyncTask<String, String, Boolean>
         return strategy.getExecutionResult();
     }
 
-    @Override
-    protected void onPostExecute(Boolean result) {
-        if (mListener != null) {
-            mListener.onBasicSynchronizationTaskExecuted(mParams, result);
-        }
-    }
-
     /**
-     *
-     */
-    public interface BasicSynchronizationTaskListener {
-
-        /**
-         * @param params
-         * @param result
-         */
-        void onBasicSynchronizationTaskExecuted(String[] params, Boolean result);
-    }
+    *
+    */
+   public interface BasicSynchronizationTaskListener {
+       
+       /**
+        * @param result
+        */
+       void onBasicSynchronizationTaskExecuted(Boolean result);
+   }
 }

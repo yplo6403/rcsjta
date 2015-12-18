@@ -69,8 +69,6 @@ public class Core {
 
     private final XmsManager mXmsManager;
 
-    private final CmsManager mCmsManager;
-
     private CoreListener mListener;
 
     private boolean mStarted = false;
@@ -187,8 +185,6 @@ public class Core {
         // Create the address book manager
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
-
-        mCmsManager = new CmsManager(ctx, imapLog, xmsLog, rcsSettings);
         mXmsManager = new XmsManager(ctx, contentResolver);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         // TODO FG never start in constructor
@@ -198,7 +194,7 @@ public class Core {
 
         /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
-                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog);
+                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, imapLog);
 
         if (logActivated) {
             sLogger.info("Terminal core is created with success");
@@ -284,7 +280,6 @@ public class Core {
         mLocaleManager.stop();
         mAddressBookManager.stop();
         mXmsManager.stop();
-        mCmsManager.stop();
         mImsModule.stop();
 
         mStopping = false;
@@ -366,14 +361,5 @@ public class Core {
      */
     public XmsManager getXmsManager() {
         return mXmsManager;
-    }
-
-    /**
-     * Gets CMS manager
-     *
-     * @return CmsManager
-     */
-    public CmsManager getCmsManager() {
-        return mCmsManager;
     }
 }

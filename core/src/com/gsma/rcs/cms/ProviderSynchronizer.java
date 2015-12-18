@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
+public class ProviderSynchronizer implements Runnable {
 
     private static final Logger sLogger = Logger.getLogger(ProviderSynchronizer.class
             .getSimpleName());
@@ -432,18 +432,17 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
     }
 
     @Override
-    protected Boolean doInBackground(String... strings) {
+    public void run() {
         boolean isActivated = sLogger.isActivated();
         if (isActivated) {
             sLogger.info(" >>> start sync between providers ...");
         }
-        // TODO FG Use handler instead
         purgeDeletedMessages();
         syncSms();
         syncMms();
         if (isActivated) {
             sLogger.info(" <<< end of sync");
         }
-        return true;
+
     }
 }

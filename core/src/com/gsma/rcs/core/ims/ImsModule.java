@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.ims.network.ImsConnectionManager;
@@ -107,11 +108,12 @@ public class ImsModule implements SipEventListener {
      * @param richCallHistory The rich call accessor
      * @param addressBookManager The address book manager instance
      * @param xmsLog The XMS log accessor
+     * @param imapLog The Imap log accessor
      */
     public ImsModule(Core core, Context ctx, LocalContentResolver localContentResolver,
             RcsSettings rcsSettings, ContactManager contactManager, MessagingLog messagingLog,
             HistoryLog historyLog, RichCallHistory richCallHistory,
-            AddressBookManager addressBookManager, XmsLog xmsLog) {
+            AddressBookManager addressBookManager, XmsLog xmsLog, ImapLog imapLog) {
         mCore = core;
         mRcsSettings = rcsSettings;
 
@@ -136,7 +138,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(mCore, this, ctx, rcsSettings, xmsLog));
+        mServices.put(ImsServiceType.CMS, new CmsService(mCore, this, ctx, rcsSettings, xmsLog, imapLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {

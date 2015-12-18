@@ -18,7 +18,6 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.core.ims.service.cms.CmsService;
 import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.core.ims.service.cms.mms.OriginatingMmsSession;
@@ -80,7 +79,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     private final XmsLog mXmsLog;
     private final Context mContext;
     private final XmsManager mXmsManager;
-    private final CmsManager mCmsManager;
     private final RcsSettings mRcsSettings;
 
     public static final String[] BLACK_LISTED_MODELS = new String[] {
@@ -93,7 +91,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * Constructor
      */
     public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
-            RcsSettings rcsSettings, XmsManager xmsManager, CmsManager cmsManager) {
+            RcsSettings rcsSettings, XmsManager xmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -103,8 +101,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;
-        mCmsManager = cmsManager;
-        mCmsManager.registerXmsMessageEventBroadcaster(mXmsMessageBroadcaster);
     }
 
     /**
@@ -115,7 +111,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is closed");
         }
-        mCmsManager.unregisterXmsMessageEventBroadcaster(mXmsMessageBroadcaster);
     }
 
     @Override
@@ -414,9 +409,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                     RcsService.ReadStatus readStatus = mXmsLog.getReadStatus(messageId);
                     if (readStatus != null) {
                         if (RcsService.ReadStatus.UNREAD == readStatus) {
-                            mCmsManager.onReadRcsMessage(messageId);
-                            if (!mCmsService.isServiceStarted()) {
-                                // TODO synchronize CMS
+                            if (mCmsService.isServiceStarted()) {
+                                mCmsService.markXmsMessageAsRead(messageId);
                             }
                         }
                     } else {
@@ -489,9 +483,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             @Override
             public void run() {
                 try {
-                    mCmsManager.onDeleteAll();
                     if (mCmsService.isServiceStarted()) {
-                        // TODO synchronize CMS
+                        mCmsService.deleteXmsMessages();
                     }
                 } catch (RuntimeException e) {
                     /*
@@ -513,9 +506,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             @Override
             public void run() {
                 try {
-                    mCmsManager.onDeleteRcsConversation(contact);
                     if (mCmsService.isServiceStarted()) {
-                        // TODO synchronize CMS
+                        mCmsService.deleteXmsMessages2(contact);
                     }
                 } catch (RuntimeException e) {
                     /*
@@ -537,9 +529,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             @Override
             public void run() {
                 try {
-                    mCmsManager.onDeleteRcsMessage(messageId);
                     if (mCmsService.isServiceStarted()) {
-                        // TODO synchronize CMS
+                        mCmsService.deleteXmsMessage(messageId);
                     }
                 } catch (RuntimeException e) {
                     /*
@@ -598,7 +589,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact,
                 subject, parts, mRcsSettings, mXmsManager);
         session.addListener(this);
-        session.addListener(mCmsManager);
+        session.addListener(mCmsService.getCmsManager());
         mCmsService.scheduleImOperation(session);
     }
 
@@ -640,5 +631,9 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void onMmsTransferStarted(ContactId contact, String mmsId) {
         long timestamp = System.currentTimeMillis();
         setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
+    }
+
+    public XmsMessageEventBroadcaster getXmsMessageBroadcaster(){
+        return mXmsMessageBroadcaster;
     }
 }

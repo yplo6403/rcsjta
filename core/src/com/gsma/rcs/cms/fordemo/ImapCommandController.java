@@ -2,6 +2,7 @@ package com.gsma.rcs.cms.fordemo;
 
 
 import android.content.Context;
+import android.os.Handler;
 
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.event.IRcsXmsEventListener;
@@ -46,8 +47,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     private final LocalStorage mLocalStorage;
     private final XmsLog mXmsLog;
     private final ImapLog mImapLog;
+    private final Handler mHandler;
 
-    public ImapCommandController(Context context, RcsSettings settings,LocalStorage localStorage, ImapLog imapLog, XmsLog xmsLog){
+    public ImapCommandController(Handler handler, Context context, RcsSettings settings,LocalStorage localStorage, ImapLog imapLog, XmsLog xmsLog){
+        mHandler = handler;
         mContext = context;
         mSettings = settings;
         mLocalStorage = localStorage;
@@ -62,11 +65,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
             sLogger.info("onIncomingSms");
         }
         try {
-            new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this).execute();
+            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -76,7 +78,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
             sLogger.info("onOutgoingSms");
         }
         try {
-            new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this).execute();
+            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }
@@ -104,7 +106,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
             sLogger.info("onIncomingMms");
         }
         try {
-            new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this).execute();
+            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }
@@ -116,7 +118,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
             sLogger.info("onOutgoingMms");
         }
         try {
-            new PushMessageTask(mContext ,mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog,this).execute();
+            mHandler.post(new PushMessageTask(mContext ,mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog,this));
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }
@@ -178,7 +180,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     @SuppressWarnings("unchecked")
     private void updateFlags(){
         try {
-            new UpdateFlagTask(ImapServiceManager.getService(mSettings), mSettings, mXmsLog, mImapLog, this).execute();
+            mHandler.post(new UpdateFlagTask(ImapServiceManager.getService(mSettings), mSettings, mXmsLog, mImapLog, this));
         } catch (ImapServiceNotAvailableException e) {
             sLogger.warn(e.getMessage());
         }

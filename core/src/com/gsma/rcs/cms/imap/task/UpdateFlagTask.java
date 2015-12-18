@@ -23,15 +23,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> {
+public class UpdateFlagTask implements Runnable {
 
     private final UpdateFlagTaskListener mListener;
     private final BasicImapService mImapService;
-    private String[] mParams;
     private RcsSettings mSettings;
     private XmsLog mXmsLog;
     private ImapLog mImapLog;
     private List<FlagChange> mFlagChanges;
+    private List<FlagChange> mSuccessFullFlagChanges = new ArrayList<>();
 
     public UpdateFlagTask(BasicImapService imapService, List<FlagChange> flagChanges,
             UpdateFlagTaskListener listener) throws ImapServiceNotAvailableException {
@@ -56,8 +56,8 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
     }
 
     @Override
-    protected List<FlagChange> doInBackground(String... params) {
-        mParams = params;
+    public void run() {
+
         try {
             mImapService.init();
             if (mFlagChanges == null) { // get from db
@@ -65,11 +65,14 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                 mFlagChanges.addAll(getReadChanges());
                 mFlagChanges.addAll(getDeleteChanges());
             }
-            return updateFlags();
+            updateFlags();
         } catch (Exception e) {
-            return null;
+
         } finally {
             ImapServiceManager.releaseService(mImapService);
+            if (mListener != null) {
+                mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
+            }
         }
     }
 
@@ -132,15 +135,7 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
      * @throws IOException
      * @throws ImapException
      */
-    public List<FlagChange> updateFlags() {
-        List<FlagChange> successFullFlagChanges = new ArrayList<>();
-        if (mFlagChanges == null) {
-            return successFullFlagChanges;
-        }
-
-        Thread currentThread = Thread.currentThread();
-        String currentName = currentThread.getName();
-        currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
+    public void updateFlags() {
 
         String previousFolder = null;
         try {
@@ -158,19 +153,10 @@ public class UpdateFlagTask extends AsyncTask<String, String, List<FlagChange>> 
                         mImapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                         break;
                 }
-                successFullFlagChanges.add(flagChange);
+                mSuccessFullFlagChanges.add(flagChange);
             }
         } catch (IOException | ImapException e) {
             e.printStackTrace();
-            Thread.currentThread().setName(currentName);
-        }
-        return successFullFlagChanges;
-    }
-
-    @Override
-    protected void onPostExecute(List<FlagChange> successFullFlagChanges) {
-        if (mListener != null) {
-            mListener.onUpdateFlagTaskExecuted(successFullFlagChanges);
         }
     }
 

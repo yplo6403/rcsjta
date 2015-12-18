@@ -19,6 +19,8 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
+import com.gsma.rcs.cms.CmsManager;
+import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.Synchronizer;
 import com.gsma.rcs.cms.utils.CmsUtils;
@@ -59,6 +61,7 @@ public class CmsService extends ImsService {
     private final Core mCore;
     private final Context mContext;
     private final RcsSettings mRcsSettings;
+    private final CmsManager mCmsManager;
 
     /**
      * Constructor
@@ -68,15 +71,17 @@ public class CmsService extends ImsService {
      * @param context The context
      * @param rcsSettings The RCS settings accessor
      * @param xmsLog The XMS log accessor
+     * @param imapLog The Imap log accessor
      */
     public CmsService(Core core, ImsModule parent, Context context, RcsSettings rcsSettings,
-            XmsLog xmsLog) {
+            XmsLog xmsLog, ImapLog imapLog) {
         super(parent, true);
         mContext = context;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mCore = core;
+        mCmsManager = new CmsManager(context, imapLog, xmsLog, rcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -94,13 +99,23 @@ public class CmsService extends ImsService {
 
     @Override
     public void start() {
+        if (isServiceStarted()) {
+            return;
+        }
         setServiceStarted(true);
+        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster()); // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
 
     @Override
     public void stop() {
+        if (!isServiceStarted()) {
+            return;
+        }
         setServiceStarted(false);
+        mCmsManager.stop();
+        mOperationHandler.getLooper().quit();
+        mOperationHandler.getLooper().getThread().interrupt();
     }
 
     @Override
@@ -125,11 +140,9 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS");
                 }
                 try {
-                    // TODO catch and log exception at this level
-                    LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                    LocalStorage localStorage = mCmsManager.getLocalStorage();
                     new Synchronizer(mContext, mRcsSettings, localStorage).syncAll();
                     mCmsServiceImpl.broadcastAllSynchronized();
-
                 } catch (IOException | ImapException | RuntimeException e) {
                     sLogger.error("Failed to sync CMS", e);
                 }
@@ -145,7 +158,7 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
                 try {
-                    LocalStorage localStorage = mCore.getCmsManager().getLocalStorage();
+                    LocalStorage localStorage = mCmsManager.getLocalStorage();
                     new Synchronizer(mContext, mRcsSettings, localStorage).syncFolder(CmsUtils
                             .contactToCmsFolder(mRcsSettings, contact));
                     mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
@@ -227,5 +240,25 @@ public class CmsService extends ImsService {
      */
     private boolean isShuttingDownOrStopped() {
         return mCore.isStopping() || !mCore.isStarted();
+    }
+
+    public void markXmsMessageAsRead(final String messageId){
+        mCmsManager.onReadRcsMessage(messageId);
+    }
+
+    public void deleteXmsMessages(){
+        mCmsManager.onDeleteAll();
+    }
+
+    public void deleteXmsMessages2(final ContactId contact){
+        mCmsManager.onDeleteRcsConversation(contact);
+    }
+
+    public void deleteXmsMessage(final String messageId){
+        mCmsManager.onDeleteRcsMessage(messageId);
+    }
+
+    public CmsManager getCmsManager(){
+        return mCmsManager;
     }
 }

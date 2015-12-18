@@ -119,13 +119,13 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             public void onClick(View v) {
                 displaySyncButton(false);
                 try {
-                    new BasicSynchronizationTask(
+                    new Thread(new BasicSynchronizationTask(
                             getApplicationContext(),
                             mRcsSettings,
                             ImapServiceManager.getService(mRcsSettings),
-                            mCore.getCmsManager().getLocalStorage(),
+                            mCore.getCmsService().getCmsManager().getLocalStorage(),
                             XmsList.this
-                    ).execute(new String[]{});
+                    )).start();
                 } catch (ImapServiceNotAvailableException e) {
                     Toast.makeText(XmsList.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
                 }
@@ -143,7 +143,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
         if(!Toolkit.checkCore(this, mCore)){
             return;
         }
-        mCore.getCmsManager().registerSmsObserverListener(this);
+        mCore.getCmsService().getCmsManager().registerSmsObserverListener(this);
         checkImapServiceStatus();
         refreshView();
     }
@@ -154,7 +154,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             sLogger.debug("onPause");
         }
         super.onPause();
-        mCore.getCmsManager().unregisterSmsObserverListener(this);
+        mCore.getCmsService().getCmsManager().unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
 
@@ -162,7 +162,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mCore.getCmsManager().unregisterSmsObserverListener(this);
+        mCore.getCmsService().getCmsManager().unregisterSmsObserverListener(this);
         ImapServiceManager.unregisterListener(this);
     }
 
@@ -187,7 +187,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
         ContactId contactId = ContactUtil.createContactIdFromTrustedData(cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT)));
-        mCore.getCmsManager().onDeleteRcsConversation(contactId);
+        mCore.getCmsService().getCmsManager().onDeleteRcsConversation(contactId);
         refreshView();
         return true;
     }
@@ -266,7 +266,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onBasicSynchronizationTaskExecuted(String[] params, Boolean result) {
+    public void onBasicSynchronizationTaskExecuted(Boolean result) {
         if (sLogger.isActivated()) {
             sLogger.info("onBasicSynchronizationTaskExecuted");
         }

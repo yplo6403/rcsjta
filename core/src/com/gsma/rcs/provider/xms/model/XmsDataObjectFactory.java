@@ -4,6 +4,7 @@ package com.gsma.rcs.provider.xms.model;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.event.ImapHeaderFormatException;
+import com.gsma.rcs.cms.event.MissingImapHeaderException;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.message.mime.MmsMimeMessage;
@@ -35,7 +36,7 @@ import java.util.List;
 public class XmsDataObjectFactory {
 
     public static SmsDataObject createSmsDataObject(ImapSmsMessage imapMessage)
-            throws ImapHeaderFormatException {
+            throws ImapHeaderFormatException, MissingImapHeaderException {
 
         Part body = imapMessage.getRawMessage().getBody();
         String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
@@ -53,11 +54,15 @@ public class XmsDataObjectFactory {
             throw new ImapHeaderFormatException("Bad format for header : " + header);
         }
         ReadStatus readStatus = imapMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
+        String messageCorrelator = body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
+        if(messageCorrelator == null){
+            throw new MissingImapHeaderException("Message-Correlator IMAP header is missing");
+        }
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contactId,
                 ((SmsMimeMessage) imapMessage.getPart()).getBodyPart(), direction,
                 DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE),
                         DateUtils.CMS_IMAP_DATE_FORMAT), readStatus,
-                body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
+                messageCorrelator);
         State state;
         if (Direction.INCOMING == direction) {
             state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);

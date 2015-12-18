@@ -32,6 +32,7 @@ import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.BaseMmsColumns;
@@ -49,13 +50,14 @@ import java.util.Set;
 public class XmsObserver implements INativeXmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
-
+    private static final String sThreadName = "XmsObserver";
     private final List<INativeXmsEventListener> mXmsEventListeners = new ArrayList<>();
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
     private final ContentResolver mContentResolver;
     private XmsContentObserver mXmsContentObserver;
+    private Handler mXmsObserverHandler;
 
     private class XmsContentObserver extends ContentObserver {
 
@@ -453,6 +455,13 @@ public class XmsObserver implements INativeXmsEventListener {
 
     public XmsObserver(Context context) {
         mContentResolver = context.getContentResolver();
+        mXmsObserverHandler = allocateBgHandler(sThreadName);
+    }
+
+    private Handler allocateBgHandler(String threadName) {
+        HandlerThread thread = new HandlerThread(threadName);
+        thread.start();
+        return new Handler(thread.getLooper());
     }
 
     /**
@@ -460,7 +469,7 @@ public class XmsObserver implements INativeXmsEventListener {
      */
     public void start() {
         // register content observer
-        mXmsContentObserver = new XmsContentObserver(new Handler());
+        mXmsContentObserver = new XmsContentObserver(mXmsObserverHandler);
         mContentResolver.registerContentObserver(Sms.URI, true, mXmsContentObserver);
         mContentResolver.registerContentObserver(Mms.URI, true, mXmsContentObserver);
         mContentResolver.registerContentObserver(MMS_SMS_URI, true, mXmsContentObserver);
@@ -472,6 +481,8 @@ public class XmsObserver implements INativeXmsEventListener {
     public void stop() {
         // unregister content observer
         mContentResolver.unregisterContentObserver(mXmsContentObserver);
+        mXmsObserverHandler.getLooper().quit();
+        mXmsObserverHandler.getLooper().getThread().interrupt();
         mXmsContentObserver = null;
         mXmsEventListeners.clear();
     }
