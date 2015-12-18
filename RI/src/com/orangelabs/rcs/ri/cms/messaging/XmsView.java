@@ -447,10 +447,7 @@ public class XmsView extends RcsFragmentActivity implements LoaderManager.Loader
                         startActivity(InitiateMmsTransfer.forgeStartIntent(XmsView.this, mContact,
                                 "image/*"));
                         break;
-                    case 1:
-                        startActivityForResult(ContactVCard.forgeIntentSelectVcard(XmsView.this),
-                                SELECT_VCARD);
-                        break;
+
                     default:
                         showMessage(getString(R.string.err_not_implemented, choices[which]));
                 }

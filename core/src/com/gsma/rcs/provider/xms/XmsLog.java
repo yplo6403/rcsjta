@@ -41,9 +41,7 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * XMS log utilities
@@ -92,6 +90,10 @@ public class XmsLog {
 
     private static final String SELECTION_BY_INTERRUPTED_MMS_TRANSFERS = XmsData.KEY_STATE + "='"
             + State.SENDING.toInt() + "'" + " AND " + XmsData.KEY_NATIVE_ID + " IS NULL";
+
+    private static final String[] PROJECTION_MESSAGE_ID = new String[] {
+        XmsData.KEY_MESSAGE_ID
+    };
 
     /**
      * Current instance
@@ -302,7 +304,6 @@ public class XmsLog {
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
         values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
-
         if (mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
                 values, null, null) < 1) {
             if (sLogger.isActivated()) {
@@ -318,7 +319,6 @@ public class XmsLog {
         }
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_STATE, state.toInt());
-
         if (mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
                 values, null, null) < 1) {
             if (sLogger.isActivated()) {
@@ -334,7 +334,6 @@ public class XmsLog {
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
         values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
-
         if (mLocalContentResolver.update(XmsData.CONTENT_URI, values, SELECTION_XMS_CONTACT_UNREAD,
                 new String[] {
                     contactId.toString()
@@ -366,7 +365,7 @@ public class XmsLog {
         values.put(XmsData.KEY_MMS_ID, mms.getMmsId());
         mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
 
-        for (MmsDataObject.MmsPart mmsPart : mms.getMmsPart()) {
+        for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getContentText();
             if (content == null) {
@@ -555,9 +554,9 @@ public class XmsLog {
         }
     }
 
-    public Set<MmsDataObject.MmsPart> getParts(String mmsId) {
+    public List<MmsDataObject.MmsPart> getParts(String mmsId) {
         Cursor cursor = null;
-        Set<MmsDataObject.MmsPart> parts = new HashSet<>();
+        List<MmsDataObject.MmsPart> parts = new ArrayList<>();
         try {
             cursor = getMmsPart(mmsId);
             if (!cursor.moveToNext()) {
@@ -587,7 +586,7 @@ public class XmsLog {
                             .getBlob(fileiconIdx);
                     Uri file = Uri.parse(cursor.getString(contentIdx));
                     partData = new MmsDataObject.MmsPart(cursor.getString(messageIdIdx), contact,
-                            cursor.getString(filenameIdx), fileSize, file, fileIcon);
+                            cursor.getString(filenameIdx), fileSize, mimeType, file, fileIcon);
                     byte[] compressed = cursor.isNull(compressedIdx) ? null : cursor
                             .getBlob(compressedIdx);
                     partData.setCompressed(compressed);
@@ -634,5 +633,18 @@ public class XmsLog {
         values.put(XmsData.KEY_REASON_CODE, reasonCode.toInt());
         return mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
                 values, null, null) > 0;
+    }
+
+    public boolean isMessagePersisted(String msgId) {
+        Cursor cursor = null;
+        Uri contentUri = Uri.withAppendedPath(XmsData.CONTENT_URI, msgId);
+        try {
+            cursor = mLocalContentResolver.query(contentUri, PROJECTION_MESSAGE_ID, null, null,
+                    null);
+            CursorUtil.assertCursorIsNotNull(cursor, contentUri);
+            return cursor.moveToNext();
+        } finally {
+            CursorUtil.close(cursor);
+        }
     }
 }

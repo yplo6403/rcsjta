@@ -1,3 +1,4 @@
+// TODO add copyrights + javadoc
 
 package com.gsma.rcs.cms.imap.task;
 
@@ -142,7 +143,7 @@ public class PushMessageTask extends AsyncTask<String, String, Boolean> {
                     imapMessage = new ImapMmsMessage(mContext, from, to, direction,
                             mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(),
                             UUID.randomUUID().toString(), "" + mms.getTimestamp(), mms.getMmsId(),
-                            mms.getMmsPart());
+                            mms.getMmsParts());
                 }
                 String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings,
                         message.getContact());

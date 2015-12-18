@@ -1,3 +1,4 @@
+// TODO FG add copyrights
 
 package com.gsma.rcs.provider.xms.model;
 
@@ -106,7 +107,7 @@ public class XmsDataObjectFactory {
                 String imageFilename = FileUtils.getPath(context, uri);
                 byte[] fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxIconSize);
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
-                        uri, fileIcon));
+                        contentType, uri, fileIcon));
 
             } else if (Constants.CONTENT_TYPE_TEXT.equals(contentType)) {
                 String content = multipart.getContent();

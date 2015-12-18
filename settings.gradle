@@ -10,7 +10,6 @@ include ':notification'
 include ':provisioning'
 include ':extension'
 include ':tts'
-include ':mms'
 
 // Project location (if not directly below root)
 project(':bouncycastle').projectDir=new File('libs/bouncycastle')
@@ -22,4 +21,3 @@ project(':extension').projectDir=new File('samples/api/extension')
 project(':tts').projectDir=new File('samples/api/tts')
 project(':api').projectDir=new File('libs/api')
 project(':api_cnx').projectDir=new File('libs/api_cnx')
-project(':mms').projectDir=new File('libs/mms')

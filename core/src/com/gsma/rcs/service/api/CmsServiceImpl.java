@@ -590,13 +590,13 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * @param parts The MMS attachment parts
      */
     public void dequeueMmsMessage(String mmsId, ContactId contact, String subject,
-            Set<MmsDataObject.MmsPart> parts) {
+            List<MmsDataObject.MmsPart> parts) {
         if (sLogger.isActivated()) {
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
         /* For outgoing MMS transfer, timestampSent = timestamp */
         OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact,
-                subject, parts, mRcsSettings);
+                subject, parts, mRcsSettings, mXmsManager);
         session.addListener(this);
         session.addListener(mCmsManager);
         mCmsService.scheduleImOperation(session);

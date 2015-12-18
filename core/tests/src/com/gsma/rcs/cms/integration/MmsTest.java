@@ -555,7 +555,7 @@ public class MmsTest extends AndroidTestCase{
                            mms.getTimestamp(),
                            mms.getNativeProviderId(),
                            mms.getNativeThreadId(),
-                           mms.getMmsPart()
+                           mms.getMmsParts()
                    ));
                    mImapLog.addMessage(
                            new MessageData(

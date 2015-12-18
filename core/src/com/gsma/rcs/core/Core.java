@@ -210,7 +210,6 @@ public class Core {
      */
     public void initialize() {
         mImsModule.initialize();
-        mXmsManager.initialize();
     }
 
     /**

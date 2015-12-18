@@ -16,10 +16,13 @@
  *
  */
 
-package com.orange.labs.mms.priv.parser;
+package com.gsma.rcs.core.ims.service.cms.mms;
 
-import com.orange.labs.mms.priv.MmsFormatException;
-import com.orange.labs.mms.priv.PartMMS;
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.utils.FileUtils;
+
+import android.content.Context;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,8 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-/* package private */ final class MmsEncoder {
+/* package private */final class MmsEncoder {
 
     public static final int MESSAGE_TYPE_SEND_REQ = 0x80;
 
@@ -143,8 +145,10 @@ import java.util.Map;
     }
 
     private final MmsEncodedMessage mMessage;
+    private final Context mCtx;
 
-    public MmsEncoder(MmsEncodedMessage message) {
+    public MmsEncoder(Context ctx, MmsEncodedMessage message) {
+        mCtx = ctx;
         mMessage = message;
     }
 
@@ -153,7 +157,7 @@ import java.util.Map;
      *
      * @return a byte array of the message
      */
-    public byte[] encode() throws MmsFormatException {
+    public byte[] encode() throws FileAccessException, MmsFormatException {
         try {
             ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
             // [WARNING] MANDATORY FIELD (TODO)
@@ -203,11 +207,27 @@ import java.util.Map;
             outBuffer.write(CONTENT_TYPE);
             outBuffer.write(MMS_CONTENT_TYPES.get(mMessage.getContentType()) + 0x80);
 
-			/* Write parts */
-            List<PartMMS> parts = mMessage.getParts();
+            /* Write parts */
+            List<MmsDataObject.MmsPart> parts = mMessage.getParts();
             outBuffer.write(encodeUint(parts.size()));
-            for (PartMMS part : parts) {
-                outBuffer.write(encodePart(part));
+            for (MmsDataObject.MmsPart part : parts) {
+                String mimeType = part.getMimeType();
+                byte[] content;
+                String body = part.getContentText();
+                if (body != null) {
+                    content = body.getBytes();
+                } else {
+                    content = part.getCompressed();
+                    if (content == null) {
+                        String filePath = FileUtils.getPath(mCtx, part.getFile());
+                        try {
+                            content = FileUtils.getContent(filePath);
+                        } catch (IOException e) {
+                            throw new FileAccessException("Failed to read part: " + filePath, e);
+                        }
+                    }
+                }
+                outBuffer.write(encodePart(content, mimeType));
             }
             return outBuffer.toByteArray();
 
@@ -224,7 +244,10 @@ import java.util.Map;
      */
     private byte[] encodeDate(long value) {
         // Nothing to do if the value equals 0
-        if (value == 0) return new byte[]{0x0};
+        if (value == 0)
+            return new byte[] {
+                0x0
+            };
 
         // We just need a timestamp in seconds not milliseconds
         value = value / 1000;
@@ -269,7 +292,10 @@ import java.util.Map;
      */
     private byte[] encodeUint(int value) {
         // Nothing to do if the value equals 0
-        if (value == 0) return new byte[]{0x0};
+        if (value == 0)
+            return new byte[] {
+                0x0
+            };
 
         // An integer is encoded on 5 bytes
         byte[] usefulValues = new byte[5];
@@ -297,22 +323,24 @@ import java.util.Map;
     }
 
     /**
-     * Encode the mms part to a valid format
+     * Encode the mms part to a PDU format
      *
-     * @param part : MmsPart to be encoded
+     * @param content : The content to encode
+     * @param mimeType The mime type content
      * @return a byte array of the encoded part
      */
-    private byte[] encodePart(PartMMS part) {
+    private byte[] encodePart(byte[] content, String mimeType) {
         // Define content type
-        int contentType = MMS_CONTENT_TYPES.get(part.getMimeType());
-        byte[] contentTypeHeader = new byte[]{(byte) (contentType + 0x80)};
+        int contentType = MMS_CONTENT_TYPES.get(mimeType);
+        byte[] contentTypeHeader = new byte[] {
+            (byte) (contentType + 0x80)
+        };
 
         // We retrieve the content of the part and it's length
-        byte[] data = part.getContent();
-        byte[] dataLengthEnc = encodeUint(data.length);
+        byte[] dataLengthEnc = encodeUint(content.length);
 
         // The result array will be stored in this object
-        byte[] partEnc = new byte[2 + dataLengthEnc.length + data.length];
+        byte[] partEnc = new byte[2 + dataLengthEnc.length + content.length];
         partEnc[0] = 0x1;
 
         int offset = 1;
@@ -322,7 +350,7 @@ import java.util.Map;
         System.arraycopy(contentTypeHeader, 0, partEnc, offset, 1);
         offset += 1;
         // We can now copy the content to the array
-        System.arraycopy(data, 0, partEnc, offset, data.length);
+        System.arraycopy(content, 0, partEnc, offset, content.length);
         return partEnc;
     }
 }

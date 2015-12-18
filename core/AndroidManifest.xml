@@ -184,6 +184,13 @@
             android:exported="true"
             android:readPermission="com.gsma.services.permission.RCS"
             android:writePermission="com.gsma.services.permission.RCS_INTERNAL_ACCESS_ONLY" />
+
+        <provider android:name="com.gsma.rcs.provider.xms.MmsFileProvider"
+            android:authorities="com.gsma.rcs.provider.xms.MmsFileProvider"
+            android:enabled="true"
+            android:grantUriPermissions="true"
+            android:exported="false" />
+
         <!-- Device events receiver -->
 
         <receiver android:name="com.gsma.rcs.service.DeviceBoot" >

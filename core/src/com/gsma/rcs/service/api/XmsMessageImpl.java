@@ -18,11 +18,9 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.IXmsMessage;
-import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.os.RemoteException;

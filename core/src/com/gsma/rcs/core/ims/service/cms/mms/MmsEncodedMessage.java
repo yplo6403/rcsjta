@@ -16,43 +16,45 @@
  *
  */
 
-package com.orange.labs.mms.priv.parser;
+package com.gsma.rcs.core.ims.service.cms.mms;
 
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.services.rcs.contact.ContactId;
-import com.orange.labs.mms.MmsMessage;
-import com.orange.labs.mms.priv.MmsFormatException;
-import com.orange.labs.mms.priv.PartMMS;
+
+import android.content.Context;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public final class MmsEncodedMessage {
 
     private final String mTransactionId;
     private final long mDate;
-    private final MmsMessage mMmsMessage;
     private final String mFrom;
+    private final String mSubject;
     private final List<String> mTo;
+    private final List<MmsDataObject.MmsPart> mParts;
+    private final Context mCtx;
 
-    public MmsEncodedMessage(MmsMessage msg) {
-        mMmsMessage = msg;
-        Random r = new Random();
-        mTransactionId = String.valueOf(r.nextInt(999999999));
-        mDate = System.currentTimeMillis();
-        mFrom = mMmsMessage.getFrom().toString().concat("/TYPE=PLMN");
+    public MmsEncodedMessage(Context ctx, ContactId sender, ContactId recipient, String subject,
+            String transactionId, List<MmsDataObject.MmsPart> parts) {
+        mFrom = sender.toString().concat("/TYPE=PLMN");
         mTo = new ArrayList<>();
-        for (ContactId contact : msg.getTo()) {
-            mTo.add(contact.toString().concat("/TYPE=PLMN"));
-        }
+        mTo.add(recipient.toString().concat("/TYPE=PLMN"));
+        mSubject = subject;
+        mTransactionId = transactionId;
+        mDate = System.currentTimeMillis();
+        mParts = parts;
+        mCtx = ctx;
     }
 
     public long getDate() {
         return mDate;
     }
 
-    public List<PartMMS> getParts() {
-        return mMmsMessage.getParts();
+    public List<MmsDataObject.MmsPart> getParts() {
+        return mParts;
     }
 
     public String getFrom() {
@@ -64,7 +66,7 @@ public final class MmsEncodedMessage {
     }
 
     public String getSubject() {
-        return mMmsMessage.getSubject();
+        return mSubject;
     }
 
     public String getTransactionId() {
@@ -79,8 +81,8 @@ public final class MmsEncodedMessage {
         return MmsEncoder.MESSAGE_TYPE_SEND_REQ;
     }
 
-    public byte[] encode() throws MmsFormatException {
-        MmsEncoder mmsEncoder = new MmsEncoder(this);
+    public byte[] encode() throws MmsFormatException, FileAccessException {
+        MmsEncoder mmsEncoder = new MmsEncoder(mCtx, this);
         return mmsEncoder.encode();
     }
 }

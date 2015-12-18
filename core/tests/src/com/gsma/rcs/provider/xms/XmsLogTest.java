@@ -28,6 +28,7 @@ import android.os.RemoteException;
 import android.test.InstrumentationTestCase;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.ims.service.cms.mms.MmsFileSizeException;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
@@ -39,7 +40,6 @@ import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
-import com.orange.labs.mms.priv.MmsFileSizeException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by Philippe LEMORDANT on 16/11/2015.
@@ -88,6 +87,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         mUriCat2 = Uri.fromFile(file);
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void createFileOnSdCard(String fileName) throws IOException {
         InputStream stream = mAssetManager.open(fileName);
         byte[] fileBytes = new byte[stream.available()];
@@ -147,7 +147,8 @@ public class XmsLogTest extends InstrumentationTestCase {
         cursor.close();
     }
 
-    public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException, MmsFileSizeException, FileAccessException {
+    public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException,
+                                            MmsFileSizeException, FileAccessException {
         long timestamp = System.currentTimeMillis();
         List<Uri> files = new ArrayList<>();
         files.add(mUriCat1);
@@ -189,7 +190,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
         cursor.close();
         /* test parts */
-        Set<MmsPart> parts = mXmsLog.getParts(mMessageId);
+        List<MmsDataObject.MmsPart> parts = mXmsLog.getParts(mMessageId);
         assertEquals(parts.size(), 3);
         for (MmsPart part : parts) {
             assertEquals(mContact, part.getContact());
@@ -229,7 +230,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(1, cursor.getCount());
         cursor.close();
-        Set<MmsPart> parts = mXmsLog.getParts(mMessageId);
+        List<MmsDataObject.MmsPart> parts = mXmsLog.getParts(mMessageId);
         assertTrue(parts.size() > 0);
         mXmsLog.deleteXmsMessage(mMessageId);
         cursor = mXmsLog.getXmsMessage(mMessageId);

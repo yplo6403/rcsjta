@@ -1,3 +1,4 @@
+// TODO FG add copyrights
 
 package com.gsma.rcs.cms.observer;
 
@@ -16,10 +17,8 @@ public class XmsObserverUtils {
     public static class Sms {
 
         public static final Uri URI = Uri.parse("content://sms/");
-        static List<Uri> FILTERED_URIS = Arrays.asList(new Uri[] {
-                Uri.parse("content://sms/raw"), Uri.parse("content://sms/inbox"),
-                Uri.parse("content://sms/conversations")
-        });
+        static List<Uri> FILTERED_URIS = Arrays.asList(Uri.parse("content://sms/raw"),
+                Uri.parse("content://sms/inbox"), Uri.parse("content://sms/conversations"));
 
         static final String[] PROJECTION = new String[] {
                 BaseColumns._ID, Telephony.TextBasedSmsColumns.THREAD_ID,
@@ -33,8 +32,7 @@ public class XmsObserverUtils {
             BaseColumns._ID
         };
 
-        static final String WHERE_CONTACT_NOT_NULL = new StringBuilder(
-                Telephony.TextBasedSmsColumns.ADDRESS).append(" is not null").toString();
+        static final String WHERE_CONTACT_NOT_NULL = TextBasedSmsColumns.ADDRESS + " is not null";
     }
 
     public static class Mms {
@@ -47,7 +45,8 @@ public class XmsObserverUtils {
         public static final String[] PROJECTION = new String[] {
                 Telephony.BaseMmsColumns._ID, Telephony.BaseMmsColumns.SUBJECT,
                 Telephony.BaseMmsColumns.MESSAGE_ID, Telephony.BaseMmsColumns.MESSAGE_TYPE,
-                Telephony.BaseMmsColumns.THREAD_ID, Telephony.BaseMmsColumns.DATE
+                Telephony.BaseMmsColumns.THREAD_ID, Telephony.BaseMmsColumns.DATE,
+                Telephony.BaseMmsColumns.TRANSACTION_ID
         };
 
         private static final String WHERE_INBOX = Telephony.BaseMmsColumns.MESSAGE_BOX + "="
@@ -64,8 +63,7 @@ public class XmsObserverUtils {
             public static final String[] PROJECTION = new String[] {
                 Telephony.Mms.Addr.ADDRESS,
             };
-            public static final String WHERE = new StringBuilder(Telephony.Mms.Addr.TYPE).append(
-                    "=?").toString();
+            public static final String WHERE = Telephony.Mms.Addr.TYPE + "=?";
             public static final int FROM = 137;
             public static final int TO = 151;
         }
@@ -77,8 +75,7 @@ public class XmsObserverUtils {
                     Telephony.Mms.Part.TEXT, Telephony.Mms.Part.CONTENT_LOCATION,
                     Telephony.Mms.Part._DATA,
             };
-            public static final String WHERE = new StringBuilder(Telephony.Mms.Part.MSG_ID).append(
-                    "=?").toString();
+            public static final String WHERE = Telephony.Mms.Part.MSG_ID + "=?";
         }
     }
 

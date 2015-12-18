@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -113,9 +112,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
         Cursor cursor = null;
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_ID_READ, null, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
             int idIdx = cursor.getColumnIndex(BaseColumns._ID);
             int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
-            CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
             while (cursor.moveToNext()) {
                 Long id = cursor.getLong(idIdx);
                 mNativeIds.add(id);
@@ -134,9 +133,9 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
         mNativeReadIds = new ArrayList<>();
         try {
             cursor = mContentResolver.query(sMmsUri, PROJECTION_ID_READ, null, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, sMmsUri);
             int idIdx = cursor.getColumnIndex(BaseColumns._ID);
             int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
-            CursorUtil.assertCursorIsNotNull(cursor, sMmsUri);
             while (cursor.moveToNext()) {
                 Long id = cursor.getLong(idIdx);
                 mNativeIds.add(id);
@@ -250,7 +249,6 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                         String.valueOf(id)
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
-
             if (!cursor.moveToFirst()) {
                 return null;
             }
@@ -299,7 +297,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
     private Collection<MmsDataObject> getMmsFromNativeProvider(Long id) {
         List<MmsDataObject> mmsDataObject = new ArrayList<>();
         Long threadId, date;
-        date = -1l;
+        date = -1L;
         String mmsId;
         String subject;
         Direction direction = Direction.INCOMING;
@@ -400,7 +398,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
                             mmsParts.put(contact, mmsPart);
                         }
                         mmsPart.add(new MmsPart(messageIds.get(contact), contact, filename,
-                                fileSize, file, fileIcon));
+                                fileSize, contentType, file, fileIcon));
                     }
                 } else {
                     for (ContactId contact : contacts) {
@@ -417,9 +415,7 @@ public class ProviderSynchronizer extends AsyncTask<String, String, Boolean> {
             CursorUtil.close(cursor);
         }
 
-        Iterator<Entry<ContactId, List<MmsPart>>> iter = mmsParts.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<ContactId, List<MmsPart>> entry = iter.next();
+        for (Entry<ContactId, List<MmsPart>> entry : mmsParts.entrySet()) {
             ContactId contact = entry.getKey();
             mmsDataObject.add(new MmsDataObject(mmsId, messageIds.get(contact), contact, subject,
                     direction, readStatus, date * 1000, id, threadId, entry.getValue()));

@@ -175,11 +175,17 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
         if (sLogger.isActivated()) {
             sLogger.debug("onOutgoingMms " + message.toString());
         }
-        mXmsLog.addMms(message);
-        mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
-                message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
+        /*
+         * Checks if an outgoing MMS already exists in local provider having a messageId equals to
+         * the transactionId.
+         */
+        if (!mXmsLog.isMessagePersisted(message.getTransId())) {
+            mXmsLog.addMms(message);
+            mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
+                    message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
+                    mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                    MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
+        }
     }
 
     @Override

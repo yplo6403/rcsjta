@@ -45,7 +45,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
@@ -200,7 +200,7 @@ public class CmsService extends ImsService {
                                 sLogger.debug("Dequeue MMS ID=" + id + " contact=" + contact
                                         + " subject=" + subject);
                             }
-                            Set<MmsDataObject.MmsPart> parts = mXmsLog.getParts(id);
+                            List<MmsDataObject.MmsPart> parts = mXmsLog.getParts(id);
                             mCmsServiceImpl.dequeueMmsMessage(id, contact, subject, parts);
                         }
                     } finally {

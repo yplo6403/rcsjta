@@ -18,7 +18,6 @@
 
 package com.gsma.rcs.service;
 
-import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;

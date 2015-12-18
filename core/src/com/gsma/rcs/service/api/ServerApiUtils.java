@@ -22,15 +22,12 @@
 
 package com.gsma.rcs.service.api;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.util.Log;
-
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.ims.network.ImsConnectionManager;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
 import com.gsma.services.rcs.RcsServiceRegistration;
-import com.orange.labs.mms.priv.utils.Constants;
+
+import android.content.Context;
+import android.net.ConnectivityManager;
 
 /**
  * Server API utils
@@ -43,7 +40,7 @@ public class ServerApiUtils {
      */
     public static void testCore() {
         if (Core.getInstance() == null) {
-            throw new ServerApiGenericException("Core is not instanciated");
+            throw new ServerApiGenericException("Core is not instantiated");
         }
     }
 
@@ -76,8 +73,10 @@ public class ServerApiUtils {
      * @return Boolean
      */
     public static boolean isMmsConnectionAvailable(Context context) {
-        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS).isAvailable();
+        ConnectivityManager connectivityManager = (ConnectivityManager) context
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
+        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS)
+                .isAvailable();
     }
 
     /**

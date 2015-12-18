@@ -19,9 +19,8 @@
 package com.gsma.rcs.utils;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.ims.service.cms.mms.MmsFileSizeException;
 import com.gsma.rcs.utils.logger.Logger;
-
-import com.orange.labs.mms.priv.MmsFileSizeException;
 
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
@@ -316,6 +315,7 @@ public class ImageUtils {
             return null;
 
         } finally {
+            // noinspection ThrowableResultOfMethodCallIgnored
             CloseableUtils.tryToClose(is);
         }
     }

@@ -18,32 +18,19 @@
 
 package com.gsma.rcs.core.ims.service.cms.mms;
 
-import android.content.Context;
-import android.net.Uri;
-
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
-import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.rcs.xms.XmsManager;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.contact.ContactId;
-import com.orange.labs.mms.MmsMessage;
-import com.orange.labs.mms.priv.MmsApnConfigException;
-import com.orange.labs.mms.priv.MmsConnectivityException;
-import com.orange.labs.mms.priv.MmsFormatException;
-import com.orange.labs.mms.priv.MmsHttpException;
-import com.orange.labs.mms.priv.PartMMS;
-import com.orange.labs.mms.priv.parser.MmsEncodedMessage;
-import com.orange.labs.mms.priv.utils.MmsApn;
-import com.orange.labs.mms.priv.utils.NetworkUtils;
+
+import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by yplo6403 on 07/12/2015.
@@ -53,36 +40,37 @@ public final class OriginatingMmsSession implements Runnable, MmsSessionListener
     private static final Logger sLogger = Logger.getLogger(OriginatingMmsSession.class
             .getSimpleName());
 
-    private final Context mContext;
+    private final Context mCtx;
     private final String mMmsId;
     private final ContactId mContact;
     private final String mSubject;
-    private final Set<MmsDataObject.MmsPart> mParts;
+    private final List<MmsDataObject.MmsPart> mParts;
     private final List<MmsSessionListener> mListeners;
     private final RcsSettings mRcsSettings;
+    private final XmsManager mXmsManager;
 
     /**
-     * @param context context
+     * @param ctx context
      * @param mmsId The message ID
      * @param contact The remote contact
      * @param subject The subject
      * @param parts The MMS attachment parts
      * @param rcsSettings The RCS settings accessor
      */
-    public OriginatingMmsSession(Context context, String mmsId, ContactId contact, String subject,
-            Set<MmsDataObject.MmsPart> parts, RcsSettings rcsSettings) {
-        mContext = context;
+    public OriginatingMmsSession(Context ctx, String mmsId, ContactId contact, String subject,
+            List<MmsDataObject.MmsPart> parts, RcsSettings rcsSettings, XmsManager xmsManager) {
+        mCtx = ctx;
         mMmsId = mmsId;
         mContact = contact;
         mSubject = subject;
         mParts = parts;
         mListeners = new ArrayList<>();
         mRcsSettings = rcsSettings;
+        mXmsManager = xmsManager;
     }
 
     @Override
     public void run() {
-        boolean success = false;
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.debug("Send MMS ID " + mMmsId + " to contact " + mContact + " subject='"
@@ -90,70 +78,26 @@ public final class OriginatingMmsSession implements Runnable, MmsSessionListener
         }
         try {
             onMmsTransferStarted(mContact, mMmsId);
-            List<PartMMS> partsMms = new ArrayList<>();
-            for (MmsPart part : mParts) {
-                String mimeType = part.getMimeType();
-                byte[] content;
-                String body = part.getContentText();
-                if (body != null) {
-                    content = body.getBytes();
-                } else {
-                    content = part.getCompressed();
-                    if (content == null) {
-                        String filePath = FileUtils.getPath(mContext, part.getFile());
-                        try {
-                            content = FileUtils.getContent(filePath);
-                        } catch (IOException e) {
-                            throw new FileAccessException("Failed to read part: " + filePath, e);
-                        }
-                    }
-                }
-                partsMms.add(new PartMMS(mimeType, content));
-            }
-            MmsMessage msg = new MmsMessage(mRcsSettings.getUserProfileImsUserName(),
-                                        Collections.singletonList(mContact), mSubject, partsMms);
-
-            MmsEncodedMessage mmsEncodedMessage = new MmsEncodedMessage(msg);
-            NetworkUtils.startMmsConnectivity(mContext);
-            // Get APNs
-            List<MmsApn> apns = MmsApn.getMmsAPNs(mContext);
-            // For each APN, try to send the message
-            for (MmsApn apn : apns) {
-                if (logActivated) {
-                    sLogger.debug("Trying APN : " + apn.toString());
-                }
-                // Check the route
-                String routeHost = apn.isProxySet ? apn.proxyHost : Uri.parse(apn.mmsc).getHost();
-                if (NetworkUtils.ensureRoute(mContext, routeHost)) {
-                    success = NetworkUtils.sendMessage(apn, mmsEncodedMessage.encode());
-                    if (success) {
-                        break;
-                    }
-                }
-            }
-            if (success) {
-                onMmsTransferred(mContact, mMmsId);
-            } else {
-                onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_UNABLE_CONNECT_MMS, mContact, mMmsId);
-            }
-
-        } catch (MmsApnConfigException e) {
-            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_INVALID_APN, mContact, mMmsId);
-
-        } catch (MmsConnectivityException e) {
-            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_UNABLE_CONNECT_MMS, mContact, mMmsId);
+            ContactId sender = mRcsSettings.getUserProfileImsUserName();
+            /*
+             * We use the messageId as the transaction ID to be able to link local XMS provider and
+             * MMS native provider.
+             */
+            MmsEncodedMessage mmsEncodedMessage = new MmsEncodedMessage(mCtx, sender, mContact,
+                    mSubject, mMmsId, mParts);
+            mXmsManager.sendMms(mMmsId, mContact, mmsEncodedMessage.encode(), this);
 
         } catch (MmsFormatException e) {
             sLogger.error("Failed to format MMS!", e);
             onMmsTransferError(ReasonCode.FAILED_ERROR_GENERIC_FAILURE, mContact, mMmsId);
 
-        } catch (MmsHttpException e) {
-            sLogger.error("Failed to send MMS over HTTP!", e);
-            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_HTTP_FAILURE, mContact, mMmsId);
-
         } catch (FileAccessException e) {
             sLogger.error("Cannot find MMS part!", e);
             onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_PART_NOT_FOUND, mContact, mMmsId);
+
+        } catch (IOException e) {
+            sLogger.error("Cannot write MMS pdu!", e);
+            onMmsTransferError(ReasonCode.FAILED_MMS_ERROR_IO_ERROR, mContact, mMmsId);
 
         } catch (RuntimeException e) {
             /*
@@ -164,9 +108,6 @@ public final class OriginatingMmsSession implements Runnable, MmsSessionListener
              */
             sLogger.error("Failed to send MMS!", e);
             onMmsTransferError(ReasonCode.UNSPECIFIED, mContact, mMmsId);
-
-        } finally {
-            NetworkUtils.endConnectivity(mContext);
         }
     }
 
@@ -176,21 +117,21 @@ public final class OriginatingMmsSession implements Runnable, MmsSessionListener
 
     @Override
     public void onMmsTransferError(ReasonCode reason, ContactId contact, String mmsId) {
-        for(MmsSessionListener listener : mListeners){
+        for (MmsSessionListener listener : mListeners) {
             listener.onMmsTransferError(reason, contact, mmsId);
         }
     }
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        for(MmsSessionListener listener : mListeners){
+        for (MmsSessionListener listener : mListeners) {
             listener.onMmsTransferred(contact, mmsId);
         }
     }
 
     @Override
     public void onMmsTransferStarted(ContactId contact, String mmsId) {
-        for(MmsSessionListener listener : mListeners){
+        for (MmsSessionListener listener : mListeners) {
             listener.onMmsTransferStarted(contact, mmsId);
         }
     }

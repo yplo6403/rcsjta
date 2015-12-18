@@ -30,6 +30,7 @@ import com.orangelabs.rcs.ri.utils.FileUtils;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
 
+import android.annotation.TargetApi;
 import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
@@ -70,8 +71,6 @@ public class InitiateMmsTransfer extends RcsActivity {
     private Button mSendBtn;
     private List<MmsPartDataObject> mMmsParts;
     private String[] mMimeType;
-
-    // TODO manage option menu to enable content reselection
 
     /**
      * Starts the InitiateMmsTransfer activity
@@ -187,25 +186,24 @@ public class InitiateMmsTransfer extends RcsActivity {
         }
     }
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK) {
             mMmsParts = new ArrayList<>();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                ClipData clipData = data.getClipData();
-                if (clipData != null) {
-                    for (int i = 0; i < clipData.getItemCount(); i++) {
-                        ClipData.Item item = clipData.getItemAt(i);
-                        addImagePart(mMmsParts, mContact, item.getUri());
-                    }
+            ClipData clipData = data.getClipData();
+            if (clipData != null) {
+                for (int i = 0; i < clipData.getItemCount(); i++) {
+                    ClipData.Item item = clipData.getItemAt(i);
+                    addImagePart(mMmsParts, mContact, item.getUri());
+                }
+            } else {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    addImagePart(mMmsParts, mContact, uri);
                 } else {
-                    Uri uri = data.getData();
-                    if (uri != null) {
-                        addImagePart(mMmsParts, mContact, uri);
-                    } else {
-                        return;
-                    }
+                    return;
                 }
             }
             if (mMmsParts.isEmpty()) {

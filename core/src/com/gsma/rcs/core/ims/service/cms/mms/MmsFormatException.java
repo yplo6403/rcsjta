@@ -1,6 +1,7 @@
-/*
- * Copyright (C) 2007 Esmertec AG.
- * Copyright (C) 2007 The Android Open Source Project
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +14,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ ******************************************************************************/
 
-package com.orange.labs.mms.priv;
+package com.gsma.rcs.core.ims.service.cms.mms;
 
-/**
- * A generic exception that is thrown by the Mms client.
- */
-public class MmsApnConfigException extends MmsException {
-    private static final long serialVersionUID = -7323249827281485390L;
+public class MmsFormatException extends Exception {
+    private static final long serialVersionUID = 1L;
 
     /**
-     * Creates a new MmsApnConfigException with the specified detail message and cause.
+     * Creates a new MmsFormatException with the specified detail message.
      *
      * @param message the detail message.
-     * @param cause the cause.
+     * @param cause the cause
      */
-    public MmsApnConfigException(String message, Throwable cause) {
+    public MmsFormatException(String message, Throwable cause) {
         super(message, cause);
     }
 }
