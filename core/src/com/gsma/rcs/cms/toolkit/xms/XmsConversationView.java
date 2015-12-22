@@ -34,8 +34,8 @@ import android.widget.Toast;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager.ImapServiceListener;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceController.ImapServiceListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
@@ -167,18 +167,14 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                try {
-                    new Thread(new BasicSynchronizationTask(
-                            getApplicationContext(),
-                            mRcsSettings,
-                            ImapServiceManager.getService(mRcsSettings),
-                            mLocalStorage,
-                            CmsUtils.contactToCmsFolder(mRcsSettings, mContact),
-                            XmsConversationView.this
-                            )).start();
-                } catch (ImapServiceNotAvailableException e) {                
-                    Toast.makeText(XmsConversationView.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
-                }                 
+                new Thread(new BasicSynchronizationTask(
+                        getApplicationContext(),
+                        mRcsSettings,
+                        mCmsManager.getImapServiceController(),
+                        mLocalStorage,
+                        CmsUtils.contactToCmsFolder(mRcsSettings, mContact),
+                        XmsConversationView.this
+                        )).start();
             }
             
         });
@@ -219,7 +215,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     protected void onPause() {
         super.onPause();
         mCmsManager.unregisterSmsObserverListener(this);
-        ImapServiceManager.unregisterListener(this);
+        mCmsManager.getImapServiceController().unregisterListener(this);
     }
     
     
@@ -227,7 +223,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     protected void onDestroy() {
         super.onDestroy();
         mCmsManager.unregisterSmsObserverListener(this);
-        ImapServiceManager.unregisterListener(this);
+        mCmsManager.getImapServiceController().unregisterListener(this);
     }
 
     /**
@@ -537,8 +533,9 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
     
     private void checkImapServiceStatus(){
-        if(!ImapServiceManager.isAvailable()){
-            ImapServiceManager.registerListener(this);
+        ImapServiceController imapServiceController = mCmsManager.getImapServiceController();
+        if(!imapServiceController.isSyncAvailable()){
+            imapServiceController.registerListener(this);
             displaySyncButton(false);
         } else{
             displaySyncButton(true);

@@ -1,8 +1,26 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
@@ -11,10 +29,9 @@ import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 
+import com.gsma.rcs.utils.logger.Logger;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
-
-import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,32 +40,43 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Task used to update flag status on the CMS server.
+ */
 public class UpdateFlagTask implements Runnable {
 
+    private static final Logger sLogger = Logger.getLogger(UpdateFlagTask.class.getSimpleName());
+
     private final UpdateFlagTaskListener mListener;
-    private final BasicImapService mImapService;
+    private final ImapServiceController mImapServiceController;
     private RcsSettings mSettings;
     private XmsLog mXmsLog;
     private ImapLog mImapLog;
     private List<FlagChange> mFlagChanges;
     private List<FlagChange> mSuccessFullFlagChanges = new ArrayList<>();
 
-    public UpdateFlagTask(BasicImapService imapService, List<FlagChange> flagChanges,
-            UpdateFlagTaskListener listener) throws ImapServiceNotAvailableException {
-        mImapService = imapService;
+    /**
+     * Constructor
+     * @param imapServiceController
+     * @param flagChanges
+     * @param listener
+     */
+    public UpdateFlagTask(ImapServiceController imapServiceController, List<FlagChange> flagChanges,
+            UpdateFlagTaskListener listener) {
+        mImapServiceController = imapServiceController;
         mListener = listener;
         mFlagChanges = flagChanges;
     }
 
     /**
-     * @param imapService
+     * Constructor
+     * @param imapServiceController
      * @param listener
      * @throws ImapServiceNotAvailableException
      */
-    public UpdateFlagTask(BasicImapService imapService, RcsSettings settings, XmsLog xmsLog,
-            ImapLog imapLog, UpdateFlagTaskListener listener)
-            throws ImapServiceNotAvailableException {
-        mImapService = imapService;
+    public UpdateFlagTask(ImapServiceController imapServiceController, RcsSettings settings, XmsLog xmsLog,
+            ImapLog imapLog, UpdateFlagTaskListener listener) {
+        mImapServiceController = imapServiceController;
         mListener = listener;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
@@ -59,7 +87,7 @@ public class UpdateFlagTask implements Runnable {
     public void run() {
 
         try {
-            mImapService.init();
+            mImapServiceController.createService();
             if (mFlagChanges == null) { // get from db
                 mFlagChanges = new ArrayList<>();
                 mFlagChanges.addAll(getReadChanges());
@@ -69,7 +97,7 @@ public class UpdateFlagTask implements Runnable {
         } catch (Exception e) {
 
         } finally {
-            ImapServiceManager.releaseService(mImapService);
+            mImapServiceController.closeService();
             if (mListener != null) {
                 mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
             }
@@ -139,33 +167,37 @@ public class UpdateFlagTask implements Runnable {
 
         String previousFolder = null;
         try {
+            BasicImapService imapService = mImapServiceController.getService();
             for (FlagChange flagChange : mFlagChanges) {
                 String folder = flagChange.getFolder();
                 if (!folder.equals(previousFolder)) {
-                    mImapService.select(folder);
+                    imapService.select(folder);
                     previousFolder = folder;
                 }
                 switch (flagChange.getOperation()) {
                     case ADD_FLAG:
-                        mImapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
+                        imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                         break;
                     case REMOVE_FLAG:
-                        mImapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlags());
+                        imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlags());
                         break;
                 }
                 mSuccessFullFlagChanges.add(flagChange);
             }
-        } catch (IOException | ImapException e) {
-            e.printStackTrace();
+        } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
+            if(sLogger.isActivated()){
+                sLogger.debug(e.getMessage());
+                e.printStackTrace(); // FIX ME :  debug purpose
+            }
         }
     }
 
     /**
-    *
+    * Interface used to notify listener when flags have been updated on the CMS server
     */
     public interface UpdateFlagTaskListener {
-
         /**
+         * Callback method
          * @param successFullFlagChanges
          */
         void onUpdateFlagTaskExecuted(List<FlagChange> successFullFlagChanges);

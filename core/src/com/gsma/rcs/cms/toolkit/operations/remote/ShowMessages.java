@@ -17,7 +17,7 @@ import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.ShowMessagesTask;
 import com.gsma.rcs.cms.imap.task.ShowMessagesTask.ShowMessagesTaskListener;
@@ -26,6 +26,8 @@ import com.gsma.rcs.cms.imap.task.UpdateFlagTask.UpdateFlagTaskListener;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.cms.sync.strategy.FlagChange.Operation;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.Base64;
@@ -48,10 +50,15 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     private ArrayAdapter<Message> mArrayAdapter;
     private RcsSettings mSettings;
     private AlertDialog mInProgressDialog;
+    private ImapServiceController mImapServiceController;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(Toolkit.checkCore(this) == null){
+            return;
+        }
+        mImapServiceController = Core.getInstance().getCmsService().getCmsManager().getImapServiceController();;
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.rcs_cms_toolkit_messages_list);
@@ -63,7 +70,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
         try {
-            new ShowMessagesTask(ImapServiceManager.getService(mSettings),this).execute(new String[]{});
+            new Thread(new ShowMessagesTask(mImapServiceController, this)).start();
             mInProgressDialog = AlertDialogUtils.displayInfo(ShowMessages.this,
                     getString(R.string.cms_toolkit_in_progress));
         } catch (ImapServiceNotAvailableException e) {
@@ -127,19 +134,13 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
                  break;
              }
          FlagChange flagChange =  new FlagChange(message.getImapMessage().getFolderPath(), message.getImapMessage().getUid(), flag,  operation);
-         try {
-             new Thread(new UpdateFlagTask(
-                     ImapServiceManager.getService(mSettings),
-                     Arrays.asList(flagChange),
-                     this
-             )).start();
-            mInProgressDialog.show();
-        } catch (ImapServiceNotAvailableException e) {
-            Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
-            e.printStackTrace();
-        }
-         
-         return true;
+         new Thread(new UpdateFlagTask(
+                 mImapServiceController,
+                 Arrays.asList(flagChange),
+                 this
+         )).start();
+        mInProgressDialog.show();
+        return true;
     }
 
     @Override
@@ -200,7 +201,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     @Override
     public void onUpdateFlagTaskExecuted(List<FlagChange> changes) {
         try {
-            new ShowMessagesTask(ImapServiceManager.getService(mSettings),this).execute(new String[]{});
+            new Thread(new ShowMessagesTask(mImapServiceController,this)).start();
         } catch (ImapServiceNotAvailableException e) {
             mInProgressDialog.dismiss();
             Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
@@ -209,7 +210,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     }
 
     @Override
-    public void onShowMessagesTaskExecuted(String[] params, List<ImapMessage> result) {
+    public void onShowMessagesTaskExecuted(List<ImapMessage> result) {
         mInProgressDialog.dismiss();
         if(result == null){
             return;

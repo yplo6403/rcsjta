@@ -6,7 +6,7 @@ import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -21,12 +21,13 @@ import java.util.List;
 
 public class PushMessageTask extends AsyncTask<String, String, List<String>> {
 
-    private RcsSettings mRcsSettings;
-    private PushMessageTaskCallback mCallback;
+    private final ImapServiceController mImapServiceController;
+    private final RcsSettings mRcsSettings;
+    private final PushMessageTaskCallback mCallback;
+    private final ContactId mMyNumber;
+    private final SmsDataObject[] mMessages;
+    private final List<Flag> mFlags;
     private BasicImapService mImapService;
-    private ContactId mMyNumber;
-    private SmsDataObject[] mMessages;
-    private List<Flag> mFlags;
     
     /**
      * @param rcsSettings
@@ -35,7 +36,8 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
      * @param flags 
      * @param callback
      */
-    public PushMessageTask(RcsSettings rcsSettings, SmsDataObject[] messages, ContactId myNumber,List<Flag> flags, PushMessageTaskCallback callback) {
+    public PushMessageTask(ImapServiceController imapServiceController, RcsSettings rcsSettings, SmsDataObject[] messages, ContactId myNumber,List<Flag> flags, PushMessageTaskCallback callback) {
+        mImapServiceController = imapServiceController;
         mRcsSettings = rcsSettings;
         mMyNumber = myNumber;
         mCallback = callback;
@@ -51,14 +53,14 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
         currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
 
         try {
-            mImapService = ImapServiceManager.getService(mRcsSettings);
+            mImapService = mImapServiceController.createService();
             mImapService.init();
             return pushMessages(mMessages);
         } catch (Exception e) {
             e.printStackTrace();
         } 
         finally {
-            ImapServiceManager.releaseService(mImapService);
+            mImapServiceController.closeService();
             Thread.currentThread().setName(currentName);
         }            
         return null;

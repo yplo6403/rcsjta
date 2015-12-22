@@ -1,9 +1,28 @@
-// FG add copyrights + javadoc
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.sync.strategy;
 
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.provider.imap.DataUtils;
 import com.gsma.rcs.cms.provider.imap.FolderData;
@@ -33,6 +52,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+/**
+ * In charge of executing an IMAP sync with the CMS server
+ */
 public class BasicSyncStrategy extends AbstractSyncStrategy {
 
     private static final long serialVersionUID = 1L;
@@ -41,21 +63,21 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
     private boolean mExecutionResult;
 
-    private final BasicImapService mImapService;
+    private final ImapServiceController mImapServiceController;
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final LocalStorage mLocalStorageHandler;
     private ISyncProcessor mSynchronizer;
 
     /**
-     * @param imapService
+     * @param imapServiceController
      * @param localStorageHandler
      */
     public BasicSyncStrategy(Context context, RcsSettings rcsSettings,
-            BasicImapService imapService, LocalStorage localStorageHandler) {
+                             ImapServiceController imapServiceController, LocalStorage localStorageHandler) {
         mContext = context;
         mRcsSettings = rcsSettings;
-        mImapService = imapService;
+        mImapServiceController = imapServiceController;
         mLocalStorageHandler = localStorageHandler;
     }
 
@@ -81,9 +103,10 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
         try {
             Map<String, FolderData> localFolders = mLocalStorageHandler.getLocalFolders();
-            mSynchronizer = new SyncProcessorImpl(mImapService);
+            BasicImapService imapService = mImapServiceController.getService();
+            mSynchronizer = new SyncProcessorImpl(imapService);
 
-            for (ImapFolder remoteFolder : mImapService.listStatus()) {
+            for (ImapFolder remoteFolder : imapService.listStatus()) {
                 String remoteFolderName = remoteFolder.getName();
                 if (folderName != null && !remoteFolderName.equals(folderName)) {
                     continue;
@@ -120,7 +143,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                 }
                 if (!messagesToPush.isEmpty()) {
                     PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
-                            mImapService, xmsLog, imapLog, null);
+                            mImapServiceController, xmsLog, imapLog, null);
                     pushMessageTask.pushMessages(messagesToPush);
                     for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
                         String baseId = entry.getKey();
@@ -131,22 +154,13 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
 
             mExecutionResult = true;
-        } catch (IOException | ImapException | FileAccessException e) {
+        } catch (IOException | ImapException | ImapServiceNotAvailableException | FileAccessException e) {
             sLogger.error(e.getMessage(), e);
         }
 
         if (logActivated) {
             sLogger.debug("<<< BasicSyncStrategy.execute ");
         }
-    }
-
-    /**
-     * @param report
-     */
-    public void execute(MutableReport report) {
-        report.setProgress(15);
-        execute();
-        report.setProgress(100);
     }
 
     private void startRemoteSynchro(FolderData localFolder, ImapFolder remoteFolder)

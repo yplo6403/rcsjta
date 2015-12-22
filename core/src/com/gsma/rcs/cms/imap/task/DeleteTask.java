@@ -1,21 +1,37 @@
-// TODO FG add copyrights + javadoc
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.imap.ImapFolder;
-import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 
 import com.sonymobile.rcs.imap.ImapException;
 
-import android.os.AsyncTask;
-
 import java.io.IOException;
 
 /**
- *
+ * Task used to delete mailboxes or messages on the CMS server.
+ * Used by the 'CMS Toolkit' or integration test
  */
-public class DeleteTask extends AsyncTask<String, String, Boolean> {
+public class DeleteTask implements Runnable {
 
     public enum Operation {
         DELETE_ALL, // delete all content for a user
@@ -23,47 +39,48 @@ public class DeleteTask extends AsyncTask<String, String, Boolean> {
         DELETE_MESSAGES // delete messages of a mailbox
     }
 
-    private final BasicImapService mImapService;
+    private final ImapServiceController mImapServiceController;
     private final Operation mOperation;
     private final DeleteTaskListener mListener;
-    private String[] mParams;
+    private final String mMailbox;
 
     /**
-     * @param imapService
+     * Constructor
+     * @param imapServiceController
      * @param operation
+     * @param mailbox
      * @param listener
      * @throws ImapServiceNotAvailableException
      */
-    public DeleteTask(BasicImapService imapService, Operation operation, DeleteTaskListener listener)
+    public DeleteTask(ImapServiceController imapServiceController, Operation operation, String mailbox, DeleteTaskListener listener)
             throws ImapServiceNotAvailableException {
-        mImapService = imapService;
+        mImapServiceController = imapServiceController;
         mOperation = operation;
+        mMailbox = mailbox;
         mListener = listener;
     }
 
     @Override
-    protected Boolean doInBackground(String... params) {
-        mParams = params;
-        Thread currentThread = Thread.currentThread();
-        String currentName = currentThread.getName();
-        currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
+    public void run() {
+        boolean result = false;
         try {
-            mImapService.init();
-            return delete(mParams);
+            mImapServiceController.getService().init();
+            result = delete(mMailbox);
         } catch (Exception e) {
-            return false;
         } finally {
-            Thread.currentThread().setName(currentName);
-            ImapServiceManager.releaseService(mImapService);
+            mImapServiceController.closeService();
+            if (mListener != null) {
+                mListener.onDeleteTaskExecuted(result);
+            }
         }
-
     }
 
     /**
-     * @param params
-     * @return boolean
+     *
+     * @param mailbox
+     * @return
      */
-    public boolean delete(String... params) {
+    public boolean delete(String mailbox) {
 
         try {
             switch (mOperation) {
@@ -71,53 +88,43 @@ public class DeleteTask extends AsyncTask<String, String, Boolean> {
                     deleteAll();
                     break;
                 case DELETE_MAILBOX:
-                    deleteMailbox(params[0]);
+                    deleteMailbox(mailbox);
                     break;
                 case DELETE_MESSAGES:
-                    deleteMessages(params[0]);
+                    deleteMessages(mailbox);
                     break;
             }
             return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ImapException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    private void deleteAll() throws IOException, ImapException {
-        for (ImapFolder imapFolder : mImapService.listStatus()) {
-            mImapService.delete(imapFolder.getName());
+    private void deleteAll() throws IOException, ImapException, ImapServiceNotAvailableException {
+        for (ImapFolder imapFolder : mImapServiceController.getService().listStatus()) {
+            mImapServiceController.getService().delete(imapFolder.getName());
         }
     }
 
-    private void deleteMailbox(String mailbox) throws IOException, ImapException {
-        mImapService.delete(mailbox);
+    private void deleteMailbox(String mailbox) throws IOException, ImapException, ImapServiceNotAvailableException {
+        mImapServiceController.getService().delete(mailbox);
     }
 
-    private void deleteMessages(String mailbox) throws IOException, ImapException {
-        mImapService.select(mailbox);
-        mImapService.expunge();
-    }
-
-    @Override
-    protected void onPostExecute(Boolean result) {
-        if (mListener != null) {
-            mListener.onDeleteTaskExecuted(mParams, result);
-        }
+    private void deleteMessages(String mailbox) throws IOException, ImapException, ImapServiceNotAvailableException {
+        mImapServiceController.getService().select(mailbox);
+        mImapServiceController.getService().expunge();
     }
 
     /**
-     *
+     * Interface used to notify listeners of deletion when call in an asynchronous way
      */
     public interface DeleteTaskListener {
-
         /**
-         * @param params
+         * Callback method
          * @param result
          */
-        public void onDeleteTaskExecuted(String[] params, Boolean result);
+        void onDeleteTaskExecuted(Boolean result);
     }
 
 }

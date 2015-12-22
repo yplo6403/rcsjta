@@ -1,4 +1,21 @@
-// TODO  FG add copyrights
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.observer;
 
@@ -47,6 +64,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+/**
+ * Class in charge of detecting changes on XMS messages in the native content provider
+ * The followings events are detected by this observer:
+ * - incoming & outgoing SMS
+ * - read of a SMS
+ * - deletion of a SMS
+ * - incoming & outgoing MMS
+ * - read of a MMS
+ * - read of a conversation
+ * - deletion of a conversation
+ */
 public class XmsObserver implements INativeXmsEventListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
@@ -59,6 +87,10 @@ public class XmsObserver implements INativeXmsEventListener {
     private XmsContentObserver mXmsContentObserver;
     private Handler mXmsObserverHandler;
 
+    /**
+     * Content observer.
+     * In charge of generating events from changes in native XMS content provider
+     */
     private class XmsContentObserver extends ContentObserver {
 
         private Set<String> mMmsIds;
@@ -66,6 +98,10 @@ public class XmsObserver implements INativeXmsEventListener {
         // / key : threadId, value:read
         private Map<Long, Boolean> mConversations;
 
+        /**
+         * Constructor
+         * @param handler
+         */
         public XmsContentObserver(Handler handler) {
             super(handler);
             mConversations = getConversations();
@@ -119,7 +155,8 @@ public class XmsObserver implements INativeXmsEventListener {
         }
 
         /**
-         * This method checks SMS events : - incoming SMS - outgoing SMS - delete SMS
+         * Check SMS events from content provider
+         * @param uri
          */
         private void checkSmsEvents(Uri uri) {
             Set<Long> currentSmsIds = getSmsIds();
@@ -134,6 +171,10 @@ public class XmsObserver implements INativeXmsEventListener {
             }
         }
 
+        /**
+         * Notify listeners of a new SMS in the native content provider
+         * @param uri
+         */
         private void handleNewSms(Uri uri) {
             Cursor cursor = null;
             try {
@@ -175,6 +216,10 @@ public class XmsObserver implements INativeXmsEventListener {
             }
         }
 
+        /**
+         * Notify listeners that the SMS status has changed
+         * @param uri
+         */
         private void handleSmsUpdateStatus(Uri uri) {
             Cursor cursor = null;
             try {
@@ -195,7 +240,7 @@ public class XmsObserver implements INativeXmsEventListener {
         }
 
         /**
-         * This method checks MMS events: - incoming MMS - outgoing MMS - delete MMS
+         * Check MMS events from content provider
          */
         private boolean checkMmsEvents() {
             Set<String> mmsIds = getMmsIds();
@@ -353,6 +398,11 @@ public class XmsObserver implements INativeXmsEventListener {
             return true;
         }
 
+        /**
+         * Check if a conversation has been read
+         * @param currentConversations
+         * @return
+         */
         private boolean checkReadConversationEvent(Map<Long, Boolean> currentConversations) {
 
             boolean eventChecked = false;
@@ -383,6 +433,11 @@ public class XmsObserver implements INativeXmsEventListener {
             return eventChecked;
         }
 
+        /**
+         * Check if a conversation has been deleted
+         * @param currentConversations
+         * @return
+         */
         private boolean checkDeleteConversationEvent(Map<Long, Boolean> currentConversations) {
 
             boolean eventChecked = false;
@@ -453,6 +508,10 @@ public class XmsObserver implements INativeXmsEventListener {
         }
     }
 
+    /**
+     * Constructor
+     * @param context
+     */
     public XmsObserver(Context context) {
         mContentResolver = context.getContentResolver();
         mXmsObserverHandler = allocateBgHandler(sThreadName);
@@ -465,7 +524,7 @@ public class XmsObserver implements INativeXmsEventListener {
     }
 
     /**
-     *
+     * Start the content observer
      */
     public void start() {
         // register content observer
@@ -476,7 +535,7 @@ public class XmsObserver implements INativeXmsEventListener {
     }
 
     /**
-     *
+     * Stop the content observer
      */
     public void stop() {
         // unregister content observer
@@ -487,11 +546,20 @@ public class XmsObserver implements INativeXmsEventListener {
         mXmsEventListeners.clear();
     }
 
+    /**
+     * Register a listener which want to be notified of XMS events
+     * @param listener
+     */
     public void registerListener(INativeXmsEventListener listener) {
         synchronized (mXmsEventListeners) {
             mXmsEventListeners.add(listener);
         }
     }
+
+    /**
+     * Unregister listener
+     * @param listener
+     */
 
     public void unregisterListener(INativeXmsEventListener listener) {
         synchronized (mXmsEventListeners) {

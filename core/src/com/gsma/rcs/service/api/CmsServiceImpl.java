@@ -174,6 +174,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
+        if(!mCmsService.isAllowedToSync()){
+            if (sLogger.isActivated()) {
+                sLogger.debug("A previous sync is already in progress");
+            }
+            return;
+        }
         mCmsService.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
@@ -207,6 +213,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
+        if(!mCmsService.isAllowedToSync()){
+            if (sLogger.isActivated()) {
+                sLogger.debug("A previous sync is already in progress");
+            }
+            return;
+        }
         mCmsService.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
@@ -235,6 +247,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void syncAll() throws RemoteException {
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
+        }
+        if(!mCmsService.isAllowedToSync()){
+            if (sLogger.isActivated()) {
+                sLogger.debug("A previous sync is already in progress");
+            }
+            return;
         }
         mCmsService.scheduleImOperation(new Runnable() {
             @Override

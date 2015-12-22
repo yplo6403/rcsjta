@@ -6,7 +6,7 @@ import android.os.Handler;
 
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.event.IRcsXmsEventListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.imap.task.PushMessageTask.PushMessageTaskListener;
@@ -22,7 +22,6 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
@@ -48,14 +47,16 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     private final XmsLog mXmsLog;
     private final ImapLog mImapLog;
     private final Handler mHandler;
+    private final ImapServiceController mImapServiceController;
 
-    public ImapCommandController(Handler handler, Context context, RcsSettings settings,LocalStorage localStorage, ImapLog imapLog, XmsLog xmsLog){
+    public ImapCommandController(Handler handler, Context context, RcsSettings settings,LocalStorage localStorage, ImapLog imapLog, XmsLog xmsLog, ImapServiceController imapServiceController){
         mHandler = handler;
         mContext = context;
         mSettings = settings;
         mLocalStorage = localStorage;
         mImapLog = imapLog;
         mXmsLog = xmsLog;
+        mImapServiceController = imapServiceController;
     }
 
     @SuppressWarnings("unchecked")
@@ -64,11 +65,14 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
         if(sLogger.isActivated()){
             sLogger.info("onIncomingSms");
         }
-        try {
-            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
+        if(!mImapServiceController.isSyncAvailable()){
+            if(sLogger.isActivated()){
+                sLogger.debug("Imap sync not available");
+                sLogger.debug(" --> PushMessageTask will not be started now");
+            }
+            return;
         }
+        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog, mImapLog, this));
     }
 
     @SuppressWarnings("unchecked")
@@ -77,11 +81,14 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
         if(sLogger.isActivated()){
             sLogger.info("onOutgoingSms");
         }
-        try {
-            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
+        if(!mImapServiceController.isSyncAvailable()){
+            if(sLogger.isActivated()){
+                sLogger.debug("Imap sync not available");
+                sLogger.debug(" --> PushMessageTask will not be started now");
+            }
+            return;
         }
+        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog, mImapLog, this));
     }
 
     @Override
@@ -105,11 +112,14 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
         if(sLogger.isActivated()){
             sLogger.info("onIncomingMms");
         }
-        try {
-            mHandler.post(new PushMessageTask(mContext, mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog, this));
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
+        if(!mImapServiceController.isSyncAvailable()){
+            if(sLogger.isActivated()){
+                sLogger.debug("Imap sync not available");
+                sLogger.debug(" --> PushMessageTask will not be started now");
+            }
+            return;
         }
+        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog, mImapLog, this));
     }
 
     @Override
@@ -117,11 +127,14 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
         if(sLogger.isActivated()){
             sLogger.info("onOutgoingMms");
         }
-        try {
-            mHandler.post(new PushMessageTask(mContext ,mSettings, ImapServiceManager.getService(mSettings), mXmsLog, mImapLog,this));
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
+        if(!mImapServiceController.isSyncAvailable()){
+            if(sLogger.isActivated()){
+                sLogger.debug("Imap sync not available");
+                sLogger.debug(" --> PushMessageTask will not be started now");
+            }
+            return;
         }
+        mHandler.post(new PushMessageTask(mContext ,mSettings, mImapServiceController, mXmsLog, mImapLog,this));
     }
 
     @Override
@@ -179,11 +192,14 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
 
     @SuppressWarnings("unchecked")
     private void updateFlags(){
-        try {
-            mHandler.post(new UpdateFlagTask(ImapServiceManager.getService(mSettings), mSettings, mXmsLog, mImapLog, this));
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn(e.getMessage());
+        if(!mImapServiceController.isSyncAvailable()){
+            if(sLogger.isActivated()){
+                sLogger.debug("Imap sync not available");
+                sLogger.debug(" --> UpdateFlagTask will not be started now");
+            }
+            return;
         }
+        mHandler.post(new UpdateFlagTask(mImapServiceController, mSettings, mXmsLog, mImapLog, this));
     }
 
     @Override

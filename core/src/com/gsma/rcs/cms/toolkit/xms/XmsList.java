@@ -32,8 +32,8 @@ import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager.ImapServiceListener;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceController.ImapServiceListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
@@ -83,8 +83,8 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     private SmsLogAdapter mAdapter;
     private Core mCore;
     private RcsSettings mRcsSettings;
-
     private TextView mSyncButton;
+    private ImapServiceController mImapServiceController;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,7 +95,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
         if(mCore == null){
             return;
         }
-
+        mImapServiceController = mCore.getCmsService().getCmsManager().getImapServiceController();
         mRcsSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
         mAdapter = new SmsLogAdapter(this);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
@@ -118,17 +118,13 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                try {
-                    new Thread(new BasicSynchronizationTask(
-                            getApplicationContext(),
-                            mRcsSettings,
-                            ImapServiceManager.getService(mRcsSettings),
-                            mCore.getCmsService().getCmsManager().getLocalStorage(),
-                            XmsList.this
-                    )).start();
-                } catch (ImapServiceNotAvailableException e) {
-                    Toast.makeText(XmsList.this, getString(R.string.label_cms_toolkit_xms_sync_already_in_progress), Toast.LENGTH_LONG).show();
-                }
+                new Thread(new BasicSynchronizationTask(
+                        getApplicationContext(),
+                        mRcsSettings,
+                        mImapServiceController,
+                        mCore.getCmsService().getCmsManager().getLocalStorage(),
+                        XmsList.this
+                )).start();
             }
 
         });
@@ -155,7 +151,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
         }
         super.onPause();
         mCore.getCmsService().getCmsManager().unregisterSmsObserverListener(this);
-        ImapServiceManager.unregisterListener(this);
+        mImapServiceController.unregisterListener(this);
     }
 
 
@@ -163,7 +159,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     protected void onDestroy() {
         super.onDestroy();
         mCore.getCmsService().getCmsManager().unregisterSmsObserverListener(this);
-        ImapServiceManager.unregisterListener(this);
+        mImapServiceController.unregisterListener(this);
     }
 
     private OnItemClickListener getOnItemClickListener() {
@@ -287,8 +283,8 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     private void checkImapServiceStatus() {
-        if (!ImapServiceManager.isAvailable()) {
-            ImapServiceManager.registerListener(this);
+        if (!mImapServiceController.isSyncAvailable()) {
+            mImapServiceController.registerListener(this);
             displaySyncButton(false);
         } else {
             displaySyncButton(true);

@@ -30,70 +30,81 @@ public class MmsObserverTest extends AndroidTestCase {
     private MmsDataObject incomingMms3;
     private MmsDataObject outgoingMms4;
 
+    private XmsObserver mXmsObserver;
+    private NativeMmsListenerMock mNativeMmsListenerMock;
+
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getContext();
         contact1 = ContactUtil.getInstance(mContext).formatContact("+33600000001");
 
         incomingMms1 = new MmsDataObject("mmsId1", "messageId1", contact1, "subject",
-                Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                Direction.INCOMING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         outgoingMms2 = new MmsDataObject("mmsId2", "messageId2", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                Direction.OUTGOING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         incomingMms3 = new MmsDataObject("mmsId3", "messageId3", contact1, "subject",
-                Direction.INCOMING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                Direction.INCOMING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         outgoingMms4 = new MmsDataObject("mmsId4", "messageId4", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.READ, System.currentTimeMillis(), null, 1l,
+                Direction.OUTGOING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
 
+        mXmsObserver = new XmsObserver(mContext);
+        mNativeMmsListenerMock = new NativeMmsListenerMock();
+        mXmsObserver.registerListener(mNativeMmsListenerMock);
     }
 
-    // TODO FG give a comprehensible name to test
-    public void test1() {
-        XmsObserver xmsObserver = new XmsObserver(mContext);
-        NativeMmsListenerMock nativeSmsListenerMock = new NativeMmsListenerMock();
-        xmsObserver.registerListener(nativeSmsListenerMock);
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        mXmsObserver.unregisterListener(mNativeMmsListenerMock);
+    }
 
-        xmsObserver.onIncomingMms(incomingMms1);
-        xmsObserver.onOutgoingMms(outgoingMms2);
+    public void testIncoming() {
+        mXmsObserver.onIncomingMms(incomingMms1);
+        Assert.assertEquals(1, mNativeMmsListenerMock.getMessage().size());
+        Assert.assertEquals(incomingMms1, mNativeMmsListenerMock.getMessage().get("mmsId1"));
+    }
 
-        Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());
-        Assert.assertEquals(incomingMms1, nativeSmsListenerMock.getMessage().get("mmsId1"));
-        Assert.assertEquals(outgoingMms2, nativeSmsListenerMock.getMessage().get("mmsId2"));
+    public void testOutgoing() {
+        mXmsObserver.onOutgoingMms(outgoingMms2);
+        Assert.assertEquals(1, mNativeMmsListenerMock.getMessage().size());
+        Assert.assertEquals(outgoingMms2, mNativeMmsListenerMock.getMessage().get("mmsId2"));
+    }
 
-        xmsObserver.onReadNativeConversation(1l);
-        Assert.assertEquals(ReadStatus.READ, nativeSmsListenerMock.getMessage().get("mmsId1")
+    public void testReadNativeConversation() {
+        mXmsObserver.onIncomingMms(incomingMms1);
+        mXmsObserver.onReadNativeConversation(1l);
+        Assert.assertEquals(ReadStatus.READ, mNativeMmsListenerMock.getMessage().get("mmsId1")
                 .getReadStatus());
-
-        xmsObserver.onDeleteNativeMms("mmsId1");
-        Assert.assertNull(nativeSmsListenerMock.getMessage().get("mmsId1"));
-
-        xmsObserver.unregisterListener(nativeSmsListenerMock);
-
-        xmsObserver.onIncomingMms(incomingMms3);
-        Assert.assertEquals(1, nativeSmsListenerMock.getMessage().size());
-        Assert.assertNull(nativeSmsListenerMock.getMessage().get(incomingMms3.getMmsId()));
     }
 
-    public void test2() {
+    public void testDeleteMms() {
+        mXmsObserver.onIncomingMms(incomingMms1);
+        mXmsObserver.onDeleteNativeMms("mmsId1");
+        Assert.assertNull(mNativeMmsListenerMock.getMessage().get("mmsId1"));
+    }
 
-        XmsObserver xmsObserver = new XmsObserver(mContext);
-        NativeMmsListenerMock nativeMmsListenerMock = new NativeMmsListenerMock();
-        xmsObserver.registerListener(nativeMmsListenerMock);
+    public void testDeleteConversation() {
+        mXmsObserver.onIncomingMms(incomingMms3);
+        mXmsObserver.onOutgoingMms(outgoingMms4);
+        mXmsObserver.onDeleteNativeConversation(1l);
+        Assert.assertNull(mNativeMmsListenerMock.getMessages(1l));
+        mXmsObserver.unregisterListener(mNativeMmsListenerMock);
+    }
 
-        xmsObserver.onIncomingMms(incomingMms3);
-        xmsObserver.onOutgoingMms(outgoingMms4);
+    public void testUnregister() {
+        mXmsObserver.unregisterListener(mNativeMmsListenerMock);
+        mXmsObserver.onIncomingMms(incomingMms1);
+        mXmsObserver.onOutgoingMms(outgoingMms2);
+        Assert.assertEquals(0, mNativeMmsListenerMock.getMessage().size());
 
-        Assert.assertEquals(2, nativeMmsListenerMock.getMessages(1l).size());
-
-        xmsObserver.onDeleteNativeConversation(1l);
-        Assert.assertNull(nativeMmsListenerMock.getMessages(1l));
-        xmsObserver.unregisterListener(nativeMmsListenerMock);
-
-        xmsObserver.onIncomingMms(incomingMms3);
-        Assert.assertEquals(2, nativeMmsListenerMock.getMessage().size());
+        mXmsObserver.registerListener(mNativeMmsListenerMock);
+        mXmsObserver.onIncomingMms(incomingMms1);
+        mXmsObserver.onOutgoingMms(outgoingMms2);
+        Assert.assertEquals(2, mNativeMmsListenerMock.getMessage().size());
     }
 
     private class NativeMmsListenerMock implements INativeXmsEventListener {

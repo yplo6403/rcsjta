@@ -1,4 +1,21 @@
-// TODO add copyrights + javadoc
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.imap.task;
 
@@ -8,7 +25,8 @@ import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
@@ -25,7 +43,6 @@ import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
 import android.content.Context;
-import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,14 +52,14 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- *
+ * Task executed to push messages on the CMS server
  */
 public class PushMessageTask implements Runnable {
 
     private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
 
     /* package private */final PushMessageTaskListener mListener;
-    /* package private */final BasicImapService mImapService;
+    /* package private */final ImapServiceController mImapServiceController;
     /* package private */final RcsSettings mRcsSettings;
     /* package private */final Context mContext;
     /* package private */final XmsLog mXmsLog;
@@ -51,15 +68,15 @@ public class PushMessageTask implements Runnable {
     /* package private */final Map<String, Integer> mCreatedUidsMap = new HashMap<>();
 
     /**
-     * @param imapService
+     * @param imapServiceController
      * @param xmsLog
      * @param listener
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings, BasicImapService imapService,
+    public PushMessageTask(Context context, RcsSettings rcsSettings, ImapServiceController imapServiceController,
             XmsLog xmsLog, ImapLog imapLog, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
-        mImapService = imapService;
+        mImapServiceController = imapServiceController;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mListener = listener;
@@ -80,12 +97,12 @@ public class PushMessageTask implements Runnable {
                     sLogger.debug("no message to push");
                 }
             }
-            mImapService.init();
+            mImapServiceController.createService();
             pushMessages(messagesToPush);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            ImapServiceManager.releaseService(mImapService);
+            mImapServiceController.closeService();
             if (mListener != null) {
                 mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
             }
@@ -93,17 +110,18 @@ public class PushMessageTask implements Runnable {
     }
 
     /**
+     * Push messages
      * @param messages
-     * @throws ImapException
-     * @throws IOException
+     * @return
      */
     public Boolean pushMessages(List<XmsDataObject> messages) {
         String from, to, direction;
         from = to = direction = null;
 
         try {
+            BasicImapService imapService = mImapServiceController.getService();
             List<String> existingFolders = new ArrayList<String>();
-            for (ImapFolder imapFolder : mImapService.listStatus()) {
+            for (ImapFolder imapFolder : imapService.listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
             for (XmsDataObject message : messages) {
@@ -143,15 +161,18 @@ public class PushMessageTask implements Runnable {
                 String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings,
                         message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
-                    mImapService.create(remoteFolder);
+                    imapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
                 }
-                mImapService.selectCondstore(remoteFolder);
-                int uid = mImapService.append(remoteFolder, flags, imapMessage.getPart());
+                imapService.selectCondstore(remoteFolder);
+                int uid = imapService.append(remoteFolder, flags, imapMessage.getPart());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
-        } catch (IOException | ImapException e) {
-            e.printStackTrace();
+        } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
+            if(sLogger.isActivated()){
+                sLogger.debug(e.getMessage());
+                e.printStackTrace(); // FIX ME :  debug purpose
+            }
         }
         return true;
     }
@@ -161,13 +182,13 @@ public class PushMessageTask implements Runnable {
     }
 
     /**
-    *
-    */
+     * Interface used to notify listeners when messages have been pushed on the CMS server (when call in an asynchronous way)
+     */
     public interface PushMessageTaskListener {
-
         /**
-         * @param uidsMap
+         * Callback method
+         * @param uids created for the pushed messages
          */
-        void onPushMessageTaskCallbackExecuted(Map<String, Integer> uidsMap);
+        void onPushMessageTaskCallbackExecuted(Map<String, Integer> uids);
     }
 }

@@ -7,7 +7,6 @@ import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
-import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
@@ -32,6 +31,9 @@ public class SmsObserverTest extends AndroidTestCase {
     private SmsDataObject sms;
     private SmsDataObject sms2;
 
+    private XmsObserver mXmsObserver;
+    private NativeSmsListenerMock mNativeSmsListenerMock;
+
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getContext();
@@ -43,60 +45,65 @@ public class SmsObserverTest extends AndroidTestCase {
         incomingSms = new SmsDataObject("messageId1", contact1, "myContent1", Direction.INCOMING,
                 ReadStatus.UNREAD, System.currentTimeMillis(), 1l, 1l);
         outgoingSms = new SmsDataObject("messageId2", contact2, "myContent2", Direction.OUTGOING,
-                ReadStatus.READ, System.currentTimeMillis(), 2l, 1l);
+                ReadStatus.UNREAD, System.currentTimeMillis(), 2l, 1l);
         sms = new SmsDataObject("messageId3", contact3, "myContent3", Direction.INCOMING,
-                ReadStatus.READ, System.currentTimeMillis(), 3l, 1l);
+                ReadStatus.UNREAD, System.currentTimeMillis(), 3l, 1l);
         sms2 = new SmsDataObject("messageId4", contact3, "myContent3", Direction.OUTGOING,
-                ReadStatus.READ, System.currentTimeMillis(), 4l, 1l);
+                ReadStatus.UNREAD, System.currentTimeMillis(), 4l, 1l);
+
+        mXmsObserver = new XmsObserver(mContext);
+        mNativeSmsListenerMock = new NativeSmsListenerMock();
+        mXmsObserver.registerListener(mNativeSmsListenerMock);
     }
 
-    // TODO FG give comprehensible test name
-    public void test1() {
-        XmsObserver xmsObserver = new XmsObserver(mContext);
-        NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
-        xmsObserver.registerListener(nativeSmsListenerMock);
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        mXmsObserver.unregisterListener(mNativeSmsListenerMock);
+    }
 
-        xmsObserver.onIncomingSms(incomingSms);
-        xmsObserver.onOutgoingSms(outgoingSms);
+    public void testIncoming() {
+        mXmsObserver.onIncomingSms(incomingSms);
+        Assert.assertEquals(1, mNativeSmsListenerMock.getMessage().size());
+        Assert.assertEquals(incomingSms, mNativeSmsListenerMock.getMessage().get(1l));
+    }
 
-        Assert.assertEquals(2, nativeSmsListenerMock.getMessage().size());
-        Assert.assertEquals(incomingSms, nativeSmsListenerMock.getMessage().get(1l));
-        Assert.assertEquals(outgoingSms, nativeSmsListenerMock.getMessage().get(2l));
+    public void testOutgoing() {
+        mXmsObserver.onOutgoingSms(outgoingSms);
+        Assert.assertEquals(1, mNativeSmsListenerMock.getMessage().size());
+        Assert.assertEquals(outgoingSms, mNativeSmsListenerMock.getMessage().get(2l));
+    }
 
-        xmsObserver.onMessageStateChanged(1l, MimeType.TEXT_MESSAGE, State.DELIVERED);
-        Assert.assertTrue(State.DELIVERED == nativeSmsListenerMock.getMessage().get(1l).getState());
-
-        xmsObserver.onReadNativeConversation(1l);
-        Assert.assertEquals(ReadStatus.READ, nativeSmsListenerMock.getMessage().get(1l)
+    public void testReadNativeConversation() {
+        mXmsObserver.onIncomingSms(incomingSms);
+        mXmsObserver.onReadNativeConversation(1l);
+        Assert.assertEquals(ReadStatus.READ, mNativeSmsListenerMock.getMessage().get(1l)
                 .getReadStatus());
-
-        xmsObserver.onDeleteNativeSms(2l);
-        Assert.assertNull(nativeSmsListenerMock.getMessage().get(2l));
-
-        xmsObserver.unregisterListener(nativeSmsListenerMock);
-
-        xmsObserver.onIncomingSms(sms);
-        Assert.assertEquals(1, nativeSmsListenerMock.getMessage().size());
-        Assert.assertNull(nativeSmsListenerMock.getMessage().get(sms.getNativeProviderId()));
     }
 
-    public void test2() {
-        XmsObserver xmsObserver = new XmsObserver(mContext);
-        NativeSmsListenerMock nativeSmsListenerMock = new NativeSmsListenerMock();
-        xmsObserver.registerListener(nativeSmsListenerMock);
+    public void testDeleteMms() {
+        mXmsObserver.onIncomingSms(outgoingSms);
+        mXmsObserver.onDeleteNativeSms(2l);
+        Assert.assertNull(mNativeSmsListenerMock.getMessage().get(2l));
+    }
 
-        xmsObserver.onIncomingSms(sms);
-        xmsObserver.onOutgoingSms(sms2);
+    public void testDeleteConversation() {
+        mXmsObserver.onIncomingSms(incomingSms);
+        mXmsObserver.onOutgoingSms(outgoingSms);
+        mXmsObserver.onDeleteNativeConversation(1l);
+        Assert.assertNull(mNativeSmsListenerMock.getMessages(1l));
+    }
 
-        Assert.assertEquals(2, nativeSmsListenerMock.getMessages(1l).size());
+    public void testUnregister() {
+        mXmsObserver.unregisterListener(mNativeSmsListenerMock);
+        mXmsObserver.onIncomingSms(incomingSms);
+        mXmsObserver.onOutgoingSms(outgoingSms);
+        Assert.assertEquals(0, mNativeSmsListenerMock.getMessage().size());
 
-        xmsObserver.onDeleteNativeConversation(1l);
-        Assert.assertNull(nativeSmsListenerMock.getMessages(1l));
-
-        xmsObserver.unregisterListener(nativeSmsListenerMock);
-
-        xmsObserver.onIncomingSms(sms);
-        Assert.assertEquals(0, nativeSmsListenerMock.getMessage().size());
+        mXmsObserver.registerListener(mNativeSmsListenerMock);
+        mXmsObserver.onIncomingSms(incomingSms);
+        mXmsObserver.onOutgoingSms(outgoingSms);
+        Assert.assertEquals(2, mNativeSmsListenerMock.getMessage().size());
     }
 
     private class NativeSmsListenerMock implements INativeXmsEventListener {

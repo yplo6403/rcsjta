@@ -20,6 +20,8 @@
 package com.gsma.rcs.core.ims.service.cms;
 
 import com.gsma.rcs.cms.CmsManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.Synchronizer;
@@ -55,7 +57,7 @@ import java.util.List;
 public class CmsService extends ImsService {
     private static final String CMS_OPERATION_THREAD_NAME = "CmsOperations";
     private final static Logger sLogger = Logger.getLogger(CmsService.class.getSimpleName());
-    private final Handler mOperationHandler;
+    private Handler mOperationHandler;
     private final XmsLog mXmsLog;
     private CmsServiceImpl mCmsServiceImpl;
     private final Core mCore;
@@ -77,7 +79,6 @@ public class CmsService extends ImsService {
             XmsLog xmsLog, ImapLog imapLog) {
         super(parent, true);
         mContext = context;
-        mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mCore = core;
@@ -103,6 +104,8 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
+        //TODO FGI : mOperationHandler is no more a final member, could be null!
+        mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster()); // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
@@ -140,10 +143,9 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS");
                 }
                 try {
-                    LocalStorage localStorage = mCmsManager.getLocalStorage();
-                    new Synchronizer(mContext, mRcsSettings, localStorage).syncAll();
+                    new Synchronizer(mContext, mRcsSettings, mCmsManager).syncAll();
                     mCmsServiceImpl.broadcastAllSynchronized();
-                } catch (IOException | ImapException | RuntimeException e) {
+                } catch (IOException | ImapException | ImapServiceNotAvailableException | RuntimeException e) {
                     sLogger.error("Failed to sync CMS", e);
                 }
             }
@@ -158,12 +160,11 @@ public class CmsService extends ImsService {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
                 try {
-                    LocalStorage localStorage = mCmsManager.getLocalStorage();
-                    new Synchronizer(mContext, mRcsSettings, localStorage).syncFolder(CmsUtils
+                    new Synchronizer(mContext, mRcsSettings, mCmsManager).syncFolder(CmsUtils
                             .contactToCmsFolder(mRcsSettings, contact));
                     mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
 
-                } catch (IOException | ImapException | RuntimeException e) {
+                } catch (IOException | ImapException | ImapServiceNotAvailableException | RuntimeException e) {
                     sLogger.error("Failed to sync conversation for contact " + contact, e);
                 }
             }
@@ -260,5 +261,9 @@ public class CmsService extends ImsService {
 
     public CmsManager getCmsManager(){
         return mCmsManager;
+    }
+
+    public boolean isAllowedToSync(){
+        return  mCmsManager.getImapServiceController().isSyncAvailable();
     }
 }

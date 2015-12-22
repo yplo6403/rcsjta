@@ -1,4 +1,21 @@
-// TODO add copyright
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms;
 
@@ -6,6 +23,7 @@ import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.event.IRcsXmsEventListener;
 import com.gsma.rcs.cms.event.XmsEventListener;
 import com.gsma.rcs.cms.fordemo.ImapCommandController;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.observer.XmsObserver;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
@@ -26,18 +44,18 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 import android.os.Handler;
-import android.os.HandlerThread;
 
 public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
-    private Context mContext;
+    private final Context mContext;
+    private final ImapLog mImapLog;
+    private final XmsLog mXmsLog;
+    private final RcsSettings mRcsSettings;
     private XmsObserver mXmsObserver;
     private XmsEventListener mXmsEventListener;
     private LocalStorage mLocalStorage;
-    private ImapLog mImapLog;
-    private XmsLog mXmsLog;
-    private RcsSettings mRcsSettings;
     private ImapCommandController mImapCommandController;
+    private ImapServiceController mImapServiceController;
 
     /**
      * Constructor of CmsManager
@@ -54,6 +72,11 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         mXmsLog = xmsLog;
     }
 
+    /**
+     * Start the CmsManager
+     * @param operationHandler
+     * @param xmsMessageEventBroadcaster
+     */
     public void start(Handler operationHandler, XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
         // execute sync between providers in handler
         operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog));
@@ -73,30 +96,45 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         // mLocalStorage.registerRemoteEventHandler(MessageType.ONETOONE, tobedefined);
         // mLocalStorage.registerRemoteEventHandler(MessageType.GC, tobedefined);
 
+        // handle imap connection
+        mImapServiceController = new ImapServiceController(mRcsSettings);
+        mImapServiceController.start();
+
         // instantiate ImapCommandController in charge of Pushing messages and updating flags with
         // Imap command
         mImapCommandController = new ImapCommandController(operationHandler, mContext, mRcsSettings, mLocalStorage,
-                mImapLog, mXmsLog);
+                mImapLog, mXmsLog, mImapServiceController);
         mXmsObserver.registerListener(mImapCommandController);
 
         // start content observer on native SMS/MMS content provider
         mXmsObserver.start();
+
     }
 
+    /**
+     * Stop the CmsManager
+     */
     public void stop() {
         if (mXmsObserver != null) {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
-         if(mLocalStorage!=null){
-             mLocalStorage.removeListeners();
-             mLocalStorage = null;
-         }
-         mXmsEventListener = null;
-         mImapCommandController = null;
+        if (mLocalStorage != null) {
+            mLocalStorage.removeListeners();
+            mLocalStorage = null;
+        }
+
+        if (mImapServiceController != null) {
+            mImapServiceController.stop();
+            mImapServiceController = null;
+        }
+
+        mXmsEventListener = null;
+        mImapCommandController = null;
     }
 
     /**
+     * Register a INativeXmsEventListener
      * @param listener The listener
      */
     public void registerSmsObserverListener(INativeXmsEventListener listener) {
@@ -106,6 +144,7 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
     }
 
     /**
+     * Unregister the listener
      * @param listener The listener
      */
     public void unregisterSmsObserverListener(INativeXmsEventListener listener) {
@@ -182,6 +221,10 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
 
     public LocalStorage getLocalStorage() {
         return mLocalStorage;
+    }
+
+    public ImapServiceController getImapServiceController(){
+        return mImapServiceController;
     }
 
     @Override

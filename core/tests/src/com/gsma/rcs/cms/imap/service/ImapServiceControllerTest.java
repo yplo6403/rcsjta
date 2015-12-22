@@ -7,7 +7,7 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 
 import junit.framework.Assert;
 
-public class ImapServiceManagerTest extends AndroidTestCase {
+public class ImapServiceControllerTest extends AndroidTestCase {
     
     private RcsSettings mSettings;
     
@@ -20,34 +20,40 @@ public class ImapServiceManagerTest extends AndroidTestCase {
     }
     
     public void test(){
-    
-        
-        BasicImapService imapService = null;
+        ImapServiceController imapServiceController = new ImapServiceController(mSettings);
+        imapServiceController.start();
+        Assert.assertTrue(imapServiceController.isStarted());
+        Assert.assertTrue(imapServiceController.isSyncAvailable());
         try {
-            imapService= ImapServiceManager.getService(mSettings);
+            imapServiceController.createService();
+            Assert.assertFalse(imapServiceController.isSyncAvailable());
         } catch (ImapServiceNotAvailableException e) {
             Assert.fail();
         }
         
         try {
-            imapService = ImapServiceManager.getService(mSettings);
+            imapServiceController.createService();
             Assert.fail();
         } catch (ImapServiceNotAvailableException e) {            
         }
 
-        ImapServiceManager.releaseService(imapService);
-        
+        imapServiceController.closeService();
+        Assert.assertTrue(imapServiceController.isSyncAvailable());
+        imapServiceController.stop();
+        Assert.assertFalse(imapServiceController.isStarted());
     }
     
     public void testRunnable(){
-        
+
+        final ImapServiceController imapServiceController = new ImapServiceController(mSettings);
+
         Runnable run1 = new Runnable(){
             @Override
             public void run() {
                 try {
-                    BasicImapService imapService= ImapServiceManager.getService(mSettings);
+                    imapServiceController.createService();
                     Thread.sleep(100);
-                    ImapServiceManager.releaseService(imapService);
+                    imapServiceController.closeService();
                 } catch (ImapServiceNotAvailableException e) {
                     Assert.fail();
                 }catch (InterruptedException e) {
@@ -60,13 +66,13 @@ public class ImapServiceManagerTest extends AndroidTestCase {
             @Override
             public void run() {
                 try {
-                    ImapServiceManager.getService(mSettings);
+                    imapServiceController.createService();
                     Assert.fail();
                 } catch (ImapServiceNotAvailableException e) {
                 }
             }            
         };
-        
+
         Thread th1 =  new Thread(run1);
         Thread th2 =  new Thread(run2);
         th1.start();

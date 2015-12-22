@@ -4,12 +4,14 @@ package com.gsma.rcs.cms.toolkit.operations;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.Toolkit;
 import com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages;
 import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
 
+import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.sonymobile.rcs.imap.ImapException;
@@ -38,7 +40,9 @@ public class RemoteOperations extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        if(Toolkit.checkCore(this) == null){
+            return;
+        }
         mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
         /* Set layout */
@@ -80,7 +84,7 @@ public class RemoteOperations extends ListActivity {
     public class DeleteTask extends AsyncTask<String, String, Boolean> {
 
         private Context mContext;
-        private ImapService mImapService;
+        private ImapServiceController mImapServiceController;
 
         /**
          * @param ctx
@@ -88,15 +92,16 @@ public class RemoteOperations extends ListActivity {
          */
         public DeleteTask(Context ctx) throws ImapServiceNotAvailableException {            
             mContext = ctx;
-            mImapService = ImapServiceManager.getService(mSettings);
+            mImapServiceController  = Core.getInstance().getCmsService().getCmsManager().getImapServiceController();
         }
 
         @Override
         protected Boolean doInBackground(String... params) {
-            try {                
-                mImapService.init();
-                boolean res = deleteExistingMessages((BasicImapService) mImapService);
-                ImapServiceManager.releaseService(mImapService);
+            try {
+                BasicImapService imapService = mImapServiceController.createService();
+                imapService.init();
+                boolean res = deleteExistingMessages((BasicImapService) imapService);
+                mImapServiceController.closeService();;
                 return res;
             } catch (Exception e) {
                 return false;

@@ -2,13 +2,16 @@
 package com.gsma.rcs.cms.toolkit.delete;
 
 import com.gsma.rcs.R;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.BasicImapService;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.DeleteTaskListener;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -33,6 +36,9 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(Toolkit.checkCore(this) == null){
+            return;
+        }
         Context context = getApplicationContext(); 
         mSettings = RcsSettings.createInstance(new LocalContentResolver(context));
         mImapLog = ImapLog.getInstance();
@@ -91,7 +97,8 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                 mInProgressDialog = AlertDialogUtils.displayInfo(DeleteOperations.this,
                         getString(R.string.cms_toolkit_in_progress));                
                 try {
-                    new DeleteTask(ImapServiceManager.getService(mSettings), Operation.DELETE_ALL, this).execute(new String[]{});
+                    ImapServiceController imapServiceController = Core.getInstance().getCmsService().getCmsManager().getImapServiceController();
+                    new Thread(new DeleteTask(imapServiceController, Operation.DELETE_ALL, null, this)).start();
                 } catch (ImapServiceNotAvailableException e) {
                     Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
                     e.printStackTrace();
@@ -117,7 +124,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
     }
 
     @Override
-    public void onDeleteTaskExecuted(String[] params, Boolean result) {
+    public void onDeleteTaskExecuted( Boolean result) {
         mInProgressDialog.dismiss();
         String message = result ? getString(R.string.cms_toolkit_result_ok) : getString(R.string.cms_toolkit_result_ko);
         AlertDialogUtils.showMessage(this, message);        

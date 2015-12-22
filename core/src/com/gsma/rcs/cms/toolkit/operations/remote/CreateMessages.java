@@ -16,7 +16,9 @@ import android.widget.TextView;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.Toolkit;
 import com.gsma.rcs.cms.toolkit.operations.remote.PushMessageTask.PushMessageTaskCallback;
+import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -46,6 +48,9 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
     public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
 
+        if(Toolkit.checkCore(this) == null){
+            return;
+        }
         // Set layout
         setContentView(R.layout.rcs_cms_toolkit_create_messages);
 
@@ -142,7 +147,7 @@ public class CreateMessages extends Activity implements PushMessageTaskCallback{
             for(int i=0;i<number;i++){
                 messages[i] = sms;
             }
-            new PushMessageTask(mSettings, messages, ContactUtil.createContactIdFromTrustedData(myNumber), mSelectedFlags, CreateMessages.this).execute();
+            new PushMessageTask(Core.getInstance().getCmsService().getCmsManager().getImapServiceController(), mSettings, messages, ContactUtil.createContactIdFromTrustedData(myNumber), mSelectedFlags, CreateMessages.this).execute();
             mInProgressDialog = AlertDialogUtils.displayInfo(CreateMessages.this,
                     getString(R.string.cms_toolkit_in_progress));
         }

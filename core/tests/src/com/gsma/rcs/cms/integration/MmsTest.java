@@ -5,7 +5,7 @@ import android.test.AndroidTestCase;
 
 import com.gsma.rcs.cms.event.XmsEventListener;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
@@ -55,6 +55,7 @@ public class MmsTest extends AndroidTestCase{
     private XmsLogEnvIntegration mXmsLogEnvIntegration;
     private RcsSettings mSettings;
     private LocalStorage mLocalStorage;
+    private ImapServiceController mImapServiceController;
     private BasicImapService mBasicImapService;
     private BasicSyncStrategy mSyncStrategy;
     private ImapLog mImapLog;
@@ -65,7 +66,7 @@ public class MmsTest extends AndroidTestCase{
         super.setUp();
         Context context = getContext();
         ContactUtil.getInstance(getContext());
-        mSettings = RcsSettingsMock.getRcsSettings(context);
+        mSettings = RcsSettingsMock.getMockSettings(context);
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
         mXmsLog = XmsLog.createInstance(new LocalContentResolver(context));
@@ -73,15 +74,17 @@ public class MmsTest extends AndroidTestCase{
         XmsEventListener smsEventHandler = new XmsEventListener(context, mImapLog, mXmsLog, mSettings);
         mLocalStorage = new LocalStorage(mImapLog);
         mLocalStorage.registerRemoteEventHandler(MessageType.MMS, smsEventHandler);
-        mBasicImapService = ImapServiceManager.getService(mSettings);
-        mSyncStrategy = new BasicSyncStrategy(context,mSettings,mBasicImapService, mLocalStorage);
+        mImapServiceController = new ImapServiceController(mSettings);
+        mBasicImapService = mImapServiceController.createService();
+        mSyncStrategy = new BasicSyncStrategy(context,mSettings,mImapServiceController, mLocalStorage);
         mBasicImapService.init();
     }
 
     protected void tearDown() throws Exception {
         super.tearDown();
-        ImapServiceManager.releaseService(mBasicImapService);
+        mImapServiceController.closeService();
         mLocalStorage.unregisterRemoteEventHandler(MessageType.MMS);
+        RcsSettingsMock.restoreSettings();
     }
 
      /**
@@ -596,17 +599,17 @@ public class MmsTest extends AndroidTestCase{
    }
    
    private void createRemoteMessages(XmsDataObject[] messages) throws ImapServiceNotAvailableException {
-       PushMessageTask task = new PushMessageTask(mContext, mSettings, mBasicImapService, mXmsLog, mImapLog, null);
+       PushMessageTask task = new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog, mImapLog, null);
        task.pushMessages(Arrays.asList(messages));
    }
    
    private void deleteRemoteStorage() throws ImapServiceNotAvailableException{       
-       DeleteTask deleteTask = new DeleteTask(mBasicImapService, Operation.DELETE_ALL, null);
-       deleteTask.delete();
+       DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_ALL, null, null);
+       deleteTask.delete(null);
    }
 
    private void deleteRemoteMailbox(String mailbox) throws Exception {
-       DeleteTask deleteTask = new DeleteTask(mBasicImapService, Operation.DELETE_MAILBOX, null);
+       DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_MAILBOX, mailbox, null);
        deleteTask.delete(mailbox);
        try {
            mBasicImapService.close();
@@ -616,12 +619,12 @@ public class MmsTest extends AndroidTestCase{
    }
 
    private void deleteRemoteMessages(String mailbox) throws ImapServiceNotAvailableException{       
-       DeleteTask deleteTask = new DeleteTask(mBasicImapService, Operation.DELETE_MESSAGES, null);
+       DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_MESSAGES, mailbox, null);
        deleteTask.delete(mailbox);
    }
 
    private void updateRemoteFlags(List<FlagChange> changes) throws ImapServiceNotAvailableException {       
-       UpdateFlagTask task = new UpdateFlagTask(mBasicImapService, changes, null);
+       UpdateFlagTask task = new UpdateFlagTask(mImapServiceController, changes, null);
        task.updateFlags();
    }
    

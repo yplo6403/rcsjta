@@ -1,8 +1,26 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.sync;
 
-import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.CmsManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.storage.LocalStorage;
@@ -15,6 +33,9 @@ import android.content.Context;
 
 import java.io.IOException;
 
+/**
+ * Class used by the API to trigger a sync
+ */
 public class Synchronizer {
 
     private static Logger sLogger = Logger.getLogger(Synchronizer.class.getSimpleName());
@@ -22,53 +43,40 @@ public class Synchronizer {
     private final Context mContext;
     private final RcsSettings mRcsSettings;
     private final LocalStorage mLocalStorage;
+    private final ImapServiceController mImapServiceController;
 
-    public Synchronizer(Context context, RcsSettings rcsSettings, LocalStorage localStorage) {
+    /**
+     * Constructor
+     * @param context
+     * @param rcsSettings
+     * @param cmsManager
+     */
+    public Synchronizer(Context context, RcsSettings rcsSettings, CmsManager cmsManager) {
         mContext = context;
         mRcsSettings = rcsSettings;
-        mLocalStorage = localStorage;
+        mLocalStorage = cmsManager.getLocalStorage();
+        mImapServiceController = cmsManager.getImapServiceController();
     }
 
-    private BasicImapService getService() {
+    public void syncFolder(String folder) throws IOException, ImapException, ImapServiceNotAvailableException {
         try {
-            return ImapServiceManager.getService(mRcsSettings);
-
-        } catch (ImapServiceNotAvailableException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-            }
-            return null;
-        }
-    }
-
-    public void syncFolder(String folder) throws IOException, ImapException {
-        BasicImapService imapService = getService();
-        if (imapService == null) {
-            return;
-        }
-        try {
-            imapService.init();
+            mImapServiceController.createService().init();
             BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
-                    mRcsSettings, imapService, mLocalStorage, null);
+                    mRcsSettings, mImapServiceController, mLocalStorage, null);
             syncTask.syncFolder(folder);
         } finally {
-            ImapServiceManager.releaseService(imapService);
+            mImapServiceController.closeService();
         }
     }
 
-    public void syncAll() throws IOException, ImapException {
-        BasicImapService imapService = getService();
-        if (imapService == null) {
-            return;
-        }
+    public void syncAll() throws IOException, ImapException, ImapServiceNotAvailableException {
         try {
-            imapService.init();
-            // TODO FG do not use async task
+            mImapServiceController.createService().init();
             BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
-                    mRcsSettings, imapService, mLocalStorage, null);
+                    mRcsSettings, mImapServiceController, mLocalStorage, null);
             syncTask.syncAll();
         } finally {
-            ImapServiceManager.releaseService(imapService);
+            mImapServiceController.closeService();
         }
     }
 }

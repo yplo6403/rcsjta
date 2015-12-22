@@ -1,8 +1,27 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceManager;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 
 import com.sonymobile.rcs.imap.ImapMessage;
@@ -13,47 +32,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Task used to show messages from the CMS server.
+ * Used by the 'CMS Toolkit'
  */
-public class ShowMessagesTask extends AsyncTask<String, String, List<ImapMessage>> {
+public class ShowMessagesTask implements Runnable {
        
     private final ShowMessagesTaskListener mListener;
-    private final BasicImapService mImapService;
+    private final ImapServiceController mImapServiceController;
     private String[] mParams;
-    
+
     /**
-     * @param rcsSettings
+     * Constructor
+     * @param imapServiceController
      * @param listener
-     * @param imapService 
-     * @throws ImapServiceNotAvailableException 
+     * @throws ImapServiceNotAvailableException
      */
-    public ShowMessagesTask(BasicImapService imapService, ShowMessagesTaskListener listener) throws ImapServiceNotAvailableException {
-        mImapService = imapService;
+    public ShowMessagesTask(ImapServiceController imapServiceController, ShowMessagesTaskListener listener) throws ImapServiceNotAvailableException {
+        mImapServiceController = imapServiceController;
         mListener = listener;                
     }
 
     @Override
-    protected List<ImapMessage> doInBackground(String... params) {
-        mParams = params;
-        Thread currentThread = Thread.currentThread();
-        String currentName = currentThread.getName();
-        currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
-
+    public void run() {
+        List<ImapMessage> messages = new ArrayList<>();
         try {
-            mImapService.init();
-            List<ImapMessage> msg = getMessages((BasicImapService) mImapService);
-            return msg;
+            mImapServiceController.getService().init();
+            messages = getMessages(mImapServiceController.getService());
         } catch (Exception e) {
-            return null;            
         }
         finally {
-            Thread.currentThread().setName(currentName);
-            ImapServiceManager.releaseService(mImapService);
+            mImapServiceController.closeService();
+            if(mListener != null){
+                mListener.onShowMessagesTaskExecuted(messages);
+            }
         }
     }
 
     private List<ImapMessage> getMessages(BasicImapService imap) {
-        List<ImapMessage> messages = new ArrayList<ImapMessage>();
+        List<ImapMessage> messages = new ArrayList<>();
         try {
             for (ImapFolder imapFolder : imap.listStatus()) {
                 imap.selectCondstore(imapFolder.getName());
@@ -67,24 +83,16 @@ public class ShowMessagesTask extends AsyncTask<String, String, List<ImapMessage
             e.printStackTrace();
         }
         return messages;
-    }    
-    
-    @Override
-    protected void onPostExecute(List<ImapMessage> result) {
-        if(mListener != null){
-            mListener.onShowMessagesTaskExecuted(mParams, result);
-        }
     }
-    
+
     /**
-    *
-    */
+     * Interface used to notify listeners when messages can be shown (when call in an asynchronous way)
+     */
    public interface ShowMessagesTaskListener {
-       
-       /**
-        * @param params
-        * @param result
-        */
-       public void onShowMessagesTaskExecuted(String[] params, List<ImapMessage> result);
+        /**
+         * Callback method
+         * @param result
+         */
+       void onShowMessagesTaskExecuted(List<ImapMessage> result);
    }
 }

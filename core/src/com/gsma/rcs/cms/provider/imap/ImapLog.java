@@ -1,3 +1,21 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.provider.imap;
 
@@ -560,6 +578,11 @@ public class ImapLog {
         }
     }
 
+    /**
+     * Get uid by messageId
+     * @param baseId
+     * @return
+     */
     public Integer getUidForXmsMessage(String baseId) {
         Cursor cursor = null;
         try {
@@ -577,6 +600,10 @@ public class ImapLog {
         }
     }
 
+    /**
+     * Update delete status of all messages
+     * @param deleteStatus
+     */
     public void updateDeleteStatus(DeleteStatus deleteStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_DELETE_STATUS, deleteStatus.toInt());
@@ -587,6 +614,12 @@ public class ImapLog {
                 null);
     }
 
+    /**
+     * Update delete status by folder and uid
+     * @param folder
+     * @param uid
+     * @param deleteStatus
+     */
     public void updateDeleteStatus(String folder, Integer uid, DeleteStatus deleteStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_DELETE_STATUS, deleteStatus.toInt());
@@ -597,6 +630,12 @@ public class ImapLog {
                 new String[]{folder, String.valueOf(uid)});
     }
 
+    /**
+     * Update delete status by messageType and messageId
+     * @param messageType
+     * @param messageId
+     * @param deleteStatus
+     */
     public void updateDeleteStatus(MessageType messageType, String messageId, DeleteStatus deleteStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_DELETE_STATUS, deleteStatus.toInt());
@@ -607,6 +646,12 @@ public class ImapLog {
                 new String[]{messageType.toString(), messageId});
     }
 
+    /**
+     * Update read status by folder and uid
+     * @param folder
+     * @param uid
+     * @param readStatus
+     */
     public void updateReadStatus(String folder, Integer uid, ReadStatus readStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_READ_STATUS, readStatus.toInt());
@@ -617,6 +662,12 @@ public class ImapLog {
                 new String[]{folder, String.valueOf(uid)});
     }
 
+    /**
+     * update read status by messageType and messageId
+     * @param messageType
+     * @param messageId
+     * @param readStatus
+     */
     public void updateReadStatus(MessageType messageType, String messageId, ReadStatus readStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_READ_STATUS, readStatus.toInt());
@@ -627,6 +678,12 @@ public class ImapLog {
                 new String[]{messageType.toString(), messageId});
     }
 
+    /**
+     * Update push status and uid by messageId
+     * @param uid
+     * @param messageId
+     * @param pushStatus
+     */
     public void updateXmsPushStatus(Integer uid, String messageId, PushStatus pushStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_UID, uid);
@@ -638,6 +695,11 @@ public class ImapLog {
                 new String[]{messageId});
     }
 
+    /**
+     * Update push status by messageType
+     * @param messageType
+     * @param pushStatus
+     */
     public void updatePushStatus(MessageType messageType, PushStatus pushStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_PUSH_STATUS, pushStatus.toInt());
@@ -663,6 +725,12 @@ public class ImapLog {
         });
     }
 
+    /**
+     * Update delete status by messageType and nativeProviderId
+     * @param messageType
+     * @param nativeProviderId
+     * @param deleteStatus
+     */
     public void updateDeleteStatus(MessageType messageType, Long nativeProviderId, DeleteStatus deleteStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_DELETE_STATUS, deleteStatus.toInt());
@@ -674,6 +742,12 @@ public class ImapLog {
                 new String[]{messageType.toString(), String.valueOf(nativeProviderId)});
     }
 
+    /**
+     * Update read status by messageType and nativeProviderId
+     * @param messageType
+     * @param nativeProviderId
+     * @param readStatus
+     */
     public void updateReadStatus(MessageType messageType, Long nativeProviderId, ReadStatus readStatus){
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_READ_STATUS, readStatus.toInt());
