@@ -94,14 +94,11 @@ public class ImageSharingList extends RcsFragmentActivity implements
 
     private ImageSharingListAdapter mAdapter;
 
-    private boolean mImageSharingListenerSet = false;
-
-    /**
-     * List of items for contextual menu
-     */
-    private static final int MENU_ITEM_DELETE = 0;
+    private boolean mImageSharingListenerSet;
 
     private Handler mHandler = new Handler();
+
+    private ImageSharingListener mImageSharingListener;
 
     private static final String LOGTAG = LogUtils.getTag(ImageSharingList.class.getSimpleName());
 
@@ -114,23 +111,10 @@ public class ImageSharingList extends RcsFragmentActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.image_sharing_list);
 
-        mImageSharingService = getImageSharingApi();
-
-        mListView = (ListView) findViewById(android.R.id.list);
-        TextView emptyView = (TextView) findViewById(android.R.id.empty);
-        mListView.setEmptyView(emptyView);
-        registerForContextMenu(mListView);
-
-        mAdapter = new ImageSharingListAdapter(this);
-        mListView.setAdapter(mAdapter);
-        /*
-         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
-         */
-        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+        initialize();
     }
 
     @Override
@@ -297,11 +281,11 @@ public class ImageSharingList extends RcsFragmentActivity implements
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_sharing_item, menu);
         if (!isServiceConnected(RcsServiceName.IMAGE_SHARING)) {
-            showMessage(R.string.label_service_not_available);
-            return;
+            menu.findItem(R.id.menu_sharing_delete).setVisible(false);
         }
-        menu.add(0, MENU_ITEM_DELETE, MENU_ITEM_DELETE, R.string.menu_sharing_delete);
     }
 
     @Override
@@ -315,7 +299,7 @@ public class ImageSharingList extends RcsFragmentActivity implements
             Log.d(LOGTAG, "onContextItemSelected sharing ID=".concat(sharingId));
         }
         switch (item.getItemId()) {
-            case MENU_ITEM_DELETE:
+            case R.id.menu_sharing_delete:
                 if (!isServiceConnected(RcsServiceName.IMAGE_SHARING)) {
                     showMessage(R.string.label_service_not_available);
                     return true;
@@ -340,34 +324,6 @@ public class ImageSharingList extends RcsFragmentActivity implements
                 return super.onContextItemSelected(item);
         }
     }
-
-    private ImageSharingListener mImageSharingListener = new ImageSharingListener() {
-
-        @Override
-        public void onStateChanged(ContactId contact, String sharingId, State state,
-                ReasonCode reasonCode) {
-        }
-
-        @Override
-        public void onProgressUpdate(ContactId contact, String sharingId, long currentSize,
-                long totalSize) {
-        }
-
-        @Override
-        public void onDeleted(ContactId contact, Set<String> sharingIds) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG,
-                        "onDeleted contact=" + contact + " for sharing IDs="
-                                + Arrays.toString(sharingIds.toArray()));
-            }
-            mHandler.post(new Runnable() {
-                public void run() {
-                    Utils.displayLongToast(ImageSharingList.this,
-                            getString(R.string.label_delete_sharing_success));
-                }
-            });
-        }
-    };
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -399,4 +355,49 @@ public class ImageSharingList extends RcsFragmentActivity implements
          */
         mAdapter.swapCursor(null);
     }
+
+    private void initialize() {
+        mImageSharingService = getImageSharingApi();
+
+        mListView = (ListView) findViewById(android.R.id.list);
+        TextView emptyView = (TextView) findViewById(android.R.id.empty);
+        mListView.setEmptyView(emptyView);
+        registerForContextMenu(mListView);
+
+        mAdapter = new ImageSharingListAdapter(this);
+        mListView.setAdapter(mAdapter);
+        /*
+         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
+         */
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+
+        mImageSharingListener = new ImageSharingListener() {
+
+            @Override
+            public void onStateChanged(ContactId contact, String sharingId, State state,
+                    ReasonCode reasonCode) {
+            }
+
+            @Override
+            public void onProgressUpdate(ContactId contact, String sharingId, long currentSize,
+                    long totalSize) {
+            }
+
+            @Override
+            public void onDeleted(ContactId contact, Set<String> sharingIds) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG,
+                            "onDeleted contact=" + contact + " for sharing IDs="
+                                    + Arrays.toString(sharingIds.toArray()));
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(ImageSharingList.this,
+                                getString(R.string.label_delete_sharing_success));
+                    }
+                });
+            }
+        };
+    }
+
 }

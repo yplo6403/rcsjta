@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/menu_log_chat_item_open"
+        android:title="@string/menu_open_chat_session"/>
+
+    <item
+        android:id="@+id/menu_log_chat_item_delete"
+        android:title="@string/menu_delete_chat_session"/>
+
+</menu>

@@ -22,6 +22,7 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.utils.ContactListAdapter;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
 
@@ -33,7 +34,7 @@ import android.widget.Button;
 import android.widget.Spinner;
 
 /**
- * Initiate chat
+ * Initiate single chat
  * 
  * @author Jean-Marc AUFFRET
  * @author Philippe LEMORDANT
@@ -79,9 +80,9 @@ public class InitiateSingleChat extends RcsActivity {
             ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
             String phoneNumber = adapter.getSelectedNumber(mSpinner.getSelectedView());
             ContactId contact = ContactUtil.formatContact(phoneNumber);
-            startActivity(SingleChatView.forgeIntentToOpenConversation(InitiateSingleChat.this,
+            startActivity(OneToOneTalkView.forgeIntentToOpenConversation(InitiateSingleChat.this,
                     contact));
-            /* Exit activity */
+            /* Exit current activity */
             finish();
         }
     };

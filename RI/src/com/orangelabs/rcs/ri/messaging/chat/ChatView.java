@@ -63,7 +63,7 @@ import android.widget.TextView;
 /**
  * Chat view
  *
- * @author yplo6403
+ * @author Philippe LEMORDANT
  */
 public abstract class ChatView extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor>, IChatView {
@@ -261,7 +261,6 @@ public abstract class ChatView extends RcsFragmentActivity implements
          */
         if (mObserver != null && !mObserver.getLoader().equals(loader)) {
             ContentResolver resolver = getContentResolver();
-            resolver.unregisterContentObserver(mObserver);
             resolver.unregisterContentObserver(mObserver);
             mObserver = null;
         }

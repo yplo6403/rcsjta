@@ -68,7 +68,7 @@ import java.util.Set;
 /**
  * List group chats from the content provider
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class GroupChatList extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
@@ -85,8 +85,7 @@ public class GroupChatList extends RcsFragmentActivity implements
     };
     // @formatter:on
 
-    private static final String SORT_ORDER = new StringBuilder(ChatLog.GroupChat.TIMESTAMP).append(
-            " DESC").toString();
+    private static final String SORT_ORDER = ChatLog.GroupChat.TIMESTAMP + " DESC";
 
     private ListView mListView;
 
@@ -97,12 +96,6 @@ public class GroupChatList extends RcsFragmentActivity implements
     private boolean mGroupChatListenerSet = false;
 
     private Handler mHandler = new Handler();
-
-    /**
-     * List of items for contextual menu
-     */
-    private static final int CHAT_MENU_ITEM_DELETE = 1;
-    private static final int CHAT_MENU_ITEM_OPEN = 0;
 
     private static final String LOGTAG = LogUtils.getTag(GroupChatList.class.getSimpleName());
 
@@ -307,8 +300,8 @@ public class GroupChatList extends RcsFragmentActivity implements
             showMessage(R.string.label_service_not_available);
             return;
         }
-        menu.add(0, CHAT_MENU_ITEM_OPEN, CHAT_MENU_ITEM_OPEN, R.string.menu_open_chat_session);
-        menu.add(0, CHAT_MENU_ITEM_DELETE, CHAT_MENU_ITEM_DELETE, R.string.menu_delete_chat_session);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_chat_item, menu);
     }
 
     @Override
@@ -321,7 +314,7 @@ public class GroupChatList extends RcsFragmentActivity implements
             Log.d(LOGTAG, "onContextItemSelected chatId=".concat(chatId));
         }
         switch (item.getItemId()) {
-            case CHAT_MENU_ITEM_OPEN:
+            case R.id.menu_log_chat_item_open:
                 if (!isServiceConnected(RcsServiceName.CHAT)) {
                     showMessage(R.string.label_service_not_available);
                     return true;
@@ -333,7 +326,7 @@ public class GroupChatList extends RcsFragmentActivity implements
                 GroupChatView.openGroupChat(this, chatId);
                 return true;
 
-            case CHAT_MENU_ITEM_DELETE:
+            case R.id.menu_log_chat_item_delete:
                 if (!isServiceConnected(RcsServiceName.CHAT)) {
                     showMessage(R.string.label_service_not_available);
                     return true;

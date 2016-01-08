@@ -86,23 +86,19 @@ public class VideoSharingList extends RcsFragmentActivity implements
     };
     // @formatter:on
 
-    private static final String SORT_ORDER = new StringBuilder(VideoSharingLog.TIMESTAMP).append(
-            " DESC").toString();
+    private static final String SORT_ORDER = VideoSharingLog.TIMESTAMP + " DESC";
 
     private ListView mListView;
 
     private VideoSharingService mVideoSharingService;
 
-    private boolean mVideoSharingListenerSet = false;
+    private boolean mVideoSharingListenerSet;
 
     private VideoSharingListAdapter mAdapter;
 
-    /**
-     * List of items for contextual menu
-     */
-    private static final int MENU_ITEM_DELETE = 0;
-
     private Handler mHandler = new Handler();
+
+    private VideoSharingListener mVideoSharingListener;
 
     private static final String LOGTAG = LogUtils.getTag(VideoSharingList.class.getSimpleName());
 
@@ -115,23 +111,10 @@ public class VideoSharingList extends RcsFragmentActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.video_sharing_list);
 
-        mVideoSharingService = getVideoSharingApi();
-
-        mListView = (ListView) findViewById(android.R.id.list);
-        TextView emptyView = (TextView) findViewById(android.R.id.empty);
-        mListView.setEmptyView(emptyView);
-        registerForContextMenu(mListView);
-
-        mAdapter = new VideoSharingListAdapter(this);
-        mListView.setAdapter(mAdapter);
-        /*
-         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
-         */
-        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+        initialize();
     }
 
     @Override
@@ -295,11 +278,11 @@ public class VideoSharingList extends RcsFragmentActivity implements
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        if (!isServiceConnected(RcsServiceName.IMAGE_SHARING)) {
-            showMessage(R.string.label_service_not_available);
-            return;
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_sharing_item, menu);
+        if (!isServiceConnected(RcsServiceName.VIDEO_SHARING)) {
+            menu.findItem(R.id.menu_sharing_delete).setVisible(false);
         }
-        menu.add(0, MENU_ITEM_DELETE, MENU_ITEM_DELETE, R.string.menu_sharing_delete);
     }
 
     @Override
@@ -313,7 +296,7 @@ public class VideoSharingList extends RcsFragmentActivity implements
             Log.d(LOGTAG, "onContextItemSelected sharing ID=".concat(sharingId));
         }
         switch (item.getItemId()) {
-            case MENU_ITEM_DELETE:
+            case R.id.menu_sharing_delete:
                 if (!isServiceConnected(RcsServiceName.VIDEO_SHARING)) {
                     showMessage(R.string.label_service_not_available);
                     return true;
@@ -337,29 +320,6 @@ public class VideoSharingList extends RcsFragmentActivity implements
                 return super.onContextItemSelected(item);
         }
     }
-
-    private VideoSharingListener mVideoSharingListener = new VideoSharingListener() {
-
-        @Override
-        public void onDeleted(ContactId contact, Set<String> sharingIds) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG,
-                        "onDeleted contact=" + contact + " for sharing IDs="
-                                + Arrays.toString(sharingIds.toArray()));
-            }
-            mHandler.post(new Runnable() {
-                public void run() {
-                    Utils.displayLongToast(VideoSharingList.this,
-                            getString(R.string.label_delete_sharing_success));
-                }
-            });
-        }
-
-        @Override
-        public void onStateChanged(ContactId arg0, String arg1, State arg2, ReasonCode arg3) {
-        }
-
-    };
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -391,4 +351,44 @@ public class VideoSharingList extends RcsFragmentActivity implements
          */
         mAdapter.swapCursor(null);
     }
+
+    private void initialize() {
+        mVideoSharingService = getVideoSharingApi();
+
+        mListView = (ListView) findViewById(android.R.id.list);
+        TextView emptyView = (TextView) findViewById(android.R.id.empty);
+        mListView.setEmptyView(emptyView);
+        registerForContextMenu(mListView);
+
+        mAdapter = new VideoSharingListAdapter(this);
+        mListView.setAdapter(mAdapter);
+        /*
+         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
+         */
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+
+        mVideoSharingListener = new VideoSharingListener() {
+
+            @Override
+            public void onDeleted(ContactId contact, Set<String> sharingIds) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG,
+                            "onDeleted contact=" + contact + " for sharing IDs="
+                                    + Arrays.toString(sharingIds.toArray()));
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(VideoSharingList.this,
+                                getString(R.string.label_delete_sharing_success));
+                    }
+                });
+            }
+
+            @Override
+            public void onStateChanged(ContactId arg0, String arg1, State arg2, ReasonCode arg3) {
+            }
+
+        };
+    }
+
 }

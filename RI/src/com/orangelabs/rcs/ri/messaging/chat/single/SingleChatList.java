@@ -30,6 +30,7 @@ import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
@@ -64,7 +65,7 @@ import java.util.Set;
 /**
  * List chats from the content provider
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class SingleChatList extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
@@ -104,12 +105,6 @@ public class SingleChatList extends RcsFragmentActivity implements
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
      */
     private static final int LOADER_ID = 1;
-
-    /**
-     * List of items for contextual menu
-     */
-    private static final int CHAT_MENU_ITEM_DELETE = 1;
-    private static final int CHAT_MENU_ITEM_OPEN = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -279,8 +274,8 @@ public class SingleChatList extends RcsFragmentActivity implements
             showMessage(R.string.label_service_not_available);
             return;
         }
-        menu.add(0, CHAT_MENU_ITEM_OPEN, CHAT_MENU_ITEM_OPEN, R.string.menu_open_chat_session);
-        menu.add(0, CHAT_MENU_ITEM_DELETE, CHAT_MENU_ITEM_DELETE, R.string.menu_delete_chat_session);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_chat_item, menu);
     }
 
     @Override
@@ -294,16 +289,16 @@ public class SingleChatList extends RcsFragmentActivity implements
             Log.d(LOGTAG, "onContextItemSelected contact=".concat(contact.toString()));
         }
         switch (item.getItemId()) {
-            case CHAT_MENU_ITEM_OPEN:
+            case R.id.menu_log_chat_item_open:
                 if (isServiceConnected(RcsServiceName.CHAT)) {
                     /* Open one-to-one chat view */
-                    startActivity(SingleChatView.forgeIntentToOpenConversation(this, contact));
+                    startActivity(OneToOneTalkView.forgeIntentToOpenConversation(this, contact));
                 } else {
                     showMessage(R.string.label_continue_chat_failed);
                 }
                 return true;
 
-            case CHAT_MENU_ITEM_DELETE:
+            case R.id.menu_log_chat_item_delete:
                 if (!isServiceConnected(RcsServiceName.CHAT)) {
                     showMessage(R.string.label_delete_chat_failed);
                     return true;

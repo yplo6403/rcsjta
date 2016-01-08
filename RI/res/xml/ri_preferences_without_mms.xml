@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:defaultValue="2"
+        android:entries="@array/ri_settings_resend_entries"
+        android:entryValues="@array/ri_settings_resend_values"
+        android:key="resend_chat"
+        android:summary="@string/ri_settings_summary_resend_chat"
+        android:title="@string/ri_settings_title_resend_chat" />
+
+    <ListPreference
+        android:defaultValue="1"
+        android:entries="@array/ri_settings_sync_mode_entries"
+        android:entryValues="@array/ri_settings_sync_mode_values"
+        android:key="sync_mode"
+        android:summary="@string/ri_settings_summary_sync_mode"
+        android:title="@string/ri_settings_title_sync_mode" />
+
+</PreferenceScreen>

@@ -31,6 +31,7 @@ import com.orangelabs.rcs.ri.history.TestHistoryLogApi;
 import com.orangelabs.rcs.ri.intents.TestIntentApps;
 import com.orangelabs.rcs.ri.messaging.TestMessagingApi;
 import com.orangelabs.rcs.ri.service.TestServiceApi;
+import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.sharing.TestSharingApi;
 import com.orangelabs.rcs.ri.upload.InitiateFileUpload;
 import com.orangelabs.rcs.ri.utils.LogUtils;
@@ -50,6 +51,7 @@ import android.widget.ProgressBar;
  * RI application
  * 
  * @author Jean-Marc AUFFRET
+ * @author Philippe LEMORDANT
  */
 public class RI extends RcsListActivity {
 
@@ -75,14 +77,24 @@ public class RI extends RcsListActivity {
         mProgressBar = (ProgressBar) findViewById(android.R.id.progress);
         mInitLayout = (LinearLayout) findViewById(R.id.wait_cnx_start);
 
+        // @formatter:off
         /* Set items */
         String[] items = {
-                getString(R.string.menu_contacts), getString(R.string.menu_capabilities),
-                getString(R.string.menu_messaging), getString(R.string.menu_sharing),
-                getString(R.string.menu_mm_session), getString(R.string.menu_cms), getString(R.string.menu_intents),
-                getString(R.string.menu_service), getString(R.string.menu_upload),
-                getString(R.string.menu_history_log), getString(R.string.menu_about)
+                getString(R.string.menu_contacts),
+                getString(R.string.menu_capabilities),
+                getString(R.string.menu_messaging),
+                getString(R.string.menu_sharing),
+                getString(R.string.menu_mm_session),
+                getString(R.string.menu_cms),
+                getString(R.string.menu_intents),
+                getString(R.string.menu_service),
+                getString(R.string.menu_upload),
+                getString(R.string.menu_history_log),
+                getString(R.string.menu_settings),
+                getString(R.string.menu_about)
         };
+        // @formatter:on
+
         setListAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
 
         ContactUtil contactUtil = ContactUtil.getInstance(this);
@@ -155,6 +167,10 @@ public class RI extends RcsListActivity {
                 break;
 
             case 10:
+                startActivity(new Intent(this, RiSettings.class));
+                break;
+
+            case 11:
                 startActivity(new Intent(this, AboutRI.class));
                 break;
         }

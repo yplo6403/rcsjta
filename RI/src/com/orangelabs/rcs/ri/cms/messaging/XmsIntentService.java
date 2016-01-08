@@ -1,22 +1,20 @@
-/*
- * ******************************************************************************
- *  * Software Name : RCS IMS Stack
- *  *
- *  * Copyright (C) 2010 France Telecom S.A.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
- *  *****************************************************************************
- */
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
 package com.orangelabs.rcs.ri.cms.messaging;
 
@@ -25,6 +23,7 @@ import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
@@ -92,12 +91,6 @@ public class XmsIntentService extends IntentService {
         }
     }
 
-    /**
-     * Handle new XMS message
-     *
-     * @param messageIntent intent with chat message
-     * @param msgId The message ID
-     */
     private void handleNewXmsMessage(Intent messageIntent, String msgId) {
         /* Read message from provider */
         XmsDataObject xms = XmsDataObject.getXms(this, msgId);
@@ -111,15 +104,9 @@ public class XmsIntentService extends IntentService {
         forwardXmsMessage2UI(messageIntent, xms);
     }
 
-    /**
-     * Forward XMS message to view activity
-     *
-     * @param messageIntent intent
-     * @param message the chat message DAO
-     */
     private void forwardXmsMessage2UI(Intent messageIntent, XmsDataObject message) {
         ContactId contact = message.getContact();
-        Intent intent = XmsView.forgeIntentOnNewMessage(this, contact, messageIntent);
+        Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, messageIntent);
         Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent, message
                 .getContact().toString());
         if (uniqueId == null) {
@@ -143,14 +130,6 @@ public class XmsIntentService extends IntentService {
         mChatPendingIntentManager.postNotification(uniqueId, notif);
     }
 
-    /**
-     * Generate a notification
-     *
-     * @param invitation invitation
-     * @param title title
-     * @param message message
-     * @return the notification
-     */
     private Notification buildNotification(PendingIntent invitation, String title, String message) {
         NotificationCompat.Builder notif = new NotificationCompat.Builder(this);
         notif.setContentIntent(invitation);

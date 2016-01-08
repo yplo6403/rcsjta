@@ -20,6 +20,7 @@ package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessageLog;
@@ -30,6 +31,7 @@ import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
@@ -66,11 +68,11 @@ import java.util.Set;
 /**
  * List XMS conversation from the content provider
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class XmsMessagingList extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
-
+    // TODO list log for integrated messaging
     // @formatter:off
     private static final String[] PROJECTION = new String[] {
         XmsMessageLog.BASECOLUMN_ID,
@@ -91,7 +93,7 @@ public class XmsMessagingList extends RcsFragmentActivity implements
 
     private CmsService mCmsService;
 
-    private boolean mXmsMessageListenerSet = false;
+    private boolean mXmsMessageListenerSet;
 
     private CmsListAdapter mAdapter;
 
@@ -104,44 +106,32 @@ public class XmsMessagingList extends RcsFragmentActivity implements
      */
     private static final int LOADER_ID = 1;
 
-    /**
-     * List of items for contextual menu
-     */
-    private static final int CMS_MENU_ITEM_DELETE = 1;
-    private static final int CMS_MENU_ITEM_OPEN = 0;
-
     private static final int MESSAGE_BODY_MAX_SIZE = 25;
+    private CmsSynchronizationListener mCmsSynchronizationListener;
+    private boolean mCmsSynchronizationListenerSet;
+    private XmsMessageListener mXmsMessageListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.xms_list);
-
-        mCmsService = getCmsApi();
-
-        mListView = (ListView) findViewById(android.R.id.list);
-        TextView emptyView = (TextView) findViewById(android.R.id.empty);
-        mListView.setEmptyView(emptyView);
-        registerForContextMenu(mListView);
-
-        mAdapter = new CmsListAdapter(this);
-        mListView.setAdapter(mAdapter);
-        /*
-         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
-         */
-        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
+        initialize();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCmsService == null || !mXmsMessageListenerSet) {
+        if (mCmsService == null) {
             return;
         }
         try {
-            mCmsService.removeEventListener(mXmsMessageListener);
+            if (mXmsMessageListenerSet) {
+                mCmsService.removeEventListener(mXmsMessageListener);
+            }
+            if (mCmsSynchronizationListenerSet) {
+                mCmsService.removeEventListener(mCmsSynchronizationListener);
+            }
 
         } catch (RcsServiceException e) {
             Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
@@ -252,48 +242,58 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = new MenuInflater(getApplicationContext());
-        inflater.inflate(R.menu.menu_log, menu);
+        inflater.inflate(R.menu.menu_log_xms, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        if (!isServiceConnected(RcsServiceName.CMS)) {
+            menu.findItem(R.id.menu_clear_log).setVisible(false);
+            menu.findItem(R.id.menu_sync_xms).setVisible(false);
+        }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_clear_log:
-                /* Delete all XMS messages */
-                if (!isServiceConnected(RcsServiceName.CMS)) {
-                    showMessage(R.string.label_service_not_available);
-                    break;
-                }
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "delete all XMS conversation");
-                }
-                try {
+        try {
+            switch (item.getItemId()) {
+                case R.id.menu_clear_log:
+                    /* Delete all XMS messages */
+                    if (!isServiceConnected(RcsServiceName.CMS)) {
+                        showMessage(R.string.label_service_not_available);
+                        break;
+                    }
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "delete all XMS conversation");
+                    }
                     if (!mXmsMessageListenerSet) {
                         mCmsService.addEventListener(mXmsMessageListener);
                         mXmsMessageListenerSet = true;
                     }
                     mCmsService.deleteXmsMessages();
-
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
-                }
-                break;
-            case R.id.menu_sync_xms:
-                /* Start a sync with CMS */
-                if (!isServiceConnected(RcsServiceName.CMS)) {
-                    showMessage(R.string.label_service_not_available);
                     break;
-                }
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "start a sync");
-                }
-                try {
+
+                case R.id.menu_sync_xms:
+                    /* Start a sync with CMS */
+                    if (!isServiceConnected(RcsServiceName.CMS)) {
+                        showMessage(R.string.label_service_not_available);
+                        break;
+                    }
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "start a sync");
+                    }
+                    if (!mCmsSynchronizationListenerSet) {
+                        mCmsService.addEventListener(mCmsSynchronizationListener);
+                        mCmsSynchronizationListenerSet = true;
+                    }
                     mCmsService.syncAll();
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
-                }
-                break;
+                    break;
+            }
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
         }
         return true;
     }
@@ -301,13 +301,14 @@ public class XmsMessagingList extends RcsFragmentActivity implements
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_xms_item, menu);
         /* Check CMS API is connected */
         if (!isServiceConnected(RcsServiceName.CMS)) {
-            showMessage(R.string.label_service_not_available);
-            return;
+            menu.findItem(R.id.menu_open_talk).setVisible(false);
+            menu.findItem(R.id.menu_delete_message).setVisible(false);
+            menu.findItem(R.id.menu_sync_xms).setVisible(false);
         }
-        menu.add(0, CMS_MENU_ITEM_OPEN, CMS_MENU_ITEM_OPEN, R.string.menu_open_xms_talk);
-        menu.add(0, CMS_MENU_ITEM_DELETE, CMS_MENU_ITEM_DELETE, R.string.menu_delete_xms_talk);
     }
 
     @Override
@@ -320,65 +321,53 @@ public class XmsMessagingList extends RcsFragmentActivity implements
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "onContextItemSelected contact=".concat(contact.toString()));
         }
-        switch (item.getItemId()) {
-            case CMS_MENU_ITEM_OPEN:
-                if (isServiceConnected(RcsServiceName.CMS)) {
-                    /* Open CMS conversation view */
-                    startActivity(XmsView.forgeIntentToOpenConversation(this, contact));
-                } else {
-                    showMessage(R.string.err_continue_xms_failed);
-                }
-                return true;
-
-            case CMS_MENU_ITEM_DELETE:
-                if (!isServiceConnected(RcsServiceName.CMS)) {
-                    showMessage(R.string.label_xms_delete_failed);
+        try {
+            switch (item.getItemId()) {
+                case R.id.menu_open_talk:
+                    if (isServiceConnected(RcsServiceName.CMS)) {
+                        /* Open CMS conversation view */
+                        startActivity(OneToOneTalkView.forgeIntentToOpenConversation(this, contact));
+                    } else {
+                        showMessage(R.string.err_continue_xms_failed);
+                    }
                     return true;
-                }
-                /* Delete messages for contact */
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "Delete XMS messages for contact=".concat(contact.toString()));
-                }
-                try {
+
+                case R.id.menu_delete_message:
+                    if (!isServiceConnected(RcsServiceName.CMS)) {
+                        showMessage(R.string.label_xms_delete_failed);
+                        return true;
+                    }
+                    /* Delete messages for contact */
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "Delete XMS messages for contact=".concat(contact.toString()));
+                    }
                     if (!mXmsMessageListenerSet) {
                         mCmsService.addEventListener(mXmsMessageListener);
                         mXmsMessageListenerSet = true;
                     }
                     mCmsService.deleteXmsMessages(contact);
+                    return true;
 
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
-                }
-                return true;
+                case R.id.menu_sync_xms:
+                    /* Delete messages for contact */
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "Sync XMS messages for contact=".concat(contact.toString()));
+                    }
+                    if (!mCmsSynchronizationListenerSet) {
+                        mCmsService.addEventListener(mCmsSynchronizationListener);
+                        mCmsSynchronizationListenerSet = true;
+                    }
+                    mCmsService.syncOneToOneConversation(contact);
+                    return true;
 
-            default:
-                return super.onContextItemSelected(item);
+                default:
+                    return super.onContextItemSelected(item);
+            }
+        } catch (RcsServiceException e) {
+            showExceptionThenExit(e);
+            return true;
         }
     }
-
-    private XmsMessageListener mXmsMessageListener = new XmsMessageListener() {
-
-        @Override
-        public void onDeleted(final ContactId contact, Set<String> msgIds) {
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG,
-                        "onDeleted contact=" + contact + " for message IDs="
-                                + Arrays.toString(msgIds.toArray()));
-            }
-            mHandler.post(new Runnable() {
-                public void run() {
-                    Utils.displayLongToast(XmsMessagingList.this,
-                            getString(R.string.label_xms_delete_success, contact.toString()));
-                }
-            });
-        }
-
-        @Override
-        public void onStateChanged(ContactId contact, String mimeType, String messageId,
-                XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
-        }
-
-    };
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -409,5 +398,76 @@ public class XmsMessagingList extends RcsFragmentActivity implements
          * old data by replacing it with a null Cursor.
          */
         mAdapter.swapCursor(null);
+    }
+
+    private void initialize() {
+        mCmsService = getCmsApi();
+
+        mListView = (ListView) findViewById(android.R.id.list);
+        TextView emptyView = (TextView) findViewById(android.R.id.empty);
+        mListView.setEmptyView(emptyView);
+        registerForContextMenu(mListView);
+
+        mAdapter = new CmsListAdapter(this);
+        mListView.setAdapter(mAdapter);
+
+        mXmsMessageListener = new XmsMessageListener() {
+
+            @Override
+            public void onDeleted(final ContactId contact, Set<String> msgIds) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG,
+                            "onDeleted contact=" + contact + " for message IDs="
+                                    + Arrays.toString(msgIds.toArray()));
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(XmsMessagingList.this,
+                                getString(R.string.label_xms_delete_success, contact.toString()));
+                    }
+                });
+            }
+
+            @Override
+            public void onStateChanged(ContactId contact, String mimeType, String messageId,
+                    XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+            }
+        };
+
+        mCmsSynchronizationListener = new CmsSynchronizationListener() {
+            @Override
+            public void onAllSynchronized() {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onAllSynchronized");
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(XmsMessagingList.this,
+                                getString(R.string.label_cms_sync_end));
+                    }
+                });
+            }
+
+            @Override
+            public void onOneToOneConversationSynchronized(final ContactId contact) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onOneToOneConversationSynchronized contact=" + contact);
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(XmsMessagingList.this,
+                                getString(R.string.label_cms_sync_talk_end, contact.toString()));
+                    }
+                });
+            }
+
+            @Override
+            public void onGroupConversationSynchronized(String chatId) {
+            }
+        };
+        /*
+         * Initialize the Loader with id '1' and callbacks 'mCallbacks'.
+         */
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
     }
 }

@@ -214,6 +214,7 @@ public final class CmsService extends RcsService {
         try {
             mApi.syncAll();
         } catch (Exception e) {
+            RcsServiceNotAvailableException.assertException(e);
             throw new RcsGenericException(e);
         }
     }
@@ -232,7 +233,10 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.syncOneToOneConversation(contact);
+
         } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotAvailableException.assertException(e);
             throw new RcsGenericException(e);
         }
     }
@@ -253,6 +257,7 @@ public final class CmsService extends RcsService {
             mApi.syncGroupConversation(chatId);
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotAvailableException.assertException(e);
             throw new RcsGenericException(e);
         }
     }
@@ -295,6 +300,7 @@ public final class CmsService extends RcsService {
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
+
             throw new RcsGenericException(e);
         }
     }

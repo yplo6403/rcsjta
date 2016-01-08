@@ -97,13 +97,6 @@ public class GroupChatView extends ChatView {
         INCOMING, OUTGOING, OPEN
     }
 
-    /**
-     * List of items for contextual menu
-     */
-    private final static int GROUPCHAT_MENU_ITEM_DELETE = 0;
-
-    private final static int GROUPCHAT_MENU_ITEM_VIEW_GC_INFO = 1;
-
     private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=?";
 
     private String mSubject;
@@ -269,14 +262,15 @@ public class GroupChatView extends ChatView {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_gchat_item, menu);
         /* Get the list item position. */
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor) mAdapter.getItem(info.position);
-        menu.add(0, GROUPCHAT_MENU_ITEM_DELETE, 0, R.string.menu_delete_message);
         Direction direction = Direction.valueOf(cursor.getInt(cursor
                 .getColumnIndexOrThrow(Message.DIRECTION)));
-        if (Direction.OUTGOING == direction) {
-            menu.add(0, GROUPCHAT_MENU_ITEM_VIEW_GC_INFO, 1, R.string.menu_view_groupdelivery);
+        if (Direction.OUTGOING != direction) {
+            menu.findItem(R.id.menu_view_group_delivery).setVisible(false);
             // TODO depending on mime-type and provider ID, allow user to view file image
         }
     }
@@ -291,11 +285,11 @@ public class GroupChatView extends ChatView {
         }
         int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
         switch (item.getItemId()) {
-            case GROUPCHAT_MENU_ITEM_VIEW_GC_INFO:
+            case R.id.menu_view_group_delivery:
                 GroupDeliveryInfoList.startActivity(this, messageId);
                 return true;
 
-            case GROUPCHAT_MENU_ITEM_DELETE:
+            case R.id.menu_delete_message:
                 try {
                     if (ChatLog.Message.HISTORYLOG_MEMBER_ID == providerId) {
                         mChatService.deleteMessage(messageId);

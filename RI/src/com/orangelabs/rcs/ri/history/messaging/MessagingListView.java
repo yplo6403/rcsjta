@@ -53,6 +53,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -97,11 +98,6 @@ public class MessagingListView extends HistoryListView {
      * Associate the providers name menu with providerIds defined in HistoryLog
      */
     private final static TreeMap<Integer, String> sProviders = new TreeMap<>();
-
-    /**
-     * List of items for contextual menu
-     */
-    private static final int CHAT_MENU_ITEM_DELETE = 0;
 
     /* mapping chat_id / group chat info */
     private final Map<String, MessagingLogInfo> mGroupChatMap;
@@ -410,7 +406,7 @@ public class MessagingListView extends HistoryListView {
     /**
      * A POJO class to hold the messaging log information.
      */
-    public class MessagingLogInfo implements Comparable<MessagingLogInfo> {
+    private class MessagingLogInfo implements Comparable<MessagingLogInfo> {
 
         private final int mProviderId;
         private final long mTimestamp;
@@ -571,6 +567,9 @@ public class MessagingListView extends HistoryListView {
 
         @Override
         public int compareTo(MessagingLogInfo another) {
+            if (another == null) {
+                throw new NullPointerException("Cannot compare to null");
+            }
             return (int) (another.getTimestamp() - mTimestamp);
         }
 
@@ -579,7 +578,8 @@ public class MessagingListView extends HistoryListView {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        menu.add(0, CHAT_MENU_ITEM_DELETE, CHAT_MENU_ITEM_DELETE, R.string.menu_delete_chat_session);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_sharing_item, menu);
     }
 
     @Override
@@ -590,7 +590,7 @@ public class MessagingListView extends HistoryListView {
             Log.d(LOGTAG, "onContextItemSelected chatId=".concat(chatInfo.mChatId));
         }
         switch (item.getItemId()) {
-            case CHAT_MENU_ITEM_DELETE:
+            case R.id.menu_sharing_delete:
                 if (isServiceConnected(RcsServiceName.CHAT)) {
                     if (mChatService == null) {
                         mChatService = getChatApi();

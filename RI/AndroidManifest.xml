@@ -245,12 +245,6 @@
         </receiver>
 
         <activity
-            android:name="com.orangelabs.rcs.ri.messaging.chat.single.SingleChatView"
-            android:icon="@drawable/ri_quick_chat_icon"
-            android:label="@string/label_quick_chat"
-            android:launchMode="singleTop" >
-        </activity>
-        <activity
             android:name="com.orangelabs.rcs.ri.messaging.chat.single.SingleChatList"
             android:icon="@drawable/ri_quick_chat_icon"
             android:label="@string/menu_chat_log" />
@@ -544,15 +538,18 @@
             android:name=".cms.messaging.XmsMessagingList"
             android:label="@string/menu_cms_messaging_title" />
         <activity
-            android:name=".cms.messaging.InitiateXmsTalk"
+            android:name=".cms.messaging.InitiateOneToOneTalk"
             android:label="@string/menu_cms_messaging_title" />
         <activity
-            android:name=".cms.messaging.XmsView"
+            android:name=".messaging.OneToOneTalkView"
             android:label="@string/menu_cms_messaging_title"
             android:launchMode="singleTop" />
         <activity
             android:name=".cms.messaging.InitiateMmsTransfer"
         />
+        <activity
+            android:name=".settings.RiSettings"
+            />
 
         <service
             android:name=".cms.messaging.XmsIntentService"

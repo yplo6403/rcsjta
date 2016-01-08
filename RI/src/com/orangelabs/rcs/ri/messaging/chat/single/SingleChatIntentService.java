@@ -18,23 +18,36 @@
 
 package com.orangelabs.rcs.ri.messaging.chat.single;
 
+import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.chat.ChatLog;
+import com.gsma.services.rcs.chat.ChatMessage;
+import com.gsma.services.rcs.chat.ChatService;
 import com.gsma.services.rcs.chat.OneToOneChatIntent;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatMessageDAO;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.media.RingtoneManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Single chat intent service
@@ -42,6 +55,13 @@ import android.util.Log;
  * @author Philippe LEMORDANT
  */
 public class SingleChatIntentService extends IntentService {
+
+    private final static String[] PROJ_UNDELIVERED_MSG = new String[] {
+        ChatLog.Message.MESSAGE_ID
+    };
+
+    private static final String SEL_UNDELIVERED_MESSAGES = ChatLog.Message.CHAT_ID + "=? AND "
+            + ChatLog.Message.EXPIRED_DELIVERY + "='1'";
 
     private ChatPendingIntentManager mChatPendingIntentManager;
 
@@ -106,17 +126,34 @@ public class SingleChatIntentService extends IntentService {
             }
             return;
         }
-        if (LogUtils.isActive) {
-            Log.d(LOGTAG, "Undelivered message ID=" + msgId + " for contact " + contact);
+        RiSettings.PreferenceResendRcs preferenceResendChat = RiSettings
+                .getPreferenceResendChat(this);
+        switch (preferenceResendChat) {
+            case DO_NOTHING:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + msgId + " for contact " + contact
+                            + ": do nothing");
+                }
+                clearExpiredDeliveryMessages(contact);
+                break;
+
+            case SEND_TO_XMS:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + msgId + " for contact " + contact
+                            + ": send to SMS");
+                }
+                resendChatMessagesViaSms(contact);
+                break;
+
+            case ALWAYS_ASK:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + msgId + " for contact " + contact
+                            + ": ask user");
+                }
+                forwardUndeliveredMessage2UI(intent, contact);
         }
-        forwardUndeliveredMessage2UI(intent, contact);
     }
 
-    /**
-     * Handle new one to one chat message
-     * 
-     * @param messageIntent intent with chat message
-     */
     private void handleNewOneToOneChatMessage(Intent messageIntent, String msgId) {
         String mimeType = messageIntent.getStringExtra(OneToOneChatIntent.EXTRA_MIME_TYPE);
         if (mimeType == null) {
@@ -137,16 +174,10 @@ public class SingleChatIntentService extends IntentService {
         forwardSingleChatMessage2UI(messageIntent, msgDAO);
     }
 
-    /**
-     * Forward one to one chat message to view activity
-     * 
-     * @param messageIntent intent
-     * @param message the chat message DAO
-     */
     private void forwardSingleChatMessage2UI(Intent messageIntent, ChatMessageDAO message) {
         ContactId contact = message.getContact();
         String content = message.getContent();
-        Intent intent = SingleChatView.forgeIntentOnStackEvent(this, contact, messageIntent);
+        Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, messageIntent);
         Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent,
                 message.getChatId());
         if (uniqueId != null) {
@@ -177,7 +208,7 @@ public class SingleChatIntentService extends IntentService {
     }
 
     private void forwardUndeliveredMessage2UI(Intent undeliveredMessageIntent, ContactId contact) {
-        Intent intent = SingleChatView.forgeIntentOnStackEvent(this, contact,
+        Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact,
                 undeliveredMessageIntent);
         Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent,
                 contact.toString());
@@ -192,14 +223,6 @@ public class SingleChatIntentService extends IntentService {
         }
     }
 
-    /**
-     * Generate a notification
-     * 
-     * @param invitation invitation
-     * @param title title
-     * @param message message
-     * @return the notification
-     */
     private Notification buildNotification(PendingIntent invitation, String title, String message) {
         NotificationCompat.Builder notif = new NotificationCompat.Builder(this);
         notif.setContentIntent(invitation);
@@ -212,5 +235,88 @@ public class SingleChatIntentService extends IntentService {
         notif.setContentTitle(title);
         notif.setContentText(message);
         return notif.build();
+    }
+
+    private void resendChatMessagesViaSms(ContactId contact) {
+        Set<String> msgIds = getUndelivered(this, contact);
+        if (msgIds.isEmpty()) {
+            return;
+        }
+        ConnectionManager cnxManager = ConnectionManager.getInstance();
+        if (!cnxManager.isServiceConnected(ConnectionManager.RcsServiceName.CHAT,
+                ConnectionManager.RcsServiceName.CMS)) {
+            return;
+        }
+        ChatService chatService = cnxManager.getChatApi();
+        CmsService cmsService = cnxManager.getCmsApi();
+        try {
+            for (String msgId : msgIds) {
+                ChatMessage chatMessage = chatService.getChatMessage(msgId);
+                String content = chatMessage.getContent();
+                cmsService.sendTextMessage(contact, content);
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Re-send via SMS message ID=".concat(msgId));
+                }
+                chatService.deleteMessage(msgId);
+            }
+        } catch (RcsServiceException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+        }
+    }
+
+    private void clearExpiredDeliveryMessages(ContactId contact) {
+        Set<String> msgIds = getUndelivered(this, contact);
+        if (msgIds.isEmpty()) {
+            return;
+        }
+        ConnectionManager cnxManager = ConnectionManager.getInstance();
+        if (!cnxManager.isServiceConnected(ConnectionManager.RcsServiceName.CHAT)) {
+            return;
+        }
+        ChatService chatService = cnxManager.getChatApi();
+        try {
+            if (LogUtils.isActive) {
+                Log.d(LOGTAG, "Clear delivery expiration for IDs=" + msgIds);
+            }
+            chatService.clearMessageDeliveryExpiration(msgIds);
+
+        } catch (RcsServiceException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+        }
+    }
+
+    /**
+     * Get set of undelivered messages
+     * 
+     * @param ctx The context
+     * @param contact The contact
+     * @return set of undelivered messages
+     */
+    public static Set<String> getUndelivered(Context ctx, ContactId contact) {
+        Set<String> messageIds = new HashSet<>();
+        Cursor cursor = null;
+        try {
+            cursor = ctx.getContentResolver().query(ChatLog.Message.CONTENT_URI,
+                    PROJ_UNDELIVERED_MSG, SEL_UNDELIVERED_MESSAGES, new String[] {
+                        contact.toString()
+                    }, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query undelivered message for contact="
+                        + contact);
+            }
+            if (!cursor.moveToFirst()) {
+                return messageIds;
+            }
+            int messageIdColumnIdx = cursor.getColumnIndexOrThrow(ChatLog.Message.MESSAGE_ID);
+            do {
+                messageIds.add(cursor.getString(messageIdColumnIdx));
+            } while (cursor.moveToNext());
+            return messageIds;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 }

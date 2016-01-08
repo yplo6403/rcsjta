@@ -18,14 +18,27 @@
 
 package com.orangelabs.rcs.ri.messaging.filetransfer;
 
+import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
+
+import com.gsma.services.rcs.CommonServiceConfiguration;
+import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsServiceNotAvailableException;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferIntent;
+import com.gsma.services.rcs.filetransfer.FileTransferLog;
+import com.gsma.services.rcs.filetransfer.FileTransferService;
 
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.messaging.chat.single.SingleChatView;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.FileUtils;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 import com.orangelabs.rcs.ri.utils.Utils;
@@ -36,9 +49,16 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.media.RingtoneManager;
+import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * File transfer intent service
@@ -49,6 +69,13 @@ public class FileTransferIntentService extends IntentService {
 
     private static final String LOGTAG = LogUtils.getTag(FileTransferIntentService.class
             .getSimpleName());
+
+    private final static String[] PROJ_UNDELIVERED_FT = new String[] {
+        FileTransferLog.FT_ID
+    };
+
+    private static final String SEL_UNDELIVERED_FTS = FileTransferLog.CHAT_ID + "=? AND "
+            + FileTransferLog.EXPIRED_DELIVERY + "='1'";
 
     /**
      * Constructor
@@ -91,15 +118,16 @@ public class FileTransferIntentService extends IntentService {
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "onHandleIntent file transfer with ID ".concat(transferId));
         }
-        if (FileTransferIntent.ACTION_FILE_TRANSFER_DELIVERY_EXPIRED.equals(action)) {
-            handleUndeliveredFileTransfer(intent, transferId);
-            return;
-        }
         /* Get File Transfer from provider */
         FileTransferDAO ftDao = FileTransferDAO.getFileTransferDAO(this, transferId);
         if (ftDao == null) {
             return;
         }
+        if (FileTransferIntent.ACTION_FILE_TRANSFER_DELIVERY_EXPIRED.equals(action)) {
+            handleUndeliveredFileTransfer(intent, transferId, ftDao);
+            return;
+        }
+
         /* Check if file transfer is already rejected */
         if (FileTransfer.State.REJECTED == ftDao.getState()) {
             if (LogUtils.isActive) {
@@ -112,7 +140,7 @@ public class FileTransferIntentService extends IntentService {
                 Log.d(LOGTAG, "File Transfer invitation filename=" + ftDao.getFilename() + " size="
                         + ftDao.getSize());
             }
-            addFileTransferInvitationNotification(intent, ftDao);
+            handleFileTransferInvitationNotification(intent, ftDao);
             return;
         }
         /* File transfer is resuming */
@@ -126,13 +154,7 @@ public class FileTransferIntentService extends IntentService {
         }
     }
 
-    /**
-     * Add file transfer notification
-     * 
-     * @param invitation Intent invitation
-     * @param ftDao the file transfer data object
-     */
-    private void addFileTransferInvitationNotification(Intent invitation, FileTransferDAO ftDao) {
+    private void handleFileTransferInvitationNotification(Intent invitation, FileTransferDAO ftDao) {
         ContactId contact = ftDao.getContact();
         if (ftDao.getContact() == null) {
             if (LogUtils.isActive) {
@@ -160,7 +182,8 @@ public class FileTransferIntentService extends IntentService {
         notificationManager.notify(uniqueId, notif);
     }
 
-    private void handleUndeliveredFileTransfer(Intent intent, String transferId) {
+    private void handleUndeliveredFileTransfer(Intent intent, String transferId,
+            FileTransferDAO ftDao) {
         ContactId contact = intent.getParcelableExtra(FileTransferIntent.EXTRA_CONTACT);
         if (contact == null) {
             if (LogUtils.isActive) {
@@ -171,12 +194,36 @@ public class FileTransferIntentService extends IntentService {
         if (LogUtils.isActive) {
             Log.d(LOGTAG, "Undelivered file transfer ID=" + transferId + " for contact " + contact);
         }
-        forwardUndeliveredFileTransferToUi(intent, contact, transferId);
+        RiSettings.PreferenceResendRcs preferenceResendFt = RiSettings
+                .getPreferenceResendFileTransfer(this);
+        switch (preferenceResendFt) {
+            case DO_NOTHING:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + transferId + " for contact " + contact
+                            + ": do nothing");
+                }
+                clearExpiredDeliveryFileTransfers(contact);
+                break;
+
+            case SEND_TO_XMS:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + transferId + " for contact " + contact
+                            + ": send to SMS");
+                }
+                resendFileTransfersViaMms(contact);
+                break;
+
+            case ALWAYS_ASK:
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Undelivered ID=" + transferId + " for contact " + contact
+                            + ": ask user");
+                }
+                forwardUndeliveredFileTransferToUi(intent, contact);
+        }
     }
 
-    private void forwardUndeliveredFileTransferToUi(Intent undeliveredIntent, ContactId contact,
-            String transferId) {
-        Intent intent = SingleChatView.forgeIntentOnStackEvent(this, contact, undeliveredIntent);
+    private void forwardUndeliveredFileTransferToUi(Intent undeliveredIntent, ContactId contact) {
+        Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, undeliveredIntent);
         ChatPendingIntentManager pendingIntentmanager = ChatPendingIntentManager
                 .getChatPendingIntentManager(this);
         Integer uniqueId = pendingIntentmanager.tryContinueChatConversation(intent,
@@ -192,14 +239,6 @@ public class FileTransferIntentService extends IntentService {
         }
     }
 
-    /**
-     * Generate a notification
-     * 
-     * @param pendingIntent pending intent
-     * @param title title
-     * @param message message
-     * @return the notification
-     */
     private Notification buildNotification(PendingIntent pendingIntent, String title, String message) {
         NotificationCompat.Builder notif = new NotificationCompat.Builder(this);
         notif.setContentIntent(pendingIntent);
@@ -214,4 +253,114 @@ public class FileTransferIntentService extends IntentService {
         return notif.build();
     }
 
+    private void resendFileTransfersViaMms(ContactId contact) {
+        Set<String> transferIds = getUndelivered(this, contact);
+        if (transferIds.isEmpty()) {
+            return;
+        }
+        ConnectionManager cnxManager = ConnectionManager.getInstance();
+        if (!cnxManager.isServiceConnected(ConnectionManager.RcsServiceName.FILE_TRANSFER,
+                ConnectionManager.RcsServiceName.CMS)) {
+            return;
+        }
+        FileTransferService fileTransferService = cnxManager.getFileTransferApi();
+        CmsService cmsService = cnxManager.getCmsApi();
+        try {
+            for (String id : transferIds) {
+                FileTransfer fileTransfer = fileTransferService.getFileTransfer(id);
+                if (fileTransfer == null) {
+                    if (LogUtils.isActive) {
+                        Log.e(LOGTAG, "Cannot resend via MMS transfer ID=" + id + ": not found!");
+                    }
+                    continue;
+                }
+                List<Uri> files = new ArrayList<>();
+                Uri file = fileTransfer.getFile();
+                if (!FileUtils.isImageType(fileTransfer.getMimeType())) {
+                    if (LogUtils.isActive) {
+                        Log.e(LOGTAG, "Cannot resend via MMS transfer ID=" + id + ": not image!");
+                    }
+                    continue;
+                }
+                takePersistableContentUriPermission(this, file);
+                files.add(file);
+                final String subject = getString(R.string.switch_mms_subject,
+                        getMyDisplayName(fileTransferService));
+                final String body = getString(R.string.switch_mms_body);
+                cmsService.sendMultimediaMessage(contact, files, subject, body);
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Re-send via MMS transfer ID=".concat(id));
+                }
+                fileTransferService.deleteFileTransfer(id);
+            }
+        } catch (RcsServiceException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+        }
+    }
+
+    private void clearExpiredDeliveryFileTransfers(ContactId contact) {
+        Set<String> msgIds = getUndelivered(this, contact);
+        if (msgIds.isEmpty()) {
+            return;
+        }
+        ConnectionManager cnxManager = ConnectionManager.getInstance();
+        if (!cnxManager.isServiceConnected(ConnectionManager.RcsServiceName.FILE_TRANSFER)) {
+            return;
+        }
+        FileTransferService fileTransferService = cnxManager.getFileTransferApi();
+        try {
+            if (LogUtils.isActive) {
+                Log.d(LOGTAG, "Clear delivery expiration for IDs=" + msgIds);
+            }
+            fileTransferService.clearFileTransferDeliveryExpiration(msgIds);
+
+        } catch (RcsServiceException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+        }
+    }
+
+    /**
+     * Get set of undelivered file transfers
+     * 
+     * @param ctx The context
+     * @param contact The contact
+     * @return set of undelivered file transfers
+     */
+    public static Set<String> getUndelivered(Context ctx, ContactId contact) {
+        Set<String> ids = new HashSet<>();
+        Cursor cursor = null;
+        try {
+            cursor = ctx.getContentResolver().query(FileTransferLog.CONTENT_URI,
+                    PROJ_UNDELIVERED_FT, SEL_UNDELIVERED_FTS, new String[] {
+                        contact.toString()
+                    }, null);
+            if (cursor == null) {
+                throw new IllegalStateException(
+                        "Cannot query undelivered file transfers for contact=" + contact);
+            }
+            if (!cursor.moveToFirst()) {
+                return ids;
+            }
+            int idColumnIdx = cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID);
+            do {
+                ids.add(cursor.getString(idColumnIdx));
+            } while (cursor.moveToNext());
+            return ids;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    private String getMyDisplayName(FileTransferService fileTransferService)
+            throws RcsGenericException, RcsServiceNotAvailableException {
+        CommonServiceConfiguration config = fileTransferService.getCommonConfiguration();
+        String myDisplayName = config.getMyDisplayName();
+        if (myDisplayName == null) {
+            myDisplayName = config.getMyContactId().toString();
+        }
+        return myDisplayName;
+    }
 }

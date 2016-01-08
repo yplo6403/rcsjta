@@ -22,6 +22,7 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.utils.ContactListAdapter;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
 
@@ -32,9 +33,11 @@ import android.widget.Button;
 import android.widget.Spinner;
 
 /**
- * Created by yplo6403 on 23/11/2015.
+ * Activity to initiate a XMS talk
+ * 
+ * @author Philippe LEMORDANT
  */
-public class InitiateXmsTalk extends RcsActivity {
+public class InitiateOneToOneTalk extends RcsActivity {
 
     /**
      * Spinner for contact selection
@@ -76,7 +79,8 @@ public class InitiateXmsTalk extends RcsActivity {
                 ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
                 String phoneNumber = adapter.getSelectedNumber(mSpinner.getSelectedView());
                 ContactId contact = ContactUtil.formatContact(phoneNumber);
-                startActivity(XmsView.forgeIntentToOpenConversation(InitiateXmsTalk.this, contact));
+                startActivity(OneToOneTalkView.forgeIntentToOpenConversation(
+                        InitiateOneToOneTalk.this, contact));
                 /* Exit activity */
                 finish();
             }

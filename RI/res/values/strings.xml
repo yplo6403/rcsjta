@@ -12,7 +12,7 @@
     <string name="label_confirm_close">Do you confirm ?\nThis will close the session.</string>
     <string name="menu_close_session">Quit</string>
     <string name="menu_clear_log">Clear log</string>
-    <string name="menu_sync_xms">Sync</string>
+    <string name="menu_sync_cms">Synchronize</string>
     <string name="label_file_size">Size: %1$s Kb</string>
     <string name="label_command_in_progress">Command in progress…</string>
     <string name="label_session_not_found">Session not found</string>
@@ -208,8 +208,10 @@
     <string name="label_GroupChatSupported">GC supported:</string>
     <string name="label_NotAllowedToInitiateGroupChat">Not allowed to initiate Group Chat</string>
     <string name="title_undelivered_message">Undelivered message(s)!</string>
-    <string name="label_undelivered_message">%1$s did not receive your message(s)</string>
+    <string name="label_undelivered_message">%1$s did not receive your message(s).\nDo you want to send them by SMS?</string>
+
     <string name="title_undelivered_filetransfer">Undelivered file(s)!</string>
+    <string name="label_undelivered_ft_resend_mms">%1$s did not receive your file(s).\nDo you want to send them by MMS?</string>
     <string name="label_undelivered_filetransfer">%1$s did not receive your file(s)</string>
 
     <!-- Sharing menu -->
@@ -353,7 +355,7 @@
     <string name="title_group_delivery_info">Group delivery information</string>
 
     <!-- Chat message menu -->
-    <string name="menu_view_groupdelivery">View delivery information</string>
+    <string name="menu_view_group_delivery">View delivery information</string>
     <string name="menu_delete_message">Delete</string>
     <string name="menu_resend_message">Resend</string>
     <string name="menu_send_message">Send</string>
@@ -417,10 +419,12 @@
     <string name="title_recv_sms">SMS from %s</string>
     <string name="title_recv_mms">MMS from %s</string>
     <string name="toast_mms_image">MMS image %1$s for contact %2$s</string>
+    <string name="label_cms_sync_end">CMS is synchronized</string>
+    <string name="label_cms_sync_talk_end">CMS is synchronized for contact %1$s</string>
 
     <string name="mms_image_in">Image %1$s received from contact %2$s</string>
     <string name="mms_image_out">Image %1$s sent to contact %2$s</string>
-    <string name="menu_delete_xms">Delete all XMS</string>
+    <string name="menu_delete_talk">Delete all messages</string>
     <string name="hint_type_subject">Enter the subject</string>
     <string name="menu_select_part">Select attachment</string>
     <string name="mms_sending">Sending MMS to %1$s</string>
@@ -429,6 +433,20 @@
      <string name="menu_add_parts">Select attachment</string>
     <string name="err_not_implemented">Option \'%1$s\' not implemented yet</string>
     <string name="label_sel_vcard">Send visit card</string>
+    <string name="menu_settings">Settings</string>
+    <string name="ri_settings_title_resend_chat">Switch failed RCS to SMS</string>
+    <string name="ri_settings_summary_resend_chat">Switch RCS to SMS in case of chat failure</string>
+    <string name="ri_settings_title_resend_ft">Switch failed RCS to MMS</string>
+    <string name="ri_settings_summary_resend_ft">Switch RCS to MMS in case of image transfer failure</string>
+    <string name="checkbox_cms_save_switch_xms">Don\'t ask again</string>
+    <string name="menu_resend_via_sms">Re-send by SMS</string>
+    <string name="menu_resend_by_mms">Re-send by MMS</string>
+    <string name="menu_switch_to_sms">Switch to SMS</string>
+    <string name="menu_switch_to_rcs">Try switch to RCS</string>
+    <string name="ri_settings_summary_sync_mode">Set the CMS synchronization mode</string>
+    <string name="ri_settings_title_sync_mode">CMS synchronization</string>
+    <string name="switch_mms_subject">MMS from %1$s</string>
+    <string name="switch_mms_body">Automatic backup from RCS to MMS</string>
 
     <!-- States -->
 
@@ -684,4 +702,22 @@
         <item>Add a contact</item>
     </string-array>
 
+    <string-array name="ri_settings_resend_entries">
+        <item>Automatically switch</item>
+        <item>Do nothing</item>
+        <item>Always ask</item>
+    </string-array>
+    <string-array name="ri_settings_resend_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string-array name="ri_settings_sync_mode_entries">
+        <item>Automatic</item>
+        <item>Manual</item>
+    </string-array>
+    <string-array name="ri_settings_sync_mode_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
 </resources>

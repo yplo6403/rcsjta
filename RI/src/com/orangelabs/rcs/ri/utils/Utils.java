@@ -36,12 +36,11 @@ import java.util.Set;
  * Utility functions
  * 
  * @author Jean-Marc AUFFRET
+ * @author Philippe LEMORDANT
  */
 public class Utils {
 
     private static final Random sPendingIntentIdGenerator = new Random();
-
-    private static final String LOGTAG = LogUtils.getTag(Utils.class.getSimpleName());
 
     /**
      * Gets a unique ID for pending intent
@@ -134,10 +133,10 @@ public class Utils {
      */
     public static String getProgressLabel(long currentSize, long totalSize) {
         StringBuilder value = new StringBuilder();
-        value.append(FileUtils.humanReadableByteCount(currentSize,true));
+        value.append(FileUtils.humanReadableByteCount(currentSize, true));
         if (totalSize != 0) {
             value.append('/');
-            value.append(FileUtils.humanReadableByteCount(currentSize,true));
+            value.append(FileUtils.humanReadableByteCount(totalSize, true));
         }
         return value.toString();
     }

@@ -36,7 +36,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -124,13 +123,8 @@ public class InitiateMmsTransfer extends RcsActivity {
                 for (MmsPartDataObject mmsPart : mMmsParts) {
                     files.add(mmsPart.getFile());
                 }
-                /*
-                 * The MMS sending is performed in background because the API returns a message
-                 * instance only once it is persisted and to persist MMS, the core stack computes
-                 * the file icon for image attached files.
-                 */
-                SendMmsTask sendMmsTask = new SendMmsTask(cmsService, mContact, files, subject,
-                        body, new SendMmsTask.TaskCompleted() {
+                SendMmsInBackground sendMmsTask = new SendMmsInBackground(cmsService, mContact,
+                        files, subject, body, new SendMmsInBackground.TaskCompleted() {
                             @Override
                             public void onTaskComplete(final Exception result) {
                                 if (result != null) {
@@ -176,13 +170,13 @@ public class InitiateMmsTransfer extends RcsActivity {
         FileUtils.openFiles(this, mMimeType, PICK_IMAGE_REQUEST);
     }
 
-    private void addImagePart( List<MmsPartDataObject> mmsParts, ContactId contact, Uri uri) {
-        String filename = FileUtils.getFileName(this,uri);
-        Long fileSize = FileUtils.getFileSize(this,uri);
+    private void addImagePart(List<MmsPartDataObject> mmsParts, ContactId contact, Uri uri) {
+        String filename = FileUtils.getFileName(this, uri);
+        Long fileSize = FileUtils.getFileSize(this, uri);
         String mimeType = FileUtils.getMimeType(filename);
         if (mimeType != null && FileUtils.isImageType(mimeType)) {
             takePersistableContentUriPermission(this, uri);
-            mmsParts.add(new MmsPartDataObject(mimeType, uri,  filename,fileSize, contact));
+            mmsParts.add(new MmsPartDataObject(mimeType, uri, filename, fileSize, contact));
         }
     }
 
@@ -221,8 +215,7 @@ public class InitiateMmsTransfer extends RcsActivity {
                                 .getItem(pos);
                         String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(),
                                 mContact.toString());
-                        Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(),
-                                msg);
+                        Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(), msg);
                     }
 
                 });
@@ -231,43 +224,4 @@ public class InitiateMmsTransfer extends RcsActivity {
         }
     }
 
-    private static class SendMmsTask extends AsyncTask<Void, Void, Exception> {
-        private final CmsService mCmsService;
-        private final ContactId mContact;
-        private final List<Uri> mFiles;
-        private final String mSubject;
-        private final String mBody;
-        private final TaskCompleted mTaskCompleted;
-
-        public SendMmsTask(CmsService cmsService, ContactId contact, List<Uri> files,
-                String subject, String body, TaskCompleted taskCompleted) {
-            mCmsService = cmsService;
-            mContact = contact;
-            mFiles = files;
-            mSubject = subject;
-            mBody = body;
-            mTaskCompleted = taskCompleted;
-        }
-
-        @Override
-        protected Exception doInBackground(Void... params) {
-            try {
-                mCmsService.sendMultimediaMessage(mContact, mFiles, mSubject, mBody);
-                return null;
-            } catch (Exception e) {
-                return e;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Exception result) {
-            if (mTaskCompleted != null) {
-                mTaskCompleted.onTaskComplete(result);
-            }
-        }
-
-        public interface TaskCompleted {
-            void onTaskComplete(Exception result);
-        }
-    }
 }

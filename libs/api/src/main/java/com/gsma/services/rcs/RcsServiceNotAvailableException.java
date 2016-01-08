@@ -57,4 +57,32 @@ public class RcsServiceNotAvailableException extends RcsServiceException {
     public RcsServiceNotAvailableException(String message) {
         super(message);
     }
+
+    /**
+     * Constructor
+     *
+     * @param message Error message obtained either from a constant string or through e.getMessage()
+     * @param cause the cause (which is saved for later retrieval by the Throwable.getCause()
+     *            method). (A null value is permitted, and indicates that the cause is nonexistent
+     *            or unknown.)
+     */
+    public RcsServiceNotAvailableException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    /**
+     * Asserts {@link RcsPermissionDeniedException}
+     * <p>
+     * An utility method that will translate the Server side exception to client specific exception
+     * by parsing exception message which will have a special formatted exception message with a
+     * pre-defined delimiter.
+     * </p>
+     *
+     * @param e Exception
+     * @throws RcsServiceNotAvailableException
+     */
+    public static void assertException(Exception e) throws RcsServiceNotAvailableException {
+        if (isIntendedException(e, RcsServiceNotAvailableException.class)) {
+            throw new RcsServiceNotAvailableException(extractServerException(e), e);
+        }
+    }
 }

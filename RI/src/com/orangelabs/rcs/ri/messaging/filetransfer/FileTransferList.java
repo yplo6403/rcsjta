@@ -96,13 +96,6 @@ public class FileTransferList extends RcsFragmentActivity implements
     private static final String LOGTAG = LogUtils.getTag(FileTransferList.class.getSimpleName());
 
     /**
-     * List of items for contextual menu
-     */
-    private final static int MENU_ITEM_DELETE = 0;
-    private final static int MENU_ITEM_RESEND = 1;
-    private final static int MENU_ITEM_VIEW = 2;
-
-    /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
      */
     private static final int LOADER_ID = 1;
@@ -281,14 +274,18 @@ public class FileTransferList extends RcsFragmentActivity implements
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_ft_item, menu);
+        menu.findItem(R.id.menu_delete_message).setVisible(false);
+        menu.findItem(R.id.menu_view_message).setVisible(false);
+        menu.findItem(R.id.menu_resend_message).setVisible(false);
         /* Check file transfer API is connected */
         if (!isServiceConnected(RcsServiceName.FILE_TRANSFER)) {
-            showMessage(R.string.label_service_not_available);
             return;
         }
+        menu.findItem(R.id.menu_delete_message).setVisible(true);
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor) mAdapter.getItem(info.position);
-        menu.add(0, MENU_ITEM_DELETE, 0, R.string.menu_delete_message);
 
         /* Check if message can be resent */
         String transferId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
@@ -299,11 +296,11 @@ public class FileTransferList extends RcsFragmentActivity implements
             }
             State state = transfer.getState();
             if (transfer.isAllowedToResendTransfer()) {
-                menu.add(0, MENU_ITEM_RESEND, 1, R.string.menu_resend_message);
+                menu.findItem(R.id.menu_resend_message).setVisible(true);
             } else if (Direction.OUTGOING == transfer.getDirection()
                     || (State.TRANSFERRED == state) || (State.DISPLAYED == state)) {
                 if (FileUtils.isImageType(transfer.getMimeType())) {
-                    menu.add(0, MENU_ITEM_VIEW, 1, R.string.menu_view_message);
+                    menu.findItem(R.id.menu_view_message).setVisible(true);
                 }
             }
         } catch (RcsServiceException e) {
@@ -318,7 +315,7 @@ public class FileTransferList extends RcsFragmentActivity implements
         String transferId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
         try {
             switch (item.getItemId()) {
-                case MENU_ITEM_RESEND:
+                case R.id.menu_resend_message:
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "onContextItemSelected resend ftId=".concat(transferId));
                     }
@@ -332,7 +329,7 @@ public class FileTransferList extends RcsFragmentActivity implements
                     }
                     return true;
 
-                case MENU_ITEM_DELETE:
+                case R.id.menu_delete_message:
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "onContextItemSelected delete ftId=".concat(transferId));
                     }
@@ -343,7 +340,7 @@ public class FileTransferList extends RcsFragmentActivity implements
                     mFileTransferService.deleteFileTransfer(transferId);
                     return true;
 
-                case MENU_ITEM_VIEW:
+                case R.id.menu_view_message:
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "onContextItemSelected view ftId=".concat(transferId));
                     }

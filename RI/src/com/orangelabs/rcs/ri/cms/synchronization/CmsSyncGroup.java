@@ -49,6 +49,7 @@ import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -62,17 +63,13 @@ import java.util.Map;
 /**
  * Synchronize group chats
  *
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class CmsSyncGroup extends RcsFragmentActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 
-    // @formatter:on
     private static final String SORT_ORDER = ChatLog.GroupChat.TIMESTAMP + " DESC";
-    /**
-     * List of items for contextual menu
-     */
-    private static final int CMS_MENU_ITEM_SYNC = 1;
+
     private static final String LOGTAG = LogUtils.getTag(CmsSyncGroup.class.getSimpleName());
     /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
@@ -88,6 +85,8 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
             ChatLog.GroupChat.TIMESTAMP,
             ChatLog.GroupChat.PARTICIPANTS
     };
+    // @formatter:on
+
     private ListView mListView;
     private SyncGroupListAdapter mAdapter;
     private Handler mHandler = new Handler();
@@ -98,7 +97,6 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.chat_list);
 
@@ -117,7 +115,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
          */
         getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
-         /* Register to API connection manager */
+        /* Register to API connection manager */
         if (!isServiceConnected(ConnectionManager.RcsServiceName.CMS)) {
             showMessageThenExit(R.string.label_service_not_available);
             return;
@@ -147,7 +145,8 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        menu.add(0, CMS_MENU_ITEM_SYNC, CMS_MENU_ITEM_SYNC, R.string.menu_cms_sync_group);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_log_cms_sync_group_item, menu);
     }
 
     @Override
@@ -160,7 +159,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
             Log.d(LOGTAG, "onContextItemSelected chatId=".concat(chatId));
         }
         switch (item.getItemId()) {
-            case CMS_MENU_ITEM_SYNC:
+            case R.id.menu_log_cms_sync_group_item:
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "Synchronize group chat for chatId=".concat(chatId));
                 }
@@ -178,7 +177,6 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        /* Create a new CursorLoader with the following query parameters. */
         return new CursorLoader(this, ChatLog.GroupChat.CONTENT_URI, PROJECTION, null, null,
                 SORT_ORDER);
     }
@@ -335,7 +333,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
 
         int columnReasonCode;
 
-      GroupChatListItemViewHolder(View base, Cursor cursor) {
+        GroupChatListItemViewHolder(View base, Cursor cursor) {
             columnSubject = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.SUBJECT);
             columnDate = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.TIMESTAMP);
             columnState = cursor.getColumnIndexOrThrow(ChatLog.GroupChat.STATE);

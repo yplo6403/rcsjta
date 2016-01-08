@@ -22,14 +22,30 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
+        android:id="@+id/menu_send_geoloc"
+        android:title="@string/menu_send_geoloc"/>
+
+    <item
+        android:id="@+id/menu_send_rcs_file"
+        android:title="@string/menu_send_file"/>
+
+    <item
         android:id="@+id/menu_send_mms"
         android:title="@string/menu_send_mms"/>
 
     <item
-        android:id="@+id/menu_delete_xms"
-        android:title="@string/menu_delete_xms"/>
+        android:id="@+id/menu_delete_talk"
+        android:title="@string/menu_delete_talk"/>
 
     <item
-        android:id="@+id/menu_sync_xms"
-        android:title="@string/menu_sync_xms"/>
+        android:id="@+id/menu_switch_to_sms"
+        android:title="@string/menu_switch_to_sms"/>
+
+    <item
+        android:id="@+id/menu_switch_to_rcs"
+        android:title="@string/menu_switch_to_rcs"/>
+
+    <item
+        android:id="@+id/menu_sync_cms"
+        android:title="@string/menu_sync_cms"/>
 </menu>
