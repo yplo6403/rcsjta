@@ -587,7 +587,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case ChatLog.Message.HISTORYLOG_MEMBER_ID:
-                    mCmsService.markMessageAsRead(id);
+                    mChatService.markMessageAsRead(id);
                     break;
 
                 case FileTransferLog.HISTORYLOG_MEMBER_ID:
