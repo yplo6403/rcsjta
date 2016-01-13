@@ -17,22 +17,30 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.imap.message.mime;
+package com.gsma.rcs.cms.observer;
 
-public class SmsMimeBody implements MimeBody{
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.services.rcs.cms.XmsMessage.State;
+import com.gsma.services.rcs.contact.ContactId;
 
-    private String mContent;
+public interface XmsObserverListener {
 
-    public SmsMimeBody() {
-    }
+    void onIncomingSms(SmsDataObject message);
 
-    @Override
-    public String toString() {
-        return mContent;
-    }
+    void onOutgoingSms(SmsDataObject message);
 
-    @Override
-    public void parsePayload(String payload) {
-        mContent = payload;
-    }
+    void onIncomingMms(MmsDataObject message);
+
+    void onOutgoingMms(MmsDataObject message);
+
+    void onDeleteSmsFromNativeApp(long nativeProviderId);
+    void onDeleteMmsFromNativeApp(String mmsId);
+
+    void onReadXmsConversationFromNativeApp(long nativeThreadId);
+
+    void onDeleteXmsConversationFromNativeApp(long nativeThreadId);
+
+    void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state);
+
 }

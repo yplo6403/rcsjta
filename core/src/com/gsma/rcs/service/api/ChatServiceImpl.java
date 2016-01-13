@@ -470,7 +470,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             mMessagingLog.addGroupChat(session.getContributionID(), session.getRemoteContact(),
                     session.getSubject(), session.getParticipants(), GroupChat.State.INITIATING,
                     GroupChat.ReasonCode.UNSPECIFIED, Direction.OUTGOING, timestamp);
-
+            mImService.getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler().onCreateGroupChat(chatId, chatId);
             mImService.scheduleImOperation(new Runnable() {
                 public void run() {
                     try {
@@ -903,6 +903,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             public void run() {
                 try {
                     mMessagingLog.markMessageAsRead(msgId);
+                    mImService.getImsModule().getCmsService().getCmsManager().getChatEventHandler().onReadChatMessage(msgId);
                     if (mRcsSettings.isImReportsActivated()
                             && mRcsSettings.isRespondToDisplayReports()) {
                         if (sLogger.isActivated()) {

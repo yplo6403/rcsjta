@@ -791,7 +791,7 @@ public abstract class GroupChatSession extends ChatSession {
                             ContactId me = ContactUtil.createContactIdFromValidatedData(number);
                             // Only consider delivery report if sent to me
                             if (localId != null && localId.equals(me)) {
-                                onDeliveryStatusReceived(remoteId, cpimMsg.getMessageContent());
+                                onDeliveryStatusReceived(remoteId, cpimMsg);
                             } else {
                                 if (logActivated) {
                                     sLogger.debug("Discard delivery report send to " + localId);
@@ -884,7 +884,7 @@ public abstract class GroupChatSession extends ChatSession {
                     ImdnDocument imdn = new ImdnDocument(msgId, ImdnDocument.DELIVERY_NOTIFICATION,
                             ImdnDocument.DELIVERY_STATUS_FAILED, ImdnDocument.IMDN_DATETIME_NOT_SET);
                     ContactId contact = null;
-                    ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(contact, imdn);
+                    ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(contact, imdn, msgId);
                 }
             } else {
                 // do nothing

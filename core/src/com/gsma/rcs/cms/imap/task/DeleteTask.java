@@ -64,9 +64,10 @@ public class DeleteTask implements Runnable {
     public void run() {
         boolean result = false;
         try {
-            mImapServiceController.getService().init();
+            mImapServiceController.createService().init();
             result = delete(mMailbox);
         } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             mImapServiceController.closeService();
             if (mListener != null) {

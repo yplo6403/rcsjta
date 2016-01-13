@@ -90,7 +90,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context context, CmsService cmsService, XmsLog xmsLog,
+    public CmsServiceImpl(Context context, CmsService cmsService, ChatServiceImpl chatService, XmsLog xmsLog,
             RcsSettings rcsSettings, XmsManager xmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
@@ -98,6 +98,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         mContext = context;
         mCmsService = cmsService;
         mCmsService.register(this);
+        mCmsService.register(chatService);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;
@@ -607,7 +608,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact,
                 subject, parts, mRcsSettings, mXmsManager);
         session.addListener(this);
-        session.addListener(mCmsService.getCmsManager());
+        session.addListener(mCmsService.getCmsManager().getMmsSessionHandler());
         mCmsService.scheduleImOperation(session);
     }
 

@@ -22,8 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.im.chat;
 
-import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
-import static com.gsma.rcs.utils.StringUtils.UTF8;
+import android.net.Uri;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
@@ -69,8 +68,6 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 
-import android.net.Uri;
-
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -78,6 +75,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
+
+import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
+import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 /**
  * Chat session
@@ -571,7 +571,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                     } else if (ChatUtils.isApplicationIsComposingType(contentType)) {
                         receiveIsComposing(contact, cpimMsg.getMessageContent().getBytes(UTF8));
                     } else if (ChatUtils.isMessageImdnType(contentType)) {
-                        onDeliveryStatusReceived(contact, cpimMsg.getMessageContent());
+                        onDeliveryStatusReceived(contact, cpimMsg);
                     } else if (ChatUtils.isGeolocType(contentType)) {
                         ChatMessage msg = new ChatMessage(cpimMsgId, contact,
                                 ChatUtils.networkGeolocContentToPersistedGeolocContent(cpimMsg
@@ -927,15 +927,15 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * Receive a message delivery status from an XML document
      * 
      * @param contact Contact identifier
-     * @param xml XML document
+     * @param cpimMessage cpimMessage
      * @throws PayloadException
      */
-    public void onDeliveryStatusReceived(ContactId contact, String xml) throws PayloadException {
+    public void onDeliveryStatusReceived(ContactId contact, CpimMessage cpimMessage) throws PayloadException {
         try {
-            ImdnDocument imdn = ChatUtils.parseDeliveryReport(xml);
+            ImdnDocument imdn = ChatUtils.parseDeliveryReport(cpimMessage.getMessageContent());
             for (ImsSessionListener listener : getListeners()) {
                 ((ChatSessionListener) listener).onDeliveryStatusReceived(mContributionId, contact,
-                        imdn);
+                        imdn, cpimMessage.getHeader(ImdnUtils.HEADER_IMDN_MSG_ID));
             }
         } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
             throw new PayloadException(new StringBuilder(

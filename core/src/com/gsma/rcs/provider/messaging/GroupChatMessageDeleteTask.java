@@ -126,6 +126,9 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
     @Override
     protected void onCompleted(String chatId, Set<String> msgIds) {
         mChatService.broadcastGroupChatMessagesDeleted(chatId, msgIds);
+        for(String messageId : msgIds){
+            mImService.getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler().onDeleteChatMessage(messageId);
+        }
     }
 
 }

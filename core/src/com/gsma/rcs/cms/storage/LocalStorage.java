@@ -19,9 +19,10 @@
 
 package com.gsma.rcs.cms.storage;
 
-import com.gsma.rcs.cms.event.IRemoteEventHandler;
-import com.gsma.rcs.cms.event.ImapHeaderFormatException;
-import com.gsma.rcs.cms.event.MissingImapHeaderException;
+import com.gsma.rcs.cms.event.CmsEventListener;
+import com.gsma.rcs.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.provider.imap.FolderData;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
@@ -34,12 +35,12 @@ import com.gsma.rcs.cms.sync.ISyncProcessorHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.utils.logger.Logger;
-
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,37 +56,18 @@ import java.util.TreeSet;
 public class LocalStorage implements ISyncProcessorHandler {
 
     private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
-    protected ImapLog mImapLog;
-    /* package private */Map<MessageType, IRemoteEventHandler> mRemoteEventHandlers = new HashMap<>();
+    protected final  ImapLog mImapLog;
+    private final CmsEventListener mCmsEventListener;
     private ImapMessageResolver mMessageResolver;
 
     /**
      * Constructor
      * @param imapLog
      */
-    public LocalStorage(ImapLog imapLog) {
+    public LocalStorage(ImapLog imapLog, CmsEventListener cmsEventListener) {
         mImapLog = imapLog;
+        mCmsEventListener = cmsEventListener;
         mMessageResolver = new ImapMessageResolver();
-    }
-
-    /**
-     * @param messageType
-     * @param handler
-     */
-    public void registerRemoteEventHandler(MessageType messageType, IRemoteEventHandler handler) {
-        mRemoteEventHandlers.put(messageType, handler);
-    }
-
-    /**
-     * @param messageType
-     */
-    public void unregisterRemoteEventHandler(MessageType messageType) {
-        mRemoteEventHandlers.remove(messageType);
-    }
-
-    public void removeListeners() {
-        mRemoteEventHandlers.clear();
-        mRemoteEventHandlers = null;
     }
 
     /**
@@ -126,16 +108,12 @@ public class LocalStorage implements ISyncProcessorHandler {
                     }
                     continue;
                 }
-                MessageType messageType = msg.getMessageType();
-                IRemoteEventHandler storageHandler = mRemoteEventHandlers.get(messageType);
                 if (deleteFlag) {
-                    msg.setDeleteStatus(DeleteStatus.DELETED);
-                    storageHandler.onRemoteDeleteEvent(messageType, msg.getMessageId());
+                    mCmsEventListener.onRemoteDeleteEvent(msg);
                 } else if (seenFlag) {
-                    msg.setReadStatus(ReadStatus.READ);
-                    storageHandler.onRemoteReadEvent(messageType, msg.getMessageId());
+                    mCmsEventListener.onRemoteReadEvent(msg);
                 }
-                mImapLog.addMessage(msg);
+                mImapLog.updateMessage(msg.getMessageType(), msg.getMessageId(), msg.getFolder(), msg.getUid(), seenFlag, deleteFlag);
             }
         }
     }
@@ -156,17 +134,13 @@ public class LocalStorage implements ISyncProcessorHandler {
         for (ImapMessage msg : messages) {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
-                if (messageType == null) {
+                if(!checkMessageType(messageType)){
                     continue;
                 }
                 IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
-                if (resolvedMessage == null) {
-                    continue;
-                }
-                IRemoteEventHandler remoteEventHandler = mRemoteEventHandlers.get(messageType);
-                String messageId = remoteEventHandler.getMessageId(messageType, resolvedMessage);
+                MessageData imapData = mCmsEventListener.searchLocalMessage(messageType, resolvedMessage);
                 boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
-                if (messageId == null) { // message not present in local storage
+                if (imapData == null) { // message not present in local storage
                     if(!isDeleted){ // prevent from downloading a new deleted message
                         uids.add(msg.getUid());
                     }
@@ -174,61 +148,118 @@ public class LocalStorage implements ISyncProcessorHandler {
                     // update flag for local message
                     boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
                     if (isDeleted) {
-                        remoteEventHandler.onRemoteDeleteEvent(messageType, messageId);
+                        mCmsEventListener.onRemoteDeleteEvent(imapData);
                     }
+                    else
                     if (isSeen) {
-                        remoteEventHandler.onRemoteReadEvent(messageType, messageId);
+                        mCmsEventListener.onRemoteReadEvent(imapData);
                     }
-                    mImapLog.updateMessage(messageType, messageId, msg.getFolderPath(),
+                    mImapLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(), msg.getFolderPath(),
                             msg.getUid(), isSeen, isDeleted);
                 }
-            } catch (ImapHeaderFormatException e) {
+            } catch (CmsSyncHeaderFormatException e) {
                 /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
-                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
-            } catch (MissingImapHeaderException e) {
+                sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+            } catch (CmsSyncMissingHeaderException e) {
                 /* Missing mandatory header on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
-                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+                sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+            } catch (CmsSyncException e) {
+                if(sLogger.isActivated()){
+                    sLogger.info(e.getMessage());
+                }
             }
         }
         return uids;
     }
 
+    private boolean checkMessageType(MessageType messageType){
+        boolean isActivated = sLogger.isActivated();
+        if(messageType == MessageType.SMS ||
+                messageType == MessageType.MMS ||
+                messageType == MessageType.MESSAGE_CPIM ||
+                messageType == MessageType.GROUP_STATE_OBJECT){
+            return true;
+        }
+        if(isActivated){
+            sLogger.debug("This type of message is not synchronized : " + messageType);
+        }
+        return false;
+    }
+
     @Override
     public void createMessages(List<ImapMessage> messages) throws FileAccessException {
-        for (ImapMessage msg : messages) {
-
-            MessageType messageType = mMessageResolver.resolveType(msg);
-            IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
-            if (resolvedMessage == null) {
-                continue;
-            }
-            try {
-                String messageId = mRemoteEventHandlers.get(messageType).onRemoteNewMessage(
-                        messageType, resolvedMessage);
-                MessageData messageData = new MessageData(resolvedMessage.getFolder(),
-                        resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
-                                : ReadStatus.UNREAD,
-                        resolvedMessage.isDeleted() ? DeleteStatus.DELETED
-                                : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
-                        messageId, null);
-                mImapLog.addMessage(messageData);
-
-            } catch (ImapHeaderFormatException e) {
+        Map<MessageType,List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
+        Iterator<Entry<MessageType,List<IImapMessage>>> iter = mapOfMessages.entrySet().iterator();
+        while(iter.hasNext()){
+            Entry<MessageType,List<IImapMessage>> entry = iter.next();
+            MessageType messageType = entry.getKey();
+            List<IImapMessage> resolvedMessages = entry.getValue();
+            for(IImapMessage resolvedMessage : resolvedMessages){
+                try{
+                    String messageId = mCmsEventListener.onRemoteNewMessage(messageType, resolvedMessage);
+                    MessageData messageData = new MessageData(resolvedMessage.getFolder(),
+                            resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
+                            : ReadStatus.UNREAD,
+                            resolvedMessage.isDeleted() ? DeleteStatus.DELETED
+                                    : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
+                            messageId, null);
+                    mImapLog.addMessage(messageData);
+                } catch (CmsSyncHeaderFormatException e) {
                 /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
-                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
-            } catch (MissingImapHeaderException e) {
+                    sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]", e);
+                } catch (CmsSyncMissingHeaderException e) {
                 /* Missing mandatory header on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
-                sLogger.error("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+                    sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]", e);
+                } catch (CmsSyncException e) {
+                    if(sLogger.isActivated()){
+                        sLogger.info(e.getMessage());
+                    }
+                }
             }
         }
+    }
+
+    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(List<ImapMessage> rawMessages){
+
+        Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap();
+        mapOfMessages.put(MessageType.GROUP_STATE_OBJECT, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.SESSION_INFO, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.CHAT_MESSAGE, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.SMS, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.MMS, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.IMDN, new ArrayList<IImapMessage>());
+
+        for (ImapMessage msg : rawMessages) {
+            try {
+                MessageType messageType = mMessageResolver.resolveType(msg);
+                List msgList = mapOfMessages.get(messageType);
+                if(msgList == null){
+                    if(sLogger.isActivated()){
+                        sLogger.debug("This type of message is not synchronized : " + messageType);
+                    }
+                    continue;
+                }
+                msgList.add(mMessageResolver.resolveMessage(messageType, msg));
+            } catch (CmsSyncMissingHeaderException e) {
+                /* Missing mandatory header on the CMS server. Keep processing
+                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                */
+                sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+            } catch (CmsSyncException e) {
+                if(sLogger.isActivated()){
+                    sLogger.info(e.getMessage());
+                }
+            }
+        }
+        return mapOfMessages;
     }
 
     @Override

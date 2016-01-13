@@ -17,17 +17,14 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.event;
+package com.gsma.rcs.cms.imap.message;
 
-public class ImapHeaderFormatException extends Exception {
+import com.gsma.rcs.cms.imap.message.ImapMessage;
 
-    private static final long serialVersionUID = 1L;
+public class ImapGroupChatObjectMessage extends ImapMessage {
 
-    /**
-     * Constructor
-     * @param message
-     */
-    public ImapHeaderFormatException(String message) {
-        super(message);
+    public ImapGroupChatObjectMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
+        super(rawMessage);
     }
+
 }

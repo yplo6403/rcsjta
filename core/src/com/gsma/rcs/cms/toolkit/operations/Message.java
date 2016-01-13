@@ -54,10 +54,6 @@ public class Message {
                 break;
             case MMS:
                 break;
-            case ONETOONE:
-                break;
-            case GC:
-                break;
         }
     }
 

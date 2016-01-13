@@ -1,7 +1,6 @@
 
 package com.gsma.rcs.cms.observer;
 
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -76,21 +75,21 @@ public class MmsObserverTest extends AndroidTestCase {
 
     public void testReadNativeConversation() {
         mXmsObserver.onIncomingMms(incomingMms1);
-        mXmsObserver.onReadNativeConversation(1l);
+        mXmsObserver.onReadXmsConversationFromNativeApp(1l);
         Assert.assertEquals(ReadStatus.READ, mNativeMmsListenerMock.getMessage().get("mmsId1")
                 .getReadStatus());
     }
 
     public void testDeleteMms() {
         mXmsObserver.onIncomingMms(incomingMms1);
-        mXmsObserver.onDeleteNativeMms("mmsId1");
+        mXmsObserver.onDeleteMmsFromNativeApp("mmsId1");
         Assert.assertNull(mNativeMmsListenerMock.getMessage().get("mmsId1"));
     }
 
     public void testDeleteConversation() {
         mXmsObserver.onIncomingMms(incomingMms3);
         mXmsObserver.onOutgoingMms(outgoingMms4);
-        mXmsObserver.onDeleteNativeConversation(1l);
+        mXmsObserver.onDeleteXmsConversationFromNativeApp(1l);
         Assert.assertNull(mNativeMmsListenerMock.getMessages(1l));
         mXmsObserver.unregisterListener(mNativeMmsListenerMock);
     }
@@ -107,7 +106,7 @@ public class MmsObserverTest extends AndroidTestCase {
         Assert.assertEquals(2, mNativeMmsListenerMock.getMessage().size());
     }
 
-    private class NativeMmsListenerMock implements INativeXmsEventListener {
+    private class NativeMmsListenerMock implements XmsObserverListener {
 
         private Map<String, MmsDataObject> messagesByMmsId = new HashMap<>();
         private Map<Long, List<MmsDataObject>> messagesByThreadId = new HashMap<>();
@@ -135,7 +134,7 @@ public class MmsObserverTest extends AndroidTestCase {
         }
 
         @Override
-        public void onDeleteNativeSms(long nativeProviderId) {
+        public void onDeleteSmsFromNativeApp(long nativeProviderId) {
 
         }
 
@@ -167,24 +166,24 @@ public class MmsObserverTest extends AndroidTestCase {
         }
 
         @Override
-        public void onDeleteNativeMms(String mmsId) {
+        public void onDeleteMmsFromNativeApp(String mmsId) {
             messagesByMmsId.remove(mmsId);
         }
 
         @Override
-        public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+        public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
         }
 
         @Override
-        public void onReadNativeConversation(long nativeThreadId) {
+        public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
             for (MmsDataObject mmsData : messagesByThreadId.get(nativeThreadId)) {
                 mmsData.setReadStatus(ReadStatus.READ);
             }
         }
 
         @Override
-        public void onDeleteNativeConversation(long nativeThreadId) {
+        public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
             messagesByThreadId.remove(nativeThreadId);
         }
 

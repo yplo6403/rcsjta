@@ -56,9 +56,10 @@ public class ShowMessagesTask implements Runnable {
     public void run() {
         List<ImapMessage> messages = new ArrayList<>();
         try {
-            mImapServiceController.getService().init();
+            mImapServiceController.createService().init();
             messages = getMessages(mImapServiceController.getService());
         } catch (Exception e) {
+            e.printStackTrace();
         }
         finally {
             mImapServiceController.closeService();

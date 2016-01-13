@@ -1,22 +1,6 @@
 
 package com.gsma.rcs.cms.toolkit.operations;
 
-import com.gsma.rcs.R;
-import com.gsma.rcs.cms.imap.ImapFolder;
-import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
-import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
-import com.gsma.rcs.cms.toolkit.Toolkit;
-import com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages;
-import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
-
-import com.gsma.rcs.core.Core;
-import com.gsma.rcs.provider.LocalContentResolver;
-import com.gsma.rcs.provider.settings.RcsSettings;
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.ImapService;
-
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
@@ -28,6 +12,20 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.gsma.rcs.R;
+import com.gsma.rcs.cms.imap.ImapFolder;
+import com.gsma.rcs.cms.imap.service.BasicImapService;
+import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
+import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages;
+import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
+import com.gsma.rcs.core.Core;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
 
@@ -101,7 +99,7 @@ public class RemoteOperations extends ListActivity {
                 BasicImapService imapService = mImapServiceController.createService();
                 imapService.init();
                 boolean res = deleteExistingMessages((BasicImapService) imapService);
-                mImapServiceController.closeService();;
+                mImapServiceController.closeService();
                 return res;
             } catch (Exception e) {
                 return false;
@@ -110,7 +108,9 @@ public class RemoteOperations extends ListActivity {
 
         @Override
         protected void onPostExecute(Boolean result) {
-            mInProgressDialog.dismiss();
+            if (mInProgressDialog != null) {
+                mInProgressDialog.dismiss();
+            }
             String message = result ? getString(R.string.cms_toolkit_result_ok)
                     : getString(R.string.cms_toolkit_result_ko);
             AlertDialogUtils.showMessage(mContext, message);
@@ -125,7 +125,6 @@ public class RemoteOperations extends ListActivity {
                 for (ImapFolder imapFolder : imap.listStatus()) {
                     imap.delete(imapFolder.getName());
                 }
-                ;
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();

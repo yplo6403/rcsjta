@@ -17,15 +17,28 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.event;
+package com.gsma.rcs.cms.imap.message.cpim;
 
-public class MissingImapHeaderException extends Exception {
+import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.imap.message.HeaderPart;
 
-    /**
-     * Constructor
-     * @param message
-     */
-    public MissingImapHeaderException(String message){
-        super(message);
+public abstract class CpimBody {
+
+    protected final HeaderPart mHeaders;
+
+    protected CpimBody(){
+        mHeaders = new HeaderPart();
     }
+
+    protected CpimBody(String contentType){
+        this();
+        mHeaders.addHeader(Constants.HEADER_CONTENT_TYPE, contentType);
+    }
+
+    public String getContentType(){
+        return mHeaders.getHeaderValue(Constants.HEADER_CONTENT_TYPE);
+    }
+
+    protected abstract void parseBody(String body);
+    protected abstract String toPayload();
 }

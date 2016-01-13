@@ -1,7 +1,6 @@
 package com.gsma.rcs.cms.utils;
 
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.ImapHeaderFormatException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
@@ -48,5 +47,13 @@ public class CmsUtils {
             return null;
         }
         return ContactUtil.createContactIdFromValidatedData(phoneNumber);
+    }
+
+    public static String groupChatToCmsFolder(RcsSettings settings, String conversationId, String contributionId){
+        return new StringBuilder(settings.getCmsDefaultDirectoryName())
+                .append(settings.getCmsDirectorySeparator())
+                .append(conversationId)
+                .append(settings.getCmsDirectorySeparator())
+                .append(contributionId).toString();
     }
 }

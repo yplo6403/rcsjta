@@ -1,7 +1,9 @@
 
 package com.gsma.rcs.cms.observer;
 
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
+import android.content.Context;
+import android.test.AndroidTestCase;
+
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.services.rcs.RcsService.Direction;
@@ -9,9 +11,6 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
-
-import android.content.Context;
-import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
@@ -76,21 +75,21 @@ public class SmsObserverTest extends AndroidTestCase {
 
     public void testReadNativeConversation() {
         mXmsObserver.onIncomingSms(incomingSms);
-        mXmsObserver.onReadNativeConversation(1l);
+        mXmsObserver.onReadXmsConversationFromNativeApp(1l);
         Assert.assertEquals(ReadStatus.READ, mNativeSmsListenerMock.getMessage().get(1l)
                 .getReadStatus());
     }
 
     public void testDeleteMms() {
         mXmsObserver.onIncomingSms(outgoingSms);
-        mXmsObserver.onDeleteNativeSms(2l);
+        mXmsObserver.onDeleteXmsConversationFromNativeApp(2l);
         Assert.assertNull(mNativeSmsListenerMock.getMessage().get(2l));
     }
 
     public void testDeleteConversation() {
         mXmsObserver.onIncomingSms(incomingSms);
         mXmsObserver.onOutgoingSms(outgoingSms);
-        mXmsObserver.onDeleteNativeConversation(1l);
+        mXmsObserver.onDeleteXmsConversationFromNativeApp(1l);
         Assert.assertNull(mNativeSmsListenerMock.getMessages(1l));
     }
 
@@ -106,7 +105,7 @@ public class SmsObserverTest extends AndroidTestCase {
         Assert.assertEquals(2, mNativeSmsListenerMock.getMessage().size());
     }
 
-    private class NativeSmsListenerMock implements INativeXmsEventListener {
+    private class NativeSmsListenerMock implements XmsObserverListener {
 
         private Map<Long, SmsDataObject> smsById = new HashMap<>();
         private Map<Long, List<SmsDataObject>> smsByThreadId = new HashMap<>();
@@ -146,7 +145,7 @@ public class SmsObserverTest extends AndroidTestCase {
         }
 
         @Override
-        public void onDeleteNativeSms(long nativeProviderId) {
+        public void onDeleteSmsFromNativeApp(long nativeProviderId) {
             smsById.remove(nativeProviderId);
         }
 
@@ -159,23 +158,23 @@ public class SmsObserverTest extends AndroidTestCase {
         }
 
         @Override
-        public void onDeleteNativeMms(String mmsId) {
+        public void onDeleteMmsFromNativeApp(String mmsId) {
         }
 
         @Override
-        public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+        public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
             smsById.get(nativeProviderId).setState(state);
         }
 
         @Override
-        public void onReadNativeConversation(long nativeThreadId) {
+        public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
             for (SmsDataObject smsData : smsByThreadId.get(nativeThreadId)) {
                 smsData.setReadStatus(ReadStatus.READ);
             }
         }
 
         @Override
-        public void onDeleteNativeConversation(long nativeThreadId) {
+        public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
             for (SmsDataObject smsData : smsByThreadId.get(nativeThreadId)) {
                 smsById.remove(smsData.getNativeProviderId());
             }

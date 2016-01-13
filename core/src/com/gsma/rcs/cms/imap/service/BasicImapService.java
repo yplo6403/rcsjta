@@ -28,8 +28,11 @@ import com.gsma.rcs.cms.imap.cmd.ListStatusCmdHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 
 import com.sonymobile.rcs.imap.DefaultImapService;
+import com.sonymobile.rcs.imap.Flag;
+import com.sonymobile.rcs.imap.IPart;
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
+import com.sonymobile.rcs.imap.ImapUtil;
 import com.sonymobile.rcs.imap.IoService;
 
 import java.io.IOException;
@@ -191,5 +194,32 @@ public class BasicImapService extends DefaultImapService {
             checkResponseOk(line);
         }
         return messages;
+    }
+
+    public synchronized int append(String folderName, List<Flag> flags, String payload)
+            throws IOException, ImapException {
+        // append INBOX (\Seen) {310}
+        int length = payload.getBytes().length;
+
+        if(!folderName.startsWith("\"")){
+            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+        }
+        writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length
+                + "}");
+        String ok = ioReadLine();
+        if (!ok.startsWith("+"))
+            return -1;
+        ioWriteln(payload);
+
+        while (true) {
+            ok = ioReadLine();
+            if (isTagged(ok)) {
+                break;
+            }
+        }
+
+        checkResponseNotBad(ok);
+
+        return getUidPlus(ok);
     }
 }

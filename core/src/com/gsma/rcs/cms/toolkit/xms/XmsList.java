@@ -31,13 +31,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.gsma.rcs.R;
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceController.ImapServiceListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
+import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.cms.toolkit.ToolkitHandler;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -51,7 +51,7 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
-public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeXmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
+public class XmsList extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, XmsObserverListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
     /**
      * The loader's unique ID. Loader IDs are specific to the Activity in which they reside.
@@ -118,13 +118,13 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                new Thread(new BasicSynchronizationTask(
+                ToolkitHandler.getInstance().scheduleTask(new BasicSynchronizationTask(
                         getApplicationContext(),
                         mRcsSettings,
                         mImapServiceController,
                         mCore.getCmsService().getCmsManager().getLocalStorage(),
                         XmsList.this
-                )).start();
+                ));
             }
 
         });
@@ -183,7 +183,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
         ContactId contactId = ContactUtil.createContactIdFromTrustedData(cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT)));
-        mCore.getCmsService().getCmsManager().onDeleteRcsConversation(contactId);
+        mCore.getCmsService().getCmsManager().onDeleteXmsConversation(contactId);
         refreshView();
         return true;
     }
@@ -209,7 +209,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onDeleteNativeConversation(long nativeThreadId) {
+    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeConversation");
         }
@@ -217,7 +217,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeSms");
         }
@@ -241,7 +241,7 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onDeleteNativeMms(String mmsId) {
+    public void onDeleteMmsFromNativeApp(String mmsId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeMms");
         }
@@ -249,12 +249,12 @@ public class XmsList extends FragmentActivity implements LoaderManager.LoaderCal
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
     }
 
     @Override
-    public void onReadNativeConversation(long nativeThreadId) {
+    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onReadNativeConversation");
         }

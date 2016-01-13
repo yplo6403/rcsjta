@@ -27,6 +27,7 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
+import com.gsma.rcs.core.ims.service.ImsSessionListener;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
@@ -115,7 +116,9 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
         final OneToOneChatSession newSession = mImService.createOneToOneChatSession(mContact, msg);
         newSession.addListener(OneToOneChatImpl.this);
         newSession.startSession();
-        onMessageSent(msg.getMessageId(), msg.getMimeType());
+        for(ImsSessionListener listener : newSession.getListeners()){
+            ((OneToOneChatSessionListener)listener).onMessageSent(msg.getMessageId(), msg.getMimeType());
+        }
     }
 
     private void sendChatMessageWithinSession(final OneToOneChatSession session,
@@ -979,16 +982,16 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
     }
 
     @Override
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn) {
+    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId) {
         mChatService.onOneToOneMessageDeliveryStatusReceived(contact, imdn);
     }
 
     @Override
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn) {
+    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnId) {
         String msgId = imdn.getMsgId();
 
         if (mMessagingLog.isMessagePersisted(msgId)) {
-            onMessageDeliveryStatusReceived(contact, imdn);
+            onMessageDeliveryStatusReceived(contact, imdn, imdnId);
             return;
         }
 

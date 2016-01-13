@@ -4,14 +4,13 @@ package com.gsma.rcs.cms.fordemo;
 import android.content.Context;
 import android.os.Handler;
 
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.event.IRcsXmsEventListener;
+import com.gsma.rcs.cms.event.XmsMessageListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.imap.task.PushMessageTask.PushMessageTaskListener;
 import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
 import com.gsma.rcs.cms.imap.task.UpdateFlagTask.UpdateFlagTaskListener;
+import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
@@ -38,7 +37,7 @@ import java.util.Map.Entry;
  * It creates SMS messages on the CMS server with IMAP command.
  *
  */
-public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsEventListener, PushMessageTaskListener, UpdateFlagTaskListener {
+public class ImapCommandController  implements XmsObserverListener, XmsMessageListener, PushMessageTaskListener, UpdateFlagTaskListener {
 
     private static final Logger sLogger = Logger.getLogger(ImapCommandController.class.getSimpleName());
     private final Context mContext;
@@ -92,7 +91,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
         boolean isLogActivated = sLogger.isActivated();
         if(isLogActivated){
             sLogger.info("onDeleteNativeSms");
@@ -138,7 +137,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onDeleteNativeMms(String mmsId) {
+    public void onDeleteMmsFromNativeApp(String mmsId) {
         boolean isLogActivated = sLogger.isActivated();
         if(isLogActivated){
             sLogger.info("onDeleteNativeMms");
@@ -154,12 +153,11 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
-
+    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
     }
 
     @Override
-    public void onReadNativeConversation(long nativeThreadId) {
+    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
         boolean isLogActivated = sLogger.isActivated();
         if (isLogActivated) {
             sLogger.info("onReadNativeConversation");
@@ -175,7 +173,7 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onDeleteNativeConversation(long nativeThreadId) {
+    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
         boolean isLogActivated = sLogger.isActivated();
         if (isLogActivated) {
             sLogger.info("onDeleteNativeConversation : " + nativeThreadId);
@@ -203,10 +201,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onReadRcsMessage(String messageId) {
+    public void onReadXmsMessage(String messageId) {
         boolean isLogActivated = sLogger.isActivated();
         if(isLogActivated){
-            sLogger.info(new StringBuilder("onReadRcsMessage : ").append(messageId).toString());
+            sLogger.info(new StringBuilder("onReadXmsMessage : ").append(messageId).toString());
         }
         if(!mSettings.getCmsUpdateFlagsWithImapXms()){
             if(isLogActivated){
@@ -218,10 +216,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onReadRcsConversation(ContactId contactId) {
+    public void onReadXmsConversation(ContactId contactId) {
         boolean isLogActivated = sLogger.isActivated();
         if(isLogActivated){
-            sLogger.info("onReadRcsConversation : ".concat(contactId.toString()));
+            sLogger.info("onReadXmsConversation : ".concat(contactId.toString()));
         }
 
         if(!mSettings.getCmsUpdateFlagsWithImapXms()){
@@ -234,10 +232,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onDeleteRcsMessage(String messageId) {
+    public void onDeleteXmsMessage(String messageId) {
         boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
-            sLogger.info(new StringBuilder("onDeleteRcsMessage :").append(messageId).toString());
+            sLogger.info(new StringBuilder("onDeleteXmsMessage :").append(messageId).toString());
         }
         if(!mSettings.getCmsUpdateFlagsWithImapXms()){
             if(isLogActivated){
@@ -249,10 +247,10 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onDeleteRcsConversation(ContactId contactId) {
+    public void onDeleteXmsConversation(ContactId contactId) {
         boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
-        sLogger.info("onDeleteRcsConversation :".concat(contactId.toString()));
+        sLogger.info("onDeleteXmsConversation :".concat(contactId.toString()));
         }
         if(!mSettings.getCmsUpdateFlagsWithImapXms()){
             if(isLogActivated){
@@ -264,15 +262,15 @@ public class ImapCommandController  implements INativeXmsEventListener, IRcsXmsE
     }
 
     @Override
-    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType, State state) {
+    public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType, State state) {
 
     }
 
     @Override
-    public void onDeleteAll() {
+    public void onDeleteAllXmsMessage() {
         boolean isLogActivated = sLogger.isActivated();
         if(sLogger.isActivated()){
-            sLogger.info("onDeleteAll");
+            sLogger.info("onDeleteAllXmsMessage");
         }
         if(!mSettings.getCmsUpdateFlagsWithImapXms()){
             if(isLogActivated){

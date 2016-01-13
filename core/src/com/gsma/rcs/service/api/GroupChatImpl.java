@@ -1727,7 +1727,7 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
     }
 
     @Override
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn) {
+    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId) {
         String status = imdn.getStatus();
         String msgId = imdn.getMsgId();
         long timestamp = imdn.getDateTime();
@@ -1754,13 +1754,13 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
     }
 
     @Override
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn) {
+    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnId) {
         String msgId = imdn.getMsgId();
 
         // TODO: Potential race condition, after we've checked that the message is persisted
         // it may be removed before the handle method executes.
         if (mMessagingLog.isMessagePersisted(msgId)) {
-            onMessageDeliveryStatusReceived(contact, imdn);
+            onMessageDeliveryStatusReceived(contact, imdn, imdnId);
             return;
         }
         if (mMessagingLog.isFileTransfer(msgId)) {

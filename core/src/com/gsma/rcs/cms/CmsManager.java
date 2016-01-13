@@ -19,43 +19,45 @@
 
 package com.gsma.rcs.cms;
 
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
-import com.gsma.rcs.cms.event.IRcsXmsEventListener;
-import com.gsma.rcs.cms.event.XmsEventListener;
+import com.gsma.rcs.cms.event.ChatEventHandler;
+import com.gsma.rcs.cms.event.CmsEventHandler;
+import com.gsma.rcs.cms.event.GroupChatEventHandler;
+import com.gsma.rcs.cms.event.MmsSessionHandler;
+import com.gsma.rcs.cms.event.XmsMessageListener;
+import com.gsma.rcs.cms.event.XmsEventHandler;
 import com.gsma.rcs.cms.fordemo.ImapCommandController;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.observer.XmsObserver;
+import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.provider.imap.MessageData;
-import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
-import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
-import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
+import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
-import com.gsma.services.rcs.RcsService.Direction;
-import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 import android.os.Handler;
 
-public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
+public class CmsManager implements XmsMessageListener {
 
     private final Context mContext;
     private final ImapLog mImapLog;
     private final XmsLog mXmsLog;
+    private final MessagingLog mMessagingLog;
     private final RcsSettings mRcsSettings;
     private XmsObserver mXmsObserver;
-    private XmsEventListener mXmsEventListener;
+    private XmsEventHandler mXmsEventHandler;
+    private ChatEventHandler mChatEventHandler;
+    private GroupChatEventHandler mGroupChatEventHandler;
+    private CmsEventHandler mCmsEventHandler;
     private LocalStorage mLocalStorage;
     private ImapCommandController mImapCommandController;
     private ImapServiceController mImapServiceController;
+    private MmsSessionHandler mMmsSessionHandler;
 
     /**
      * Constructor of CmsManager
@@ -63,13 +65,15 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
      * @param context The context
      * @param imapLog The IMAP log accessor
      * @param xmsLog The XMS log accessor
+     * @param messagingLog The Messaging log accessor
      * @param rcsSettings THE RCS settings accessor
      */
-    public CmsManager(Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings rcsSettings) {
+    public CmsManager(Context context, ImapLog imapLog, XmsLog xmsLog, MessagingLog messagingLog, RcsSettings rcsSettings) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mImapLog = imapLog;
         mXmsLog = xmsLog;
+        mMessagingLog = messagingLog;
     }
 
     /**
@@ -77,24 +81,28 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
      * @param operationHandler
      * @param xmsMessageEventBroadcaster
      */
-    public void start(Handler operationHandler, XmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+    public void start(Handler operationHandler, XmsMessageEventBroadcaster xmsMessageEventBroadcaster, ChatServiceImpl chatService) {
         // execute sync between providers in handler
         operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog));
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
 
-        // instantiate XmsEventListener in charge of handling xms events from XmsObserver
-        mXmsEventListener = new XmsEventListener(mContext, mImapLog, mXmsLog, mRcsSettings);
-        mXmsEventListener.registerBroadcaster(xmsMessageEventBroadcaster);
-        mXmsObserver.registerListener(mXmsEventListener);
+        // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
+        mXmsEventHandler = new XmsEventHandler(mContext, mImapLog, mXmsLog, mRcsSettings, xmsMessageEventBroadcaster);
+        mXmsObserver.registerListener(mXmsEventHandler);
+
+        // instantiate CmsEventHandler in charge of handling events from Cms
+        mCmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog, mMessagingLog, chatService, mRcsSettings, xmsMessageEventBroadcaster);
+
+        // instantiate ChatEventHandler in charge of handling events from ChatSession,read or deletion of messages
+        mChatEventHandler = new ChatEventHandler(mContext, mImapLog, mMessagingLog, mRcsSettings);
+
+        // instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or deletion of messages
+        mGroupChatEventHandler = new GroupChatEventHandler(mContext, mImapLog, mMessagingLog, mRcsSettings);
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
-        mLocalStorage = new LocalStorage(mImapLog);
-        mLocalStorage.registerRemoteEventHandler(MessageType.SMS, mXmsEventListener);
-        mLocalStorage.registerRemoteEventHandler(MessageType.MMS, mXmsEventListener);
-        // mLocalStorage.registerRemoteEventHandler(MessageType.ONETOONE, tobedefined);
-        // mLocalStorage.registerRemoteEventHandler(MessageType.GC, tobedefined);
+        mLocalStorage = new LocalStorage(mImapLog, mCmsEventHandler);
 
         // handle imap connection
         mImapServiceController = new ImapServiceController(mRcsSettings);
@@ -105,6 +113,8 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         mImapCommandController = new ImapCommandController(operationHandler, mContext, mRcsSettings, mLocalStorage,
                 mImapLog, mXmsLog, mImapServiceController);
         mXmsObserver.registerListener(mImapCommandController);
+
+        mMmsSessionHandler = new MmsSessionHandler(mContext, mImapLog, mXmsLog, mRcsSettings, mImapCommandController);
 
         // start content observer on native SMS/MMS content provider
         mXmsObserver.start();
@@ -119,25 +129,22 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
-        if (mLocalStorage != null) {
-            mLocalStorage.removeListeners();
-            mLocalStorage = null;
-        }
 
         if (mImapServiceController != null) {
             mImapServiceController.stop();
             mImapServiceController = null;
         }
 
-        mXmsEventListener = null;
+        mLocalStorage = null;
+        mXmsEventHandler = null;
         mImapCommandController = null;
     }
 
     /**
-     * Register a INativeXmsEventListener
+     * Register a NativeXmsMessageListener
      * @param listener The listener
      */
-    public void registerSmsObserverListener(INativeXmsEventListener listener) {
+    public void registerSmsObserverListener(XmsObserverListener listener) {
         if (mXmsObserver != null) {
             mXmsObserver.registerListener(listener);
         }
@@ -147,67 +154,67 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
      * Unregister the listener
      * @param listener The listener
      */
-    public void unregisterSmsObserverListener(INativeXmsEventListener listener) {
+    public void unregisterSmsObserverListener(XmsObserverListener listener) {
         if (mXmsObserver != null) {
             mXmsObserver.unregisterListener(listener);
         }
     }
 
     @Override
-    public void onReadRcsMessage(String messageId) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onReadRcsMessage(messageId);
+    public void onReadXmsMessage(String messageId) {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onReadXmsMessage(messageId);
         }
         if (mImapCommandController != null) {
-            mImapCommandController.onReadRcsMessage(messageId);
+            mImapCommandController.onReadXmsMessage(messageId);
         }
     }
 
     @Override
-    public void onDeleteRcsMessage(String messageId) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onDeleteRcsMessage(messageId);
+    public void onDeleteXmsMessage(String messageId) {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onDeleteXmsMessage(messageId);
         }
         if (mImapCommandController != null) {
-            mImapCommandController.onDeleteRcsMessage(messageId);
+            mImapCommandController.onDeleteXmsMessage(messageId);
         }
     }
 
     @Override
-    public void onReadRcsConversation(ContactId contact) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onReadRcsConversation(contact);
+    public void onReadXmsConversation(ContactId contact) {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onReadXmsConversation(contact);
         }
         if (mImapCommandController != null) {
-            mImapCommandController.onReadRcsConversation(contact);
+            mImapCommandController.onReadXmsConversation(contact);
         }
     }
 
     @Override
-    public void onDeleteRcsConversation(ContactId contact) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onDeleteRcsConversation(contact);
+    public void onDeleteXmsConversation(ContactId contact) {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onDeleteXmsConversation(contact);
         }
         if (mImapCommandController != null) {
-            mImapCommandController.onDeleteRcsConversation(contact);
+            mImapCommandController.onDeleteXmsConversation(contact);
         }
     }
 
     @Override
-    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType,
-            State state) {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onMessageStateChanged(contact, messageId, mimeType, state);
+    public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType,
+                                         State state) {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onXmsMessageStateChanged(contact, messageId, mimeType, state);
         }
     }
 
     @Override
-    public void onDeleteAll() {
-        if (mXmsEventListener != null) {
-            mXmsEventListener.onDeleteAll();
+    public void onDeleteAllXmsMessage() {
+        if (mXmsEventHandler != null) {
+            mXmsEventHandler.onDeleteAllXmsMessage();
         }
         if (mImapCommandController != null) {
-            mImapCommandController.onDeleteAll();
+            mImapCommandController.onDeleteAllXmsMessage();
         }
     }
 
@@ -227,30 +234,15 @@ public class CmsManager implements IRcsXmsEventListener, MmsSessionListener {
         return mImapServiceController;
     }
 
-    @Override
-    public void onMmsTransferError(ReasonCode reason, ContactId contact, String mmsId) {
+    public ChatEventHandler getChatEventHandler(){
+        return mChatEventHandler;
     }
 
-    @Override
-    public void onMmsTransferred(ContactId contact, String mmsId) {
-
-        mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mRcsSettings, contact),
-                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                mRcsSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS, mmsId, null));
-
-        if (mImapCommandController != null) {
-            MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
-            if (Direction.INCOMING == mms.getDirection()) {
-                mImapCommandController.onIncomingMms(mms);
-            } else {
-                mImapCommandController.onOutgoingMms(mms);
-            }
-        }
+    public GroupChatEventHandler getGroupChatEventHandler(){
+        return mGroupChatEventHandler;
     }
 
-    @Override
-    public void onMmsTransferStarted(ContactId contact, String mmsId) {
+    public MmsSessionHandler getMmsSessionHandler(){
+        return mMmsSessionHandler;
     }
-
 }

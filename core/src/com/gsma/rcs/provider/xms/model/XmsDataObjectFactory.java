@@ -2,14 +2,17 @@
 
 package com.gsma.rcs.provider.xms.model;
 
+import android.content.Context;
+import android.net.Uri;
+
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.ImapHeaderFormatException;
-import com.gsma.rcs.cms.event.MissingImapHeaderException;
-import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
-import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
-import com.gsma.rcs.cms.imap.message.mime.MmsMimeMessage;
-import com.gsma.rcs.cms.imap.message.mime.MultiPart;
-import com.gsma.rcs.cms.imap.message.mime.SmsMimeMessage;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.cms.imap.message.IImapMessage;
+import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
+import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
+import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody.Part;
+import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
@@ -25,42 +28,40 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.sonymobile.rcs.imap.Part;
-
-import android.content.Context;
-import android.net.Uri;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class XmsDataObjectFactory {
 
-    public static SmsDataObject createSmsDataObject(ImapSmsMessage imapMessage)
-            throws ImapHeaderFormatException, MissingImapHeaderException {
+    public static SmsDataObject createSmsDataObject(IImapMessage imapMessage)
+            throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
 
-        Part body = imapMessage.getRawMessage().getBody();
-        String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
+        //Part body = imapMessage.g.getRawMessage().getBody();
+        String directionStr = imapMessage.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
         String header;
         if (Constants.DIRECTION_RECEIVED.equals(directionStr)) {
             direction = Direction.INCOMING;
-            header = body.getHeader(Constants.HEADER_FROM);
+            header = imapMessage.getHeader(Constants.HEADER_FROM);
         } else {
             direction = Direction.OUTGOING;
-            header = body.getHeader(Constants.HEADER_TO);
+            header = imapMessage.getHeader(Constants.HEADER_TO);
         }
         ContactId contactId = CmsUtils.headerToContact(header);
         if (contactId == null) {
-            throw new ImapHeaderFormatException("Bad format for header : " + header);
+            throw new CmsSyncHeaderFormatException("Bad format for header : " + header);
         }
         ReadStatus readStatus = imapMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
-        String messageCorrelator = body.getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
+        String messageCorrelator = imapMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
         if(messageCorrelator == null){
-            throw new MissingImapHeaderException("Message-Correlator IMAP header is missing");
+            throw new CmsSyncMissingHeaderException("Message-Correlator IMAP header is missing");
         }
+        CpimMessage cpimMessage = imapMessage.getCpimMessage();
+        // when fetching only headers cpim message is null
+        String content = (cpimMessage == null ? "" : ((TextCpimBody)cpimMessage.getBody()).getContent());
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contactId,
-                ((SmsMimeMessage) imapMessage.getPart()).getBodyPart(), direction,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE),
+                content, direction,
+                DateUtils.parseDate(imapMessage.getHeader(Constants.HEADER_DATE),
                         DateUtils.CMS_IMAP_DATE_FORMAT), readStatus,
                 messageCorrelator);
         State state;
@@ -74,37 +75,36 @@ public class XmsDataObjectFactory {
     }
 
     public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
-            ImapMmsMessage imapMessage) throws ImapHeaderFormatException, FileAccessException {
-        Part body = imapMessage.getRawMessage().getBody();
-        String directionStr = body.getHeader(Constants.HEADER_DIRECTION);
+            IImapMessage imapMessage) throws CmsSyncHeaderFormatException, FileAccessException {
+        String directionStr = imapMessage.getHeader(Constants.HEADER_DIRECTION);
         Direction direction;
         String header;
         if (Constants.DIRECTION_RECEIVED.equals(directionStr)) {
             direction = Direction.INCOMING;
-            header = body.getHeader(Constants.HEADER_FROM);
+            header = imapMessage.getHeader(Constants.HEADER_FROM);
         } else {
             direction = Direction.OUTGOING;
-            header = body.getHeader(Constants.HEADER_TO);
+            header = imapMessage.getHeader(Constants.HEADER_TO);
         }
         ContactId contactId = CmsUtils.headerToContact(header);
         if (contactId == null) {
-            throw new ImapHeaderFormatException("Bad format for header : " + header);
+            throw new CmsSyncHeaderFormatException("Bad format for header : " + header);
         }
         String messageId = IdGenerator.generateMessageID();
-        MmsMimeMessage mmsMimeMessage = (MmsMimeMessage) imapMessage.getPart();
+        MultipartCpimBody multipartCpimBody = (MultipartCpimBody)imapMessage.getCpimMessage().getBody();
         List<MmsPart> mmsParts = new ArrayList<>();
-        for (MultiPart multipart : mmsMimeMessage.getMimebody().getMultiParts()) {
-            String contentType = multipart.getContentType();
+        for (Part part : multipartCpimBody.getParts()) {
+            String contentType = part.getContentType();
             // TODO FG : is checking correct ? How is handled SMIL ?
             // Use MimeManage.isImage
             if (MmsUtils.sContentTypeImage.contains(contentType)) {
                 byte[] data;
-                if (Constants.HEADER_BASE64.equals(multipart.getContentTransferEncoding())) {
-                    data = Base64.decodeBase64(multipart.getContent().getBytes());
+                if (Constants.HEADER_BASE64.equals(part.getContentTransferEncoding())) {
+                    data = Base64.decodeBase64(part.getContent().getBytes());
                 } else {
-                    data = multipart.getContent().getBytes();
+                    data = part.getContent().getBytes();
                 }
-                Uri uri = MmsUtils.saveContent(rcsSettings, contentType, multipart.getContentId(),
+                Uri uri = MmsUtils.saveContent(rcsSettings, contentType, part.getContentId(),
                         data);
                 String fileName = FileUtils.getFileName(context, uri);
                 Long fileLength = (long) data.length;
@@ -114,16 +114,16 @@ public class XmsDataObjectFactory {
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
                         contentType, uri, fileIcon));
 
-            } else if (Constants.CONTENT_TYPE_TEXT.equals(contentType)) {
-                String content = multipart.getContent();
+            } else if (Constants.CONTENT_TYPE_TEXT_PLAIN.equals(contentType)) {
+                String content = part.getContent();
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, contentType, content));
             }
         }
         ReadStatus readStatus = imapMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
         MmsDataObject mmsDataObject = new MmsDataObject(
-                body.getHeader(Constants.HEADER_MESSAGE_ID), messageId, contactId,
-                body.getHeader(Constants.HEADER_SUBJECT), direction, readStatus,
-                DateUtils.parseDate(body.getHeader(Constants.HEADER_DATE),
+                imapMessage.getHeader(Constants.HEADER_MESSAGE_ID), messageId, contactId,
+                imapMessage.getHeader(Constants.HEADER_SUBJECT), direction, readStatus,
+                DateUtils.parseDate(imapMessage.getHeader(Constants.HEADER_DATE),
                         DateUtils.CMS_IMAP_DATE_FORMAT), null, null, mmsParts);
         State state;
         if (Direction.INCOMING == direction) {

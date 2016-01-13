@@ -17,9 +17,15 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.imap.message.mime;
+package com.gsma.rcs.cms.event.exception;
 
-public interface MimeBody {
-    String toString();
-    void parsePayload(String payload);
+public class CmsSyncMissingHeaderException extends CmsSyncException {
+
+    /**
+     * Constructor
+     * @param message
+     */
+    public CmsSyncMissingHeaderException(String message){
+        super(message);
+    }
 }

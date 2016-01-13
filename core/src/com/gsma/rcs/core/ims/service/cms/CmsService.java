@@ -19,34 +19,33 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.os.Handler;
+import android.os.HandlerThread;
+
 import com.gsma.rcs.cms.CmsManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.Synchronizer;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.UpdateMmsStateAfterUngracefulTerminationTask;
 import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.ServerApiUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
-
 import com.sonymobile.rcs.imap.ImapException;
-
-import android.content.Context;
-import android.database.Cursor;
-import android.os.Handler;
-import android.os.HandlerThread;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,6 +59,7 @@ public class CmsService extends ImsService {
     private Handler mOperationHandler;
     private final XmsLog mXmsLog;
     private CmsServiceImpl mCmsServiceImpl;
+    private ChatServiceImpl mChatServiceImpl;
     private final Core mCore;
     private final Context mContext;
     private final RcsSettings mRcsSettings;
@@ -73,16 +73,17 @@ public class CmsService extends ImsService {
      * @param context The context
      * @param rcsSettings The RCS settings accessor
      * @param xmsLog The XMS log accessor
+     * @param messagingLog The Chat log accessor
      * @param imapLog The Imap log accessor
      */
     public CmsService(Core core, ImsModule parent, Context context, RcsSettings rcsSettings,
-            XmsLog xmsLog, ImapLog imapLog) {
+            XmsLog xmsLog, MessagingLog messagingLog, ImapLog imapLog) {
         super(parent, true);
         mContext = context;
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mCore = core;
-        mCmsManager = new CmsManager(context, imapLog, xmsLog, rcsSettings);
+        mCmsManager = new CmsManager(context, imapLog, xmsLog, messagingLog, rcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -98,6 +99,13 @@ public class CmsService extends ImsService {
         mCmsServiceImpl = service;
     }
 
+    public void register(ChatServiceImpl chatService) {
+        if (sLogger.isActivated()) {
+            sLogger.debug(chatService.getClass().getName() + " registered ok.");
+        }
+        mChatServiceImpl = chatService;
+    }
+
     @Override
     public void start() {
         if (isServiceStarted()) {
@@ -106,7 +114,7 @@ public class CmsService extends ImsService {
         setServiceStarted(true);
         //TODO FGI : mOperationHandler is no more a final member, could be null!
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster()); // must be started before trying to dequeue MMS messages
+        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster(), mChatServiceImpl); // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
 
@@ -244,19 +252,19 @@ public class CmsService extends ImsService {
     }
 
     public void markXmsMessageAsRead(final String messageId){
-        mCmsManager.onReadRcsMessage(messageId);
+        mCmsManager.onReadXmsMessage(messageId);
     }
 
     public void deleteXmsMessages(){
-        mCmsManager.onDeleteAll();
+        mCmsManager.onDeleteAllXmsMessage();
     }
 
     public void deleteXmsMessages2(final ContactId contact){
-        mCmsManager.onDeleteRcsConversation(contact);
+        mCmsManager.onDeleteXmsConversation(contact);
     }
 
     public void deleteXmsMessage(final String messageId){
-        mCmsManager.onDeleteRcsMessage(messageId);
+        mCmsManager.onDeleteXmsMessage(messageId);
     }
 
     public CmsManager getCmsManager(){

@@ -73,8 +73,8 @@ public final class MessageData {
      */
     /* package private */static final String KEY_NATIVE_PROVIDER_ID = "nativeProviderId";
 
-    public static enum MessageType {
-        SMS, MMS, ONETOONE, GC
+    public enum MessageType {
+        SMS, MMS, MESSAGE_CPIM, CHAT_MESSAGE, IMDN, SESSION_INFO, GROUP_STATE_OBJECT, FILE_TRANSFER
     }
 
     /**

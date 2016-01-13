@@ -66,7 +66,10 @@ public class Constants {
     public static final String BOUNDARY = "boundary=";
     public static final String BOUDARY_SEP = "--";
 
-    public static final String CONTENT_TYPE_CPIM = "Message/CPIM";
+    public static final String MESSAGE_CPIM = "Message/CPIM";
+    public static final String APPLICATION_SESSION = "Application/X-CPM-Session";
+    public static final String APPLICATION_GROUP_STATE = "Application/group-state-object+xml";
+    public static final String APPLICATION_FILE_TRANSFER = "Application/X-CPM-File-Transfer";
     public static final String PAGER_MESSAGE = "pager-message";
     public static final String MULTIMEDIA_MESSAGE = "multimedia-message";
     public static final String DIRECTION_SENT = "sent";
@@ -74,7 +77,8 @@ public class Constants {
 
     public static final String TEL_PREFIX = "tel:";
 
-    public static final String CONTENT_TYPE_TEXT = "text/plain";
+    public static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain";
+    public static final String CONTENT_TYPE_MESSAGE_IMDN_XML = "message/imdn+xml";
     public static final String CONTENT_TYPE_MULTIPART_RELATED = "Multipart/Related";
     public static final String CONTENT_TYPE_APP_SMIL = "application/smil";
     public static final String CONTENT_TYPE_IMAGE_JPG = "image/jpg";

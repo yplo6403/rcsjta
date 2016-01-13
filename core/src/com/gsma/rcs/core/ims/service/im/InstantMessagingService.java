@@ -22,7 +22,10 @@
 
 package com.gsma.rcs.core.ims.service.im;
 
-import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
+import android.content.Context;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
@@ -111,11 +114,6 @@ import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 
-import android.content.Context;
-import android.net.Uri;
-import android.os.Handler;
-import android.os.HandlerThread;
-
 import org.xml.sax.SAXException;
 
 import java.util.HashMap;
@@ -124,8 +122,11 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
+
 import javax2.sip.header.ContactHeader;
 import javax2.sip.message.Response;
+
+import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
 
 /**
  * Instant messaging services (1-1 chat, group chat and file transfer)
@@ -399,6 +400,7 @@ public class InstantMessagingService extends ImsService {
         synchronized (getImsServiceSessionOperationLock()) {
             mOneToOneChatSessionCache.put(contact, session);
             addImsServiceSession(session);
+            session.addListener(getImsModule().getCmsService().getCmsManager().getChatEventHandler());
         }
     }
 
@@ -505,6 +507,7 @@ public class InstantMessagingService extends ImsService {
         synchronized (getImsServiceSessionOperationLock()) {
             mGroupChatSessionCache.put(chatId, session);
             addImsServiceSession(session);
+            session.addListener(getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler());
         }
     }
 
@@ -1044,6 +1047,7 @@ public class InstantMessagingService extends ImsService {
                         if (firstMsg != null
                                 && !mMessagingLog.isMessagePersisted(firstMsg.getMessageId())) {
                             mMessagingLog.addOneToOneSpamMessage(firstMsg);
+                            getImsModule().getCmsService().getCmsManager().getChatEventHandler().onMessageReceived(firstMsg, false, false);
                         }
 
                         if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
@@ -1080,6 +1084,7 @@ public class InstantMessagingService extends ImsService {
                                 && ChatUtils.isImdnDisplayedRequested(invite);
                         mMessagingLog
                                 .addIncomingOneToOneChatMessage(firstMsg, imdnDisplayRequested);
+                        getImsModule().getCmsService().getCmsManager().getChatEventHandler().onMessageReceived(firstMsg, false, false);
                     }
 
                     if (!isChatSessionAvailable()) {
@@ -1388,6 +1393,8 @@ public class InstantMessagingService extends ImsService {
 
                     String chatId = mMessagingLog.getMessageChatId(msgId);
                     if (chatId != null) {
+                        String imdnId = ChatUtils.getMessageId(message);
+                        getImsModule().getCmsService().getCmsManager().getChatEventHandler().onMessageDeliveryStatusReceived(contact, imdn, imdnId);
                         if (chatId.equals(contact.toString())) {
                             if (sLogger.isActivated()) {
                                 sLogger.debug("Handle one to one message delivery status");
@@ -1396,7 +1403,7 @@ public class InstantMessagingService extends ImsService {
                             return;
                         }
                         mChatService.getOrCreateGroupChat(chatId).onMessageDeliveryStatusReceived(
-                                contact, imdn);
+                                contact, imdn, imdnId);
                         return;
                     }
                     chatId = mMessagingLog.getFileTransferChatId(msgId);

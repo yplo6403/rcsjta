@@ -33,14 +33,14 @@ import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.CmsManager;
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceController.ImapServiceListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask.BasicSynchronizationTaskListener;
+import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.cms.toolkit.ToolkitHandler;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.CursorUtil;
@@ -60,7 +60,7 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
-public class XmsConversationView extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, INativeXmsEventListener, BasicSynchronizationTaskListener, ImapServiceListener {
+public class XmsConversationView extends FragmentActivity implements LoaderManager.LoaderCallbacks<Cursor>, XmsObserverListener, BasicSynchronizationTaskListener, ImapServiceListener {
 
     private final static Logger sLogger = Logger.getLogger(XmsConversationView.class.getSimpleName());
 
@@ -167,14 +167,14 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
             @Override
             public void onClick(View v) {
                 displaySyncButton(false);
-                new Thread(new BasicSynchronizationTask(
+                ToolkitHandler.getInstance().scheduleTask(new BasicSynchronizationTask(
                         getApplicationContext(),
                         mRcsSettings,
                         mCmsManager.getImapServiceController(),
                         mLocalStorage,
                         CmsUtils.contactToCmsFolder(mRcsSettings, mContact),
                         XmsConversationView.this
-                        )).start();
+                        ));
             }
             
         });
@@ -460,7 +460,7 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
     }
 
     @Override
@@ -478,22 +478,22 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     }
 
     @Override
-    public void onDeleteNativeMms(String mmsId) {
+    public void onDeleteMmsFromNativeApp(String mmsId) {
 
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
 
     }
 
     @Override
-    public void onReadNativeConversation(long nativeThreadId) {
+    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
 
     }
 
     @Override
-    public void onDeleteNativeConversation(long nativeThreadId) {
+    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
     }
     
     @Override
@@ -506,18 +506,18 @@ public class XmsConversationView extends FragmentActivity implements LoaderManag
     public boolean onContextItemSelected(MenuItem item) {
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
         Cursor cursor = (Cursor) (mAdapter.getItem(info.position));
-        mCmsManager.onDeleteRcsMessage(
+        mCmsManager.onDeleteXmsMessage(
                 cursor.getString(cursor.getColumnIndex(XmsData.KEY_MESSAGE_ID)));
         refreshView();
         return true;
     }
     
     private void markConversationAsRead(ContactId contactId){
-        mCmsManager.onReadRcsConversation(contactId);
+        mCmsManager.onReadXmsConversation(contactId);
     }
 
     private void markMessageAsRead(String messageId){
-        mCmsManager.onReadRcsMessage(messageId);
+        mCmsManager.onReadXmsMessage(messageId);
     }
 
     @Override

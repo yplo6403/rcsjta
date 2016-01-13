@@ -3,7 +3,8 @@ package com.gsma.rcs.cms.integration;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
-import com.gsma.rcs.cms.event.XmsEventListener;
+import com.gsma.rcs.cms.event.CmsEventHandler;
+import com.gsma.rcs.cms.event.XmsEventHandler;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
@@ -30,6 +31,7 @@ import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.cms.toolkit.operations.Message;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -59,6 +61,7 @@ public class SmsTest extends AndroidTestCase{
     private BasicImapService mBasicImapService;
     private BasicSyncStrategy mSyncStrategy;
     private ImapLog mImapLog;
+    private MessagingLog mMessagingLog;
     private ImapLogEnvIntegration mImapLogEnvIntegration;
     private XmsLog mXmsLog;
 
@@ -70,10 +73,10 @@ public class SmsTest extends AndroidTestCase{
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
         mXmsLog = XmsLog.createInstance(new LocalContentResolver(context));
+        mMessagingLog = MessagingLog.createInstance(new LocalContentResolver(context), mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
-        XmsEventListener smsEventHandler = new XmsEventListener(context, mImapLog, mXmsLog, mSettings);
-        mLocalStorage = new LocalStorage(mImapLog);
-        mLocalStorage.registerRemoteEventHandler(MessageType.SMS, smsEventHandler);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mImapLog, mXmsLog, mMessagingLog, null, mSettings, null);
+        mLocalStorage = new LocalStorage(mImapLog, cmsEventHandler );
         mImapServiceController = new ImapServiceController(mSettings);
         mBasicImapService = mImapServiceController.createService();
         mSyncStrategy = new BasicSyncStrategy(context, mSettings, mImapServiceController, mLocalStorage);
@@ -83,7 +86,6 @@ public class SmsTest extends AndroidTestCase{
     protected void tearDown() throws Exception {
         super.tearDown();
         mImapServiceController.closeService();
-        mLocalStorage.unregisterRemoteEventHandler(MessageType.SMS);
         RcsSettingsMock.restoreSettings();
     }
     

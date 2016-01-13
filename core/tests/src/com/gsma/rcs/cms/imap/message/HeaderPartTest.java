@@ -1,10 +1,10 @@
-package com.gsma.rcs.cms.imap.message.mime;
+package com.gsma.rcs.cms.imap.message;
 
 import android.test.AndroidTestCase;
 
 import com.gsma.rcs.cms.Constants;
 
-public class MimeHeadersTest extends AndroidTestCase {
+public class HeaderPartTest extends AndroidTestCase {
 
     public static StringBuilder headerContent = new StringBuilder();
     static{
@@ -21,7 +21,7 @@ public class MimeHeadersTest extends AndroidTestCase {
     }
 
     public void test(){
-        MimeHeaders headers = new MimeHeaders();
+        HeaderPart headers = new HeaderPart();
         headers.addHeader(Constants.HEADER_FROM, "+33643202148");
         headers.addHeader(Constants.HEADER_TO, "+33643209850");
         headers.addHeader(Constants.HEADER_DATE, "ven., 30 10 2015 16:26:16.0 +0100");

@@ -19,10 +19,18 @@
 
 package com.gsma.rcs.cms.observer;
 
-import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
-import static com.gsma.rcs.provider.CursorUtil.close;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.provider.BaseColumns;
+import android.provider.Telephony;
+import android.provider.Telephony.BaseMmsColumns;
+import android.provider.Telephony.TextBasedSmsColumns;
 
-import com.gsma.rcs.cms.event.INativeXmsEventListener;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
@@ -43,18 +51,6 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.provider.BaseColumns;
-import android.provider.Telephony;
-import android.provider.Telephony.BaseMmsColumns;
-import android.provider.Telephony.TextBasedSmsColumns;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,6 +59,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
+import static com.gsma.rcs.provider.CursorUtil.close;
 
 /**
  * Class in charge of detecting changes on XMS messages in the native content provider
@@ -75,11 +74,11 @@ import java.util.Set;
  * - read of a conversation
  * - deletion of a conversation
  */
-public class XmsObserver implements INativeXmsEventListener {
+public class XmsObserver implements XmsObserverListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsObserver.class.getSimpleName());
     private static final String sThreadName = "XmsObserver";
-    private final List<INativeXmsEventListener> mXmsEventListeners = new ArrayList<>();
+    private final List<XmsObserverListener> mXmsObserverListeners = new ArrayList<>();
 
     private static final Uri MMS_SMS_URI = Uri.parse("content://mms-sms/");
 
@@ -163,7 +162,7 @@ public class XmsObserver implements INativeXmsEventListener {
             int diff = currentSmsIds.size() - mSmsIds.size();
             mSmsIds = currentSmsIds;
             if (diff == -1) {
-                onDeleteNativeSms(Long.parseLong(uri.getLastPathSegment()));
+                onDeleteSmsFromNativeApp(Long.parseLong(uri.getLastPathSegment()));
             } else if (diff == 1) {
                 handleNewSms(uri);
             } else { // sms update status
@@ -232,7 +231,7 @@ public class XmsObserver implements INativeXmsEventListener {
                 Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
                 int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
                 int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
-                onMessageStateChanged(_id, MimeType.TEXT_MESSAGE,
+                onXmsMessageStateChanged(_id, MimeType.TEXT_MESSAGE,
                         XmsObserverUtils.getSmsState(type, status));
             } finally {
                 close(cursor);
@@ -255,7 +254,7 @@ public class XmsObserver implements INativeXmsEventListener {
                 if (diff == -1) { // one MMS deleted
                     mMmsIds.removeAll(mmsIds);
                     for (String id : mMmsIds) {
-                        onDeleteNativeMms(id);
+                        onDeleteMmsFromNativeApp(id);
                         eventChecked = true;
                     }
                 }
@@ -427,7 +426,7 @@ public class XmsObserver implements INativeXmsEventListener {
             // make delta between unread to get read conversation
             unreadConversations.removeAll(currentUnreadConversations);
             for (Long threadId : unreadConversations) {
-                onReadNativeConversation(threadId);
+                onReadXmsConversationFromNativeApp(threadId);
                 eventChecked = true;
             }
             return eventChecked;
@@ -444,7 +443,7 @@ public class XmsObserver implements INativeXmsEventListener {
             Set<Long> deletedConversations = new HashSet<>(mConversations.keySet());
             deletedConversations.removeAll(currentConversations.keySet());
             for (Long conversation : deletedConversations) {
-                onDeleteNativeConversation(conversation);
+                onDeleteXmsConversationFromNativeApp(conversation);
                 eventChecked = true;
             }
             if (eventChecked) {
@@ -543,16 +542,16 @@ public class XmsObserver implements INativeXmsEventListener {
         mXmsObserverHandler.getLooper().quit();
         mXmsObserverHandler.getLooper().getThread().interrupt();
         mXmsContentObserver = null;
-        mXmsEventListeners.clear();
+        mXmsObserverListeners.clear();
     }
 
     /**
      * Register a listener which want to be notified of XMS events
      * @param listener
      */
-    public void registerListener(INativeXmsEventListener listener) {
-        synchronized (mXmsEventListeners) {
-            mXmsEventListeners.add(listener);
+    public void registerListener(XmsObserverListener listener) {
+        synchronized (mXmsObserverListeners) {
+            mXmsObserverListeners.add(listener);
         }
     }
 
@@ -561,58 +560,58 @@ public class XmsObserver implements INativeXmsEventListener {
      * @param listener
      */
 
-    public void unregisterListener(INativeXmsEventListener listener) {
-        synchronized (mXmsEventListeners) {
-            mXmsEventListeners.remove(listener);
+    public void unregisterListener(XmsObserverListener listener) {
+        synchronized (mXmsObserverListeners) {
+            mXmsObserverListeners.remove(listener);
         }
     }
 
     /********************** XMS Events **********************/
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeSms : ".concat(String.valueOf(nativeProviderId)));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
-                listener.onDeleteNativeSms(nativeProviderId);
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
+                listener.onDeleteSmsFromNativeApp(nativeProviderId);
             }
         }
     }
 
     @Override
-    public void onDeleteNativeMms(String mmsId) {
+    public void onDeleteMmsFromNativeApp(String mmsId) {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeMms : ".concat(mmsId));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
-                listener.onDeleteNativeMms(mmsId);
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
+                listener.onDeleteMmsFromNativeApp(mmsId);
             }
         }
     }
 
     @Override
-    public void onDeleteNativeConversation(long nativeThreadId) {
+    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteNativeConversation : " + nativeThreadId);
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
-                listener.onDeleteNativeConversation(nativeThreadId);
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
+                listener.onDeleteXmsConversationFromNativeApp(nativeThreadId);
             }
         }
     }
 
     @Override
-    public void onReadNativeConversation(long nativeThreadId) {
+    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.info("onReadNativeConversation : " + nativeThreadId);
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
-                listener.onReadNativeConversation(nativeThreadId);
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
+                listener.onReadXmsConversationFromNativeApp(nativeThreadId);
             }
         }
     }
@@ -621,10 +620,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onIncomingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onIncomingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsObserverListeners.size())));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
                 listener.onIncomingSms(message);
             }
         }
@@ -634,10 +633,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onOutgoingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingSms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsObserverListeners.size())));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
                 listener.onOutgoingSms(message);
             }
         }
@@ -647,10 +646,10 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onIncomingMms(MmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onIncomingMms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsObserverListeners.size())));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
                 listener.onIncomingMms(message);
             }
         }
@@ -660,23 +659,23 @@ public class XmsObserver implements INativeXmsEventListener {
     public void onOutgoingMms(MmsDataObject message) {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingMms : ".concat(String.valueOf(message.getNativeProviderId())));
-            sLogger.info("listeners size : ".concat(String.valueOf(mXmsEventListeners.size())));
+            sLogger.info("listeners size : ".concat(String.valueOf(mXmsObserverListeners.size())));
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
                 listener.onOutgoingMms(message);
             }
         }
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
         if (state == null) {
             return;
         }
-        synchronized (mXmsEventListeners) {
-            for (INativeXmsEventListener listener : mXmsEventListeners) {
-                listener.onMessageStateChanged(nativeProviderId, mimeType, state);
+        synchronized (mXmsObserverListeners) {
+            for (XmsObserverListener listener : mXmsObserverListeners) {
+                listener.onXmsMessageStateChanged(nativeProviderId, mimeType, state);
             }
         }
     }

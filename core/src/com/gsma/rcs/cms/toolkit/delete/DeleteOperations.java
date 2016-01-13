@@ -11,6 +11,7 @@ import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.Toolkit;
+import com.gsma.rcs.cms.toolkit.ToolkitHandler;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -98,7 +99,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                         getString(R.string.cms_toolkit_in_progress));                
                 try {
                     ImapServiceController imapServiceController = Core.getInstance().getCmsService().getCmsManager().getImapServiceController();
-                    new Thread(new DeleteTask(imapServiceController, Operation.DELETE_ALL, null, this)).start();
+                    ToolkitHandler.getInstance().scheduleTask(new DeleteTask(imapServiceController, Operation.DELETE_ALL, null, this));
                 } catch (ImapServiceNotAvailableException e) {
                     Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
                     e.printStackTrace();

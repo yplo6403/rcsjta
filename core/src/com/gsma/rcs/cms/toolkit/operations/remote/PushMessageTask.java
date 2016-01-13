@@ -108,7 +108,7 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
                 }
                 mImapService.selectCondstore(folder);
                 int uid = mImapService.append(folder, mFlags,
-                        imapSmsMessage.getPart());
+                        imapSmsMessage.toPayload());
                 createdUids.add(String.valueOf(uid));
             }            
         } catch (IOException | ImapException e) {

@@ -330,7 +330,7 @@ public abstract class OneToOneChatSession extends ChatSession {
                 ImdnDocument imdn = new ImdnDocument(msgId, ImdnDocument.DELIVERY_NOTIFICATION,
                         ImdnDocument.DELIVERY_STATUS_FAILED, ImdnDocument.IMDN_DATETIME_NOT_SET);
                 ContactId contact = null;
-                ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(contact, imdn);
+                ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(contact, imdn, msgId);
             }
         } else {
             // do nothing

@@ -19,7 +19,9 @@
 
 package com.gsma.rcs.cms.event;
 
+import com.gsma.rcs.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
+import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.core.FileAccessException;
 
@@ -27,23 +29,21 @@ import com.gsma.rcs.core.FileAccessException;
  * Interface used to take into account remote changes from CMS server.
  * These changes shall be apply in local storage
  */
-public interface IRemoteEventHandler {
+public interface CmsEventListener {
 
     /**
      * Take into account a read flag event from CMS server
      *
-     * @param messageType
-     * @param messageId
+     * @param imapData
      */
-    void onRemoteReadEvent(MessageType messageType, String messageId);
+    void onRemoteReadEvent(MessageData imapData);
 
     /**
      * Take into account a deleted flag event from CMS server
      *
-     * @param messageType
-     * @param messageId
+     * @param imapData
      */
-    void onRemoteDeleteEvent(MessageType messageType, String messageId);
+    void onRemoteDeleteEvent(MessageData imapData);
 
     /**
      * Create new message in local storage
@@ -51,12 +51,11 @@ public interface IRemoteEventHandler {
      * @param messageType
      * @param message
      * @return
-     * @throws ImapHeaderFormatException
-     * @throws MissingImapHeaderException
+     * @throws CmsSyncException
      * @throws FileAccessException
      */
     String onRemoteNewMessage(MessageType messageType, IImapMessage message)
-            throws ImapHeaderFormatException, MissingImapHeaderException, FileAccessException;
+            throws CmsSyncException, FileAccessException;
 
     /**
      * This method checks if the message is already present in local storage. Comparison between
@@ -65,9 +64,8 @@ public interface IRemoteEventHandler {
      * @param messageType
      * @param message
      * @return
-     * @throws ImapHeaderFormatException
-     * @throws MissingImapHeaderException
+     * @throws CmsSyncException
      */
-    String getMessageId(MessageType messageType, IImapMessage message)
-            throws ImapHeaderFormatException, MissingImapHeaderException;
+    MessageData searchLocalMessage(MessageType messageType, IImapMessage message)
+            throws CmsSyncException;
 }

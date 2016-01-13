@@ -17,16 +17,17 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.event;
+package com.gsma.rcs.cms.event.exception;
 
-import com.gsma.services.rcs.cms.XmsMessage.State;
-import com.gsma.services.rcs.contact.ContactId;
+public class CmsSyncMessageNotSupportedException extends CmsSyncException {
 
-public interface IRcsXmsEventListener {
-    void onReadRcsMessage(String messageId);
-    void onDeleteRcsMessage(String messageId);
-    void onReadRcsConversation(ContactId contact);
-    void onDeleteRcsConversation(ContactId contact);
-    void onMessageStateChanged(ContactId contact, String messageId, String mimeType, State state);
-    void onDeleteAll();
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Constructor
+     * @param message
+     */
+    public CmsSyncMessageNotSupportedException(String message) {
+        super(message);
+    }
 }

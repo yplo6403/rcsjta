@@ -19,51 +19,41 @@
 
 package com.gsma.rcs.cms.event;
 
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.IImapMessage;
-import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
-import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
+import android.content.Context;
+import android.database.Cursor;
+
+import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObjectFactory;
 import com.gsma.rcs.service.broadcaster.IXmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.Context;
-import android.database.Cursor;
-
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventListener,
-        IRemoteEventHandler {
+public class XmsEventHandler implements XmsMessageListener, XmsObserverListener {
 
-    private static final Logger sLogger = Logger.getLogger(XmsEventListener.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(XmsEventHandler.class.getSimpleName());
     private final Context mContext;
     private final XmsLog mXmsLog;
     private final ImapLog mImapLog;
     private final RcsSettings mSettings;
-
-    private IXmsMessageEventBroadcaster mXmsMessageEventBroadcaster;
+    private final IXmsMessageEventBroadcaster mXmsMessageEventBroadcaster;
 
     /**
      * Default constructor
@@ -73,15 +63,12 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
      * @param xmsLog
      * @param settings
      */
-    public XmsEventListener(Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings settings) {
+    public XmsEventHandler(Context context, ImapLog imapLog, XmsLog xmsLog, RcsSettings settings, IXmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
         mContext = context;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
-    }
-
-    public void registerBroadcaster(IXmsMessageEventBroadcaster broadcaster) {
-        mXmsMessageEventBroadcaster = broadcaster;
+        mXmsMessageEventBroadcaster = xmsMessageEventBroadcaster;
     }
 
     /***********************************************************************/
@@ -122,7 +109,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteNativeSms(long nativeProviderId) {
+    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
 
         Cursor cursor = null;
         try {
@@ -189,7 +176,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteNativeMms(String mmsId) {
+    public void onDeleteMmsFromNativeApp(String mmsId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeMms " + mmsId);
         }
@@ -217,9 +204,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
         if (sLogger.isActivated()) {
-            sLogger.debug(new StringBuilder("onMessageStateChanged:").append(nativeProviderId)
+            sLogger.debug(new StringBuilder("onXmsMessageStateChanged:").append(nativeProviderId)
                     .append(",").append(mimeType).append(",").append(state).toString());
         }
 
@@ -252,7 +239,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onReadNativeConversation(long nativeThreadId) {
+    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onReadNativeConversation " + nativeThreadId);
         }
@@ -285,7 +272,7 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteNativeConversation(long nativeThreadId) {
+    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeConversation " + nativeThreadId);
         }
@@ -322,9 +309,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onReadRcsMessage(String messageId) {
+    public void onReadXmsMessage(String messageId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onReadRcsMessage " + messageId);
+            sLogger.debug("onReadXmsMessage " + messageId);
         }
         MessageType messageType = MessageType.SMS;
         String mimeType = mXmsLog.getMimeType(messageId);
@@ -337,9 +324,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onReadRcsConversation(ContactId contactId) {
+    public void onReadXmsConversation(ContactId contactId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onReadRcsConversation " + contactId.toString());
+            sLogger.debug("onReadXmsConversation " + contactId.toString());
         }
         Cursor cursor = null;
         try {
@@ -362,9 +349,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteRcsMessage(String messageId) {
+    public void onDeleteXmsMessage(String messageId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeleteRcsMessage " + messageId);
+            sLogger.debug("onDeleteXmsMessage " + messageId);
         }
         String mimeType = mXmsLog.getMimeType(messageId);
         MessageType messageType = MessageType.SMS;
@@ -377,9 +364,9 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteRcsConversation(ContactId contactId) {
+    public void onDeleteXmsConversation(ContactId contactId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeleteRcsConversation " + contactId.toString());
+            sLogger.debug("onDeleteXmsConversation " + contactId.toString());
         }
         Cursor cursor = null;
         try {
@@ -403,10 +390,10 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onMessageStateChanged(ContactId contact, String messageId, String mimeType,
-            State state) {
+    public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType,
+                                         State state) {
         if (sLogger.isActivated()) {
-            sLogger.debug(new StringBuilder("onMessageStateChanged:").append(messageId).append(",")
+            sLogger.debug(new StringBuilder("onXmsMessageStateChanged:").append(messageId).append(",")
                     .append(mimeType).append(",").append(state).toString());
         }
 
@@ -419,135 +406,15 @@ public class XmsEventListener implements INativeXmsEventListener, IRcsXmsEventLi
     }
 
     @Override
-    public void onDeleteAll() {
+    public void onDeleteAllXmsMessage() {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeleteAll");
+            sLogger.debug("onDeleteAllXmsMessage");
         }
         mXmsLog.deleteAllEntries();
         mImapLog.updateDeleteStatus(MessageData.DeleteStatus.DELETED_REPORT_REQUESTED);
-    }
-
-    @Override
-    public void onRemoteReadEvent(MessageType messageType, String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onRemoteReadEvent");
-        }
-        mXmsLog.markMessageAsRead(messageId);
-        String contact = mXmsLog.getContact(messageId);
-        if (contact == null) { // message is no more present in db
-            return;
-        }
-        if (mXmsMessageEventBroadcaster!=null) {
-            mXmsMessageEventBroadcaster.broadcastMessageStateChanged(ContactUtil
-                        .createContactIdFromTrustedData(contact),
-                        MessageType.SMS == messageType ? MimeType.TEXT_MESSAGE
-                                : MimeType.MULTIMEDIA_MESSAGE, messageId, State.DISPLAYED,
-                        ReasonCode.UNSPECIFIED);
-        }
-    }
-
-    @Override
-    public void onRemoteDeleteEvent(MessageType messageType, String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onRemoteDeleteEvent");
-        }
-        String contact = mXmsLog.getContact(messageId);
-        if(contact == null){ // message is no more present in db
-            return;
-        }
-        ContactId contactId = ContactUtil.createContactIdFromTrustedData(contact);
-        mXmsLog.deleteXmsMessage(messageId);
-        Set<String> messageIds = new HashSet<>();
-        messageIds.add(messageId);
         if (mXmsMessageEventBroadcaster != null) {
-            mXmsMessageEventBroadcaster.broadcastMessageDeleted(contactId, messageIds);
+            //TODO FGI : notify broadcaster from deleted messages
         }
     }
 
-    @Override
-    public String onRemoteNewMessage(MessageType messageType, IImapMessage message)
-            throws ImapHeaderFormatException, MissingImapHeaderException, FileAccessException {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onRemoteNewMessage");
-        }
-
-        if (message.isDeleted()) { // no need to add a deleted message in xms content provider
-            return IdGenerator.generateMessageID();
-        }
-
-        if (MessageType.SMS == messageType) {
-            SmsDataObject smsDataObject = XmsDataObjectFactory
-                    .createSmsDataObject((ImapSmsMessage) message);
-            mXmsLog.addSms(smsDataObject);
-            String messageId = smsDataObject.getMessageId();
-            if (RcsService.ReadStatus.UNREAD == smsDataObject.getReadStatus()) {
-                if (mXmsMessageEventBroadcaster != null) {
-                    mXmsMessageEventBroadcaster.broadcastNewMessage(MimeType.TEXT_MESSAGE, messageId);
-                }
-            }
-            return messageId;
-        } else if (MessageType.MMS == messageType) {
-            MmsDataObject mmsDataObject = XmsDataObjectFactory.createMmsDataObject(mContext,
-                    mSettings, (ImapMmsMessage) message);
-            mXmsLog.addMms(mmsDataObject);
-            String messageId = mmsDataObject.getMessageId();
-            if (RcsService.ReadStatus.UNREAD == mmsDataObject.getReadStatus()) {
-                if (mXmsMessageEventBroadcaster != null) {
-                    mXmsMessageEventBroadcaster.broadcastNewMessage(MimeType.MULTIMEDIA_MESSAGE, messageId);
-                }
-            }
-            return messageId;
-        }
-        return null;
-    }
-
-    @Override
-    public String getMessageId(MessageType messageType, IImapMessage message)
-            throws ImapHeaderFormatException, MissingImapHeaderException {
-
-        // check if an entry already exist in imapData provider
-        MessageData messageData = mImapLog.getMessage(message.getFolder(), message.getUid());
-        if (messageData != null) {
-            return messageData.getMessageId();
-        }
-
-        if (MessageType.SMS == messageType) {
-            // get messages from provider with contact, direction and correlator fields
-            // messages are sorted by Date DESC (more recent first).
-            SmsDataObject smsData = XmsDataObjectFactory
-                    .createSmsDataObject((ImapSmsMessage) message);
-            List<String> ids = mXmsLog.getMessageIds(smsData.getContact().toString(),
-                    smsData.getDirection(), smsData.getCorrelator());
-
-            // take the first message which s not synchronized with CMS server (have no uid)
-            for (String id : ids) {
-                Integer uid = mImapLog.getUidForXmsMessage(id);
-                if (uid == null) {
-                    return id;
-                }
-            }
-            return null;
-        } else if (MessageType.MMS == messageType) {
-            String mmsId = ((ImapMmsMessage) message).getRawMessage().getBody()
-                    .getHeader(Constants.HEADER_MESSAGE_ID);
-            if(mmsId == null){
-                throw new MissingImapHeaderException(Constants.HEADER_MESSAGE_ID + " IMAP header is missing");
-            }
-            return getMessageId(mmsId);
-        }
-        return null;
-    }
-
-    private String getMessageId(String mmsId) {
-        Cursor cursor = null;
-        try {
-            cursor = mXmsLog.getMmsMessage(mmsId);
-            if (!cursor.moveToNext()) {
-                return null;
-            }
-            return cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
 }

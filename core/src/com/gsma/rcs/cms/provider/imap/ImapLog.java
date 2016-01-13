@@ -88,14 +88,23 @@ public class ImapLog {
         private static final String SELECTION_READ_STATUS_OR_DELETE_STATUS = new StringBuilder("(").append(SELECTION_READ_STATUS).append(" OR ").append(SELECTION_DELETE_STATUS).append(")").toString();
         private static final String SELECTION_PUSH_STATUS = new StringBuilder(MessageData.KEY_PUSH_STATUS).append("=?").toString();
 
+        private static final String SELECTION_CHAT = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.CHAT_MESSAGE).append("'").toString();
+        private static final String SELECTION_IMDN = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.IMDN).append("'").toString();
+        private static final String SELECTION_GC_OBJECT = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.GROUP_STATE_OBJECT).append("'").toString();
         private static final String SELECTION_SMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.SMS).append("'").toString();
         private static final String SELECTION_MMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.MMS).append("'").toString();
         private static final String SELECTION_XMS = new StringBuilder("(").append(SELECTION_SMS).append(" OR ").append(SELECTION_MMS).append(")").toString();
+        private static final String SELECTION_CHAT_IMDN = new StringBuilder("(").append(SELECTION_CHAT).append(" OR ").append(SELECTION_IMDN).append(")").toString();
+
         static final String SELECTION_FOLDER_NAME_UID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_UID).toString();
         static final String SELECTION_FOLDER_NAME_MESSAGEID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_XMS_MESSAGEID = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        private static final String SELECTION_CHAT_IMDN_MESSAGEID = new StringBuilder(SELECTION_CHAT_IMDN).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        private static final String SELECTION_GC_OBJECT_MESSAGEID = new StringBuilder(SELECTION_GC_OBJECT).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        private static final String SELECTION_SMS_MESSAGEID = new StringBuilder(SELECTION_SMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        private static final String SELECTION_MMS_MESSAGEID = new StringBuilder(SELECTION_MMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
 
-        private static final String SELECTION_XMS_PUSH_STATUS = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_PUSH_STATUS).toString();
+        private static final String SELECTION_XMS_PUSH_STATUS_DELETE_STATUS = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_PUSH_STATUS).append(" AND ").append(SELECTION_DELETE_STATUS).toString();
 
         private static final String SELECTION_MESSAGE_TYPE_MESSAGE_ID = new StringBuilder(SELECTION_MESSAGE_TYPE).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID = new StringBuilder(SELECTION_MESSAGE_TYPE).append(" AND ").append(SELECTION_PROVIDER_ID).toString();
@@ -359,6 +368,72 @@ public class ImapLog {
     }
 
     /**
+     * Get sms data by messageId
+     *
+     * @param messageId
+     * @return MessageData
+     */
+    public MessageData getSmsData(String messageId) {
+        return getData(messageId, Message.SELECTION_SMS_MESSAGEID);
+    }
+
+    /**
+     * Get mms data by messageId
+     *
+     * @param messageId
+     * @return MessageData
+     */
+    public MessageData getMmsData(String messageId) {
+        return getData(messageId, Message.SELECTION_MMS_MESSAGEID);
+    }
+
+    /**
+     * Get chat or imdn data by messageId
+     *
+     * @param messageId
+     * @return MessageData
+     */
+    public MessageData getChatOrImdnData(String messageId) {
+        return getData(messageId, Message.SELECTION_CHAT_IMDN_MESSAGEID);
+    }
+
+    /**
+     * Get groupChatObject data by messageId
+     *
+     * @param messageId
+     * @return MessageData
+     */
+    public MessageData getGroupChatObjectData(String messageId) {
+        return getData(messageId, Message.SELECTION_GC_OBJECT_MESSAGEID);
+    }
+
+    private MessageData getData(String messageId, String selection) {
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null,
+                    selection, new String[] {
+                            messageId}, null);
+            CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
+            if (!cursor.moveToFirst()) {
+                return null;
+            }
+            return new MessageData(
+                    cursor.getString(cursor.getColumnIndexOrThrow(MessageData.KEY_FOLDER_NAME)),
+                    cursor.isNull(cursor.getColumnIndexOrThrow(MessageData.KEY_UID)) ? null : cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_UID)),
+                    ReadStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_READ_STATUS))),
+                    DeleteStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_DELETE_STATUS))),
+                    PushStatus.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(MessageData.KEY_PUSH_STATUS))),
+                    MessageType.valueOf(cursor
+                            .getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_TYPE))),
+                    cursor.getString(cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID)),
+                    cursor.isNull(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)) ? null : cursor.getLong(cursor.getColumnIndexOrThrow(MessageData.KEY_NATIVE_PROVIDER_ID)))
+                    ;
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    /**
      * Return the max uid for messages of a folder
      * 
      * @param folderName
@@ -521,8 +596,9 @@ public class ImapLog {
         List<MessageData> messages = new ArrayList<>();
         try {
             cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null,
-                    Message.SELECTION_XMS_PUSH_STATUS, new String[] {
-                            String.valueOf(pushStatus.toInt())
+                    Message.SELECTION_XMS_PUSH_STATUS_DELETE_STATUS, new String[] {
+                            String.valueOf(pushStatus.toInt()),
+                            String.valueOf(DeleteStatus.NOT_DELETED.toInt())
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
             int uidIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_UID);

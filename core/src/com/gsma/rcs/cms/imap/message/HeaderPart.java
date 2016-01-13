@@ -17,14 +17,16 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.imap.message.mime;
+package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MimeHeaders {
+public class HeaderPart {
 
     class Header{
         private String mKey;
@@ -33,28 +35,37 @@ public class MimeHeaders {
             mKey = key;
             mValue = value;
         }
+
         public String toString(){
             return new StringBuilder(mKey).append(Constants.HEADER_SEP).append(mValue).append(Constants.CRLF).toString();
         }
     }
 
-    List<Header> mHeaders;
+    Map<String,Header> mHeadersMap;
+    List<Header> mHeadersList;
 
-    public MimeHeaders(){
-        mHeaders = new ArrayList<>();
+    public HeaderPart(){
+        mHeadersMap = new HashMap<>();
+        mHeadersList = new ArrayList<>();
     }
 
     public void addHeader(String key, String value){
-        mHeaders.add(new Header(key, value));
+        addHeader(new Header(key, value));
     }
 
     public void addHeader(Header header){
-        mHeaders.add(header);
+        mHeadersList.add(header);
+        mHeadersMap.put(header.mKey, header);
+    }
+
+    public String getHeaderValue(String headerName){
+        Header header = mHeadersMap.get(headerName);
+        return (header == null ? null : header.mValue);
     }
 
     public String toString(){
         StringBuilder sb = new StringBuilder();
-        for(Header header : mHeaders){
+        for(Header header : mHeadersList){
             sb.append(header);
         }
         return sb.toString();

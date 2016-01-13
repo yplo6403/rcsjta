@@ -138,10 +138,8 @@ public class ImapServiceController {
             }
         } catch (ImapException | IOException | RuntimeException e) {
             if(sLogger.isActivated()){
-                sLogger.debug(e.getMessage());
                 e.printStackTrace(); // debug purpose
             }
-
         } finally {
             mAvailable = true;
             for (ImapServiceListener listener : mListeners) {

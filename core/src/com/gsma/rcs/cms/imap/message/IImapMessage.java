@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.cms.imap.message;
 
-import com.sonymobile.rcs.imap.IPart;
+import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
 
 public interface IImapMessage {
     
@@ -27,10 +27,16 @@ public interface IImapMessage {
     
     Integer getUid();
     
-    IPart getPart();
-    
+    String toPayload();
+
+    void parsePayload(String payload);
+
     boolean isSeen();
     
     boolean isDeleted();
+
+    String getHeader(String headerName);
+
+    CpimMessage getCpimMessage();
 
 }

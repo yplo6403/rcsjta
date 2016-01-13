@@ -165,7 +165,7 @@ public class PushMessageTask implements Runnable {
                     existingFolders.add(remoteFolder);
                 }
                 imapService.selectCondstore(remoteFolder);
-                int uid = imapService.append(remoteFolder, flags, imapMessage.getPart());
+                int uid = imapService.append(remoteFolder, flags, imapMessage.toPayload());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
         } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
