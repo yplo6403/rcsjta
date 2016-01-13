@@ -49,7 +49,6 @@ import android.net.Uri;
 import android.support.v4.util.LruCache;
 import android.support.v4.widget.CursorAdapter;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,7 +60,7 @@ import android.widget.TextView;
 /**
  * Conversation cursor adapter
  */
-public class TalkCursorAdapter extends CursorAdapter {
+public class OneToOneTalkCursorAdapter extends CursorAdapter {
 
     private static final int MAX_IMAGE_WIDTH = 100;
     private static final int MAX_IMAGE_HEIGHT = 100;
@@ -77,33 +76,28 @@ public class TalkCursorAdapter extends CursorAdapter {
     private static final int VIEW_TYPE_RCS_FILE_TRANSFER_IN = 8;
     private static final int VIEW_TYPE_RCS_FILE_TRANSFER_OUT = 9;
 
-    private static final String LOGTAG = LogUtils.getTag(TalkCursorAdapter.class.getSimpleName());
-
     public static Bitmap sDefaultThumbnail;
     private final LinearLayout.LayoutParams mImageParams;
     private final Activity mActivity;
     private LayoutInflater mInflater;
     private BitmapCache bitmapCache;
 
+    private static final String LOGTAG = LogUtils.getTag(OneToOneTalkCursorAdapter.class
+            .getSimpleName());
+
     /**
      * Constructor
      *
      * @param activity The activity
      */
-    public TalkCursorAdapter(Activity activity) {
+    public OneToOneTalkCursorAdapter(Activity activity) {
         super(activity, null, 0);
         mActivity = activity;
         mInflater = LayoutInflater.from(activity);
-
         int size100Dp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 100, mContext
                 .getResources().getDisplayMetrics());
         mImageParams = new LinearLayout.LayoutParams(size100Dp, size100Dp);
-
         bitmapCache = BitmapCache.getInstance();
-
-        if (LogUtils.isActive) {
-            Log.d(LOGTAG, "ConversationCursorAdapter create");
-        }
     }
 
     @Override
@@ -178,7 +172,7 @@ public class TalkCursorAdapter extends CursorAdapter {
 
             case VIEW_TYPE_RCS_CHAT_LOC_IN:
             case VIEW_TYPE_RCS_CHAT_TEXT_IN:
-                bindRcsChatView(view, cursor);
+                bindRcsChatInView(view, cursor);
                 break;
 
             case VIEW_TYPE_RCS_FILE_TRANSFER_IN:
@@ -243,14 +237,15 @@ public class TalkCursorAdapter extends CursorAdapter {
                     return VIEW_TYPE_RCS_FILE_TRANSFER_OUT;
                 }
         }
-        throw new IllegalArgumentException("Invalid provider IDe: '" + providerId + "'!");
+        throw new IllegalArgumentException("Invalid provider ID: '" + providerId + "'!");
     }
 
     private void bindRcsFileTransferOutView(View view, Cursor cursor) {
         bindRcsFileTransferInView(view, cursor, Direction.OUTGOING);
         RcsFileTransferOutViewHolder holder = (RcsFileTransferOutViewHolder) view.getTag();
         boolean undeliveredExpiration = cursor.getInt(holder.getColumnExpiredDeliveryIdx()) == 1;
-        holder.getUndeliveredView().setVisibility(undeliveredExpiration ? View.VISIBLE : View.GONE);
+        holder.getStatusText().setCompoundDrawablesWithIntrinsicBounds(
+                undeliveredExpiration ? R.drawable.chat_view_undelivered : 0, 0, 0, 0);
     }
 
     private void bindRcsFileTransferInView(View view, Cursor cursor, final Direction dir) {
@@ -336,13 +331,14 @@ public class TalkCursorAdapter extends CursorAdapter {
     }
 
     private void bindRcsChatOutView(View view, Cursor cursor) {
-        bindRcsChatView(view, cursor);
+        bindRcsChatInView(view, cursor);
         RcsChatOutViewHolder holder = (RcsChatOutViewHolder) view.getTag();
         boolean undeliveredExpiration = cursor.getInt(holder.getColumnExpiredDeliveryIdx()) == 1;
-        holder.getUndeliveredView().setVisibility(undeliveredExpiration ? View.VISIBLE : View.GONE);
+        holder.getStatusText().setCompoundDrawablesWithIntrinsicBounds(
+                undeliveredExpiration ? R.drawable.chat_view_undelivered : 0, 0, 0, 0);
     }
 
-    private void bindRcsChatView(View view, Cursor cursor) {
+    private void bindRcsChatInView(View view, Cursor cursor) {
         RcsChatInViewHolder holder = (RcsChatInViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
@@ -515,7 +511,7 @@ public class TalkCursorAdapter extends CursorAdapter {
      * @param geoloc The geolocation
      * @return a formatted text
      */
-    private CharSequence formatGeolocation(Context context, Geoloc geoloc) {
+    public static String formatGeolocation(Context context, Geoloc geoloc) {
         StringBuilder result = new StringBuilder(context.getString(R.string.label_geolocation_msg))
                 .append("\n");
         String label = geoloc.getLabel();

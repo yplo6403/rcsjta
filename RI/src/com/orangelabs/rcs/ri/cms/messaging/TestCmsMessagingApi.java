@@ -20,6 +20,7 @@ package com.orangelabs.rcs.ri.cms.messaging;
 
 import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -56,7 +57,7 @@ public class TestCmsMessagingApi extends RcsListActivity {
                 break;
 
             case 1:
-                startActivity(new Intent(this, XmsMessagingList.class));
+                startActivity(new Intent(this, OneToOneTalkList.class));
                 break;
 
         }

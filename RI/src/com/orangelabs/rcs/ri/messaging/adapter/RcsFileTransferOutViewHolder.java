@@ -20,19 +20,14 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 
 import com.gsma.services.rcs.history.HistoryLog;
 
-import com.orangelabs.rcs.ri.R;
-
 import android.database.Cursor;
 import android.view.View;
-import android.widget.ImageView;
 
 /**
  * A ViewHolder class keeps references to children views to avoid unnecessary calls to
  * findViewById() or getColumnIndex() on each row.
  */
 public class RcsFileTransferOutViewHolder extends RcsFileTransferInViewHolder {
-    private final ImageView mUndeliveredView;
-
     private final int mColumnExpiredDeliveryIdx;
 
     /**
@@ -45,12 +40,6 @@ public class RcsFileTransferOutViewHolder extends RcsFileTransferInViewHolder {
         super(base, cursor);
         /* Save column indexes */
         mColumnExpiredDeliveryIdx = cursor.getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY);
-        /* Save children views */
-        mUndeliveredView = (ImageView) base.findViewById(R.id.undelivered);
-    }
-
-    public ImageView getUndeliveredView() {
-        return mUndeliveredView;
     }
 
     public int getColumnExpiredDeliveryIdx() {

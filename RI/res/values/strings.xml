@@ -149,6 +149,7 @@
     <string name="title_multi_file_transfer">Multiple file transfer</string>
     <string name="label_pause_ft_not_allowed">Cannot pause HTTP file transfer</string>
     <string name="label_resume_ft_not_allowed">Cannot resume HTTP file transfer</string>
+    <string name="label_delete_file_transfer_success">File transfers with contact %1$s deleted</string>
 
     <!-- Chat menu -->
     <string name="menu_initiate_chat">Initiate single chat</string>
@@ -176,7 +177,7 @@
     <string name="menu_quicktext">Quick text</string>
     <string name="label_continue_chat_failed">Can\'t continue the conversation: RCS service is not available</string>
     <string name="label_delete_chat_failed">Delete chat conversation failed</string>
-    <string name="label_delete_chat_success">Chat with contact %1$s is deleted</string>
+    <string name="label_delete_chat_success">Chat with contact %1$s deleted</string>
     <string name="label_delete_gchat_success">Group chat successfully deleted</string>
     <string name="label_subject">Subject: </string>
     <string name="label_subject_notif">Subject: %s</string>
@@ -397,12 +398,13 @@
     <string name="menu_cms_messaging_title">CMS messaging</string>
     <string name="menu_cms_messaging_item1">Initiate conversation</string>
     <string name="menu_cms_messaging_item2">CMS log</string>
-    <string name="label_cms_sms_contact">SMS with %s</string>
-    <string name="label_cms_mms_contact">MMS with %s</string>
+    <string name="label_cms_sms_contact">SMS with %1$s</string>
+    <string name="label_cms_mms_contact">MMS with %1$s</string>
+    <string name="label_rcs_chat_contact">Chat with %1$s</string>
+    <string name="label_rcs_ft_contact">Transfer with %1$s</string>
     <string name="menu_open_xms_talk">Open</string>
     <string name="menu_delete_xms_talk">Delete</string>
     <string name="menu_select_parts">Select attachments</string>
-    <string name="err_continue_xms_failed">Can\'t continue the conversation: RCS service is not available</string>
     <string name="menu_cms_sync_title">CMS synchronize</string>
     <string name="menu_cms_sync_all">Sync all</string>
     <string name="menu_cms_sync_one_to_one">Sync one-to-one conversation</string>
@@ -412,8 +414,8 @@
     <string name="cms_sync_timestamp">Synchronized at</string>
     <string name="err_select_file">Select at least one image or video file</string>
     <string name="label_xms_list_empty">No XMS message</string>
-    <string name="label_xms_delete_success">XMS with contact %1$s is deleted</string>
-    <string name="label_xms_delete_failed">Delete XMS conversation failed</string>
+    <string name="label_xms_delete_success">XMS with contact %1$s deleted</string>
+    <string name="error_conversation_delete">Delete conversation failed</string>
     <string name="title_send_mms">Send MMS to %1$s</string>
     <string name="mms_image">MMS image</string>
     <string name="title_recv_sms">SMS from %s</string>

@@ -178,13 +178,11 @@ public class SharingListView extends HistoryListView {
 
             // Load the drawables
             mDrawableIncomingFailed = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_incoming_call_failed);
+                    R.drawable.ri_incoming_call_failed);
             mDrawableOutgoingFailed = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_outgoing_call_failed);
-            mDrawableIncoming = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_incoming_call);
-            mDrawableOutgoing = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_outgoing_call);
+                    R.drawable.ri_outgoing_call_failed);
+            mDrawableIncoming = context.getResources().getDrawable(R.drawable.ri_incoming_call);
+            mDrawableOutgoing = context.getResources().getDrawable(R.drawable.ri_outgoing_call);
             mDrawableRichCall = context.getResources().getDrawable(R.drawable.ri_historylog_csh);
         }
 

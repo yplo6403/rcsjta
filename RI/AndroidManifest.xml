@@ -535,7 +535,7 @@
             android:name=".cms.synchronization.CmsSyncGroup"
             android:label="@string/menu_cms_sync_title" />
         <activity
-            android:name=".cms.messaging.XmsMessagingList"
+            android:name=".messaging.OneToOneTalkList"
             android:label="@string/menu_cms_messaging_title" />
         <activity
             android:name=".cms.messaging.InitiateOneToOneTalk"

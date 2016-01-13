@@ -22,11 +22,8 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 
 import com.gsma.services.rcs.history.HistoryLog;
 
-import com.orangelabs.rcs.ri.R;
-
 import android.database.Cursor;
 import android.view.View;
-import android.widget.ImageView;
 
 /**
  * Created by yplo6403 on 01/12/2015.
@@ -35,21 +32,14 @@ public class RcsChatOutViewHolder extends RcsChatInViewHolder {
 
     private final int mColumnExpiredDeliveryIdx;
 
-    private final ImageView mUndeliveredView;
-
-    public RcsChatOutViewHolder(View view, Cursor cursor) {
+    RcsChatOutViewHolder(View view, Cursor cursor) {
         super(view, cursor);
         /* Save column indexes */
         mColumnExpiredDeliveryIdx = cursor.getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY);
-        /* Save children views */
-        mUndeliveredView = (ImageView) view.findViewById(R.id.undelivered);
     }
 
     public int getColumnExpiredDeliveryIdx() {
         return mColumnExpiredDeliveryIdx;
     }
 
-    public ImageView getUndeliveredView() {
-        return mUndeliveredView;
-    }
 }

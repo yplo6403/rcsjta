@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ /*******************************************************************************
   ~  * Software Name : RCS IMS Stack
   ~  *
@@ -20,10 +19,10 @@
   -->
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingBottom="5dip"
-                android:paddingTop="5dip">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="5dip"
+    android:paddingTop="5dip">
 
     <RelativeLayout
         android:id="@+id/conv_item_chat_text_in"
@@ -32,23 +31,22 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:background="@drawable/msg_item_right"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/content_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@android:color/black"
-            />
+            android:text="content"
+            android:textColor="@android:color/black" />
 
         <TextView
             android:id="@+id/timestamp_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/content_text"
-            android:textColor="@android:color/darker_gray"
-            />
+            android:text="timestamp"
+            android:textColor="@android:color/darker_gray" />
 
     </RelativeLayout>
 
@@ -59,7 +57,7 @@
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:layout_below="@id/conv_item_chat_text_in"
-        android:textColor="@android:color/white"
-        />
+        android:text="@string/label_state_unknown"
+        android:textColor="@android:color/darker_gray" />
 
 </RelativeLayout>

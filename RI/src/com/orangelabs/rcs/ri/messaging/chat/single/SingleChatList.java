@@ -59,7 +59,6 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.util.Arrays;
 import java.util.Set;
 
 /**
@@ -328,9 +327,7 @@ public class SingleChatList extends RcsFragmentActivity implements
         @Override
         public void onMessagesDeleted(final ContactId contact, Set<String> msgIds) {
             if (LogUtils.isActive) {
-                Log.d(LOGTAG,
-                        "onMessagesDeleted contact=" + contact + " for message IDs="
-                                + Arrays.toString(msgIds.toArray()));
+                Log.d(LOGTAG, "onMessagesDeleted contact=" + contact + " for message IDs=" + msgIds);
             }
             mHandler.post(new Runnable() {
                 public void run() {

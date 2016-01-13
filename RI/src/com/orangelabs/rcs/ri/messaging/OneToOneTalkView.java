@@ -59,7 +59,7 @@ import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
 import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
-import com.orangelabs.rcs.ri.messaging.adapter.TalkCursorAdapter;
+import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
 import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
 import com.orangelabs.rcs.ri.messaging.chat.ChatView;
 import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
@@ -169,7 +169,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     /**
      * The adapter that binds data to the ListView
      */
-    private TalkCursorAdapter mAdapter;
+    private OneToOneTalkCursorAdapter mAdapter;
     private Uri mUriHistoryProvider;
     private ContactId mContact;
     private CmsService mCmsService;
@@ -562,7 +562,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         });
 
         /* Initialize the adapter. */
-        mAdapter = new TalkCursorAdapter(this);
+        mAdapter = new OneToOneTalkCursorAdapter(this);
 
         /* Associate the list adapter with the ListView. */
         ListView listView = (ListView) findViewById(android.R.id.list);

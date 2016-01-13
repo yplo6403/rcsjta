@@ -38,11 +38,13 @@ import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.history.HistoryListView;
 import com.orangelabs.rcs.ri.messaging.filetransfer.multi.SendMultiFile;
+import com.orangelabs.rcs.ri.utils.AbstractMessageParser;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -184,17 +186,13 @@ public class MessagingListView extends HistoryListView {
             super(context, R.layout.history_log_list, mMessagingLogInfos);
 
             // Load the drawables
-            mDrawableIncomingFailed = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_incoming_call_failed);
-            mDrawableOutgoingFailed = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_outgoing_call_failed);
-            mDrawableIncoming = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_incoming_call);
-            mDrawableOutgoing = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_list_outgoing_call);
-            mDrawableChat = context.getResources().getDrawable(R.drawable.ri_historylog_chat);
-            mDrawableFileTransfer = context.getResources().getDrawable(
-                    R.drawable.ri_historylog_filetransfer);
+            Resources res = context.getResources();
+            mDrawableIncomingFailed = res.getDrawable(R.drawable.ri_incoming_call_failed);
+            mDrawableOutgoingFailed = res.getDrawable(R.drawable.ri_outgoing_call_failed);
+            mDrawableIncoming = res.getDrawable(R.drawable.ri_incoming_call);
+            mDrawableOutgoing = res.getDrawable(R.drawable.ri_outgoing_call);
+            mDrawableChat = res.getDrawable(R.drawable.ri_message_chat);
+            mDrawableFileTransfer = res.getDrawable(R.drawable.ri_filetransfer);
 
             mContext = context;
         }
@@ -570,7 +568,7 @@ public class MessagingListView extends HistoryListView {
             if (another == null) {
                 throw new NullPointerException("Cannot compare to null");
             }
-            return (int) (another.getTimestamp() - mTimestamp);
+            return Long.valueOf(mTimestamp).compareTo(another.getTimestamp());
         }
 
     }
@@ -629,7 +627,7 @@ public class MessagingListView extends HistoryListView {
         }
     }
 
-    MessagingLogInfo getmMessagingLogInfos(String chatId) {
+    private MessagingLogInfo getMessagingLogInfos(String chatId) {
         for (MessagingLogInfo messagingLogInfo : mMessagingLogInfos) {
             if (messagingLogInfo.getChatId().equals(chatId)) {
                 return messagingLogInfo;
@@ -638,7 +636,7 @@ public class MessagingListView extends HistoryListView {
         return null;
     }
 
-    OneToOneChatListener mOneChatListener = new OneToOneChatListener() {
+    private OneToOneChatListener mOneChatListener = new OneToOneChatListener() {
 
         @Override
         public void onMessagesDeleted(ContactId contact, Set<String> msgIds) {
@@ -648,7 +646,7 @@ public class MessagingListView extends HistoryListView {
                                 + Arrays.toString(msgIds.toArray()));
             }
             boolean refreshRequired = false;
-            MessagingLogInfo messagingLogInfo = getmMessagingLogInfos(contact.toString());
+            MessagingLogInfo messagingLogInfo = getMessagingLogInfos(contact.toString());
             if (messagingLogInfo != null) {
                 refreshRequired = true;
                 mMessagingLogInfos.remove(messagingLogInfo);
@@ -672,7 +670,7 @@ public class MessagingListView extends HistoryListView {
         }
     };
 
-    GroupChatListener mGroupChatListener = new GroupChatListener() {
+    private GroupChatListener mGroupChatListener = new GroupChatListener() {
 
         @Override
         public void onMessagesDeleted(String chatId, Set<String> msgIds) {
@@ -690,7 +688,7 @@ public class MessagingListView extends HistoryListView {
             }
             boolean refresh = false;
             for (String chatId : chatIds) {
-                MessagingLogInfo messagingLogInfo = getmMessagingLogInfos(chatId);
+                MessagingLogInfo messagingLogInfo = getMessagingLogInfos(chatId);
                 if (messagingLogInfo != null) {
                     refresh = true;
                     mMessagingLogInfos.remove(messagingLogInfo);
