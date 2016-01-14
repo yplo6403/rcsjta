@@ -521,6 +521,19 @@ public class MessageLog implements IMessageLog {
     }
 
     @Override
+    public ContactId getMessageContact(String msgId) {
+        Cursor cursor = getMessageData(MessageData.KEY_CONTACT, msgId);
+        if (cursor == null) {
+            return null;
+        }
+        String number = getDataAsString(cursor);
+        if (number == null) {
+            return null;
+        }
+        return ContactUtil.createContactIdFromTrustedData(number);
+    }
+
+    @Override
     public String getChatMessageContent(String msgId) {
         Cursor cursor = getMessageData(MessageData.KEY_CONTENT, msgId);
         if (cursor == null) {

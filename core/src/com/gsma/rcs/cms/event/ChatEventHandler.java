@@ -19,8 +19,6 @@
 
 package com.gsma.rcs.cms.event;
 
-import android.content.Context;
-
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
@@ -32,11 +30,8 @@ import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
-import com.gsma.rcs.core.ims.service.im.chat.ChatSessionListener;
-import com.gsma.rcs.core.ims.service.im.chat.GroupChatSessionListener;
 import com.gsma.rcs.core.ims.service.im.chat.OneToOneChatSessionListener;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
-import com.gsma.rcs.provider.messaging.ChatMessagePersistedStorageAccessor;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -45,33 +40,31 @@ import com.gsma.services.rcs.contact.ContactId;
 public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessageListener {
 
     private static final Logger sLogger = Logger.getLogger(ChatEventHandler.class.getSimpleName());
-    private final Context mContext;
-    /* package private */ final MessagingLog mMessagingLog;
-    /* package private */ final ImapLog mImapLog;
-    /* package private */ final RcsSettings mSettings;
+    protected final MessagingLog mMessagingLog;
+    protected final ImapLog mImapLog;
+    protected final RcsSettings mSettings;
 
     /**
      * Default constructor
      *
-     * @param context
-     * @param imapLog
-     * @param messagingLog
-     * @param settings
+     * @param imapLog the IMAP log accessor
+     * @param messagingLog the messaging log accessor
+     * @param settings the RCS settings accessor
      */
-    public ChatEventHandler(Context context, ImapLog imapLog, MessagingLog messagingLog, RcsSettings settings) {
-        mContext = context;
+    public ChatEventHandler(ImapLog imapLog, MessagingLog messagingLog, RcsSettings settings) {
         mMessagingLog = messagingLog;
         mImapLog = imapLog;
         mSettings = settings;
     }
 
     @Override
-    public void onMessageReceived(ChatMessage msg, boolean imdnDisplayedRequested, boolean deliverySuccess) {
-        if(sLogger.isActivated()){
-            sLogger.debug("onMessageReceived : ".concat(msg.toString()));
+    public void onMessageReceived(ChatMessage msg, boolean imdnDisplayedRequested,
+            boolean deliverySuccess) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
-        mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings, msg.getRemoteContact()),
-                ReadStatus.UNREAD, MessageData.DeleteStatus.NOT_DELETED,
+        mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
+                msg.getRemoteContact()), ReadStatus.UNREAD, MessageData.DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED, MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
     }
 
@@ -82,14 +75,13 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onMessageSent(String msgId, String mimeType) {
-        if(sLogger.isActivated()){
-            sLogger.debug("onMessageSent : " + msgId);
+        if (sLogger.isActivated()) {
+            sLogger.debug("onMessageSent: ".concat(msgId));
         }
-        ChatMessagePersistedStorageAccessor chatMessagePersistedStorageAccessor = new ChatMessagePersistedStorageAccessor(mMessagingLog, msgId);
-        ContactId contact =  chatMessagePersistedStorageAccessor.getRemoteContact();
+        ContactId contact = mMessagingLog.getMessageContact(msgId);
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, msgId, null));
+                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                MessageType.CHAT_MESSAGE, msgId, null));
     }
 
     @Override
@@ -99,17 +91,18 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId) {
-        if(sLogger.isActivated()){
-            sLogger.debug("onMessageDeliveryStatusReceived : " + imdnId);
+        if (sLogger.isActivated()) {
+            sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnId));
         }
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.IMDN, imdnId, null));
+                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                MessageType.IMDN, imdnId, null));
     }
 
     @Override
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnId) {
-        onMessageDeliveryStatusReceived(contact, imdn,  imdnId);
+    public void onDeliveryStatusReceived(String contributionId, ContactId contact,
+            ImdnDocument imdn, String imdnId) {
+        onMessageDeliveryStatusReceived(contact, imdn, imdnId);
     }
 
     @Override
@@ -128,7 +121,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     }
 
     @Override
-    public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact, TypeMsrpChunk chunktype) {
+    public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact,
+            TypeMsrpChunk chunktype) {
 
     }
 
@@ -159,11 +153,13 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onReadChatMessage(String messageId) {
-        mImapLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId, ReadStatus.READ_REPORT_REQUESTED);
+        mImapLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
+                ReadStatus.READ_REPORT_REQUESTED);
     }
 
     @Override
     public void onDeleteChatMessage(String messageId) {
-        mImapLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId, DeleteStatus.DELETED_REPORT_REQUESTED);
+        mImapLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId,
+                DeleteStatus.DELETED_REPORT_REQUESTED);
     }
 }

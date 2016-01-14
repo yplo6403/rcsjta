@@ -18,6 +18,10 @@
 
 package com.gsma.rcs.provider.xms;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.net.Uri;
+
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -36,12 +40,12 @@ import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.net.Uri;
-
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * XMS log utilities
@@ -93,6 +97,11 @@ public class XmsLog {
 
     private static final String[] PROJECTION_MESSAGE_ID = new String[] {
         XmsData.KEY_MESSAGE_ID
+    };
+
+    private static final String[] PROJECTION_MESSAGE_ID_CONTACT = new String[] {
+            XmsData.KEY_MESSAGE_ID,
+            XmsData.KEY_CONTACT
     };
 
     /**
@@ -572,8 +581,7 @@ public class XmsLog {
             int compressedIdx = cursor.getColumnIndexOrThrow(PartData.KEY_COMPRESSED);
             do {
                 String number = cursor.getString(contactIdx);
-                ContactId contact = com.gsma.rcs.utils.ContactUtil
-                        .createContactIdFromTrustedData(number);
+                ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
                 String mimeType = cursor.getString(mimeTypeIdx);
                 MmsDataObject.MmsPart partData;
                 if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)
@@ -643,6 +651,43 @@ public class XmsLog {
                     null);
             CursorUtil.assertCursorIsNotNull(cursor, contentUri);
             return cursor.moveToNext();
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    /**
+     * Gets the map of XMS contacts with their associated message IDs
+     * @return the map of XMS contacts with their associated message IDs (may be empty)
+     */
+    public Map<ContactId, Set<String>> getMessagesIdsPerContact() {
+        Cursor cursor = null;
+        Map<ContactId, Set<String>> result = new HashMap<>();
+        try {
+            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, PROJECTION_MESSAGE_ID_CONTACT, null, null,
+                    null);
+            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
+            if (!cursor.moveToNext()) {
+                return result;
+            }
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
+            int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
+            do {
+                String msgId = cursor.getString(messageIdIdx);
+                String number = cursor.getString(contactIdx);
+                ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
+                if (result.containsKey(contact)) {
+                    Set<String> msgIds = result.get(contact);
+                    msgIds.add(msgId);
+                    result.put(contact, msgIds);
+                } else {
+                    Set<String> msgIds = new HashSet<>();
+                    msgIds.add(msgId);
+                    result.put(contact, msgIds);
+                }
+            } while (cursor.moveToNext());
+            return result;
+
         } finally {
             CursorUtil.close(cursor);
         }

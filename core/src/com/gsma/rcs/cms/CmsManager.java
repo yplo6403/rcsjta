@@ -23,8 +23,8 @@ import com.gsma.rcs.cms.event.ChatEventHandler;
 import com.gsma.rcs.cms.event.CmsEventHandler;
 import com.gsma.rcs.cms.event.GroupChatEventHandler;
 import com.gsma.rcs.cms.event.MmsSessionHandler;
-import com.gsma.rcs.cms.event.XmsMessageListener;
 import com.gsma.rcs.cms.event.XmsEventHandler;
+import com.gsma.rcs.cms.event.XmsMessageListener;
 import com.gsma.rcs.cms.fordemo.ImapCommandController;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.observer.XmsObserver;
@@ -53,7 +53,6 @@ public class CmsManager implements XmsMessageListener {
     private XmsEventHandler mXmsEventHandler;
     private ChatEventHandler mChatEventHandler;
     private GroupChatEventHandler mGroupChatEventHandler;
-    private CmsEventHandler mCmsEventHandler;
     private LocalStorage mLocalStorage;
     private ImapCommandController mImapCommandController;
     private ImapServiceController mImapServiceController;
@@ -68,7 +67,8 @@ public class CmsManager implements XmsMessageListener {
      * @param messagingLog The Messaging log accessor
      * @param rcsSettings THE RCS settings accessor
      */
-    public CmsManager(Context context, ImapLog imapLog, XmsLog xmsLog, MessagingLog messagingLog, RcsSettings rcsSettings) {
+    public CmsManager(Context context, ImapLog imapLog, XmsLog xmsLog, MessagingLog messagingLog,
+            RcsSettings rcsSettings) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mImapLog = imapLog;
@@ -78,31 +78,39 @@ public class CmsManager implements XmsMessageListener {
 
     /**
      * Start the CmsManager
-     * @param operationHandler
-     * @param xmsMessageEventBroadcaster
+     * 
+     * @param operationHandler the operation handler
+     * @param xmsMessageEventBroadcaster the XMS event broadcaster
+     * @param chatService the RCS chat service
      */
-    public void start(Handler operationHandler, XmsMessageEventBroadcaster xmsMessageEventBroadcaster, ChatServiceImpl chatService) {
+    public void start(Handler operationHandler,
+            XmsMessageEventBroadcaster xmsMessageEventBroadcaster, ChatServiceImpl chatService) {
         // execute sync between providers in handler
-        operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mImapLog));
+        operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings,
+                mXmsLog, mImapLog));
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
 
         // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
-        mXmsEventHandler = new XmsEventHandler(mContext, mImapLog, mXmsLog, mRcsSettings, xmsMessageEventBroadcaster);
+        mXmsEventHandler = new XmsEventHandler(mImapLog, mXmsLog, mRcsSettings,
+                xmsMessageEventBroadcaster);
         mXmsObserver.registerListener(mXmsEventHandler);
 
         // instantiate CmsEventHandler in charge of handling events from Cms
-        mCmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog, mMessagingLog, chatService, mRcsSettings, xmsMessageEventBroadcaster);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog,
+                mMessagingLog, chatService, mRcsSettings, xmsMessageEventBroadcaster);
 
-        // instantiate ChatEventHandler in charge of handling events from ChatSession,read or deletion of messages
-        mChatEventHandler = new ChatEventHandler(mContext, mImapLog, mMessagingLog, mRcsSettings);
+        // instantiate ChatEventHandler in charge of handling events from ChatSession,read or
+        // deletion of messages
+        mChatEventHandler = new ChatEventHandler(mImapLog, mMessagingLog, mRcsSettings);
 
-        // instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or deletion of messages
-        mGroupChatEventHandler = new GroupChatEventHandler(mContext, mImapLog, mMessagingLog, mRcsSettings);
+        // instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
+        // deletion of messages
+        mGroupChatEventHandler = new GroupChatEventHandler(mImapLog, mMessagingLog, mRcsSettings);
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
-        mLocalStorage = new LocalStorage(mImapLog, mCmsEventHandler);
+        mLocalStorage = new LocalStorage(mImapLog, cmsEventHandler);
 
         // handle imap connection
         mImapServiceController = new ImapServiceController(mRcsSettings);
@@ -110,11 +118,12 @@ public class CmsManager implements XmsMessageListener {
 
         // instantiate ImapCommandController in charge of Pushing messages and updating flags with
         // Imap command
-        mImapCommandController = new ImapCommandController(operationHandler, mContext, mRcsSettings, mLocalStorage,
-                mImapLog, mXmsLog, mImapServiceController);
+        mImapCommandController = new ImapCommandController(operationHandler, mContext,
+                mRcsSettings, mLocalStorage, mImapLog, mXmsLog, mImapServiceController);
         mXmsObserver.registerListener(mImapCommandController);
 
-        mMmsSessionHandler = new MmsSessionHandler(mContext, mImapLog, mXmsLog, mRcsSettings, mImapCommandController);
+        mMmsSessionHandler = new MmsSessionHandler(mImapLog, mXmsLog, mRcsSettings,
+                mImapCommandController);
 
         // start content observer on native SMS/MMS content provider
         mXmsObserver.start();
@@ -142,6 +151,7 @@ public class CmsManager implements XmsMessageListener {
 
     /**
      * Register a NativeXmsMessageListener
+     * 
      * @param listener The listener
      */
     public void registerSmsObserverListener(XmsObserverListener listener) {
@@ -152,6 +162,7 @@ public class CmsManager implements XmsMessageListener {
 
     /**
      * Unregister the listener
+     * 
      * @param listener The listener
      */
     public void unregisterSmsObserverListener(XmsObserverListener listener) {
@@ -202,7 +213,7 @@ public class CmsManager implements XmsMessageListener {
 
     @Override
     public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType,
-                                         State state) {
+            State state) {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onXmsMessageStateChanged(contact, messageId, mimeType, state);
         }
@@ -230,19 +241,19 @@ public class CmsManager implements XmsMessageListener {
         return mLocalStorage;
     }
 
-    public ImapServiceController getImapServiceController(){
+    public ImapServiceController getImapServiceController() {
         return mImapServiceController;
     }
 
-    public ChatEventHandler getChatEventHandler(){
+    public ChatEventHandler getChatEventHandler() {
         return mChatEventHandler;
     }
 
-    public GroupChatEventHandler getGroupChatEventHandler(){
+    public GroupChatEventHandler getGroupChatEventHandler() {
         return mGroupChatEventHandler;
     }
 
-    public MmsSessionHandler getMmsSessionHandler(){
+    public MmsSessionHandler getMmsSessionHandler() {
         return mMmsSessionHandler;
     }
 }

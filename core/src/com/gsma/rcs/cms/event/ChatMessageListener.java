@@ -25,16 +25,16 @@ package com.gsma.rcs.cms.event;
 public interface ChatMessageListener {
 
     /**
-     *  Take into account that a chat message is read
+     * Take into account that a chat message is read
      *
-     * @param messageId
+     * @param messageId the message ID
      */
     void onReadChatMessage(String messageId);
 
     /**
-     *  Take into account that a chat message is deleted
+     * Take into account that a chat message is deleted
      *
-     * @param messageId
+     * @param messageId the message ID
      */
     void onDeleteChatMessage(String messageId);
 }

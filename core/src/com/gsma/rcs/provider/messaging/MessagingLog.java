@@ -438,6 +438,11 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
+    public ContactId getMessageContact(String msgId) {
+        return mMessageLog.getMessageContact(msgId);
+    }
+
+    @Override
     public String getChatMessageContent(String msgId) {
         return mMessageLog.getChatMessageContent(msgId);
     }
