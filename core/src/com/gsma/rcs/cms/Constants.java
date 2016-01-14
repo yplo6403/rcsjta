@@ -80,11 +80,5 @@ public class Constants {
     public static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain";
     public static final String CONTENT_TYPE_MESSAGE_IMDN_XML = "message/imdn+xml";
     public static final String CONTENT_TYPE_MULTIPART_RELATED = "Multipart/Related";
-    public static final String CONTENT_TYPE_APP_SMIL = "application/smil";
-    public static final String CONTENT_TYPE_IMAGE_JPG = "image/jpg";
-    public static final String CONTENT_TYPE_IMAGE_JPEG = "image/jpeg";
-    public static final String CONTENT_TYPE_IMAGE_PNG = "image/png";
-    public static final String CONTENT_TYPE_IMAGE_GIF = "image/gif";
-    public static final String CONTENT_TYPE_IMAGE_BMP = "image/bmp";
 
 }

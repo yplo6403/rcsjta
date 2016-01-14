@@ -29,6 +29,7 @@ import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -403,7 +404,18 @@ public class ProviderSynchronizer implements Runnable {
                 }
                 if (data != null) {
                     Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
-                    byte[] bytes = MmsUtils.getContent(mContentResolver, file);
+                    byte[] bytes;
+                    try {
+                        bytes = MmsUtils.getContent(mContentResolver, file);
+
+                    } catch (FileAccessException e) {
+                        if (sLogger.isActivated()) {
+                            sLogger.warn(
+                                    "Failed to read MMS part from native provider URI=" + file, e);
+                        }
+                        /* Skip invalid record */
+                        continue;
+                    }
                     Long fileSize = (long) bytes.length;
                     byte[] fileIcon = null;
                     if (MimeManager.isImageType(contentType)) {

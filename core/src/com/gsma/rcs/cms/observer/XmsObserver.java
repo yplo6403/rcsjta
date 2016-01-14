@@ -19,23 +19,15 @@
 
 package com.gsma.rcs.cms.observer;
 
-import android.content.ContentResolver;
-import android.content.Context;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.provider.BaseColumns;
-import android.provider.Telephony;
-import android.provider.Telephony.BaseMmsColumns;
-import android.provider.Telephony.TextBasedSmsColumns;
+import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
+import static com.gsma.rcs.provider.CursorUtil.close;
 
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Mms.Part;
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Sms;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -51,6 +43,18 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.ContentObserver;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.provider.BaseColumns;
+import android.provider.Telephony;
+import android.provider.Telephony.BaseMmsColumns;
+import android.provider.Telephony.TextBasedSmsColumns;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,19 +64,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
-import static com.gsma.rcs.provider.CursorUtil.close;
-
 /**
- * Class in charge of detecting changes on XMS messages in the native content provider
+ * Class in charge of detecting changes on XMS messages in the native content provider.<br>
  * The followings events are detected by this observer:
- * - incoming & outgoing SMS
- * - read of a SMS
- * - deletion of a SMS
- * - incoming & outgoing MMS
- * - read of a MMS
- * - read of a conversation
- * - deletion of a conversation
+ * <ul>
+ * <li>incoming & outgoing SMS</li>
+ * <li>read of a SMS</li>
+ * <li>deletion of a SMS</li>
+ * <li>incoming & outgoing MMS</li>
+ * <li>read of a MMS</li>
+ * <li>read of a conversation</li>
+ * <li>deletion of a conversation</li>
+ * </ul>
  */
 public class XmsObserver implements XmsObserverListener {
 
@@ -87,8 +90,7 @@ public class XmsObserver implements XmsObserverListener {
     private Handler mXmsObserverHandler;
 
     /**
-     * Content observer.
-     * In charge of generating events from changes in native XMS content provider
+     * Content observer in charge of generating events from changes in native XMS content provider
      */
     private class XmsContentObserver extends ContentObserver {
 
@@ -99,7 +101,8 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Constructor
-         * @param handler
+         * 
+         * @param handler background handler
          */
         public XmsContentObserver(Handler handler) {
             super(handler);
@@ -116,7 +119,7 @@ public class XmsObserver implements XmsObserverListener {
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             if (sLogger.isActivated()) {
-                sLogger.info("onChange method : " + uri);
+                sLogger.info("onChange: " + uri);
             }
             if (uri == null) {
                 return;
@@ -155,6 +158,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check SMS events from content provider
+         * 
          * @param uri
          */
         private void checkSmsEvents(Uri uri) {
@@ -172,6 +176,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Notify listeners of a new SMS in the native content provider
+         * 
          * @param uri
          */
         private void handleNewSms(Uri uri) {
@@ -217,6 +222,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Notify listeners that the SMS status has changed
+         * 
          * @param uri
          */
         private void handleSmsUpdateStatus(Uri uri) {
@@ -348,7 +354,17 @@ public class XmsObserver implements XmsObserverListener {
                     }
                     if (data != null) {
                         Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
-                        byte[] bytes = MmsUtils.getContent(mContentResolver, file);
+                        byte[] bytes;
+                        try {
+                            bytes = MmsUtils.getContent(mContentResolver, file);
+
+                        } catch (FileAccessException e) {
+                            if (sLogger.isActivated()) {
+                                sLogger.warn("Failed to read MMS part " + file, e);
+                            }
+                            /* Skip invalid record */
+                            continue;
+                        }
                         Long fileSize = (long) bytes.length;
                         byte[] fileIcon = null;
                         if (MimeManager.isImageType(contentType)) {
@@ -399,6 +415,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check if a conversation has been read
+         * 
          * @param currentConversations
          * @return
          */
@@ -434,6 +451,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check if a conversation has been deleted
+         * 
          * @param currentConversations
          * @return
          */
@@ -509,6 +527,7 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Constructor
+     * 
      * @param context
      */
     public XmsObserver(Context context) {
@@ -547,6 +566,7 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Register a listener which want to be notified of XMS events
+     * 
      * @param listener
      */
     public void registerListener(XmsObserverListener listener) {
@@ -557,6 +577,7 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Unregister listener
+     * 
      * @param listener
      */
 

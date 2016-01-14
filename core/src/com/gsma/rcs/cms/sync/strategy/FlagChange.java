@@ -19,9 +19,9 @@
 
 package com.gsma.rcs.cms.sync.strategy;
 
-import com.gsma.rcs.cms.utils.ListUtils;
-
 import com.sonymobile.rcs.imap.Flag;
+
+import android.text.TextUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -75,7 +75,7 @@ public class FlagChange {
     }
 
     public String getJoinedUids() {
-        return ListUtils.join(mUids, ",");
+        return TextUtils.join(",", mUids);
     }
 
     public List<Integer> getUids() {

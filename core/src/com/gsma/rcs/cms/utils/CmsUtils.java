@@ -1,3 +1,22 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2015 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
+
 package com.gsma.rcs.cms.utils;
 
 import com.gsma.rcs.cms.Constants;
@@ -5,43 +24,34 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.StringUtils;
-import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 public class CmsUtils {
 
-    private static final Logger sLogger = Logger.getLogger(CmsUtils.class.getSimpleName());
-
-    public static String contactToCmsFolder(RcsSettings settings, ContactId contactId){
-        return new StringBuilder(settings.getCmsDefaultDirectoryName())
-                .append(settings.getCmsDirectorySeparator())
-                .append(Constants.TEL_PREFIX)
-                .append(contactId.toString()).toString();
+    public static String contactToCmsFolder(RcsSettings settings, ContactId contactId) {
+        return settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
+                + Constants.TEL_PREFIX + contactId.toString();
     }
 
-    public static String contactToHeader(ContactId contactId){
-        return new StringBuilder(Constants.TEL_PREFIX)
-                .append(contactId.toString()).toString();
+    public static String contactToHeader(ContactId contactId) {
+        return Constants.TEL_PREFIX + contactId.toString();
     }
 
-    public static String cmsFolderToContact(RcsSettings settings, String cmsFolder){
+    public static String cmsFolderToContact(RcsSettings settings, String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
-        String prefix = new StringBuilder(settings.getCmsDefaultDirectoryName())
-                .append(settings.getCmsDirectorySeparator())
-                .append((Constants.TEL_PREFIX)).toString();
-        if(cmsFolder.startsWith(prefix)){
+        String prefix = settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
+                + (Constants.TEL_PREFIX);
+        if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
         }
         return contact;
     }
 
     public static ContactId headerToContact(String header) {
-        //TODO FGI : use regexp to extract phone number from header
         String contact = header;
         if (header.startsWith(Constants.TEL_PREFIX)) {
             contact = header.substring(Constants.TEL_PREFIX.length());
         }
-
         PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(contact);
         if (phoneNumber == null) {
             return null;
@@ -49,11 +59,9 @@ public class CmsUtils {
         return ContactUtil.createContactIdFromValidatedData(phoneNumber);
     }
 
-    public static String groupChatToCmsFolder(RcsSettings settings, String conversationId, String contributionId){
-        return new StringBuilder(settings.getCmsDefaultDirectoryName())
-                .append(settings.getCmsDirectorySeparator())
-                .append(conversationId)
-                .append(settings.getCmsDirectorySeparator())
-                .append(contributionId).toString();
+    public static String groupChatToCmsFolder(RcsSettings settings, String conversationId,
+            String contributionId) {
+        return settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
+                + conversationId + settings.getCmsDirectorySeparator() + contributionId;
     }
 }

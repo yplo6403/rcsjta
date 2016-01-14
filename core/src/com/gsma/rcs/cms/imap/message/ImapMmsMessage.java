@@ -19,29 +19,34 @@
 
 package com.gsma.rcs.cms.imap.message;
 
-import android.content.Context;
-
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
 import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
+import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.Header;
+
+import android.content.Context;
 
 import java.util.List;
 
 public class ImapMmsMessage extends ImapMessage {
+
+    private final static Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getSimpleName());
 
     public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
         super(rawMessage);
     }
 
     public ImapMmsMessage(Context context, String from, String to, String direction, long date,
-                          String subject, String conversationId, String contributionId, String imdnMessageId,
-                          String mmsId, List<MmsPart> mmsParts) {
+            String subject, String conversationId, String contributionId, String imdnMessageId,
+            String mmsId, List<MmsPart> mmsParts) {
         super();
 
         addHeader(Constants.HEADER_FROM, from);
@@ -76,22 +81,29 @@ public class ImapMmsMessage extends ImapMessage {
             String transferEncoding = null;
             // If not text or SMIL ?
             if (MimeManager.isImageType(mimeType)) { // base 64
-                byte[] bytes = MmsUtils.getContent(context.getContentResolver(), mmsPart.getFile());
-                if (bytes == null) {
+                try {
+                    byte[] bytes = MmsUtils.getContent(context.getContentResolver(),
+                            mmsPart.getFile());
+                    transferEncoding = Constants.HEADER_BASE64;
+                    content = Base64.encodeBase64ToString(bytes);
+
+                } catch (FileAccessException e) {
+                    if (sLogger.isActivated()) {
+                        sLogger.warn("Failed to read MMS part " + mmsPart, e);
+                    }
+                    /* Skip invalid record */
                     continue;
                 }
-                transferEncoding = Constants.HEADER_BASE64;
-                content = Base64.encodeBase64ToString(bytes);
             }
             HeaderPart headers = new HeaderPart();
-            if(mimeType!=null){
+            if (mimeType != null) {
                 headers.addHeader(Constants.HEADER_CONTENT_TYPE, mimeType);
             }
-            if(contentId!=null){
+            if (contentId != null) {
                 headers.addHeader(Constants.HEADER_CONTENT_ID, contentId);
             }
-            if(transferEncoding!=null){
-                headers.addHeader(Constants.HEADER_CONTENT_TRANSFER_ENCODING,transferEncoding);
+            if (transferEncoding != null) {
+                headers.addHeader(Constants.HEADER_CONTENT_TRANSFER_ENCODING, transferEncoding);
             }
             multipartCpimBody.addMultiPart(headers, content);
         }
@@ -100,9 +112,9 @@ public class ImapMmsMessage extends ImapMessage {
 
     @Override
     public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF,2);
-        if(2 == parts.length ){
-            for(Header header : Header.parseHeaders(parts[0]).values()){
+        String[] parts = payload.split(Constants.CRLFCRLF, 2);
+        if (2 == parts.length) {
+            for (Header header : Header.parseHeaders(parts[0]).values()) {
                 addHeader(header.getKey(), header.getValue());
             }
             mCpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
