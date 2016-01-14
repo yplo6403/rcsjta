@@ -64,15 +64,16 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * In charge of synchronizing the native content provider with the RCS XMS local content provider
+ * Synchronizes the native content provider with the RCS XMS local content provider.<br>
+ * Synchronization is only performed once upon start up.
  */
 public class ProviderSynchronizer implements Runnable {
 
     private static final Logger sLogger = Logger.getLogger(ProviderSynchronizer.class
             .getSimpleName());
 
-    private static Uri sSmsUri = Uri.parse("content://sms/");
-    private static Uri sMmsUri = Uri.parse("content://mms/");
+    private final static Uri sSmsUri = Uri.parse("content://sms/");
+    private final static Uri sMmsUri = Uri.parse("content://mms/");
 
     private final String[] PROJECTION_SMS = new String[] {
             BaseColumns._ID, TextBasedSmsColumns.THREAD_ID, TextBasedSmsColumns.ADDRESS,
@@ -89,7 +90,7 @@ public class ProviderSynchronizer implements Runnable {
     };
 
     private static final String SELECTION_CONTACT_NOT_NULL = TextBasedSmsColumns.ADDRESS
-            + " is not null";
+            + " IS NOT NULL";
     static final String SELECTION_BASE_ID = BaseColumns._ID + "=?" + " AND "
             + SELECTION_CONTACT_NOT_NULL;
 
@@ -98,8 +99,9 @@ public class ProviderSynchronizer implements Runnable {
     private final ImapLog mImapLog;
     private final RcsSettings mSettings;
 
-    private List<Long> mNativeIds;
-    private List<Long> mNativeReadIds;
+    private Set<Long> mNativeIds;
+    private Set<Long> mNativeReadIds;
+    private final static int MMS_TYPE_SEND_REQUEST = 128;
 
     public ProviderSynchronizer(ContentResolver resolver, RcsSettings settings, XmsLog xmsLog,
             ImapLog imapLog) {
@@ -110,24 +112,24 @@ public class ProviderSynchronizer implements Runnable {
     }
 
     private void syncSms() {
-        getNativeSmsIds();
-        Map<Long, MessageData> rcsMessages = getRcsMessages(MessageType.SMS);
+        updateSetOfNativeSmsIds();
+        Map<Long, MessageData> rcsMessages = mImapLog.getNativeMessages(MessageType.SMS);
         checkDeletedMessages(MessageType.SMS, rcsMessages);
         checkNewMessages(MessageType.SMS, rcsMessages);
         checkReadMessages(MessageType.SMS, rcsMessages);
     }
 
     private void syncMms() {
-        getNativeMmsIds();
-        Map<Long, MessageData> rcsMessages = getRcsMessages(MessageType.MMS);
+        updateSetOfNativeMmsIds();
+        Map<Long, MessageData> rcsMessages = mImapLog.getNativeMessages(MessageType.MMS);
         checkDeletedMessages(MessageType.MMS, rcsMessages);
         checkNewMessages(MessageType.MMS, rcsMessages);
         checkReadMessages(MessageType.MMS, rcsMessages);
     }
 
-    private void getNativeSmsIds() {
-        mNativeIds = new ArrayList<>();
-        mNativeReadIds = new ArrayList<>();
+    private void updateSetOfNativeSmsIds() {
+        mNativeIds = new HashSet<>();
+        mNativeReadIds = new HashSet<>();
         Cursor cursor = null;
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_ID_READ, null, null, null);
@@ -146,10 +148,10 @@ public class ProviderSynchronizer implements Runnable {
         }
     }
 
-    private void getNativeMmsIds() {
+    private void updateSetOfNativeMmsIds() {
         Cursor cursor = null;
-        mNativeIds = new ArrayList<>();
-        mNativeReadIds = new ArrayList<>();
+        mNativeIds = new HashSet<>();
+        mNativeReadIds = new HashSet<>();
         try {
             cursor = mContentResolver.query(sMmsUri, PROJECTION_ID_READ, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor, sMmsUri);
@@ -167,10 +169,6 @@ public class ProviderSynchronizer implements Runnable {
         }
     }
 
-    private Map<Long, MessageData> getRcsMessages(MessageType messageType) {
-        return mImapLog.getNativeMessages(messageType);
-    }
-
     private void purgeDeletedMessages() {
         int nb = mImapLog.purgeMessages();
         if (sLogger.isActivated()) {
@@ -178,21 +176,18 @@ public class ProviderSynchronizer implements Runnable {
         }
     }
 
-    /**
-     * Check messages deleted from native provider
-     *
-     * @param messageType
-     */
     private void checkDeletedMessages(MessageData.MessageType messageType,
             Map<Long, MessageData> rcsMessages) {
-        boolean isActivated = sLogger.isActivated();
-        List<Long> deletedIds = new ArrayList<>(rcsMessages.keySet());
+        if (rcsMessages.isEmpty()) {
+            return;
+        }
+        Set<Long> deletedIds = new HashSet<>(rcsMessages.keySet());
         deletedIds.removeAll(mNativeIds);
         for (Long id : deletedIds) {
             MessageData messageData = rcsMessages.get(id);
             DeleteStatus deleteStatus = messageData.getDeleteStatus();
             if (DeleteStatus.NOT_DELETED == deleteStatus) {
-                if (isActivated) {
+                if (sLogger.isActivated()) {
                     sLogger.debug(messageType.toString()
                             + " message is marked as DELETED_REPORT_REQUESTED :" + id);
                 }
@@ -204,14 +199,16 @@ public class ProviderSynchronizer implements Runnable {
 
     private void checkNewMessages(MessageData.MessageType messageType,
             Map<Long, MessageData> rcsMessages) {
-        boolean isActivated = sLogger.isActivated();
-        List<Long> newIds = new ArrayList<>(mNativeIds);
+        if (mNativeIds.isEmpty()) {
+            return;
+        }
+        Set<Long> newIds = new HashSet<>(mNativeIds);
         newIds.removeAll(rcsMessages.keySet());
         for (Long id : newIds) {
             if (MessageType.SMS == messageType) {
                 SmsDataObject smsData = getSmsFromNativeProvider(id);
                 if (smsData != null) {
-                    if (isActivated) {
+                    if (sLogger.isActivated()) {
                         sLogger.debug(" Importing new SMS message :" + id);
                     }
                     mXmsLog.addSms(smsData);
@@ -226,7 +223,7 @@ public class ProviderSynchronizer implements Runnable {
                 }
             } else if (MessageType.MMS == messageType) {
                 for (MmsDataObject mmsData : getMmsFromNativeProvider(id)) {
-                    if (isActivated) {
+                    if (sLogger.isActivated()) {
                         sLogger.debug(" Importing new MMS message :" + id);
                     }
                     mXmsLog.addMms(mmsData);
@@ -245,12 +242,14 @@ public class ProviderSynchronizer implements Runnable {
 
     private void checkReadMessages(MessageData.MessageType messageType,
             Map<Long, MessageData> rcsMessages) {
-        boolean isActivated = sLogger.isActivated();
-        List<Long> readIds = new ArrayList<>(mNativeReadIds);
+        if (mNativeReadIds.isEmpty()) {
+            return;
+        }
+        Set<Long> readIds = new HashSet<>(mNativeReadIds);
         readIds.retainAll(rcsMessages.keySet());
         for (Long id : readIds) {
             if (MessageData.ReadStatus.UNREAD == rcsMessages.get(id).getReadStatus()) {
-                if (isActivated) {
+                if (sLogger.isActivated()) {
                     sLogger.debug(messageType.toString()
                             + " message is marked as READ_REPORT_REQUESTED :" + id);
                 }
@@ -340,15 +339,15 @@ public class ProviderSynchronizer implements Runnable {
             int messageType = cursor.getInt(cursor
                     .getColumnIndex(Telephony.BaseMmsColumns.MESSAGE_TYPE));
             subject = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
-            if (128 == messageType) {
+            if (MMS_TYPE_SEND_REQUEST == messageType) {
                 direction = Direction.OUTGOING;
             }
-            date = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.DATE));
+            date = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.DATE) * 1000);
         } finally {
             CursorUtil.close(cursor);
         }
 
-        // Get recipients
+        /* Get recipients and associate a message Id */
         Map<ContactId, String> messageIds = new HashMap<>();
         try {
             int type = XmsObserverUtils.Mms.Addr.FROM;
@@ -368,7 +367,7 @@ public class ProviderSynchronizer implements Runnable {
                 PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
                 if (phoneNumber == null) {
                     if (sLogger.isActivated()) {
-                        sLogger.info("Bad format for contact : " + address);
+                        sLogger.info("Bad format for contact : ".concat(address));
                     }
                     continue;
                 }
@@ -380,7 +379,7 @@ public class ProviderSynchronizer implements Runnable {
             CursorUtil.close(cursor);
         }
 
-        // Get part
+        /* Get parts and duplicate for al recipients */
         Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
         try {
             cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
@@ -437,7 +436,7 @@ public class ProviderSynchronizer implements Runnable {
         for (Entry<ContactId, List<MmsPart>> entry : mmsParts.entrySet()) {
             ContactId contact = entry.getKey();
             mmsDataObject.add(new MmsDataObject(mmsId, messageIds.get(contact), contact, subject,
-                    direction, readStatus, date * 1000, id, threadId, entry.getValue()));
+                    direction, readStatus, date, id, threadId, entry.getValue()));
         }
 
         State state = State.DISPLAYED;
@@ -452,16 +451,25 @@ public class ProviderSynchronizer implements Runnable {
 
     @Override
     public void run() {
-        boolean isActivated = sLogger.isActivated();
-        if (isActivated) {
-            sLogger.info(" >>> start sync between providers ...");
+        try {
+            boolean isActivated = sLogger.isActivated();
+            if (isActivated) {
+                sLogger.info(" >>> start sync providers");
+            }
+            purgeDeletedMessages();
+            syncSms();
+            syncMms();
+            if (isActivated) {
+                sLogger.info(" <<< end sync providers");
+            }
+        } catch (RuntimeException e) {
+            /*
+             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+             * which should be handled/fixed within the code. However the cases when we are
+             * executing operations on a thread unhandling such exceptions will eventually lead to
+             * exit the system and thus can bring the whole system down, which is not intended.
+             */
+            sLogger.error("CMS sync failure", e);
         }
-        purgeDeletedMessages();
-        syncSms();
-        syncMms();
-        if (isActivated) {
-            sLogger.info(" <<< end of sync");
-        }
-
     }
 }
