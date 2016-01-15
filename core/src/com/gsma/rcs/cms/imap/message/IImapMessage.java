@@ -37,6 +37,6 @@ public interface IImapMessage {
 
     String getHeader(String headerName);
 
-    CpimMessage getCpimMessage();
+    BodyPart getBodyPart();
 
 }

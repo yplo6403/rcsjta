@@ -31,7 +31,7 @@ import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapChatMessage;
 import com.gsma.rcs.cms.imap.message.ImapCpimMessage;
-import com.gsma.rcs.cms.imap.message.ImapGroupChatObjectMessage;
+import com.gsma.rcs.cms.imap.message.ImapGroupStateMessage;
 import com.gsma.rcs.cms.imap.message.ImapImdnMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
@@ -44,6 +44,7 @@ import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.messaging.GroupChatPersistedStorageAccessor;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -57,9 +58,12 @@ import com.gsma.rcs.utils.DateUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.chat.ChatLog.Message;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content.Status;
+import com.gsma.services.rcs.chat.GroupChat;
+import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
@@ -68,8 +72,10 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.SAXException;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -196,11 +202,13 @@ public class CmsEventHandler implements CmsEventListener {
         else if( MessageType.IMDN == messageType){
             return onNewImdnMessage((ImapImdnMessage) message);
         }
+        else if( MessageType.GROUP_STATE == messageType){
+            return onNewGroupStateMessage((ImapGroupStateMessage) message);
+        }
         throw new CmsSyncMessageNotSupportedException("This messageType is not supported :" + messageType.toString());
     }
 
-    private String onNewSmsMessage(ImapSmsMessage message)
-            throws CmsSyncMessageNotSupportedException, CmsSyncHeaderFormatException, CmsSyncMissingHeaderException, FileAccessException {
+    private String onNewSmsMessage(ImapSmsMessage message) {
 
         if (message.isDeleted()) { // no need to add a deleted message in xms content provider
             return IdGenerator.generateMessageID();
@@ -218,8 +226,7 @@ public class CmsEventHandler implements CmsEventListener {
         return messageId;
     }
 
-    private String onNewMmsMessage(ImapMmsMessage message)
-            throws CmsSyncMessageNotSupportedException, CmsSyncHeaderFormatException, CmsSyncMissingHeaderException, FileAccessException {
+    private String onNewMmsMessage(ImapMmsMessage message) throws FileAccessException {
 
         if (message.isDeleted()) { // no need to add a deleted message in xms content provider
             return IdGenerator.generateMessageID();
@@ -237,47 +244,66 @@ public class CmsEventHandler implements CmsEventListener {
         return messageId;
     }
 
-    private String onNewChatMessage(ImapChatMessage imapChatMessage) throws CmsSyncHeaderFormatException {
-        String direction = imapChatMessage.getHeader(Constants.HEADER_DIRECTION);
-        String header;
-        if(Constants.DIRECTION_SENT.equals(direction)){
-            header = imapChatMessage.getHeader(Constants.HEADER_TO);
-        } else{
-            header = imapChatMessage.getHeader(Constants.HEADER_FROM);
-        }
+    private String onNewChatMessage(ImapChatMessage imapChatMessage) {
 
-        ContactId contact = CmsUtils.headerToContact(header);
-        if (contact == null) {
-            throw new CmsSyncHeaderFormatException("Bad format for header : " + header);
-        }
+        ChatMessage chatMessage = createTextMessage(imapChatMessage.getContact(), imapChatMessage);
+        Direction direction = imapChatMessage.getDirection();
+        if(direction == Direction.OUTGOING){
+            if(imapChatMessage.isOneToOne()){
+                mMessagingLog.addOutgoingOneToOneChatMessage(chatMessage, Status.SENT, Content.ReasonCode.UNSPECIFIED, 0);
+            }
+            else{
+                String chatId = imapChatMessage.getChatId();
+                GroupChatPersistedStorageAccessor accessor = new GroupChatPersistedStorageAccessor(chatId, mMessagingLog, mSettings);
+                mMessagingLog.addOutgoingGroupChatMessage(chatId, chatMessage, accessor.getParticipants().keySet(), Status.SENT, Content.ReasonCode.UNSPECIFIED);
+            }
 
-        ChatMessage chatMessage = createTextMessage(contact, imapChatMessage);
-        if(Constants.DIRECTION_SENT.equals(direction)){
-            mMessagingLog.addOutgoingOneToOneChatMessage(chatMessage, Status.SENT, Content.ReasonCode.UNSPECIFIED, 0);
-        } else{
-            mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, false);
+        } else {
+            if(imapChatMessage.isOneToOne()){
+                mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, false);
+            }
+            else{
+                mMessagingLog.addIncomingGroupChatMessage(imapChatMessage.getChatId(), chatMessage, false);
+            }
+            if (!imapChatMessage.isSeen()) {
+                mChatService.broadcastNewChatMessage(chatMessage);
+            }
         }
         return chatMessage.getMessageId();
     }
 
-    private String onNewImdnMessage(ImapImdnMessage imapImdnMessage) throws CmsSyncHeaderFormatException, CmsSyncImdnFormatException {
-
-        String header = imapImdnMessage.getHeader(Constants.HEADER_FROM);
-        if(Constants.DIRECTION_SENT.equals(imapImdnMessage.getHeader(Constants.HEADER_DIRECTION))){
-            header = imapImdnMessage.getHeader(Constants.HEADER_TO);
-        }
-
-        ContactId contact = CmsUtils.headerToContact(header);
-        if (contact == null) {
-            throw new CmsSyncHeaderFormatException("Bad format for header : " + header);
-        }
+    private String onNewImdnMessage(ImapImdnMessage imapImdnMessage) throws CmsSyncImdnFormatException {
 
         try {
-            mChatService.onOneToOneMessageDeliveryStatusReceived(contact, imapImdnMessage.getImdnDocument());
-            return imapImdnMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
+            if(imapImdnMessage.isOneToOne()){
+                mChatService.onOneToOneMessageDeliveryStatusReceived(imapImdnMessage.getContact(), imapImdnMessage.getImdnDocument());
+            }
+            else{
+                String chatId = mMessagingLog.getMessageChatId(imapImdnMessage.getImdnDocument().getMsgId());
+                if(chatId != null){
+                    mChatService.getOrCreateGroupChat(chatId).onMessageDeliveryStatusReceived(imapImdnMessage.getContact(), imapImdnMessage.getImdnDocument(), imapImdnMessage.getImdnId());
+                }
+            }
+            return imapImdnMessage.getImdnId();
         } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
             throw new CmsSyncImdnFormatException(e);
         }
+    }
+
+    private String onNewGroupStateMessage(ImapGroupStateMessage imapGroupStateMessage) {
+
+        String chatId = imapGroupStateMessage.getChatId();
+
+        Map<ContactId, ParticipantStatus> participants = new HashMap<>();
+        for(ContactId contact : imapGroupStateMessage.getParticipants()){
+            participants.put(contact, ParticipantStatus.CONNECTED);
+        }
+
+        mMessagingLog.addGroupChat(chatId, null,
+                imapGroupStateMessage.getSubject(), participants, GroupChat.State.STARTED,
+                GroupChat.ReasonCode.UNSPECIFIED, imapGroupStateMessage.getDirection(), imapGroupStateMessage.getTimestamp());
+        mMessagingLog.setGroupChatRejoinId(chatId, imapGroupStateMessage.getRejoinId(), false);
+        return chatId;
     }
 
     @Override
@@ -299,8 +325,8 @@ public class CmsEventHandler implements CmsEventListener {
         else if (MessageType.MESSAGE_CPIM == messageType) {
             return searchLocalCpimMessage((ImapCpimMessage) message);
         }
-        else if (MessageType.GROUP_STATE_OBJECT == messageType) {
-            return searchLocalGroupChat((ImapGroupChatObjectMessage) message);
+        else if (MessageType.GROUP_STATE == messageType) {
+            return searchLocalGroupStateMessage((ImapGroupStateMessage) message);
         }
 
         if(sLogger.isActivated()){
@@ -363,7 +389,7 @@ public class CmsEventHandler implements CmsEventListener {
         return mImapLog.getChatOrImdnData(messageId);
     }
 
-    private MessageData searchLocalGroupChat(ImapGroupChatObjectMessage message)
+    private MessageData searchLocalGroupStateMessage(ImapGroupStateMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
         String  messageId = message.getHeader(Constants.HEADER_CONTRIBUTION_ID);
         if(messageId == null){

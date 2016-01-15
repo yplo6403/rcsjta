@@ -17,14 +17,13 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.imap.message;
+package com.gsma.rcs.cms.event.exception;
 
-import com.gsma.rcs.cms.imap.message.ImapMessage;
+public class CmsSyncXmlFormatException extends CmsSyncException {
 
-public class ImapGroupChatObjectMessage extends ImapMessage {
+    private static final long serialVersionUID = 1L;
 
-    public ImapGroupChatObjectMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
-        super(rawMessage);
+    public CmsSyncXmlFormatException(Exception e) {
+        super(e);
     }
-
 }

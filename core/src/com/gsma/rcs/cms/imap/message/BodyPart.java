@@ -17,51 +17,37 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.imap.message.cpim;
+package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.BodyPart;
-import com.gsma.rcs.cms.imap.message.HeaderPart;
+import com.gsma.rcs.cms.imap.message.cpim.CpimBody;
 import com.sonymobile.rcs.imap.Header;
 
-public class CpimMessage extends BodyPart{
+public class BodyPart {
 
-    protected final HeaderPart mHeaders;
-    protected final CpimBody mBody;
+    protected BodyPart(){
+    }
 
-    public CpimMessage(HeaderPart headers, CpimBody body){
-        super();
-        mHeaders = headers;
-        mBody = body;
+    public BodyPart(String payload){
+        parsePayload(payload);
     }
 
     public void parsePayload(String payload) {
         String[] parts = payload.split(Constants.CRLFCRLF,2);
         if(2 == parts.length ){
             for(Header header : Header.parseHeaders(parts[0]).values()){
-                mHeaders.addHeader(header.getKey(), header.getValue());
+                //mHeaders.addHeader(header.getKey(), header.getValue());
             }
-            mBody.parseBody(parts[1]);
+            //mBody.parseBody(parts[1]);
         }
     }
 
     public String toPayload(){
         StringBuilder sb = new StringBuilder();
-        sb.append(mHeaders);
+        //sb.append(mHeaders);
         sb.append(Constants.CRLF);
-        sb.append(mBody.toPayload());
+        //sb.append(mBody.toPayload());
         return sb.toString();
     }
 
-    public CpimBody getBody(){
-        return mBody;
-    }
-
-    public String getHeader(String headerName){
-        return mHeaders.getHeaderValue(headerName);
-    }
-
-    public String getContentType(){
-        return mBody.getContentType();
-    }
 }

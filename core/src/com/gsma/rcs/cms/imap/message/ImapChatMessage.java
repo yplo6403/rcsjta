@@ -19,15 +19,42 @@
 
 package com.gsma.rcs.cms.imap.message;
 
+import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 
 public class ImapChatMessage extends ImapCpimMessage {
 
-    public ImapChatMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
+    private final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
+
+    private final boolean isOneToOne;
+    private final String mChatId;
+
+    public ImapChatMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
+
+        mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
+        if(mChatId == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID + " IMAP header is missing");
+        }
+
+        String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
+        if(from == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM + " IMAP header is missing");
+        }
+        isOneToOne = ANONYMOUS.equals(from);
     }
 
     public String getText(){
         return ((TextCpimBody)getCpimMessage().getBody()).getContent();
+    }
+
+    public boolean isOneToOne(){
+        return isOneToOne;
+    }
+
+    public String getChatId(){
+        return mChatId;
     }
 }

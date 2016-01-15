@@ -90,7 +90,7 @@ public class ImapLog {
 
         private static final String SELECTION_CHAT = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.CHAT_MESSAGE).append("'").toString();
         private static final String SELECTION_IMDN = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.IMDN).append("'").toString();
-        private static final String SELECTION_GC_OBJECT = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.GROUP_STATE_OBJECT).append("'").toString();
+        private static final String SELECTION_GROUP_STATE = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.GROUP_STATE).append("'").toString();
         private static final String SELECTION_SMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.SMS).append("'").toString();
         private static final String SELECTION_MMS = new StringBuilder(MessageData.KEY_MESSAGE_TYPE).append("='").append(MessageType.MMS).append("'").toString();
         private static final String SELECTION_XMS = new StringBuilder("(").append(SELECTION_SMS).append(" OR ").append(SELECTION_MMS).append(")").toString();
@@ -100,7 +100,7 @@ public class ImapLog {
         static final String SELECTION_FOLDER_NAME_MESSAGEID = new StringBuilder(SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_XMS_MESSAGEID = new StringBuilder(SELECTION_XMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_CHAT_IMDN_MESSAGEID = new StringBuilder(SELECTION_CHAT_IMDN).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_GC_OBJECT_MESSAGEID = new StringBuilder(SELECTION_GC_OBJECT).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        private static final String SELECTION_GROUP_STATE_MESSAGEID = new StringBuilder(SELECTION_GROUP_STATE).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_SMS_MESSAGEID = new StringBuilder(SELECTION_SMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
         private static final String SELECTION_MMS_MESSAGEID = new StringBuilder(SELECTION_MMS).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
 
@@ -404,7 +404,7 @@ public class ImapLog {
      * @return MessageData
      */
     public MessageData getGroupChatObjectData(String messageId) {
-        return getData(messageId, Message.SELECTION_GC_OBJECT_MESSAGEID);
+        return getData(messageId, Message.SELECTION_GROUP_STATE_MESSAGEID);
     }
 
     private MessageData getData(String messageId, String selection) {

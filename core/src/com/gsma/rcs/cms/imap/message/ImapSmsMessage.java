@@ -20,15 +20,31 @@
 package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
 import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.HeaderCorrelatorUtils;
 
-public class ImapSmsMessage extends ImapMessage {
-        
-    public ImapSmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
+public class ImapSmsMessage extends ImapCpimMessage {
+
+    private String mCorrelator;
+    private long mDate;
+
+    public ImapSmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
+
+        mCorrelator = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
+        if(mCorrelator == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR + " IMAP header is missing");
+        }
+
+        String dateHeader = getHeader(Constants.HEADER_DATE);
+        if(dateHeader == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE + " IMAP header is missing");
+        }
+        mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
     
     public ImapSmsMessage(String from, String to, String direction, long date,
@@ -55,6 +71,15 @@ public class ImapSmsMessage extends ImapMessage {
         cpimHeaders.addHeader(Constants.HEADER_DATE_TIME, DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
 
         TextCpimBody textCpimBody = new TextCpimBody("text/plain; charset=utf-8", content);
-        mCpimMessage = new CpimMessage(cpimHeaders, textCpimBody);
+        CpimMessage cpimMessage = new CpimMessage(cpimHeaders, textCpimBody);
+        setBodyPart(cpimMessage);
+    }
+
+    public String getCorrelator(){
+        return mCorrelator;
+    }
+
+    public long getDate(){
+        return mDate;
     }
 }

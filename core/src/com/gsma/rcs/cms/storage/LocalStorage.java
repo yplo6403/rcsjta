@@ -157,16 +157,12 @@ public class LocalStorage implements ISyncProcessorHandler {
                     mImapLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(), msg.getFolderPath(),
                             msg.getUid(), isSeen, isDeleted);
                 }
-            } catch (CmsSyncHeaderFormatException e) {
+            } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
                 /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
                    remaining IMAP messages but log error since it MUST be fixed on CMS server.
                 */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
-            } catch (CmsSyncMissingHeaderException e) {
-                /* Missing mandatory header on the CMS server. Keep processing
-                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
-                */
-                sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+
             } catch (CmsSyncException e) {
                 if(sLogger.isActivated()){
                     sLogger.info(e.getMessage());
@@ -181,7 +177,7 @@ public class LocalStorage implements ISyncProcessorHandler {
         if(messageType == MessageType.SMS ||
                 messageType == MessageType.MMS ||
                 messageType == MessageType.MESSAGE_CPIM ||
-                messageType == MessageType.GROUP_STATE_OBJECT){
+                messageType == MessageType.GROUP_STATE){
             return true;
         }
         if(isActivated){
@@ -230,7 +226,7 @@ public class LocalStorage implements ISyncProcessorHandler {
     private Map<MessageType, List<IImapMessage>> resolveMessagesByType(List<ImapMessage> rawMessages){
 
         Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap();
-        mapOfMessages.put(MessageType.GROUP_STATE_OBJECT, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.SESSION_INFO, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.CHAT_MESSAGE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.SMS, new ArrayList<IImapMessage>());

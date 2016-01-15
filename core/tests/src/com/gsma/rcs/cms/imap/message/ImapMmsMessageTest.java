@@ -5,6 +5,9 @@ import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.cms.utils.DateUtils;
@@ -78,40 +81,45 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     @SmallTest
     public void testFromPayload(){
 
-        ImapMessage rawMessage = new ImapMessage();
-        rawMessage.fromPayload(mPayload);
-        ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage);
+        try {
+            ImapMessage rawMessage = new ImapMessage();
+            rawMessage.fromPayload(mPayload);
+            ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage);
+            Assert.assertEquals("+33642575779", imapMmsMessage.getHeader(Constants.HEADER_FROM));
+            Assert.assertEquals("+33640332859", imapMmsMessage.getHeader(Constants.HEADER_TO));
+            Assert.assertEquals(mImapDate, imapMmsMessage.getHeader(Constants.HEADER_DATE));
+            Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
+            Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
+            Assert.assertEquals("myMmsId", imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_ID));
+            Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
+            Assert.assertEquals("received", imapMmsMessage.getHeader(Constants.HEADER_DIRECTION));
+            Assert.assertEquals("multimedia-message", imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
+            Assert.assertEquals("Message/CPIM", imapMmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-        Assert.assertEquals("+33642575779", imapMmsMessage.getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals("+33640332859", imapMmsMessage.getHeader(Constants.HEADER_TO));
-        Assert.assertEquals(mImapDate, imapMmsMessage.getHeader(Constants.HEADER_DATE));
-        Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
-        Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
-        Assert.assertEquals("myMmsId", imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_ID));
-        Assert.assertEquals("1443517760826", imapMmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
-        Assert.assertEquals("received", imapMmsMessage.getHeader(Constants.HEADER_DIRECTION));
-        Assert.assertEquals("multimedia-message", imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
-        Assert.assertEquals("Message/CPIM", imapMmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
+            Assert.assertEquals("+33642575779", imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
+            Assert.assertEquals("+33640332859", imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
+            Assert.assertEquals("1443517760826", imapMmsMessage.getCpimMessage().getHeader("imdn.Message-ID"));
+            Assert.assertEquals(mCpimDate, imapMmsMessage.getCpimMessage().getHeader("DateTime"));
 
-        Assert.assertEquals("+33642575779", imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals("+33640332859", imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
-        Assert.assertEquals("1443517760826", imapMmsMessage.getCpimMessage().getHeader("imdn.Message-ID"));
-        Assert.assertEquals(mCpimDate, imapMmsMessage.getCpimMessage().getHeader("DateTime"));
+            MultipartCpimBody cpimBody = (MultipartCpimBody)imapMmsMessage.getCpimMessage().getBody();
 
-        MultipartCpimBody cpimBody = (MultipartCpimBody)imapMmsMessage.getCpimMessage().getBody();
+            Assert.assertEquals("Multipart/Related;boundary=\"boundary_1446218793256\";", cpimBody.getContentType());
+            Assert.assertEquals(2, cpimBody.getParts().size());
 
-        Assert.assertEquals("Multipart/Related;boundary=\"boundary_1446218793256\";", cpimBody.getContentType());
-        Assert.assertEquals(2, cpimBody.getParts().size());
+            MultipartCpimBody.Part part;
 
-        MultipartCpimBody.Part part;
+            part = cpimBody.getParts().get(0);
+            Assert.assertEquals("text/plain", part.getHeader(Constants.HEADER_CONTENT_TYPE));
+            Assert.assertEquals("myContent", part.getContent());
 
-        part = cpimBody.getParts().get(0);
-        Assert.assertEquals("text/plain", part.getHeader(Constants.HEADER_CONTENT_TYPE));
-        Assert.assertEquals("myContent", part.getContent());
+            part = cpimBody.getParts().get(1);
+            Assert.assertEquals("text/plain; charset=utf-8", part.getHeader(Constants.HEADER_CONTENT_TYPE));
+            Assert.assertEquals("1", part.getContent());
 
-        part = cpimBody.getParts().get(1);
-        Assert.assertEquals("text/plain; charset=utf-8", part.getHeader(Constants.HEADER_CONTENT_TYPE));
-        Assert.assertEquals("1", part.getContent());
+        } catch (CmsSyncException e) {
+            e.printStackTrace();
+            Assert.fail();
+        }
 
     }
 

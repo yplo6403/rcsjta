@@ -27,10 +27,12 @@ import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
+import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.GroupChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.OneToOneChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnManager;
+import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.ChatMessagePersistedStorageAccessor;
@@ -40,6 +42,7 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.broadcaster.GroupChatEventBroadcaster;
 import com.gsma.rcs.service.broadcaster.OneToOneChatEventBroadcaster;
 import com.gsma.rcs.service.broadcaster.RcsServiceRegistrationEventBroadcaster;
+import com.gsma.rcs.utils.IntentUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.ICommonServiceConfiguration;
 import com.gsma.services.rcs.IRcsServiceRegistrationListener;
@@ -59,8 +62,10 @@ import com.gsma.services.rcs.chat.IGroupChat;
 import com.gsma.services.rcs.chat.IGroupChatListener;
 import com.gsma.services.rcs.chat.IOneToOneChat;
 import com.gsma.services.rcs.chat.IOneToOneChatListener;
+import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.content.Intent;
 import android.os.RemoteException;
 import android.text.TextUtils;
 
@@ -1078,6 +1083,15 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     public void broadcastOneToOneMessagesDeleted(ContactId contact, Set<String> msgIds) {
         mOneToOneChatEventBroadcaster.broadcastMessagesDeleted(contact, msgIds);
+    }
+
+    public void broadcastNewChatMessage(ChatMessage chatMessage) {
+        ChatMessagePersistedStorageAccessor persistedStorage = new ChatMessagePersistedStorageAccessor(mMessagingLog, chatMessage.getMessageId());
+        if(persistedStorage.getChatId().equals(persistedStorage.getRemoteContact().toString())){ // OneToOne chat message
+            mOneToOneChatEventBroadcaster.broadcastMessageReceived(persistedStorage.getMimeType(), chatMessage.getMessageId());
+        } else{ // GC message
+            mGroupChatEventBroadcaster.broadcastMessageReceived(persistedStorage.getMimeType(), chatMessage.getMessageId());
+        }
     }
 
     /**

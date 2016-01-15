@@ -28,8 +28,8 @@ import com.sonymobile.rcs.imap.Header;
 public abstract class ImapMessage implements IImapMessage {
 
     protected com.sonymobile.rcs.imap.ImapMessage mRawMessage;
-    protected HeaderPart mHeaderPart;
-    protected CpimMessage mCpimMessage;
+    private HeaderPart mHeaderPart;
+    private BodyPart mBodyPart;
 
     protected ImapMessage(){
         mHeaderPart = new HeaderPart();
@@ -50,23 +50,12 @@ public abstract class ImapMessage implements IImapMessage {
         StringBuilder sb = new StringBuilder();
         sb.append(mHeaderPart);
         sb.append(Constants.CRLF);
-        sb.append(mCpimMessage.toPayload());
+        sb.append(mBodyPart.toPayload());
         return sb.toString();
     }
 
     @Override
-    public void parsePayload(String payload) {
-        {
-            String[] parts = payload.split(Constants.CRLFCRLF,2);
-            if(2 == parts.length ){
-                for(Header header : Header.parseHeaders(parts[0]).values()){
-                    addHeader(header.getKey(), header.getValue());
-                }
-                mCpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
-                mCpimMessage.parsePayload(parts[1]);
-            }
-        }
-    }
+    public abstract void parsePayload(String payload);
 
     @Override
     public String getHeader(String headerName){
@@ -74,8 +63,8 @@ public abstract class ImapMessage implements IImapMessage {
     }
 
     @Override
-    public CpimMessage getCpimMessage(){
-        return mCpimMessage;
+    public BodyPart getBodyPart(){
+        return mBodyPart;
     }
 
     @Override
@@ -96,6 +85,10 @@ public abstract class ImapMessage implements IImapMessage {
     @Override
     public boolean isDeleted() {
         return mRawMessage.getMetadata().getFlags().contains(Flag.Deleted);
+    }
+
+    public void setBodyPart(BodyPart bodyPart){
+        mBodyPart = bodyPart;
     }
 
 }

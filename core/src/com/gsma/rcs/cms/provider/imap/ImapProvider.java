@@ -103,42 +103,14 @@ public class ImapProvider extends ContentProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL(new StringBuilder("CREATE TABLE IF NOT EXISTS ").append(TABLE_FOLDER)
-                    .append('(').append(BaseColumns._ID)
-                    .append(" INTEGER PRIMARY KEY AUTOINCREMENT,").append(FolderData.KEY_NAME)
-                    .append(" TEXT NOT NULL,").append(FolderData.KEY_NEXT_UID).append(" INTEGER,")
-                    .append(FolderData.KEY_HIGHESTMODSEQ).append(" INTEGER,")
-                    .append(FolderData.KEY_UID_VALIDITY).append(" INTEGER)").toString());
-            db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_FOLDER).append('_')
-                    .append(BaseColumns._ID).append("_idx").append(" ON ").append(TABLE_FOLDER)
-                    .append('(').append(BaseColumns._ID).append(')').toString());
-            db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_FOLDER).append('_')
-                    .append(FolderData.KEY_NAME).append("_idx").append(" ON ").append(TABLE_FOLDER)
-                    .append('(').append(FolderData.KEY_NAME).append(')').toString());
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + FolderData.KEY_NAME + " TEXT NOT NULL," + FolderData.KEY_NEXT_UID + " INTEGER," + FolderData.KEY_HIGHESTMODSEQ + " INTEGER," + FolderData.KEY_UID_VALIDITY + " INTEGER)");
+            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + BaseColumns._ID + "_idx" + " ON " + TABLE_FOLDER + '(' + BaseColumns._ID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + FolderData.KEY_NAME + "_idx" + " ON " + TABLE_FOLDER + '(' + FolderData.KEY_NAME + ')');
 
-            db.execSQL(new StringBuilder("CREATE TABLE IF NOT EXISTS ").append(TABLE_MESSAGE)
-                    .append('(').append(BaseColumns._ID)
-                    .append(" INTEGER PRIMARY KEY AUTOINCREMENT,")
-                    .append(MessageData.KEY_FOLDER_NAME).append(" TEXT,")
-                    .append(MessageData.KEY_UID).append(" INTEGER,")
-                    .append(MessageData.KEY_READ_STATUS).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_DELETE_STATUS).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_PUSH_STATUS).append(" INTEGER NOT NULL,")
-                    .append(MessageData.KEY_MESSAGE_TYPE).append(" TEXT NOT NULL,")
-                    .append(MessageData.KEY_MESSAGE_ID).append(" TEXT NOT NULL,")
-                    .append(MessageData.KEY_NATIVE_PROVIDER_ID).append(" INTEGER)").toString());
-            db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_MESSAGE).append('_')
-                    .append(BaseColumns._ID).append("_idx").append(" ON ").append(TABLE_MESSAGE)
-                    .append('(').append(BaseColumns._ID).append(')').toString());
-            db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_MESSAGE).append('_')
-                    .append(MessageData.KEY_FOLDER_NAME).append("_idx").append(" ON ")
-                    .append(TABLE_MESSAGE).append('(').append(MessageData.KEY_FOLDER_NAME)
-                    .append(')').toString());
-            db.execSQL(new StringBuilder("CREATE INDEX ").append(TABLE_MESSAGE).append('_')
-                    .append(MessageData.KEY_FOLDER_NAME).append("_").append(MessageData.KEY_UID)
-                    .append("_idx").append(" ON ").append(TABLE_MESSAGE).append('(')
-                    .append(MessageData.KEY_FOLDER_NAME).append(",").append(MessageData.KEY_UID)
-                    .append(')').toString());
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + MessageData.KEY_FOLDER_NAME + " TEXT," + MessageData.KEY_UID + " INTEGER," + MessageData.KEY_READ_STATUS + " INTEGER NOT NULL," + MessageData.KEY_DELETE_STATUS + " INTEGER NOT NULL," + MessageData.KEY_PUSH_STATUS + " INTEGER NOT NULL," + MessageData.KEY_MESSAGE_TYPE + " TEXT NOT NULL," + MessageData.KEY_MESSAGE_ID + " TEXT NOT NULL," + MessageData.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + BaseColumns._ID + "_idx" + " ON " + TABLE_MESSAGE + '(' + BaseColumns._ID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_idx" + " ON " + TABLE_MESSAGE + '(' + MessageData.KEY_FOLDER_NAME + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_" + MessageData.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '(' + MessageData.KEY_FOLDER_NAME + "," + MessageData.KEY_UID + ')');
 
             // TODO
             // define another index
@@ -174,7 +146,7 @@ public class ImapProvider extends ContentProvider {
                 return CursorType.Message.TYPE_ITEM;
             default:
                 throw new IllegalArgumentException(
-                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
+                        "Unsupported URI " + uri + "!");
         }
     }
 
@@ -182,8 +154,7 @@ public class ImapProvider extends ContentProvider {
         if (TextUtils.isEmpty(selection)) {
             return SELECTION_WITH_ID_ONLY;
         }
-        return new StringBuilder("(").append(SELECTION_WITH_ID_ONLY).append(") AND (")
-                .append(selection).append(')').toString();
+        return "(" + SELECTION_WITH_ID_ONLY + ") AND (" + selection + ')';
     }
 
     private String[] getSelectionArgsWithId(String[] selectionArgs, String id) {

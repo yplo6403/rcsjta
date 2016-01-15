@@ -330,6 +330,16 @@ public class SmsTest extends AndroidTestCase{
                // create messages in local storage
                for(SmsDataObject sms : SmsIntegrationUtils.Test1.conversation){
                    mXmsLog.addSms(sms);
+                   mImapLog.addMessage(
+                           new MessageData(
+                                   CmsUtils.contactToCmsFolder(mSettings, sms.getContact()),
+                                   MessageData.ReadStatus.READ,
+                                   DeleteStatus.NOT_DELETED,
+                                   PushStatus.PUSHED,
+                                   MessageType.SMS,
+                                   sms.getMessageId(), null)
+                   );
+
                }
                            
                startSynchro();

@@ -63,7 +63,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         mImapLog.addMessage(new MessageData(CmsUtils.groupChatToCmsFolder(mSettings,
                 conversationId, contributionId), ReadStatus.UNREAD,
                 MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.GROUP_STATE_OBJECT, contributionId, null));
+                MessageType.GROUP_STATE, contributionId, null));
     }
 
     @Override

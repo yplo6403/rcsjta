@@ -20,6 +20,8 @@
 package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
 import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.cms.utils.DateUtils;
@@ -36,12 +38,29 @@ import android.content.Context;
 
 import java.util.List;
 
-public class ImapMmsMessage extends ImapMessage {
+public class ImapMmsMessage extends ImapCpimMessage {
 
     private final static Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getSimpleName());
 
-    public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
+
+    private String mSubject;
+    private String mMmsId;
+    private long mDate;
+
+    public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
+
+        mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
+        if(mMmsId == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_ID + " IMAP header is missing");
+        }
+        mSubject = getHeader(Constants.HEADER_SUBJECT);
+
+        String dateHeader = getHeader(Constants.HEADER_DATE);
+        if(dateHeader == null){
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE + " IMAP header is missing");
+        }
+        mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
 
     public ImapMmsMessage(Context context, String from, String to, String direction, long date,
@@ -107,7 +126,7 @@ public class ImapMmsMessage extends ImapMessage {
             }
             multipartCpimBody.addMultiPart(headers, content);
         }
-        mCpimMessage = new CpimMessage(cpimHeaders, multipartCpimBody);
+        setBodyPart(new CpimMessage(cpimHeaders, multipartCpimBody));
     }
 
     @Override
@@ -117,8 +136,25 @@ public class ImapMmsMessage extends ImapMessage {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
                 addHeader(header.getKey(), header.getValue());
             }
-            mCpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
-            mCpimMessage.parsePayload(parts[1]);
+            CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
+            cpimMessage.parsePayload(parts[1]);
+            setBodyPart(cpimMessage);
         }
+    }
+
+    public String getMmsId(){
+        return mMmsId;
+    }
+
+    public String getSubject(){
+        return mSubject;
+    }
+
+    public long getDate(){
+        return mDate;
+    }
+
+    public MultipartCpimBody getCpimBody() {
+        return (MultipartCpimBody)getCpimMessage().getBody();
     }
 }

@@ -80,9 +80,9 @@ public class SmsObserverTest extends AndroidTestCase {
                 .getReadStatus());
     }
 
-    public void testDeleteMms() {
+    public void testDeleteSms() {
         mXmsObserver.onIncomingSms(outgoingSms);
-        mXmsObserver.onDeleteXmsConversationFromNativeApp(2l);
+        mXmsObserver.onDeleteSmsFromNativeApp(2l);
         Assert.assertNull(mNativeSmsListenerMock.getMessage().get(2l));
     }
 

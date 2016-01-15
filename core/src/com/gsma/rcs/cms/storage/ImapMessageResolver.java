@@ -20,13 +20,14 @@
 package com.gsma.rcs.cms.storage;
 
 import com.gsma.rcs.cms.Constants;
+import com.gsma.rcs.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.cms.imap.message.HeaderPart;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapChatMessage;
 import com.gsma.rcs.cms.imap.message.ImapCpimMessage;
-import com.gsma.rcs.cms.imap.message.ImapGroupChatObjectMessage;
+import com.gsma.rcs.cms.imap.message.ImapGroupStateMessage;
 import com.gsma.rcs.cms.imap.message.ImapImdnMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
@@ -89,7 +90,7 @@ public class ImapMessageResolver {
             return MessageType.SESSION_INFO;
         }
         else if(imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
-            return MessageType.GROUP_STATE_OBJECT;
+            return MessageType.GROUP_STATE;
         }
         else if(imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
             return MessageType.FILE_TRANSFER;
@@ -100,7 +101,7 @@ public class ImapMessageResolver {
         throw new CmsSyncMessageNotSupportedException(msg.toString());
     }
 
-    public IImapMessage resolveMessage(MessageType messageType, com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncMessageNotSupportedException {
+    public IImapMessage resolveMessage(MessageType messageType, com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncException {
 
         switch (messageType) {
             case SMS:
@@ -113,8 +114,8 @@ public class ImapMessageResolver {
                 return new ImapChatMessage(imapMessage);
             case IMDN:
                 return new ImapImdnMessage(imapMessage);
-            case GROUP_STATE_OBJECT:
-                return new ImapGroupChatObjectMessage(imapMessage);
+            case GROUP_STATE:
+                return new ImapGroupStateMessage(imapMessage);
         }
         throw new CmsSyncMessageNotSupportedException("unsupported message type : ".concat(messageType.toString()));
     }
