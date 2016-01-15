@@ -27,10 +27,9 @@ import com.sonymobile.rcs.imap.Part;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -38,19 +37,28 @@ import java.util.Set;
  */
 public class FetchFlagCmdHandler extends CmdHandler {
 
+    // TODO why not private
     static final String sCommand = Constants.CMD_FETCH_FLAGS;
     private static final String sPattern = "\\(UID ([0-9]+) FLAGS \\((.*)\\) MODSEQ \\(([0-9]+)\\)\\)$";
 
     private static final int sExpectedValues = 3;
 
-    final Map<Integer, Map<String, String>> mData = new HashMap<Integer, Map<String, String>>();
+    /* Map of UIDs with their associated command (map of parameter/value) */
+    // TODO Give more explicit name
+    final Map<Integer, Map<String, String>> mData;
 
-    private String mFolderName;
-    
-    public FetchFlagCmdHandler(String folderName){
-        mFolderName = folderName;    
+    private final String mFolderName;
+
+    /**
+     * Constructor
+     * 
+     * @param folderName The folder
+     */
+    public FetchFlagCmdHandler(String folderName) {
+        mFolderName = folderName;
+        mData = new HashMap<>();
     }
-    
+
     @Override
     public String buildCommand(Object... params) {
         return String.format(sCommand, params);
@@ -58,14 +66,11 @@ public class FetchFlagCmdHandler extends CmdHandler {
 
     @Override
     public boolean handleLine(String oneLine) {
-
         String[] values = extractCounterValuesFromLine(sPattern, oneLine);
-
         if (values == null || values.length != sExpectedValues) {
             return false;
         }
-
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         Integer uid = Integer.valueOf(values[0]);
         data.put(Constants.METADATA_UID, values[0]);
         data.put(Constants.METADATA_FLAGS, values[1]);
@@ -84,26 +89,24 @@ public class FetchFlagCmdHandler extends CmdHandler {
 
     @Override
     public List<FlagChange> getResult() {
-        Iterator<Entry<Integer, Map<String, String>>> iter = mData.entrySet().iterator();
-        List<Integer> readUids = new ArrayList<>();
-        List<Integer> deletedUids = new ArrayList<>();
-        while (iter.hasNext()) {
-            Entry<Integer, Map<String, String>> entry = iter.next();
+        Set<Integer> readUids = new HashSet<>();
+        Set<Integer> deletedUids = new HashSet<>();
+        for (Map.Entry<Integer, Map<String, String>> entry : mData.entrySet()) {
             Integer uid = entry.getKey();
-            Map<String, String> data = entry.getValue();
-            Set<Flag> flags = CmdUtils.parseFlags(data.get(Constants.METADATA_FLAGS));
-            if(flags.contains(Flag.Seen)){
+            Map<String, String> cmdArgs = entry.getValue();
+            Set<Flag> flags = CmdUtils.parseFlags(cmdArgs.get(Constants.METADATA_FLAGS));
+            if (flags.contains(Flag.Seen)) {
                 readUids.add(uid);
             }
-            if(flags.contains(Flag.Deleted)){
+            if (flags.contains(Flag.Deleted)) {
                 deletedUids.add(uid);
             }
         }
         List<FlagChange> flagChanges = new ArrayList<>();
-        if(!deletedUids.isEmpty()){
+        if (!deletedUids.isEmpty()) {
             flagChanges.add(new FlagChange(mFolderName, deletedUids, Flag.Deleted));
         }
-        if(!readUids.isEmpty()){
+        if (!readUids.isEmpty()) {
             flagChanges.add(new FlagChange(mFolderName, readUids, Flag.Seen));
         }
         return flagChanges;

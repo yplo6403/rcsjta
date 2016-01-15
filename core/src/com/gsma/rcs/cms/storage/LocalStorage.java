@@ -35,11 +35,12 @@ import com.gsma.rcs.cms.sync.ISyncProcessorHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,21 +49,21 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * LocalStorage implementation
- * Apply remote changes from CMS server
- * Resolve the IMAP message and select the correct content provider to apply changes
- * Retrieve changes from local content providers which must be applied on the CMS server
+ * LocalStorage implementation Apply remote changes from CMS server Resolve the IMAP message and
+ * select the correct content provider to apply changes Retrieve changes from local content
+ * providers which must be applied on the CMS server
  */
 public class LocalStorage implements ISyncProcessorHandler {
 
     private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
-    protected final  ImapLog mImapLog;
+    protected final ImapLog mImapLog;
     private final CmsEventListener mCmsEventListener;
     private ImapMessageResolver mMessageResolver;
 
     /**
      * Constructor
-     * @param imapLog
+     * 
+     * @param imapLog IMAP log accessor
      */
     public LocalStorage(ImapLog imapLog, CmsEventListener cmsEventListener) {
         mImapLog = imapLog;
@@ -87,7 +88,7 @@ public class LocalStorage implements ISyncProcessorHandler {
     /**
      * Apply folder change
      *
-     * @param folder
+     * @param folder the folder
      */
     public void applyFolderChange(FolderData folder) {
         mImapLog.addFolder(folder);
@@ -97,8 +98,8 @@ public class LocalStorage implements ISyncProcessorHandler {
     public void applyFlagChange(List<FlagChange> flagchanges) {
         for (FlagChange fg : flagchanges) {
             String folder = fg.getFolder();
-            boolean deleteFlag = fg.addDeletedFlag();
-            boolean seenFlag = fg.addSeenFlag();
+            boolean deleteFlag = fg.isDeleted();
+            boolean seenFlag = fg.isSeen();
             for (Integer uid : fg.getUids()) {
                 MessageData msg = mImapLog.getMessage(folder, uid);
                 if (msg == null) {
@@ -113,7 +114,8 @@ public class LocalStorage implements ISyncProcessorHandler {
                 } else if (seenFlag) {
                     mCmsEventListener.onRemoteReadEvent(msg);
                 }
-                mImapLog.updateMessage(msg.getMessageType(), msg.getMessageId(), msg.getFolder(), msg.getUid(), seenFlag, deleteFlag);
+                mImapLog.updateMessage(msg.getMessageType(), msg.getMessageId(), msg.getFolder(),
+                        msg.getUid(), seenFlag, deleteFlag);
             }
         }
     }
@@ -134,14 +136,15 @@ public class LocalStorage implements ISyncProcessorHandler {
         for (ImapMessage msg : messages) {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
-                if(!checkMessageType(messageType)){
+                if (!checkMessageType(messageType)) {
                     continue;
                 }
                 IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
-                MessageData imapData = mCmsEventListener.searchLocalMessage(messageType, resolvedMessage);
+                MessageData imapData = mCmsEventListener.searchLocalMessage(messageType,
+                        resolvedMessage);
                 boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
                 if (imapData == null) { // message not present in local storage
-                    if(!isDeleted){ // prevent from downloading a new deleted message
+                    if (!isDeleted) { // prevent from downloading a new deleted message
                         uids.add(msg.getUid());
                     }
                 } else {
@@ -149,22 +152,21 @@ public class LocalStorage implements ISyncProcessorHandler {
                     boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
                     if (isDeleted) {
                         mCmsEventListener.onRemoteDeleteEvent(imapData);
-                    }
-                    else
-                    if (isSeen) {
+                    } else if (isSeen) {
                         mCmsEventListener.onRemoteReadEvent(imapData);
                     }
-                    mImapLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(), msg.getFolderPath(),
-                            msg.getUid(), isSeen, isDeleted);
+                    mImapLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(),
+                            msg.getFolderPath(), msg.getUid(), isSeen, isDeleted);
                 }
             } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
-                /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
-                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
-                */
+                /*
+                 * There is a wrongly formatted IMAP message on the CMS server. Keep processing
+                 * remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                 */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
 
             } catch (CmsSyncException e) {
-                if(sLogger.isActivated()){
+                if (sLogger.isActivated()) {
                     sLogger.info(e.getMessage());
                 }
             }
@@ -172,15 +174,14 @@ public class LocalStorage implements ISyncProcessorHandler {
         return uids;
     }
 
-    private boolean checkMessageType(MessageType messageType){
+    private boolean checkMessageType(MessageType messageType) {
         boolean isActivated = sLogger.isActivated();
-        if(messageType == MessageType.SMS ||
-                messageType == MessageType.MMS ||
-                messageType == MessageType.MESSAGE_CPIM ||
-                messageType == MessageType.GROUP_STATE){
+        if (messageType == MessageType.SMS || messageType == MessageType.MMS
+                || messageType == MessageType.MESSAGE_CPIM
+                || messageType == MessageType.GROUP_STATE) {
             return true;
         }
-        if(isActivated){
+        if (isActivated) {
             sLogger.debug("This type of message is not synchronized : " + messageType);
         }
         return false;
@@ -188,34 +189,30 @@ public class LocalStorage implements ISyncProcessorHandler {
 
     @Override
     public void createMessages(List<ImapMessage> messages) throws FileAccessException {
-        Map<MessageType,List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
-        Iterator<Entry<MessageType,List<IImapMessage>>> iter = mapOfMessages.entrySet().iterator();
-        while(iter.hasNext()){
-            Entry<MessageType,List<IImapMessage>> entry = iter.next();
+        Map<MessageType, List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
+        for (Entry<MessageType, List<IImapMessage>> entry : mapOfMessages.entrySet()) {
             MessageType messageType = entry.getKey();
             List<IImapMessage> resolvedMessages = entry.getValue();
-            for(IImapMessage resolvedMessage : resolvedMessages){
-                try{
-                    String messageId = mCmsEventListener.onRemoteNewMessage(messageType, resolvedMessage);
+            for (IImapMessage resolvedMessage : resolvedMessages) {
+                try {
+                    String messageId = mCmsEventListener.onRemoteNewMessage(messageType,
+                            resolvedMessage);
                     MessageData messageData = new MessageData(resolvedMessage.getFolder(),
                             resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
-                            : ReadStatus.UNREAD,
+                                    : ReadStatus.UNREAD,
                             resolvedMessage.isDeleted() ? DeleteStatus.DELETED
                                     : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
                             messageId, null);
                     mImapLog.addMessage(messageData);
-                } catch (CmsSyncHeaderFormatException e) {
-                /* There is a wrongly formatted IMAP message on the CMS server. Keep processing
-                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
-                */
-                    sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]", e);
-                } catch (CmsSyncMissingHeaderException e) {
-                /* Missing mandatory header on the CMS server. Keep processing
-                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
-                */
-                    sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]", e);
+                } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
+                    /*
+                     * There is a wrongly formatted IMAP message on the CMS server. Keep processing
+                     * remaining IMAP messages but log error since it MUST be fixed on CMS server.
+                     */
+                    sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]",
+                            e);
                 } catch (CmsSyncException e) {
-                    if(sLogger.isActivated()){
+                    if (sLogger.isActivated()) {
                         sLogger.info(e.getMessage());
                     }
                 }
@@ -223,7 +220,7 @@ public class LocalStorage implements ISyncProcessorHandler {
         }
     }
 
-    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(List<ImapMessage> rawMessages){
+    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(List<ImapMessage> rawMessages) {
 
         Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap();
         mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
@@ -237,20 +234,21 @@ public class LocalStorage implements ISyncProcessorHandler {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
                 List msgList = mapOfMessages.get(messageType);
-                if(msgList == null){
-                    if(sLogger.isActivated()){
+                if (msgList == null) {
+                    if (sLogger.isActivated()) {
                         sLogger.debug("This type of message is not synchronized : " + messageType);
                     }
                     continue;
                 }
                 msgList.add(mMessageResolver.resolveMessage(messageType, msg));
             } catch (CmsSyncMissingHeaderException e) {
-                /* Missing mandatory header on the CMS server. Keep processing
-                   remaining IMAP messages but log error since it MUST be fixed on CMS server.
-                */
+                /*
+                 * Missing mandatory header on the CMS server. Keep processing remaining IMAP
+                 * messages but log error since it MUST be fixed on CMS server.
+                 */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
             } catch (CmsSyncException e) {
-                if(sLogger.isActivated()){
+                if (sLogger.isActivated()) {
                     sLogger.info(e.getMessage());
                 }
             }
@@ -261,8 +259,8 @@ public class LocalStorage implements ISyncProcessorHandler {
     @Override
     public List<FlagChange> getLocalFlagChanges(String folder) {
         List<FlagChange> changes = new ArrayList<>();
-        List<Integer> readUids = new ArrayList<>();
-        List<Integer> deletedUids = new ArrayList<>();
+        Set<Integer> readUids = new HashSet<>();
+        Set<Integer> deletedUids = new HashSet<>();
         for (MessageData messageData : mImapLog.getMessages(folder,
                 ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.DELETED_REPORT_REQUESTED)) {
             Integer uid = messageData.getUid();
@@ -285,13 +283,13 @@ public class LocalStorage implements ISyncProcessorHandler {
     }
 
     /**
-     * @param flagChanges
+     * @param flagChanges list of uids with changed flags
      */
     public void finalizeLocalFlagChanges(List<FlagChange> flagChanges) {
         for (FlagChange fg : flagChanges) {
             String folder = fg.getFolder();
-            boolean seenFlag = fg.addSeenFlag();
-            boolean deleteFlag = fg.addDeletedFlag();
+            boolean seenFlag = fg.isSeen();
+            boolean deleteFlag = fg.isDeleted();
             for (Integer uid : fg.getUids()) {
                 if (seenFlag) {
                     mImapLog.updateReadStatus(folder, uid, ReadStatus.READ);

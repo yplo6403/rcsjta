@@ -40,12 +40,14 @@ import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactUtil;
+import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapMessageMetadata;
 import com.sonymobile.rcs.imap.Part;
 
 import junit.framework.Assert;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -184,9 +186,9 @@ public class MmsTest extends AndroidTestCase{
            assertEquals(Test1.conversation.length,mImapLogEnvIntegration.getMessages(Test1.folderName).size());
            messages = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
            assertEquals(0, messages.size());
-        } catch (ImapServiceNotAvailableException e) {
+        } catch (ImapServiceNotAvailableException | ImapException |  IOException e) {
             Assert.fail();
-        }
+       }
 
    }
 
@@ -634,7 +636,7 @@ public class MmsTest extends AndroidTestCase{
        deleteTask.delete(mailbox);
    }
 
-   private void updateRemoteFlags(List<FlagChange> changes) throws ImapServiceNotAvailableException {       
+   private void updateRemoteFlags(List<FlagChange> changes) throws ImapServiceNotAvailableException, IOException, ImapException {
        UpdateFlagTask task = new UpdateFlagTask(mImapServiceController, changes, null);
        task.updateFlags();
    }

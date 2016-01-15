@@ -26,19 +26,18 @@ import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
-import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.xms.XmsLog;
-
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Task used to update flag status on the CMS server.
@@ -49,43 +48,42 @@ public class UpdateFlagTask implements Runnable {
 
     private final UpdateFlagTaskListener mListener;
     private final ImapServiceController mImapServiceController;
-    private RcsSettings mSettings;
-    private XmsLog mXmsLog;
     private ImapLog mImapLog;
     private List<FlagChange> mFlagChanges;
-    private List<FlagChange> mSuccessFullFlagChanges = new ArrayList<>();
+    private final List<FlagChange> mSuccessFullFlagChanges;
 
     /**
      * Constructor
-     * @param imapServiceController
-     * @param flagChanges
-     * @param listener
+     * 
+     * @param imapServiceController the IMAP service controller
+     * @param flagChanges the list of changed flags
+     * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapServiceController imapServiceController, List<FlagChange> flagChanges,
-            UpdateFlagTaskListener listener) {
+    public UpdateFlagTask(ImapServiceController imapServiceController,
+            List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
         mImapServiceController = imapServiceController;
         mListener = listener;
         mFlagChanges = flagChanges;
+        mSuccessFullFlagChanges = new ArrayList<>();
     }
 
     /**
      * Constructor
-     * @param imapServiceController
-     * @param listener
-     * @throws ImapServiceNotAvailableException
+     *
+     * @param imapServiceController the IMAP service controller
+     * @param imapLog the IMAP log accessor
+     * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapServiceController imapServiceController, RcsSettings settings, XmsLog xmsLog,
-            ImapLog imapLog, UpdateFlagTaskListener listener) {
+    public UpdateFlagTask(ImapServiceController imapServiceController, ImapLog imapLog,
+            UpdateFlagTaskListener listener) {
         mImapServiceController = imapServiceController;
         mListener = listener;
-        mXmsLog = xmsLog;
         mImapLog = imapLog;
-        mSettings = settings;
+        mSuccessFullFlagChanges = new ArrayList<>();
     }
 
     @Override
     public void run() {
-
         try {
             mImapServiceController.createService();
             if (mFlagChanges == null) { // get from db
@@ -94,45 +92,67 @@ public class UpdateFlagTask implements Runnable {
                 mFlagChanges.addAll(getDeleteChanges());
             }
             updateFlags();
-        } catch (Exception e) {
+
+        } catch (ImapServiceNotAvailableException e) {
+            sLogger.warn("Cannot update flag status on the CMS server: service not available");
+
+        } catch (RuntimeException e) {
+            /*
+             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+             * which should be handled/fixed within the code. However the cases when we are
+             * executing operations on a thread unhandling such exceptions will eventually lead to
+             * exit the system and thus can bring the whole system down, which is not intended.
+             */
+            sLogger.error("Runtime error while updating flag status on CMS server!", e);
+
+        } catch (ImapException | IOException e) {
+            sLogger.error("Failed to update flag status on CMS server!", e);
 
         } finally {
-            mImapServiceController.closeService();
-            if (mListener != null) {
-                mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
+            try {
+                mImapServiceController.closeService();
+                if (mListener != null) {
+                    mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
+                }
+            } catch (RuntimeException e) {
+                /*
+                 * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
+                 * which should be handled/fixed within the code. However the cases when we are
+                 * executing operations on a thread unhandling such exceptions will eventually lead
+                 * to exit the system and thus can bring the whole system down, which is not
+                 * intended.
+                 */
+                sLogger.error("Runtime error while updating flag status on CMS server!", e);
             }
         }
     }
 
     private List<FlagChange> getReadChanges() {
-        Map<String, List<Integer>> folderUidsMap = new HashMap<>();
+        Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
         for (MessageData messageData : mImapLog.getMessages(ReadStatus.READ_REPORT_REQUESTED)) {
             Integer uid = messageData.getUid();
             if (uid == null) {
                 continue;
             }
             String folderName = messageData.getFolder();
-            List<Integer> uids = folderUidsMap.get(folderName);
+            Set<Integer> uids = folderUidsMap.get(folderName);
             if (uids == null) {
-                uids = new ArrayList<>();
+                uids = new HashSet<>();
                 folderUidsMap.put(folderName, uids);
             }
             uids.add(uid);
         }
-
         List<FlagChange> flagChanges = new ArrayList<>();
-        Iterator<Map.Entry<String, List<Integer>>> iterator = folderUidsMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, List<Integer>> entry = iterator.next();
+        for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
             String folderName = entry.getKey();
-            List<Integer> uids = entry.getValue();
+            Set<Integer> uids = entry.getValue();
             flagChanges.add(new FlagChange(folderName, uids, Flag.Seen));
         }
         return flagChanges;
     }
 
     private List<FlagChange> getDeleteChanges() {
-        Map<String, List<Integer>> folderUidsMap = new HashMap<>();
+        Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
         for (MessageData messageData : mImapLog
                 .getMessages(MessageData.DeleteStatus.DELETED_REPORT_REQUESTED)) {
             String folderName = messageData.getFolder();
@@ -140,67 +160,57 @@ public class UpdateFlagTask implements Runnable {
             if (uid == null) {
                 continue;
             }
-            List<Integer> uids = folderUidsMap.get(folderName);
+            Set<Integer> uids = folderUidsMap.get(folderName);
             if (uids == null) {
-                uids = new ArrayList<>();
+                uids = new HashSet<>();
                 folderUidsMap.put(folderName, uids);
             }
             uids.add(uid);
         }
 
         List<FlagChange> flagChanges = new ArrayList<>();
-        Iterator<Map.Entry<String, List<Integer>>> iterator = folderUidsMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, List<Integer>> entry = iterator.next();
+        for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
             String folderName = entry.getKey();
-            List<Integer> uids = entry.getValue();
+            Set<Integer> uids = entry.getValue();
             flagChanges.add(new FlagChange(folderName, uids, Flag.Deleted));
         }
         return flagChanges;
     }
 
     /**
-     * @throws IOException
-     * @throws ImapException
+     * Update flags
      */
-    public void updateFlags() {
-
+    public void updateFlags() throws ImapServiceNotAvailableException, IOException, ImapException {
         String previousFolder = null;
-        try {
-            BasicImapService imapService = mImapServiceController.getService();
-            for (FlagChange flagChange : mFlagChanges) {
-                String folder = flagChange.getFolder();
-                if (!folder.equals(previousFolder)) {
-                    imapService.select(folder);
-                    previousFolder = folder;
-                }
-                switch (flagChange.getOperation()) {
-                    case ADD_FLAG:
-                        imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
-                        break;
-                    case REMOVE_FLAG:
-                        imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlags());
-                        break;
-                }
-                mSuccessFullFlagChanges.add(flagChange);
+        BasicImapService imapService = mImapServiceController.getService();
+        for (FlagChange flagChange : mFlagChanges) {
+            String folder = flagChange.getFolder();
+            if (!folder.equals(previousFolder)) {
+                imapService.select(folder);
+                previousFolder = folder;
             }
-        } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
-            if(sLogger.isActivated()){
-                sLogger.debug(e.getMessage());
-                e.printStackTrace(); // FIX ME :  debug purpose
+            switch (flagChange.getOperation()) {
+                case ADD_FLAG:
+                    imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                    break;
+                case REMOVE_FLAG:
+                    imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                    break;
             }
+            mSuccessFullFlagChanges.add(flagChange);
         }
     }
 
     /**
-    * Interface used to notify listener when flags have been updated on the CMS server
-    */
+     * Interface used to notify listener when flags have been updated on the CMS server
+     */
     public interface UpdateFlagTaskListener {
         /**
          * Callback method
-         * @param successFullFlagChanges
+         * 
+         * @param flags list of changed flags
          */
-        void onUpdateFlagTaskExecuted(List<FlagChange> successFullFlagChanges);
+        void onUpdateFlagTaskExecuted(List<FlagChange> flags);
     }
 
 }

@@ -8,9 +8,7 @@ import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 public class FetchFlagCmdHandlerTest extends AndroidTestCase {
 
@@ -35,14 +33,16 @@ public class FetchFlagCmdHandlerTest extends AndroidTestCase {
         // Delete flagchange first
         FlagChange fg = flagChanges.get(0);
         Assert.assertEquals("myFolder",fg.getFolder());
-        Assert.assertTrue(19==fg.getUids().get(0));
-        Assert.assertTrue(fg.addDeletedFlag());
+        Assert.assertTrue(!fg.getUids().isEmpty());
+        Assert.assertTrue(fg.getUids().iterator().next() == 19);
+        Assert.assertTrue(fg.isDeleted());
 
         // Read flagchange in second
         fg = flagChanges.get(1);
         Assert.assertEquals("myFolder",fg.getFolder());
-        Assert.assertTrue(19==fg.getUids().get(0));
-        Assert.assertTrue(fg.addSeenFlag());
+        Assert.assertTrue(!fg.getUids().isEmpty());
+        Assert.assertTrue(fg.getUids().iterator().next() == 19);
+        Assert.assertTrue(fg.isSeen());
 
     }
 }

@@ -343,7 +343,7 @@ public class ProviderSynchronizer implements Runnable {
             if (MMS_TYPE_SEND_REQUEST == messageType) {
                 direction = Direction.OUTGOING;
             }
-            date = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.DATE) * 1000);
+            date = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.DATE)) * 1000;
         } finally {
             CursorUtil.close(cursor);
         }

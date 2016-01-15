@@ -65,21 +65,23 @@ public class PushMessageTask implements Runnable {
     /* package private */final XmsLog mXmsLog;
     /* package private */final ImapLog mImapLog;
 
-    /* package private */final Map<String, Integer> mCreatedUidsMap = new HashMap<>();
+    /* package private */final Map<String, Integer> mCreatedUidsMap;
 
     /**
      * @param imapServiceController
      * @param xmsLog
      * @param listener
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings, ImapServiceController imapServiceController,
-            XmsLog xmsLog, ImapLog imapLog, PushMessageTaskListener listener) {
+    public PushMessageTask(Context context, RcsSettings rcsSettings,
+            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
+            PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mImapServiceController = imapServiceController;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mListener = listener;
+        mCreatedUidsMap = new HashMap<>();
     }
 
     @Override
@@ -111,6 +113,7 @@ public class PushMessageTask implements Runnable {
 
     /**
      * Push messages
+     * 
      * @param messages
      * @return
      */
@@ -169,9 +172,9 @@ public class PushMessageTask implements Runnable {
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
         } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
-            if(sLogger.isActivated()){
+            if (sLogger.isActivated()) {
                 sLogger.debug(e.getMessage());
-                e.printStackTrace(); // FIX ME :  debug purpose
+                e.printStackTrace(); // FIX ME : debug purpose
             }
         }
         return true;
@@ -182,11 +185,13 @@ public class PushMessageTask implements Runnable {
     }
 
     /**
-     * Interface used to notify listeners when messages have been pushed on the CMS server (when call in an asynchronous way)
+     * Interface used to notify listeners when messages have been pushed on the CMS server (when
+     * call in an asynchronous way)
      */
     public interface PushMessageTaskListener {
         /**
          * Callback method
+         * 
          * @param uids created for the pushed messages
          */
         void onPushMessageTaskCallbackExecuted(Map<String, Integer> uids);

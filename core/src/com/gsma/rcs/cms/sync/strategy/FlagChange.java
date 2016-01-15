@@ -23,9 +23,8 @@ import com.sonymobile.rcs.imap.Flag;
 
 import android.text.TextUtils;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
@@ -33,44 +32,30 @@ public class FlagChange {
 
     public enum Operation {
         ADD_FLAG, REMOVE_FLAG
-    };
-
-    private String mFolder;
-    private List<Integer> mUids;
-    private Set<Flag> mFlags;
-    private Operation mOperation = Operation.ADD_FLAG;
-
-    /**
-     * @param folder
-     * @param uids
-     * @param flags
-     */
-    public FlagChange(String folder, List<Integer> uids, Set<Flag> flags) {
-        super();
-        mFolder = folder;
-        mUids = uids;
-        mFlags = flags;
     }
 
+    private final String mFolder;
+    /* UIDS are unique per folder */
+    private final Set<Integer> mUids;
+    private final Flag mFlag;
+    private Operation mOperation;
+
     /**
-     * @param folder
-     * @param uids
-     * @param flag
+     * Constructor
+     * 
+     * @param folder the folder
+     * @param uids the set of UIDs
+     * @param flag the flag
      */
-    public FlagChange(String folder, List<Integer> uids, Flag flag) {
-        super();
+    public FlagChange(String folder, Set<Integer> uids, Flag flag) {
         mFolder = folder;
         mUids = uids;
-        mFlags = new HashSet<>(Arrays.asList(flag));
+        mFlag = flag;
+        mOperation = Operation.ADD_FLAG;
     }
 
     public FlagChange(String folder, Integer uid, Flag flag, Operation operation) {
-        super();
-        mFolder = folder;
-        mUids = Arrays.asList(new Integer[] {
-            uid
-        });
-        mFlags = new HashSet<>(Arrays.asList(flag));
+        this(folder, new HashSet<>(Collections.singletonList(uid)), flag);
         mOperation = operation;
     }
 
@@ -78,24 +63,24 @@ public class FlagChange {
         return TextUtils.join(",", mUids);
     }
 
-    public List<Integer> getUids() {
+    public Set<Integer> getUids() {
         return mUids;
     }
 
-    public Boolean addSeenFlag() {
-        return mOperation == Operation.ADD_FLAG && mFlags.contains(Flag.Seen);
+    public Boolean isSeen() {
+        return mOperation == Operation.ADD_FLAG && Flag.Seen == mFlag;
     }
 
-    public Boolean addDeletedFlag() {
-        return mOperation == Operation.ADD_FLAG && mFlags.contains(Flag.Deleted);
+    public Boolean isDeleted() {
+        return mOperation == Operation.ADD_FLAG && Flag.Deleted == mFlag;
     }
 
     public String getFolder() {
         return mFolder;
     }
 
-    public Flag[] getFlags() {
-        return mFlags.toArray(new Flag[mFlags.size()]);
+    public Flag getFlag() {
+        return mFlag;
     }
 
     public Operation getOperation() {

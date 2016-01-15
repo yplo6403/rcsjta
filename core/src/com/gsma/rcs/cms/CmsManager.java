@@ -119,7 +119,7 @@ public class CmsManager implements XmsMessageListener {
         // instantiate ImapCommandController in charge of Pushing messages and updating flags with
         // Imap command
         mImapCommandController = new ImapCommandController(operationHandler, mContext,
-                mRcsSettings, mLocalStorage, mImapLog, mXmsLog, mImapServiceController);
+                mRcsSettings, mImapLog, mXmsLog, mImapServiceController);
         mXmsObserver.registerListener(mImapCommandController);
 
         mMmsSessionHandler = new MmsSessionHandler(mImapLog, mXmsLog, mRcsSettings,

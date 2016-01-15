@@ -40,12 +40,13 @@ import java.util.Set;
 public class SyncProcessorImpl implements ISyncProcessor {
 
     private static Logger sLogger = Logger.getLogger(SyncProcessorImpl.class.getSimpleName());
-    
-    private BasicImapService mImapService;
+
+    private final BasicImapService mImapService;
 
     /**
      * Constructor
-     * @param imapService
+     * 
+     * @param imapService the IMAP service
      */
     public SyncProcessorImpl(BasicImapService imapService) {
         mImapService = imapService;
@@ -54,13 +55,15 @@ public class SyncProcessorImpl implements ISyncProcessor {
     @Override
     public List<FlagChange> syncRemoteFlags(FolderData localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException {
-        return mImapService.fetchFlags(remoteFolder.getName(), localFolder.getMaxUid(), localFolder.getModseq());
+        return mImapService.fetchFlags(remoteFolder.getName(), localFolder.getMaxUid(),
+                localFolder.getModseq());
     }
 
     @Override
     public List<ImapMessage> syncRemoteHeaders(FolderData localFolder, ImapFolder remoteFolder)
             throws ImapException, IOException {
-        List<ImapMessage> messages = mImapService.fetchHeaders(localFolder.getMaxUid() + 1, remoteFolder.getUidNext());
+        List<ImapMessage> messages = mImapService.fetchHeaders(localFolder.getMaxUid() + 1,
+                remoteFolder.getUidNext());
         for (ImapMessage imapMessage : messages) {
             imapMessage.setFolderPath(remoteFolder.getName());
         }
@@ -71,7 +74,7 @@ public class SyncProcessorImpl implements ISyncProcessor {
     public List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
             throws IOException, ImapException {
 
-        List<ImapMessage> messages = new ArrayList<ImapMessage>();
+        List<ImapMessage> messages = new ArrayList<>();
         for (Integer uid : uids) {
             ImapMessage msg = mImapService.fetchMessage(uid);
             msg.setFolderPath(folderName);
@@ -88,9 +91,9 @@ public class SyncProcessorImpl implements ISyncProcessor {
     @Override
     public void syncLocalFlags(List<FlagChange> flagChanges) {
         String prevFolder = null;
-        List<String> deletedMailboxes = new ArrayList<String>();
-        Set<FlagChange> flagChangesToKeep = new HashSet<FlagChange>();
-       
+        List<String> deletedMailboxes = new ArrayList<>();
+        Set<FlagChange> flagChangesToKeep = new HashSet<>();
+        boolean logActivated = sLogger.isActivated();
         try {
             for (FlagChange flagChange : flagChanges) {
                 String folder = flagChange.getFolder();
@@ -99,7 +102,7 @@ public class SyncProcessorImpl implements ISyncProcessor {
                     try {
                         mImapService.selectCondstore(folder);
                     } catch (ImapException e) {
-                        if(sLogger.isActivated()){
+                        if (logActivated) {
                             sLogger.debug("The mailbox has been deleted on CMS : ".concat(folder));
                         }
                         // It does not matter if the mailbox does not exist anymore on CMS
@@ -111,19 +114,24 @@ public class SyncProcessorImpl implements ISyncProcessor {
                     continue;
                 }
 
-                try {   
-                    sLogger.warn(new StringBuilder(flagChange.getFolder()).append("/").append(flagChange.getJoinedUids()).toString());
-                    mImapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlags());
+                try {
+                    if (logActivated) {
+                        sLogger.warn(flagChange.getFolder() + "/" + flagChange.getJoinedUids());
+                    }
+                    mImapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+
                 } catch (ImapException e) {
                     // It does not matter if the message does not exist anymore on CMS
-                    if(sLogger.isActivated()){
-                        sLogger.debug(new StringBuilder("The message has been deleted on CMS : ").append(folder).append(",").append(flagChange.getJoinedUids()).toString());
+                    if (logActivated) {
+                        sLogger.debug("The message has been deleted on CMS : " + folder + ","
+                                + flagChange.getJoinedUids());
                     }
 
                 }
                 flagChangesToKeep.add(flagChange);
             }
         } catch (IOException ioe) { // we stop updating status flag on CMS in case of ioe
+            // TODO at least log
         }
 
         for (FlagChange flagChange : flagChanges) {
