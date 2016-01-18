@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,17 @@ package com.gsma.rcs.cms.imap.task;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
 
 /**
- * Task used to delete mailboxes or messages on the CMS server.
- * Used by the 'CMS Toolkit' or integration test
+ * Task used to delete mailboxes or messages on the CMS server. Used by the 'CMS Toolkit' or
+ * integration test
  */
 public class DeleteTask implements Runnable {
 
@@ -43,17 +46,19 @@ public class DeleteTask implements Runnable {
     private final Operation mOperation;
     private final DeleteTaskListener mListener;
     private final String mMailbox;
+    private static final Logger sLogger = Logger.getLogger(DeleteTask.class.getSimpleName());
 
     /**
      * Constructor
-     * @param imapServiceController
-     * @param operation
-     * @param mailbox
-     * @param listener
+     * 
+     * @param imapServiceController the IMAP service controller
+     * @param operation the operation
+     * @param mailbox the mailbox
+     * @param listener the listener
      * @throws ImapServiceNotAvailableException
      */
-    public DeleteTask(ImapServiceController imapServiceController, Operation operation, String mailbox, DeleteTaskListener listener)
-            throws ImapServiceNotAvailableException {
+    public DeleteTask(ImapServiceController imapServiceController, Operation operation,
+            String mailbox, DeleteTaskListener listener) throws ImapServiceNotAvailableException {
         mImapServiceController = imapServiceController;
         mOperation = operation;
         mMailbox = mailbox;
@@ -64,12 +69,28 @@ public class DeleteTask implements Runnable {
     public void run() {
         boolean result = false;
         try {
-            mImapServiceController.createService().init();
-            result = delete(mMailbox);
-        } catch (Exception e) {
-            e.printStackTrace();
+            mImapServiceController.initService();
+            delete(mMailbox);
+            result = true;
+
+        } catch (ImapServiceNotAvailableException | NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Failed to delete mailbox: '" + mMailbox + "'! error="
+                        + e.getMessage());
+            }
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to delete mailbox: '" + mMailbox + "'!", e);
+
         } finally {
-            mImapServiceController.closeService();
+            try {
+                mImapServiceController.closeService();
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
+                }
+            } catch (PayloadException e) {
+                sLogger.error("Failed to close CMS service", e);
+            }
             if (mListener != null) {
                 mListener.onDeleteTaskExecuted(result);
             }
@@ -77,11 +98,12 @@ public class DeleteTask implements Runnable {
     }
 
     /**
-     *
-     * @param mailbox
-     * @return
+     * Deletes the mailbox
+     * 
+     * @param mailbox the mailbox
      */
-    public boolean delete(String mailbox) {
+    public void delete(String mailbox) throws NetworkException, PayloadException,
+            ImapServiceNotAvailableException {
 
         try {
             switch (mOperation) {
@@ -95,11 +117,13 @@ public class DeleteTask implements Runnable {
                     deleteMessages(mailbox);
                     break;
             }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        } catch (IOException e) {
+            throw new NetworkException("Failed to delete mailbox " + mailbox, e);
+
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to delete mailbox " + mailbox, e);
         }
-        return false;
     }
 
     private void deleteAll() throws IOException, ImapException, ImapServiceNotAvailableException {
@@ -108,11 +132,13 @@ public class DeleteTask implements Runnable {
         }
     }
 
-    private void deleteMailbox(String mailbox) throws IOException, ImapException, ImapServiceNotAvailableException {
+    private void deleteMailbox(String mailbox) throws IOException, ImapException,
+            ImapServiceNotAvailableException {
         mImapServiceController.getService().delete(mailbox);
     }
 
-    private void deleteMessages(String mailbox) throws IOException, ImapException, ImapServiceNotAvailableException {
+    private void deleteMessages(String mailbox) throws IOException, ImapException,
+            ImapServiceNotAvailableException {
         mImapServiceController.getService().select(mailbox);
         mImapServiceController.getService().expunge();
     }
@@ -123,7 +149,8 @@ public class DeleteTask implements Runnable {
     public interface DeleteTaskListener {
         /**
          * Callback method
-         * @param result
+         * 
+         * @param result True is delete is successful
          */
         void onDeleteTaskExecuted(Boolean result);
     }

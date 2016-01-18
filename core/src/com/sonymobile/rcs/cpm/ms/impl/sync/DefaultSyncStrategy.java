@@ -48,23 +48,23 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
     public void execute() throws CpmMessageStoreException {
         debug("** Analyze local changes **");
         analyzeLocalFlagsChanges();
-        report.setProgress(15);
+        mReport.setProgress(15);
 
         debug("** Analyze remote changes **");
         analyzeRemoteChanges();
-        report.setProgress(30);
+        mReport.setProgress(30);
 
         debug("** Update remote flags **");
         applyRemoteChanges();
-        report.setProgress(45);
+        mReport.setProgress(45);
 
         debug("** Insert new items in local db **");
         insertNewItemsAndGroups();
-        report.setProgress(60);
+        mReport.setProgress(60);
 
         debug("** Update local flags **");
         applyLocalChanges();
-        report.setProgress(75);
+        mReport.setProgress(75);
 
         mSyncHelper.purge();
 
@@ -73,7 +73,7 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
     private void analyzeLocalFlagsChanges() throws CpmMessageStoreException {
         mSyncHelper.markAllAsDeletedLocally();
 
-        Set<? extends ConversationHistoryFolder> localConvs = localStore.getDefaultFolder()
+        Set<? extends ConversationHistoryFolder> localConvs = mLocalStore.getDefaultFolder()
                 .getConversationHistoryFolders();
 
         for (ConversationHistoryFolder localConv : localConvs) {
@@ -93,7 +93,7 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
     private void analyzeRemoteChanges() throws CpmMessageStoreException {
         // Browse remote
         Collection<SessionHistoryFolder> remoteGroups = new HashSet<SessionHistoryFolder>();
-        for (ConversationHistoryFolder remoteConv : remoteStore.getDefaultFolder()
+        for (ConversationHistoryFolder remoteConv : mRemoteStore.getDefaultFolder()
                 .getConversationHistoryFolders()) {
             remoteGroups.addAll(remoteConv.getSessionHistoryFolders());
         }
@@ -156,13 +156,13 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
 
                 localGroupId = remoteGroupId;
                 debug("getting group : " + remoteGroupId);
-                // ItemGroup remoteGroup = remoteStore.getGroupById(remoteGroupId);
+                // ItemGroup remoteGroup = mRemoteStore.getGroupById(remoteGroupId);
                 // GroupInfo remoteGroupInfo = remoteGroup.getInfo();
                 // debug("Creating new group : "+remoteGroupInfo);
-                // localStore.createGroup(remoteGroupInfo);
+                // mLocalStore.createGroup(remoteGroupInfo);
 
             }
-            // ItemGroup localGroup = localStore.getGroupById(localGroupId);
+            // ItemGroup localGroup = mLocalStore.getGroupById(localGroupId);
             // debug("adding item "+itemId+" to group "+localGroupId);
             // localGroup.addItem(item);
             item.setDeleted(false);
@@ -186,7 +186,7 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
         Collection<CpmObjectMetadata> localChanges = mSyncHelper.getLocalChanges();
 
         for (CpmObjectMetadata changedItem : localChanges) {
-            // ItemGroup group = localStore.getGroupById(changedItem.getGroupId());
+            // ItemGroup group = mLocalStore.getGroupById(changedItem.getGroupId());
             // group.updateItem(changedItem);
         }
 
@@ -199,7 +199,7 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
         Collection<CpmObjectMetadata> remoteChanges = mSyncHelper.getRemoteChanges();
 
         for (CpmObjectMetadata changedItem : remoteChanges) {
-            // ItemGroup group = remoteStore.getGroupById(changedItem.getGroupId());
+            // ItemGroup group = mRemoteStore.getGroupById(changedItem.getGroupId());
             // group.updateItem(changedItem);
         }
 
@@ -207,14 +207,14 @@ public class DefaultSyncStrategy extends AbstractSyncStrategy {
 
         // it s ok now to release remote connection
         try {
-            remoteStore.close();
+            mRemoteStore.close();
         } catch (IOException e) {
             LOG.warning("Problem while closing remote resource");
         }
     }
 
     protected void debug(String message) {
-        report.setMessage(message);
+        mReport.setMessage(message);
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine(message);
         }

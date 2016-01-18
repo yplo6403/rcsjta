@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,14 @@ import com.gsma.rcs.cms.observer.XmsObserver;
 import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.storage.LocalStorage;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
+import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -57,6 +60,7 @@ public class CmsManager implements XmsMessageListener {
     private ImapCommandController mImapCommandController;
     private ImapServiceController mImapServiceController;
     private MmsSessionHandler mMmsSessionHandler;
+    private final static Logger sLogger = Logger.getLogger(CmsManager.class.getSimpleName());
 
     /**
      * Constructor of CmsManager
@@ -133,14 +137,21 @@ public class CmsManager implements XmsMessageListener {
     /**
      * Stop the CmsManager
      */
-    public void stop() {
+    public void stop() throws PayloadException {
         if (mXmsObserver != null) {
             mXmsObserver.stop();
             mXmsObserver = null;
         }
 
         if (mImapServiceController != null) {
-            mImapServiceController.stop();
+            try {
+                mImapServiceController.stop();
+
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.warn("Failed to close IMAP controller ", e);
+                }
+            }
             mImapServiceController = null;
         }
 

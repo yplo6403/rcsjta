@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,18 +19,16 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
-import android.content.Context;
-import android.database.Cursor;
-import android.os.Handler;
-import android.os.HandlerThread;
-
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.sync.Synchronizer;
 import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ims.ImsModule;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -45,9 +43,12 @@ import com.gsma.rcs.service.api.ServerApiUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
-import com.sonymobile.rcs.imap.ImapException;
 
-import java.io.IOException;
+import android.content.Context;
+import android.database.Cursor;
+import android.os.Handler;
+import android.os.HandlerThread;
+
 import java.util.List;
 
 /**
@@ -112,14 +113,15 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
-        //TODO FGI : mOperationHandler is no more a final member, could be null!
+        // TODO FGI : mOperationHandler is no more a final member, could be null!
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster(), mChatServiceImpl); // must be started before trying to dequeue MMS messages
+        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster(),
+                mChatServiceImpl); // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
 
     @Override
-    public void stop() {
+    public void stop() throws PayloadException {
         if (!isServiceStarted()) {
             return;
         }
@@ -153,7 +155,12 @@ public class CmsService extends ImsService {
                 try {
                     new Synchronizer(mContext, mRcsSettings, mCmsManager).syncAll();
                     mCmsServiceImpl.broadcastAllSynchronized();
-                } catch (IOException | ImapException | ImapServiceNotAvailableException | RuntimeException e) {
+
+                } catch (ImapServiceNotAvailableException | NetworkException e) {
+                    if (sLogger.isActivated()) {
+                        sLogger.info("Failed to sync all conversations! error=" + e.getMessage());
+                    }
+                } catch (PayloadException | FileAccessException | RuntimeException e) {
                     sLogger.error("Failed to sync CMS", e);
                 }
             }
@@ -172,8 +179,14 @@ public class CmsService extends ImsService {
                             .contactToCmsFolder(mRcsSettings, contact));
                     mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
 
-                } catch (IOException | ImapException | ImapServiceNotAvailableException | RuntimeException e) {
-                    sLogger.error("Failed to sync conversation for contact " + contact, e);
+                } catch (ImapServiceNotAvailableException e) {
+                    if (sLogger.isActivated()) {
+                        sLogger.info("Failed to sync CMS for contact " + contact
+                                + ": IMAP service not available");
+                    }
+                } catch (PayloadException | NetworkException | FileAccessException
+                        | RuntimeException e) {
+                    sLogger.error("Failed to sync CMS for contact " + contact, e);
                 }
             }
         });
@@ -251,27 +264,27 @@ public class CmsService extends ImsService {
         return mCore.isStopping() || !mCore.isStarted();
     }
 
-    public void markXmsMessageAsRead(final String messageId){
+    public void markXmsMessageAsRead(final String messageId) {
         mCmsManager.onReadXmsMessage(messageId);
     }
 
-    public void deleteXmsMessages(){
+    public void deleteXmsMessages() {
         mCmsManager.onDeleteAllXmsMessage();
     }
 
-    public void deleteXmsMessages2(final ContactId contact){
+    public void deleteXmsMessages2(final ContactId contact) {
         mCmsManager.onDeleteXmsConversation(contact);
     }
 
-    public void deleteXmsMessage(final String messageId){
+    public void deleteXmsMessage(final String messageId) {
         mCmsManager.onDeleteXmsMessage(messageId);
     }
 
-    public CmsManager getCmsManager(){
+    public CmsManager getCmsManager() {
         return mCmsManager;
     }
 
-    public boolean isAllowedToSync(){
-        return  mCmsManager.getImapServiceController().isSyncAvailable();
+    public boolean isAllowedToSync() {
+        return mCmsManager.getImapServiceController().isSyncAvailable();
     }
 }

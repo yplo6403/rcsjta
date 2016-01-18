@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,4 +87,27 @@ public class FlagChange {
         return mOperation;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+
+        FlagChange that = (FlagChange) o;
+
+        return !(mFolder != null ? !mFolder.equals(that.mFolder) : that.mFolder != null)
+                && !(mUids != null ? !mUids.equals(that.mUids) : that.mUids != null)
+                && mFlag == that.mFlag && mOperation == that.mOperation;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mFolder != null ? mFolder.hashCode() : 0;
+        result = 31 * result + (mUids != null ? mUids.hashCode() : 0);
+        result = 31 * result + (mFlag != null ? mFlag.hashCode() : 0);
+        result = 31 * result + (mOperation != null ? mOperation.hashCode() : 0);
+        return result;
+    }
 }

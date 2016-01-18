@@ -20,7 +20,7 @@ public interface ISyncProcessorHandler {
      * Update local IMAP data for a folder. Take into account IMAP counters retrieved from CMS
      * server (NEXTUID, HIGHESTMODSEQ, UIDVALIDITY, ...)
      * 
-     * @param folder
+     * @param folder the folder
      */
     void updateLocalFolder(FolderData folder);
 
@@ -35,7 +35,7 @@ public interface ISyncProcessorHandler {
      * Delete local IMAP folder when it is no more valid by checking the UIDVALIDITY value retrieved
      * from CMS.
      * 
-     * @param folderName
+     * @param folderName the folder
      */
     void removeLocalFolder(String folderName);
 
@@ -56,10 +56,10 @@ public interface ISyncProcessorHandler {
     void createMessages(List<ImapMessage> messages) throws FileAccessException;
 
     /**
-     * Get flag change from local storage for a folder
+     * Get flag changes from local storage for a folder
      * 
-     * @param folder
-     * @return flagChanges
+     * @param folder the folder
+     * @return flagChanges the set of flag changes
      */
-    List<FlagChange> getLocalFlagChanges(String folder);
+    Set<FlagChange> getLocalFlagChanges(String folder);
 }

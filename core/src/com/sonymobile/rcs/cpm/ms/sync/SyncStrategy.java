@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -23,15 +24,15 @@ import java.io.Serializable;
 
 public interface SyncStrategy extends Serializable {
 
-    public String getName();
+    String getName();
 
-    public void execute(MessageStore localStore, MessageStore remoteStore, MutableReport report)
-            throws CpmMessageStoreException;
+    void execute(MessageStore localStore, MessageStore remoteStore, MutableReport report)
+            throws Exception;
 
-    public void pause() throws CpmMessageStoreException;
+    void pause() throws CpmMessageStoreException;
 
-    public void resume() throws CpmMessageStoreException;
+    void resume() throws CpmMessageStoreException;
 
-    public void cancel() throws CpmMessageStoreException;
+    void cancel() throws CpmMessageStoreException;
 
 }

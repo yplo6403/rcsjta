@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.storage.LocalStorage;
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.ImapException;
 
@@ -38,8 +40,6 @@ import java.io.IOException;
  */
 public class Synchronizer {
 
-    private static Logger sLogger = Logger.getLogger(Synchronizer.class.getSimpleName());
-
     private final Context mContext;
     private final RcsSettings mRcsSettings;
     private final LocalStorage mLocalStorage;
@@ -47,9 +47,10 @@ public class Synchronizer {
 
     /**
      * Constructor
-     * @param context
-     * @param rcsSettings
-     * @param cmsManager
+     * 
+     * @param context the context
+     * @param rcsSettings the RCS settings accessor
+     * @param cmsManager the CMS manager
      */
     public Synchronizer(Context context, RcsSettings rcsSettings, CmsManager cmsManager) {
         mContext = context;
@@ -58,20 +59,29 @@ public class Synchronizer {
         mImapServiceController = cmsManager.getImapServiceController();
     }
 
-    public void syncFolder(String folder) throws IOException, ImapException, ImapServiceNotAvailableException {
+    public void syncFolder(String folder) throws ImapServiceNotAvailableException,
+            FileAccessException, PayloadException, NetworkException {
         try {
             mImapServiceController.createService().init();
             BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
                     mRcsSettings, mImapServiceController, mLocalStorage, null);
             syncTask.syncFolder(folder);
+
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to sync folder: " + folder, e);
+
+        } catch (IOException e) {
+            throw new NetworkException("Failed to sync folder: " + folder, e);
+
         } finally {
             mImapServiceController.closeService();
         }
     }
 
-    public void syncAll() throws IOException, ImapException, ImapServiceNotAvailableException {
+    public void syncAll() throws ImapServiceNotAvailableException, FileAccessException,
+            NetworkException, PayloadException {
         try {
-            mImapServiceController.createService().init();
+            mImapServiceController.initService();
             BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
                     mRcsSettings, mImapServiceController, mLocalStorage, null);
             syncTask.syncAll();

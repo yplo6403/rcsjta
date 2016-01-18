@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -29,23 +30,23 @@ public abstract class AbstractSyncStrategy implements SyncStrategy {
 	 */
     private static final long serialVersionUID = 1L;
 
-    protected MessageStore localStore;
+    protected MessageStore mLocalStore;
 
-    protected MessageStore remoteStore;
+    protected MessageStore mRemoteStore;
 
-    protected MutableReport report;
+    protected MutableReport mReport;
 
     @Override
     public void execute(MessageStore localStore, MessageStore remoteStore, MutableReport report)
-            throws CpmMessageStoreException {
-        this.localStore = localStore;
-        this.remoteStore = remoteStore;
-        this.report = report;
+            throws Exception {
+        mLocalStore = localStore;
+        mRemoteStore = remoteStore;
+        mReport = report;
 
         execute();
 
         // TODO clear exception handling
-        //localStore.applyChanges();
+        // mLocalStore.applyChanges();
         remoteStore.applyChanges();
 
         report.setProgress(report.getProgressMax());
@@ -71,6 +72,6 @@ public abstract class AbstractSyncStrategy implements SyncStrategy {
         throw new SyncOperationNotAllowed("Not implemented for this strategy :" + getName());
     }
 
-    public abstract void execute() throws CpmMessageStoreException;
+    public abstract void execute() throws Exception;
 
 }

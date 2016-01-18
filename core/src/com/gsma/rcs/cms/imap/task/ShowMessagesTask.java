@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,47 +23,61 @@ import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.ImapMessage;
-
-import android.os.AsyncTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Task used to show messages from the CMS server.
- * Used by the 'CMS Toolkit'
+ * Task used to show messages from the CMS server. Used by the 'CMS Toolkit'
  */
 public class ShowMessagesTask implements Runnable {
-       
+
     private final ShowMessagesTaskListener mListener;
     private final ImapServiceController mImapServiceController;
-    private String[] mParams;
+    private static final Logger sLogger = Logger.getLogger(ShowMessagesTask.class.getSimpleName());
 
     /**
      * Constructor
+     * 
      * @param imapServiceController
      * @param listener
      * @throws ImapServiceNotAvailableException
      */
-    public ShowMessagesTask(ImapServiceController imapServiceController, ShowMessagesTaskListener listener) throws ImapServiceNotAvailableException {
+    public ShowMessagesTask(ImapServiceController imapServiceController,
+            ShowMessagesTaskListener listener) throws ImapServiceNotAvailableException {
         mImapServiceController = imapServiceController;
-        mListener = listener;                
+        mListener = listener;
     }
 
     @Override
     public void run() {
         List<ImapMessage> messages = new ArrayList<>();
         try {
-            mImapServiceController.createService().init();
+            mImapServiceController.initService();
             messages = getMessages(mImapServiceController.getService());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        finally {
-            mImapServiceController.closeService();
-            if(mListener != null){
+
+        } catch (ImapServiceNotAvailableException | NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Failed to get messages!" + e.getMessage());
+            }
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to get messages!", e);
+        } finally {
+            try {
+                mImapServiceController.closeService();
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
+                }
+            } catch (PayloadException | RuntimeException e) {
+                sLogger.error("Failed to close CMS service", e);
+            }
+            if (mListener != null) {
                 mListener.onShowMessagesTaskExecuted(messages);
             }
         }
@@ -74,11 +88,11 @@ public class ShowMessagesTask implements Runnable {
         try {
             for (ImapFolder imapFolder : imap.listStatus()) {
                 imap.selectCondstore(imapFolder.getName());
-                List<ImapMessage> imapMessages = imap.fetchAllMessages(); 
-                for(ImapMessage imapMessage : imapMessages){
+                List<ImapMessage> imapMessages = imap.fetchAllMessages();
+                for (ImapMessage imapMessage : imapMessages) {
                     imapMessage.setFolderPath(imapFolder.getName());
                     messages.add(imapMessage);
-                }                    
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -87,13 +101,15 @@ public class ShowMessagesTask implements Runnable {
     }
 
     /**
-     * Interface used to notify listeners when messages can be shown (when call in an asynchronous way)
+     * Interface used to notify listeners when messages can be shown (when call in an asynchronous
+     * way)
      */
-   public interface ShowMessagesTaskListener {
+    public interface ShowMessagesTaskListener {
         /**
          * Callback method
+         * 
          * @param result
          */
-       void onShowMessagesTaskExecuted(List<ImapMessage> result);
-   }
+        void onShowMessagesTaskExecuted(List<ImapMessage> result);
+    }
 }

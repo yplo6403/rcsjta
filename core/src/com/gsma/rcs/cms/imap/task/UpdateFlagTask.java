@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.Flag;
@@ -93,20 +95,12 @@ public class UpdateFlagTask implements Runnable {
             }
             updateFlags();
 
-        } catch (ImapServiceNotAvailableException e) {
-            sLogger.warn("Cannot update flag status on the CMS server: service not available");
-
-        } catch (RuntimeException e) {
-            /*
-             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-             * which should be handled/fixed within the code. However the cases when we are
-             * executing operations on a thread unhandling such exceptions will eventually lead to
-             * exit the system and thus can bring the whole system down, which is not intended.
-             */
+        } catch (ImapServiceNotAvailableException | NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info(e.getMessage());
+            }
+        } catch (PayloadException | RuntimeException e) {
             sLogger.error("Runtime error while updating flag status on CMS server!", e);
-
-        } catch (ImapException | IOException e) {
-            sLogger.error("Failed to update flag status on CMS server!", e);
 
         } finally {
             try {
@@ -114,14 +108,12 @@ public class UpdateFlagTask implements Runnable {
                 if (mListener != null) {
                     mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
                 }
-            } catch (RuntimeException e) {
-                /*
-                 * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-                 * which should be handled/fixed within the code. However the cases when we are
-                 * executing operations on a thread unhandling such exceptions will eventually lead
-                 * to exit the system and thus can bring the whole system down, which is not
-                 * intended.
-                 */
+
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.info(e.getMessage());
+                }
+            } catch (PayloadException | RuntimeException e) {
                 sLogger.error("Runtime error while updating flag status on CMS server!", e);
             }
         }
@@ -180,24 +172,35 @@ public class UpdateFlagTask implements Runnable {
     /**
      * Update flags
      */
-    public void updateFlags() throws ImapServiceNotAvailableException, IOException, ImapException {
+    public void updateFlags() throws ImapServiceNotAvailableException, NetworkException,
+            PayloadException {
         String previousFolder = null;
-        BasicImapService imapService = mImapServiceController.getService();
-        for (FlagChange flagChange : mFlagChanges) {
-            String folder = flagChange.getFolder();
-            if (!folder.equals(previousFolder)) {
-                imapService.select(folder);
-                previousFolder = folder;
+        try {
+            BasicImapService imapService = mImapServiceController.getService();
+            for (FlagChange flagChange : mFlagChanges) {
+                String folder = flagChange.getFolder();
+                if (!folder.equals(previousFolder)) {
+
+                    imapService.select(folder);
+
+                    previousFolder = folder;
+                }
+                switch (flagChange.getOperation()) {
+                    case ADD_FLAG:
+                        imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        break;
+                    case REMOVE_FLAG:
+                        imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        break;
+                }
+                mSuccessFullFlagChanges.add(flagChange);
             }
-            switch (flagChange.getOperation()) {
-                case ADD_FLAG:
-                    imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
-                    break;
-                case REMOVE_FLAG:
-                    imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
-                    break;
-            }
-            mSuccessFullFlagChanges.add(flagChange);
+        } catch (IOException e) {
+            throw new NetworkException("Failed to update flags!", e);
+
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to update flags!", e);
+
         }
     }
 

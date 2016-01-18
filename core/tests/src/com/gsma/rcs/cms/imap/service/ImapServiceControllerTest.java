@@ -1,25 +1,28 @@
+
 package com.gsma.rcs.cms.imap.service;
 
-import android.test.AndroidTestCase;
-
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
+
+import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
 public class ImapServiceControllerTest extends AndroidTestCase {
-    
+
     private RcsSettings mSettings;
-    
+
     protected void setUp() throws Exception {
-        super.setUp();                
+        super.setUp();
         mSettings = RcsSettings.createInstance(new LocalContentResolver(getContext()));
         mSettings.setCmsServerAddress("imap://myAddress");
         mSettings.setCmsUserLogin("myLogin");
         mSettings.setCmsUserPwd("myPwd");
     }
-    
-    public void test(){
+
+    public void test() throws NetworkException, PayloadException {
         ImapServiceController imapServiceController = new ImapServiceController(mSettings);
         imapServiceController.start();
         Assert.assertTrue(imapServiceController.isStarted());
@@ -30,11 +33,11 @@ public class ImapServiceControllerTest extends AndroidTestCase {
         } catch (ImapServiceNotAvailableException e) {
             Assert.fail();
         }
-        
+
         try {
             imapServiceController.createService();
             Assert.fail();
-        } catch (ImapServiceNotAvailableException e) {            
+        } catch (ImapServiceNotAvailableException e) {
         }
 
         imapServiceController.closeService();
@@ -42,27 +45,26 @@ public class ImapServiceControllerTest extends AndroidTestCase {
         imapServiceController.stop();
         Assert.assertFalse(imapServiceController.isStarted());
     }
-    
-    public void testRunnable(){
+
+    public void testRunnable() {
 
         final ImapServiceController imapServiceController = new ImapServiceController(mSettings);
 
-        Runnable run1 = new Runnable(){
+        Runnable run1 = new Runnable() {
             @Override
             public void run() {
                 try {
                     imapServiceController.createService();
                     Thread.sleep(100);
                     imapServiceController.closeService();
-                } catch (ImapServiceNotAvailableException e) {
-                    Assert.fail();
-                }catch (InterruptedException e) {
+                } catch (InterruptedException | ImapServiceNotAvailableException | PayloadException
+                        | NetworkException e) {
                     Assert.fail();
                 }
-            }            
+            }
         };
-        
-        Runnable run2 = new Runnable(){
+
+        Runnable run2 = new Runnable() {
             @Override
             public void run() {
                 try {
@@ -70,11 +72,11 @@ public class ImapServiceControllerTest extends AndroidTestCase {
                     Assert.fail();
                 } catch (ImapServiceNotAvailableException e) {
                 }
-            }            
+            }
         };
 
-        Thread th1 =  new Thread(run1);
-        Thread th2 =  new Thread(run2);
+        Thread th1 = new Thread(run1);
+        Thread th2 = new Thread(run2);
         th1.start();
         th2.start();
         try {

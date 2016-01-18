@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.gsma.rcs.cms.sync.strategy.FlagChange;
 
 import com.sonymobile.rcs.imap.DefaultImapService;
 import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.IPart;
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 import com.sonymobile.rcs.imap.ImapUtil;
@@ -50,6 +49,7 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute LIST-STATUS command on CMS server
+     * 
      * @return
      * @throws IOException
      * @throws ImapException
@@ -64,6 +64,7 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute SELECT CONDSTORE command on CMS server
+     * 
      * @param folderName
      * @throws IOException
      * @throws ImapException
@@ -77,6 +78,7 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute FETCH FLAGS command on CMS server
+     * 
      * @param folderName
      * @param uid
      * @param changedSince
@@ -107,6 +109,7 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute FETCH HEADERS command on CMS server
+     * 
      * @param fromUid
      * @param toUid
      * @return An ordered collection of messages (containing only headers)
@@ -138,6 +141,7 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute FETCH MESSAGE command on CMS server (one message)
+     * 
      * @param uid
      * @return ImapMessage
      * @throws IOException
@@ -165,9 +169,9 @@ public class BasicImapService extends DefaultImapService {
         return (ImapMessage) handler.getResult();
     }
 
-
     /**
      * Execute FETCH MESSAGES command on CMS server (fetch all messages)
+     * 
      * @return
      * @throws IOException
      * @throws ImapException
@@ -201,11 +205,10 @@ public class BasicImapService extends DefaultImapService {
         // append INBOX (\Seen) {310}
         int length = payload.getBytes().length;
 
-        if(!folderName.startsWith("\"")){
+        if (!folderName.startsWith("\"")) {
             folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
         }
-        writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length
-                + "}");
+        writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length + "}");
         String ok = ioReadLine();
         if (!ok.startsWith("+"))
             return -1;

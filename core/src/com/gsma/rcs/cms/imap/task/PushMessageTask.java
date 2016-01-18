@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -101,12 +103,23 @@ public class PushMessageTask implements Runnable {
             }
             mImapServiceController.createService();
             pushMessages(messagesToPush);
-        } catch (Exception e) {
-            e.printStackTrace();
+
+        } catch (ImapServiceNotAvailableException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info(e.getMessage());
+            }
         } finally {
-            mImapServiceController.closeService();
-            if (mListener != null) {
-                mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
+            try {
+                mImapServiceController.closeService();
+                if (mListener != null) {
+                    mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
+                }
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.info(e.getMessage());
+                }
+            } catch (PayloadException | RuntimeException e) {
+                sLogger.error("Failed to close connection with CMS server", e);
             }
         }
     }

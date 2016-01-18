@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,15 +36,19 @@ import java.util.Set;
 public interface ISyncProcessor {
 
     /**
-     * @param folderName
+     * Select folder
+     * 
+     * @param folderName the folder
      * @throws IOException
      * @throws ImapException
      */
     void selectFolder(String folderName) throws IOException, ImapException;
 
     /**
-     * @param localFolder
-     * @param remoteFolder
+     * Synchronize remote flags between local and remote folders
+     * 
+     * @param localFolder the local folder
+     * @param remoteFolder the the remote folder
      * @return Set<FlagChange>
      * @throws IOException
      * @throws ImapException
@@ -53,9 +57,11 @@ public interface ISyncProcessor {
             throws IOException, ImapException;
 
     /**
-     * @param localFolder
-     * @param remoteFolder
-     * @return Set<Integer>
+     * Synchronize IMAP headers between local and remote folders
+     * 
+     * @param localFolder the local folder
+     * @param remoteFolder the remote folder
+     * @return List<ImapMessage>
      * @throws IOException
      * @throws ImapException
      */
@@ -63,8 +69,10 @@ public interface ISyncProcessor {
             throws IOException, ImapException;
 
     /**
-     * @param folderName
-     * @param uids
+     * Synchronize remote messages
+     * 
+     * @param folderName the folder
+     * @param uids the set of UIDs to synchronize
      * @return List<ImapMessage>
      * @throws IOException
      * @throws ImapException
@@ -73,10 +81,10 @@ public interface ISyncProcessor {
             ImapException;
 
     /**
-     * @param flagChanges
-     * @throws IOException
-     * @throws ImapException
+     * Synchronize local flags
+     * 
+     * @param flagChanges set of changed flags to synchronize
      */
-    void syncLocalFlags(List<FlagChange> flagChanges);
+    void syncLocalFlags(Set<FlagChange> flagChanges);
 
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -257,8 +257,8 @@ public class LocalStorage implements ISyncProcessorHandler {
     }
 
     @Override
-    public List<FlagChange> getLocalFlagChanges(String folder) {
-        List<FlagChange> changes = new ArrayList<>();
+    public Set<FlagChange> getLocalFlagChanges(String folder) {
+        Set<FlagChange> changes = new HashSet<>();
         Set<Integer> readUids = new HashSet<>();
         Set<Integer> deletedUids = new HashSet<>();
         for (MessageData messageData : mImapLog.getMessages(folder,
@@ -283,9 +283,9 @@ public class LocalStorage implements ISyncProcessorHandler {
     }
 
     /**
-     * @param flagChanges list of uids with changed flags
+     * @param flagChanges set of UIDs with changed flags
      */
-    public void finalizeLocalFlagChanges(List<FlagChange> flagChanges) {
+    public void finalizeLocalFlagChanges(Set<FlagChange> flagChanges) {
         for (FlagChange fg : flagChanges) {
             String folder = fg.getFolder();
             boolean seenFlag = fg.isSeen();

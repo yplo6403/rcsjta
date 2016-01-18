@@ -1,19 +1,25 @@
-package com.gsma.rcs.cms.toolkit.operations.remote;
 
-import android.os.AsyncTask;
+package com.gsma.rcs.cms.toolkit.operations.remote;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
+import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.BasicSynchronizationTask;
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
+
+import android.os.AsyncTask;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,16 +33,20 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
     private final ContactId mMyNumber;
     private final SmsDataObject[] mMessages;
     private final List<Flag> mFlags;
+
+    private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
     private BasicImapService mImapService;
-    
+
     /**
      * @param rcsSettings
-     * @param messages 
+     * @param messages
      * @param myNumber
-     * @param flags 
+     * @param flags
      * @param callback
      */
-    public PushMessageTask(ImapServiceController imapServiceController, RcsSettings rcsSettings, SmsDataObject[] messages, ContactId myNumber,List<Flag> flags, PushMessageTaskCallback callback) {
+    public PushMessageTask(ImapServiceController imapServiceController, RcsSettings rcsSettings,
+            SmsDataObject[] messages, ContactId myNumber, List<Flag> flags,
+            PushMessageTaskCallback callback) {
         mImapServiceController = imapServiceController;
         mRcsSettings = rcsSettings;
         mMyNumber = myNumber;
@@ -47,22 +57,35 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
 
     @Override
     protected List<String> doInBackground(String... params) {
-        
+
         Thread currentThread = Thread.currentThread();
         String currentName = currentThread.getName();
         currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
 
         try {
-            mImapService = mImapServiceController.createService();
-            mImapService.init();
+            mImapService = mImapServiceController.getService();
+            mImapServiceController.initService();
             return pushMessages(mMessages);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-        finally {
-            mImapServiceController.closeService();
+
+        } catch (ImapServiceNotAvailableException | NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Failed to push messages! error=" + e.getMessage());
+            }
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to push messages!", e);
+
+        } finally {
+            try {
+                mImapServiceController.closeService();
+            } catch (NetworkException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
+                }
+            } catch (PayloadException | RuntimeException e) {
+                sLogger.error("Failed to close CMS service", e);
+            }
             Thread.currentThread().setName(currentName);
-        }            
+        }
         return null;
     }
 
@@ -98,19 +121,18 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
                 }
 
                 ImapSmsMessage imapSmsMessage = new ImapSmsMessage(from, to, direction,
-                        message.getTimestamp(), message.getBody(), "" + message.getTimestamp(),
-                        "" + message.getTimestamp(), "" + message.getTimestamp());
-                
+                        message.getTimestamp(), message.getBody(), "" + message.getTimestamp(), ""
+                                + message.getTimestamp(), "" + message.getTimestamp());
+
                 String folder = CmsUtils.contactToCmsFolder(mRcsSettings, message.getContact());
                 if (!existingFolders.contains(folder)) {
                     mImapService.create(folder);
                     existingFolders.add(folder);
                 }
                 mImapService.selectCondstore(folder);
-                int uid = mImapService.append(folder, mFlags,
-                        imapSmsMessage.toPayload());
+                int uid = mImapService.append(folder, mFlags, imapSmsMessage.toPayload());
                 createdUids.add(String.valueOf(uid));
-            }            
+            }
         } catch (IOException | ImapException e) {
             e.printStackTrace();
         }
@@ -123,7 +145,7 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
             mCallback.onPushMessageTaskCallbackExecuted(result);
         }
     }
-    
+
     /**
     *
     */

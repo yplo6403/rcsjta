@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -164,11 +164,8 @@ public class ContactServiceImpl extends IContactService.Stub {
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        if (logger.isActivated()) {
-            logger.info("Get RCS contact " + contact);
-        }
         try {
-            // Read capabilities in the local database
+            /* Read capabilities in the local database */
             return getRcsContact(mContactManager.getContactInfo(contact));
 
         } catch (ServerApiBaseException e) {

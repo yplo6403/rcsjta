@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 
 package com.gsma.rcs.cms.imap.service;
 
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -31,14 +33,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class used to restrict the connection with the CMS server.
- * It allows only one connection with the CMS server at a given time.
- * Started and stopped from the Core.
+ * Class used to restrict the connection with the CMS server. It allows only one connection with the
+ * CMS server at a given time. Started and stopped from the Core.
  */
 public class ImapServiceController {
 
-    private static final Logger sLogger = Logger
-            .getLogger(ImapServiceController.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(ImapServiceController.class
+            .getSimpleName());
 
     private final List<ImapServiceListener> mListeners = new ArrayList<>();
     private final RcsSettings mRcsSettings;
@@ -48,26 +49,27 @@ public class ImapServiceController {
 
     /**
      * Constructor
-     * @param rcsSettings
+     * 
+     * @param rcsSettings the RCS settings accessor
      */
-    public ImapServiceController(RcsSettings rcsSettings){
+    public ImapServiceController(RcsSettings rcsSettings) {
         mRcsSettings = rcsSettings;
         mStarted = false;
         mAvailable = true;
     }
 
-    public synchronized void start(){
-        if(mStarted){
+    public synchronized void start() {
+        if (mStarted) {
             return;
         }
         mStarted = true;
     }
 
-    public synchronized void stop(){
-        if(!mStarted){
+    public synchronized void stop() throws NetworkException, PayloadException {
+        if (!mStarted) {
             return;
         }
-        if(mBasicImapService != null){
+        if (mBasicImapService != null) {
             if (sLogger.isActivated()) {
                 sLogger.debug("Force to close current IMAP service");
             }
@@ -76,18 +78,18 @@ public class ImapServiceController {
         mStarted = false;
     }
 
-    protected boolean isStarted(){
+    protected boolean isStarted() {
         return mStarted;
     }
 
     /**
-     * Create an imap service (connection)  with the CMS server
-     * Parameters for the service are retrieved from the settings
-     * @return
+     * Create an imap service (connection) with the CMS server Parameters for the service are
+     * retrieved from the settings
+     * 
+     * @return IMAP service
      * @throws ImapServiceNotAvailableException
      */
-    public synchronized BasicImapService createService()
-            throws ImapServiceNotAvailableException {
+    public synchronized BasicImapService createService() throws ImapServiceNotAvailableException {
 
         if (!mAvailable) {
             if (sLogger.isActivated()) {
@@ -102,43 +104,63 @@ public class ImapServiceController {
         }
         IoService io = new SocketIoService(mRcsSettings.getCmsServerAddress());
         mBasicImapService = new BasicImapService(io);
-        mBasicImapService.setAuthenticationDetails(mRcsSettings.getCmsUserLogin(), mRcsSettings.getCmsUserPwd(),
-                null, null, false);
+        mBasicImapService.setAuthenticationDetails(mRcsSettings.getCmsUserLogin(),
+                mRcsSettings.getCmsUserPwd(), null, null, false);
         mAvailable = false;
         return mBasicImapService;
     }
 
     /**
      * Retrieve the current imap service
-     * @return
+     * 
+     * @return IMAP service
      * @throws ImapServiceNotAvailableException
      */
-    public BasicImapService getService() throws ImapServiceNotAvailableException{
-        if(mBasicImapService == null){
+    public BasicImapService getService() throws ImapServiceNotAvailableException {
+        if (mBasicImapService == null) {
             throw new ImapServiceNotAvailableException("BasicImapService not open");
         }
         return mBasicImapService;
     }
 
+    public synchronized void initService() throws ImapServiceNotAvailableException,
+            NetworkException, PayloadException {
+        if (mBasicImapService == null) {
+            throw new ImapServiceNotAvailableException("BasicImapService not open");
+        }
+        try {
+            mBasicImapService.init();
+
+        } catch (IOException e) {
+            throw new NetworkException("Failed to initialize CMS service!", e);
+
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to initialize CMS service!", e);
+        }
+    }
+
     /**
      * Close the current service (connection) with the CMS server
      */
-    public synchronized void closeService() {
+    public synchronized void closeService() throws NetworkException, PayloadException {
         if (sLogger.isActivated()) {
             sLogger.debug("End of IMAP synchronization.");
         }
-        if(mBasicImapService == null){
+        if (mBasicImapService == null) {
             return;
         }
 
         try {
             if (mBasicImapService.isAvailable()) {
-                mBasicImapService.logout();
-                mBasicImapService.close();
-            }
-        } catch (ImapException | IOException | RuntimeException e) {
-            if(sLogger.isActivated()){
-                e.printStackTrace(); // debug purpose
+                try {
+                    mBasicImapService.logout();
+                    mBasicImapService.close();
+                } catch (IOException e) {
+                    throw new NetworkException("Failed to close connection with CMS server!", e);
+
+                } catch (ImapException e) {
+                    throw new PayloadException("Failed to close connection with CMS server!", e);
+                }
             }
         } finally {
             mAvailable = true;
@@ -151,7 +173,8 @@ public class ImapServiceController {
 
     /**
      * Check if there is no sync in progress
-     * @return
+     * 
+     * @return True if there is no sync in progress
      */
     public boolean isSyncAvailable() {
         return mAvailable;
@@ -159,7 +182,8 @@ public class ImapServiceController {
 
     /**
      * Register a listener to be notified of the end of the sync
-     * @param listener
+     * 
+     * @param listener the IMAP listener
      */
     public void registerListener(ImapServiceListener listener) {
         synchronized (mListeners) {
@@ -169,7 +193,8 @@ public class ImapServiceController {
 
     /**
      * Unregister a listener
-     * @param listener
+     * 
+     * @param listener the IMAP listener
      */
     public void unregisterListener(ImapServiceListener listener) {
         synchronized (mListeners) {
