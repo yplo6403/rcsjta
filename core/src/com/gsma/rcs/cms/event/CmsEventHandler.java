@@ -162,6 +162,9 @@ public class CmsEventHandler implements CmsEventListener {
         else if(MessageType.CHAT_MESSAGE == imapData.getMessageType()){
             onDeleteChatMessage(imapData);
         }
+        else if(MessageType.GROUP_STATE == imapData.getMessageType()){
+            onDeleteGroupChat(imapData);
+        }
     }
 
     private void onDeleteXmsMessage(MessageData imapData) {
@@ -183,6 +186,9 @@ public class CmsEventHandler implements CmsEventListener {
         mChatService.deleteMessage(imapData.getMessageId());
     }
 
+    private void onDeleteGroupChat(MessageData imapData) {
+        mChatService.deleteGroupChat(imapData.getMessageId());
+    }
     @Override
     public String onRemoteNewMessage(MessageType messageType, IImapMessage message)
             throws CmsSyncException, FileAccessException {

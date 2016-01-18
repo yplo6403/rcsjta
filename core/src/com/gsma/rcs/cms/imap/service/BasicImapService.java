@@ -24,6 +24,7 @@ import com.gsma.rcs.cms.imap.cmd.CmdHandler;
 import com.gsma.rcs.cms.imap.cmd.CmdHandler.CommandType;
 import com.gsma.rcs.cms.imap.cmd.FetchFlagCmdHandler;
 import com.gsma.rcs.cms.imap.cmd.FetchHeaderCmdHandler;
+import com.gsma.rcs.cms.imap.cmd.ListCmdHandler;
 import com.gsma.rcs.cms.imap.cmd.ListStatusCmdHandler;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 
@@ -45,6 +46,20 @@ public class BasicImapService extends DefaultImapService {
      */
     public BasicImapService(IoService ioService) {
         super(ioService);
+    }
+
+    /**
+     * Execute LIST command on CMS server
+     * @return
+     * @throws IOException
+     * @throws ImapException
+     */
+    public List<String> list() throws IOException, ImapException {
+        ListCmdHandler handler = (ListCmdHandler) CmdHandler.getHandler(
+                CommandType.LIST, getCapabilities());
+        writeCommand(handler.buildCommand());
+        handler.handleLines(readToEndOfResponse());
+        return handler.getResult();
     }
 
     /**

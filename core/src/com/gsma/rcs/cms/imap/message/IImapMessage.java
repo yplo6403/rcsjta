@@ -19,8 +19,6 @@
 
 package com.gsma.rcs.cms.imap.message;
 
-import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
-
 public interface IImapMessage {
     
     String getFolder();
@@ -28,8 +26,6 @@ public interface IImapMessage {
     Integer getUid();
     
     String toPayload();
-
-    void parsePayload(String payload);
 
     boolean isSeen();
     

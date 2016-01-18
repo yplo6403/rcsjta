@@ -31,7 +31,7 @@ public abstract class CmdHandler {
      * IMAP command definition
      */
     public enum CommandType {
-        LIST_STATUS, SELECT_CONDSTORE, FETCH_FLAGS, FETCH_HEADERS, FETCH_MESSAGES_BODY
+        LIST, LIST_STATUS, SELECT_CONDSTORE, FETCH_FLAGS, FETCH_HEADERS, FETCH_MESSAGES_BODY
     }
 
     /**
@@ -46,6 +46,9 @@ public abstract class CmdHandler {
             Object... params) {
         CmdHandler handler = null;
         switch (command) {
+            case LIST:
+                handler = new ListCmdHandler();
+                break;
             case LIST_STATUS:
                 handler = new ListStatusCmdHandler();
                 break;

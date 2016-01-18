@@ -21,6 +21,7 @@ package com.gsma.rcs.cms.event;
 
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
@@ -64,6 +65,14 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
                 conversationId, contributionId), ReadStatus.UNREAD,
                 MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
                 MessageType.GROUP_STATE, contributionId, null));
+    }
+
+    @Override
+    public void onDeleteGroupChat(String chatId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onDeleteGroupChat: " + chatId);
+        }
+        mImapLog.updateDeleteStatus(MessageType.GROUP_STATE, chatId, DeleteStatus.DELETED_REPORT_REQUESTED);
     }
 
     @Override

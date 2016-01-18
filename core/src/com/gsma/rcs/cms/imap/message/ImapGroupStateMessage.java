@@ -43,9 +43,9 @@ public class ImapGroupStateMessage extends ImapMessage {
     private final String mChatId;
     private final Direction mDirection;
     private final String mSubject;
-    private final long mTimestamp;
-    private final String mRejoinId;
-    private final List<ContactId> mParticipants;
+    private long mTimestamp;
+    private String mRejoinId;
+    private List<ContactId> mParticipants;
 
     public ImapGroupStateMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncException {
         super(rawMessage);
@@ -60,12 +60,14 @@ public class ImapGroupStateMessage extends ImapMessage {
 
             mSubject = getHeader(Constants.HEADER_SUBJECT);
 
-            String xml = getBodyPart().toPayload();
-            GroupStateParser parser = new GroupStateParser(new InputSource(new ByteArrayInputStream(xml.toString().getBytes())));
-            GroupStateDocument document = parser.parse().getGroupStateDocument();
-            mTimestamp = document.getDate();
-            mRejoinId = document.getLastfocussessionid();
-            mParticipants = document.getParticipants();
+            String xml = getBodyPart().getPayload();
+            if(!xml.isEmpty()){
+                GroupStateParser parser = new GroupStateParser(new InputSource(new ByteArrayInputStream(xml.toString().getBytes())));
+                GroupStateDocument document = parser.parse().getGroupStateDocument();
+                mTimestamp = document.getDate();
+                mRejoinId = document.getLastfocussessionid();
+                mParticipants = document.getParticipants();
+            }
 
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
             e.printStackTrace();

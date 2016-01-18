@@ -19,35 +19,19 @@
 
 package com.gsma.rcs.cms.imap.message;
 
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.cpim.CpimBody;
-import com.sonymobile.rcs.imap.Header;
-
 public class BodyPart {
+
+    private String mPayload;
 
     protected BodyPart(){
     }
 
     public BodyPart(String payload){
-        parsePayload(payload);
+        mPayload = payload;
     }
 
-    public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF,2);
-        if(2 == parts.length ){
-            for(Header header : Header.parseHeaders(parts[0]).values()){
-                //mHeaders.addHeader(header.getKey(), header.getValue());
-            }
-            //mBody.parseBody(parts[1]);
-        }
-    }
-
-    public String toPayload(){
-        StringBuilder sb = new StringBuilder();
-        //sb.append(mHeaders);
-        sb.append(Constants.CRLF);
-        //sb.append(mBody.toPayload());
-        return sb.toString();
+    public String getPayload(){
+        return mPayload;
     }
 
 }

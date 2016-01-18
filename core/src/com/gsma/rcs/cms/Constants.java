@@ -22,6 +22,7 @@ package com.gsma.rcs.cms;
 public class Constants {
 
     public static final String CMD_LIST_STATUS = "LIST \"\" * RETURN (STATUS (MESSAGES UIDNEXT UIDVALIDITY HIGHESTMODSEQ))";
+    public static final String CMD_LIST = "LIST \"\" *";
     public static final String CMD_SELECT_CONDSTORE = "SELECT %1$s (CONDSTORE)";
     public static final String CMD_FETCH_FLAGS = "UID FETCH 1:%1$s (UID FLAGS) (CHANGEDSINCE %2$s)";
     // public static final String CMD_FETCH_HEADERS = "UID FTECH %1$s:%2$s (RFC822.SIZE FLAGS MOSDEQ

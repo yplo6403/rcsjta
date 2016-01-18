@@ -22,10 +22,17 @@ package com.gsma.rcs.cms.event;
 public interface GroupChatListener {
 
     /**
-     * Take into account that a chat message is read
+     * Called when a new group chat conversation is created
      *
      * @param conversationId conversation ID
      * @param contributionId contribution ID
      */
     void onCreateGroupChat(String conversationId, String contributionId);
+
+    /**
+     * Called when group chat conversation is deleted
+     *
+     * @param chatId
+     */
+    void onDeleteGroupChat(String chatId);
 }

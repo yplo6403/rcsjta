@@ -26,7 +26,7 @@ import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 
 public class ImapChatMessage extends ImapCpimMessage {
 
-    private final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
+    final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
 
     private final boolean isOneToOne;
     private final String mChatId;

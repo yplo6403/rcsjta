@@ -32,7 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 public class ImapImdnMessage extends ImapCpimMessage {
 
-    private final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
+    final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
 
     private String mImdnId;
     private final boolean isOneToOne;

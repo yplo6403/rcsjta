@@ -122,8 +122,8 @@ public class RemoteOperations extends ListActivity {
          */
         public boolean deleteExistingMessages(BasicImapService imap) {
             try {
-                for (ImapFolder imapFolder : imap.listStatus()) {
-                    imap.delete(imapFolder.getName());
+                for (String imapFolder : imap.list()) {
+                    imap.delete(imapFolder);
                 }
                 return true;
             } catch (IOException e) {

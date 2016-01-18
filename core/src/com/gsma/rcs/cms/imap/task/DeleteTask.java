@@ -19,7 +19,6 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -127,8 +126,8 @@ public class DeleteTask implements Runnable {
     }
 
     private void deleteAll() throws IOException, ImapException, ImapServiceNotAvailableException {
-        for (ImapFolder imapFolder : mImapServiceController.getService().listStatus()) {
-            mImapServiceController.getService().delete(imapFolder.getName());
+        for (String imapFolder : mImapServiceController.getService().list()) {
+            mImapServiceController.getService().delete(imapFolder);
         }
     }
 
