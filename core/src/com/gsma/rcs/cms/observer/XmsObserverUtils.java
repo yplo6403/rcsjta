@@ -111,11 +111,10 @@ public class XmsObserverUtils {
         }
 
         if (type == TextBasedSmsColumns.MESSAGE_TYPE_SENT) {
-            if (status == TextBasedSmsColumns.STATUS_NONE
-                    || status == TextBasedSmsColumns.STATUS_PENDING) {
-                return State.SENT;
-            } else if (status == TextBasedSmsColumns.STATUS_COMPLETE) {
+            if (status == TextBasedSmsColumns.STATUS_COMPLETE) {
                 return State.DELIVERED;
+            } else {
+                return State.SENT;
             }
         }
         return null;

@@ -354,17 +354,6 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     }
 
     @Override
-    public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType,
-            State state) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onXmsMessageStateChanged:" + messageId + "," + mimeType + "," + state);
-        }
-        mXmsLog.updateState(messageId, state);
-        mXmsMessageEventBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
-                state, ReasonCode.UNSPECIFIED);
-    }
-
-    @Override
     public void onDeleteAllXmsMessage() {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteAllXmsMessage");

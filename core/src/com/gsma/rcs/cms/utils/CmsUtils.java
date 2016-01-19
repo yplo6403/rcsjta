@@ -37,14 +37,18 @@ public class CmsUtils {
         return Constants.TEL_PREFIX + contactId.toString();
     }
 
-    public static String cmsFolderToContact(RcsSettings settings, String cmsFolder) {
+    public static ContactId cmsFolderToContact(RcsSettings settings, String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
         String prefix = settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
                 + (Constants.TEL_PREFIX);
         if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
         }
-        return contact;
+        PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(contact);
+        if(phoneNumber != null){
+            return ContactUtil.createContactIdFromValidatedData(phoneNumber);
+        }
+        return null;
     }
 
     public static ContactId headerToContact(String header) {

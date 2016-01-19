@@ -85,6 +85,6 @@ public interface ISyncProcessor {
      * 
      * @param flagChanges set of changed flags to synchronize
      */
-    void syncLocalFlags(Set<FlagChange> flagChanges);
+    void syncLocalFlags(String remoteFolder, Set<FlagChange> flagChanges);
 
 }

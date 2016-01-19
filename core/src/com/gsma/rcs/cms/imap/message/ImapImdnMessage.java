@@ -54,7 +54,7 @@ public class ImapImdnMessage extends ImapCpimMessage {
     }
 
     public ImdnDocument getImdnDocument() throws ParseFailureException, SAXException, ParserConfigurationException {
-        return ChatUtils.parseCpimDeliveryReport(getCpimMessage().toPayload());
+        return ChatUtils.parseCpimDeliveryReport(getCpimMessage().getPayload());
     }
 
     public String getImdnId(){

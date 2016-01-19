@@ -89,31 +89,11 @@ public class SyncProcessorImpl implements ISyncProcessor {
     }
 
     @Override
-    public void syncLocalFlags(Set<FlagChange> flagChanges) {
-        String prevFolder = null;
-        List<String> deletedMailboxes = new ArrayList<>();
+    public void syncLocalFlags(String remoteFolder, Set<FlagChange> flagChanges) {
         Set<FlagChange> flagChangesToKeep = new HashSet<>();
         boolean logActivated = sLogger.isActivated();
         try {
             for (FlagChange flagChange : flagChanges) {
-                String folder = flagChange.getFolder();
-                if (!folder.equals(prevFolder)) {
-                    prevFolder = folder;
-                    try {
-                        mImapService.selectCondstore(folder);
-                    } catch (ImapException e) {
-                        if (logActivated) {
-                            sLogger.debug("The mailbox has been deleted on CMS : ".concat(folder));
-                        }
-                        // It does not matter if the mailbox does not exist anymore on CMS
-                        deletedMailboxes.add(folder);
-                    }
-                }
-
-                if (deletedMailboxes.contains(folder)) {
-                    continue;
-                }
-
                 try {
                     if (logActivated) {
                         sLogger.warn(flagChange.getFolder() + "/" + flagChange.getJoinedUids());
@@ -123,7 +103,7 @@ public class SyncProcessorImpl implements ISyncProcessor {
                 } catch (ImapException e) {
                     // It does not matter if the message does not exist anymore on CMS
                     if (logActivated) {
-                        sLogger.debug("The message has been deleted on CMS : " + folder + ","
+                        sLogger.debug("The message has been deleted on CMS : " + remoteFolder + ","
                                 + flagChange.getJoinedUids());
                     }
 
@@ -131,13 +111,11 @@ public class SyncProcessorImpl implements ISyncProcessor {
                 flagChangesToKeep.add(flagChange);
             }
         } catch (IOException ioe) { // we stop updating status flag on CMS in case of ioe
-            // TODO at least log
-        }
-
-        for (FlagChange flagChange : flagChanges) {
-            if (deletedMailboxes.contains(flagChange.getFolder())) {
-                flagChangesToKeep.add(flagChange);
+            if (logActivated) {
+                sLogger.debug("IOException during sync with CMS server");
+                ioe.printStackTrace();
             }
+
         }
         flagChanges.retainAll(flagChangesToKeep);
     }

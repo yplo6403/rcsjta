@@ -45,7 +45,8 @@ public class CpimMessage extends BodyPart{
         }
     }
 
-    public String toPayload(){
+    @Override
+    public String getPayload(){
         StringBuilder sb = new StringBuilder();
         sb.append(mHeaders);
         sb.append(Constants.CRLF);

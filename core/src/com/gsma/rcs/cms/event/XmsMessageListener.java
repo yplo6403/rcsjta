@@ -19,7 +19,6 @@
 
 package com.gsma.rcs.cms.event;
 
-import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 public interface XmsMessageListener {
@@ -31,8 +30,6 @@ public interface XmsMessageListener {
     void onReadXmsConversation(ContactId contact);
 
     void onDeleteXmsConversation(ContactId contact);
-
-    void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType, State state);
 
     void onDeleteAllXmsMessage();
 

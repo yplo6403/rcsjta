@@ -556,7 +556,7 @@ public class MmsTest extends AndroidTestCase {
     private void createRemoteMessages(XmsDataObject[] messages)
             throws ImapServiceNotAvailableException {
         PushMessageTask task = new PushMessageTask(mContext, mSettings, mImapServiceController,
-                mXmsLog, mImapLog, null);
+                mXmsLog, mImapLog);
         task.pushMessages(Arrays.asList(messages));
     }
 

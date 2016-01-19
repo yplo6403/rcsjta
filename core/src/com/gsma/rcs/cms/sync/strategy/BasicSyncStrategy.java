@@ -32,6 +32,7 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISyncProcessor;
 import com.gsma.rcs.cms.sync.SyncProcessorImpl;
+import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -117,42 +118,25 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                     /* Remote folder exists but not local */
                     localFolder = new FolderData(remoteFolderName);
                 }
+                boolean isMailboxSelected = false;
                 if (shouldStartRemoteSynchronization(localFolder, remoteFolder)) {
                     startRemoteSynchro(localFolder, remoteFolder);
                     mLocalStorageHandler.applyFolderChange(DataUtils.toFolderData(remoteFolder));
+                    isMailboxSelected = true;
+                }
+
+                if(!isMailboxSelected){
+                    mSynchronizer.selectFolder(remoteFolderName);
                 }
                 /* sync CMS with local change */
                 Set<FlagChange> flagChanges = mLocalStorageHandler
                         .getLocalFlagChanges(remoteFolderName);
-                mSynchronizer.syncLocalFlags(flagChanges);
+                mSynchronizer.syncLocalFlags(remoteFolderName, flagChanges);
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
             }
 
-            // TODO FGI
-            // Demo purpose only
-            // push on CMS server, messages that are marked as PUSH_requested in database
-            // try to get an instance of XmsLog
-            XmsLog xmsLog = XmsLog.getInstance();
-            ImapLog imapLog = ImapLog.getInstance();
-            if (xmsLog != null && imapLog != null) {
-                List<XmsDataObject> messagesToPush = new ArrayList<>();
-                for (MessageData messageData : imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)) {
-                    XmsDataObject xms = xmsLog.getXmsDataObject(messageData.getMessageId());
-                    if (xms != null) {
-                        messagesToPush.add(xms);
-                    }
-                }
-                if (!messagesToPush.isEmpty()) {
-                    PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
-                            mImapServiceController, xmsLog, imapLog, null);
-                    pushMessageTask.pushMessages(messagesToPush);
-                    for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
-                        String baseId = entry.getKey();
-                        Integer uid = entry.getValue();
-                        imapLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
-                    }
-                }
-            }
+            pushLocalMessages(folderName);
+
             mExecutionResult = true;
             if (logActivated) {
                 sLogger.debug("<<< BasicSyncStrategy.execute ");
@@ -201,6 +185,41 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             sLogger.debug("<<< shouldStartSynchronization");
         }
         return sync;
+    }
+
+    private void pushLocalMessages(String localFolderName){
+
+        XmsLog xmsLog = XmsLog.getInstance();
+        ImapLog imapLog = ImapLog.getInstance();
+        if(xmsLog == null || imapLog == null){
+            return;
+        }
+
+        List<MessageData> messageDataList;
+        if(localFolderName == null) { // get all messages
+            messageDataList = imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED);
+        }
+        else{
+            messageDataList = imapLog.getXmsMessages(localFolderName, PushStatus.PUSH_REQUESTED);
+        }
+
+        List<XmsDataObject> messagesToPush = new ArrayList<>();
+        for (MessageData messageData : messageDataList) {
+            XmsDataObject xms = xmsLog.getXmsDataObject(messageData.getMessageId());
+            if (xms != null) {
+                messagesToPush.add(xms);
+            }
+        }
+        if (!messagesToPush.isEmpty()) {
+            PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
+                    mImapServiceController, xmsLog, imapLog);
+            pushMessageTask.pushMessages(messagesToPush);
+            for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
+                String baseId = entry.getKey();
+                Integer uid = entry.getValue();
+                imapLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+            }
+        }
     }
 
     /**

@@ -406,7 +406,7 @@ public class XmsObserver implements XmsObserverListener {
                     mmsDataObject.setState(State.RECEIVED);
                     onIncomingMms(mmsDataObject);
                 } else {
-                    mmsDataObject.setState(State.DISPLAYED);
+                    mmsDataObject.setState(State.SENT);
                     onOutgoingMms(mmsDataObject);
                 }
             }

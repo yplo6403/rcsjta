@@ -1,7 +1,6 @@
 
-package com.gsma.rcs.cms.fordemo;
+package com.gsma.rcs.cms.event;
 
-import com.gsma.rcs.cms.event.XmsMessageListener;
 import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.imap.task.PushMessageTask.PushMessageTaskListener;
@@ -32,10 +31,10 @@ import java.util.Map.Entry;
  * This class should be removed. Should be used for testing purpose only It creates SMS messages on
  * the CMS server with IMAP command.
  */
-public class ImapCommandController implements XmsObserverListener, XmsMessageListener,
+public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessageListener,
         PushMessageTaskListener, UpdateFlagTaskListener {
 
-    private static final Logger sLogger = Logger.getLogger(ImapCommandController.class
+    private static final Logger sLogger = Logger.getLogger(ImapEventFrameworkHandler.class
             .getSimpleName());
 
     private final Context mContext;
@@ -45,8 +44,8 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
     private final Handler mHandler;
     private final ImapServiceController mImapServiceController;
 
-    public ImapCommandController(Handler handler, Context context, RcsSettings settings,
-            ImapLog imapLog, XmsLog xmsLog, ImapServiceController imapServiceController) {
+    public ImapEventFrameworkHandler(Handler handler, Context context, RcsSettings settings,
+                                     ImapLog imapLog, XmsLog xmsLog, ImapServiceController imapServiceController) {
         mHandler = handler;
         mContext = context;
         mSettings = settings;
@@ -70,7 +69,7 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
             return;
         }
         mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, this));
+                mImapLog, message.getContact(), this));
     }
 
     @SuppressWarnings("unchecked")
@@ -88,7 +87,7 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
             return;
         }
         mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, this));
+                mImapLog, message.getContact(), this));
     }
 
     @Override
@@ -120,7 +119,7 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
             return;
         }
         mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, this));
+                mImapLog, message.getContact(), this));
     }
 
     @Override
@@ -137,7 +136,7 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
             return;
         }
         mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, this));
+                mImapLog, message.getContact(), this));
     }
 
     @Override
@@ -260,11 +259,6 @@ public class ImapCommandController implements XmsObserverListener, XmsMessageLis
             return;
         }
         updateFlags();
-    }
-
-    @Override
-    public void onXmsMessageStateChanged(ContactId contact, String messageId, String mimeType,
-            State state) {
     }
 
     @Override

@@ -38,6 +38,7 @@ import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -86,6 +87,7 @@ public class GroupStateTest extends AndroidTestCase{
         Context context = getContext();
         ContactUtil.getInstance(getContext());
         mSettings = RcsSettingsMock.getMockSettings(context);
+        AndroidFactory.setApplicationContext(context, mSettings);
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
         LocalContentResolver localContentResolver = new LocalContentResolver(context);

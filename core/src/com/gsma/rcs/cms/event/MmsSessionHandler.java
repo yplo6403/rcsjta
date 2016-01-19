@@ -19,7 +19,6 @@
 
 package com.gsma.rcs.cms.event;
 
-import com.gsma.rcs.cms.fordemo.ImapCommandController;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
@@ -39,7 +38,7 @@ public class MmsSessionHandler implements MmsSessionListener {
     private final ImapLog mImapLog;
     private final XmsLog mXmsLog;
     private final RcsSettings mSettings;
-    private final ImapCommandController mImapCommandController;
+    private final ImapEventFrameworkHandler mImapEventFrameworkHandler;
 
     /**
      * Default constructor
@@ -48,11 +47,11 @@ public class MmsSessionHandler implements MmsSessionListener {
      * @param settings the RCS settings accessor
      */
     public MmsSessionHandler(ImapLog imapLog, XmsLog xmsLog, RcsSettings settings,
-            ImapCommandController imapCommandController) {
+            ImapEventFrameworkHandler imapEventFrameworkHandler) {
         mImapLog = imapLog;
         mXmsLog = xmsLog;
         mSettings = settings;
-        mImapCommandController = imapCommandController;
+        mImapEventFrameworkHandler = imapEventFrameworkHandler;
     }
 
     @Override
@@ -68,9 +67,9 @@ public class MmsSessionHandler implements MmsSessionListener {
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
         if (Direction.INCOMING == mms.getDirection()) {
-            mImapCommandController.onIncomingMms(mms);
+            mImapEventFrameworkHandler.onIncomingMms(mms);
         } else {
-            mImapCommandController.onOutgoingMms(mms);
+            mImapEventFrameworkHandler.onOutgoingMms(mms);
         }
     }
 

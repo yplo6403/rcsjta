@@ -20,10 +20,7 @@
 package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
-import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
 import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.Header;
 
 public abstract class ImapMessage implements IImapMessage {
 
@@ -75,6 +72,7 @@ public abstract class ImapMessage implements IImapMessage {
     public Integer getUid() {
         return mRawMessage.getUid();
     }
+
 
     @Override
     public boolean isSeen() {

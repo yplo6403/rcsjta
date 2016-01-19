@@ -41,6 +41,7 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 
+import com.gsma.services.rcs.contact.ContactId;
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
@@ -66,22 +67,44 @@ public class PushMessageTask implements Runnable {
     /* package private */final Context mContext;
     /* package private */final XmsLog mXmsLog;
     /* package private */final ImapLog mImapLog;
+    /* package private */final ContactId mContact;
 
     /* package private */final Map<String, Integer> mCreatedUidsMap;
 
     /**
+     * Call this constructor when executing this task in a synchronous way
+     *
+     * @param context
+     * @param rcsSettings
      * @param imapServiceController
      * @param xmsLog
+     * @param imapLog
+     */
+    public PushMessageTask(Context context, RcsSettings rcsSettings,
+            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog) {
+        this(context, rcsSettings, imapServiceController, xmsLog, imapLog, null, null);
+    }
+
+    /**
+     * Call this constructor when executing this task as a runnable (run method executed)
+     *
+     * @param context
+     * @param rcsSettings
+     * @param imapServiceController
+     * @param xmsLog
+     * @param imapLog
+     * @param contact
      * @param listener
      */
     public PushMessageTask(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
-            PushMessageTaskListener listener) {
+                           ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
+                           ContactId contact, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mImapServiceController = imapServiceController;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
+        mContact = contact;
         mListener = listener;
         mCreatedUidsMap = new HashMap<>();
     }
@@ -90,7 +113,8 @@ public class PushMessageTask implements Runnable {
     public void run() {
         try {
             List<XmsDataObject> messagesToPush = new ArrayList<>();
-            for (MessageData messageData : mImapLog.getXmsMessages(PushStatus.PUSH_REQUESTED)) {
+            String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
+            for (MessageData messageData : mImapLog.getXmsMessages(folder, PushStatus.PUSH_REQUESTED)) {
                 XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
                 if (xms != null) {
                     messagesToPush.add(xms);
@@ -140,6 +164,7 @@ public class PushMessageTask implements Runnable {
             for (ImapFolder imapFolder : imapService.listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
+            String prevSelectedFolder = "";
             for (XmsDataObject message : messages) {
                 List<Flag> flags = new ArrayList<Flag>();
                 switch (message.getDirection()) {
@@ -180,7 +205,10 @@ public class PushMessageTask implements Runnable {
                     imapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
                 }
-                imapService.selectCondstore(remoteFolder);
+                if(!remoteFolder.equals(prevSelectedFolder)){
+                    imapService.selectCondstore(remoteFolder);
+                    prevSelectedFolder = remoteFolder;
+                }
                 int uid = imapService.append(remoteFolder, flags, imapMessage.toPayload());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }

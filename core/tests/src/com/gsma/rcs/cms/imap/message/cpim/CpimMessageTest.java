@@ -36,7 +36,7 @@ public class CpimMessageTest extends AndroidTestCase{
         CpimBody cpimBody = new TextCpimBody("myContentType", "myContent");
 
         CpimMessage cpimMessage = new CpimMessage(headers, cpimBody);
-        Assert.assertEquals(expectedPayload, cpimMessage.toPayload());
+        Assert.assertEquals(expectedPayload, cpimMessage.getPayload());
     }
 
 }
