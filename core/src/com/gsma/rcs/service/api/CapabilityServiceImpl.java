@@ -40,10 +40,6 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.os.RemoteException;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 /**
  * Capability service API implementation
  * 
@@ -348,30 +344,6 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
         }
         ServerApiUtils.testIms();
         mCapabilityService.scheduleCapabilityOperation(new AllCapabilitiesRequester());
-    }
-
-    @Override
-    public void requestContactCapabilities2(List<ContactId> contacts) throws RemoteException {
-        ServerApiUtils.testIms();
-        if (contacts == null) {
-            if (sLogger.isActivated()) {
-                sLogger.info("Request capabilities for all contacts");
-            }
-            mCapabilityService.scheduleCapabilityOperation(new AllCapabilitiesRequester());
-
-        } else {
-            if (sLogger.isActivated()) {
-                sLogger.info("Request capabilities for contacts: " + contacts);
-            }
-            final Set<ContactId> setOfContacts = new HashSet<ContactId>(contacts);
-            mCapabilityService.scheduleCapabilityOperation(new Runnable() {
-
-                @Override
-                public void run() {
-                    mCapabilityService.requestContactCapabilities(setOfContacts);
-                }
-            });
-        }
     }
 
     /**
