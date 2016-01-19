@@ -475,7 +475,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 }
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "onCapabilitiesReceived contact=" + contact + " IM="
-                            + capabilities.hasCapabilities(Capabilities.CAPABILITY_IM_SUPPORT));
+                            + capabilities.isImSessionSupported());
                 }
                 try {
                     /*

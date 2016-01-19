@@ -86,28 +86,6 @@
 
         <TableRow>
 
-            <TextView android:gravity="right" />
-
-            <CheckBox
-                android:id="@+id/ip_voice_call"
-                android:clickable="false"
-                android:text="@string/label_capabilities_ip_voice_call"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-        </TableRow>
-
-        <TableRow>
-
-            <TextView android:gravity="right" />
-
-            <CheckBox
-                android:id="@+id/ip_video_call"
-                android:clickable="false"
-                android:text="@string/label_capabilities_ip_video_call"
-                android:textAppearance="?android:attr/textAppearanceSmall" />
-        </TableRow>
-
-        <TableRow>
-
             <TextView
                 android:gravity="right"
                 android:text="@string/label_capabilities_extensions" />

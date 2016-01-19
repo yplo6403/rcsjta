@@ -231,8 +231,6 @@ public class CapabilitiesList extends RcsActivity {
             ishBox = (CheckBox) base.findViewById(R.id.image_sharing);
             vshBox = (CheckBox) base.findViewById(R.id.video_sharing);
             geolocBox = (CheckBox) base.findViewById(R.id.geoloc_push);
-            ipVoiceCallBox = (CheckBox) base.findViewById(R.id.ip_voice_call);
-            ipVideoCallBox = (CheckBox) base.findViewById(R.id.ip_video_call);
             extsText = (TextView) base.findViewById(R.id.extensions);
             automataBox = (CheckBox) base.findViewById(R.id.automata);
             lastRefreshText = (TextView) base.findViewById(R.id.last_refresh);
