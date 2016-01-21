@@ -83,7 +83,7 @@ public class OneToOneTalkArrayItem implements Comparable<OneToOneTalkArrayItem> 
         if (another == null) {
             throw new NullPointerException("Cannot compare to null");
         }
-        return Long.valueOf(mTimestamp).compareTo(another.getTimestamp());
+        return Long.valueOf(another.getTimestamp()).compareTo(mTimestamp);
     }
 
     public int getUnreadCount() {

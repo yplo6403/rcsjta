@@ -433,7 +433,7 @@ public class OneToOneTalkList extends RcsActivity {
                 }
                 mMessageLogs.clear();
                 mMessageLogs.addAll(result);
-                /* Sort by ascending timestamp */
+                /* Sort by descending timestamp */
                 Collections.sort(mMessageLogs);
                 mAdapter.notifyDataSetChanged();
                 if (mObserver == null) {
