@@ -536,10 +536,10 @@
             android:label="@string/menu_cms_sync_title" />
         <activity
             android:name=".messaging.OneToOneTalkList"
-            android:label="@string/menu_cms_messaging_title" />
+            android:label="@string/menu_cms_log_title" />
         <activity
             android:name=".cms.messaging.InitiateOneToOneTalk"
-            android:label="@string/menu_cms_messaging_title" />
+            android:label="@string/menu_cms_initiate_title" />
         <activity
             android:name=".messaging.OneToOneTalkView"
             android:label="@string/menu_cms_messaging_title"

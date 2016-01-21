@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  * <p/>
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
 import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
 import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
 import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.messaging.chat.ChatView;
 import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
 import com.orangelabs.rcs.ri.messaging.chat.single.SendSingleFile;
@@ -666,6 +667,11 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         boolean firstLoad = (mContact == null);
         /* Save contact ID */
         mContact = newContact;
+
+        ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
+                .getChatPendingIntentManager(this);
+        pendingIntentManager.clearNotification(mContact.toString());
+
         /*
          * Open chat so that if the parameter IM SESSION START is 0 then the session is accepted
          * now.

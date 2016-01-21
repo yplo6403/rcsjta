@@ -67,14 +67,10 @@
     <string name="label_about_release">Release: %s</string>
     <string name="label_about_api">API release: %s</string>
 
-    <!-- Quick contact badge -->
-    <string name="label_quick_chat">Chat</string>
-
     <!-- Contacts API -->
     <string name="menu_contacts">Contacts</string>
     <string name="menu_address_book">Native address book</string>
     <string name="menu_list_rcs_contacts">All RCS contacts</string>
-    <string name="label_ext_tag">Extension tag:</string>
     <string name="menu_contact_vcard">Contact visit card</string>
     <string name="label_vcard">Visit card:</string>
     <string name="label_show_vcard">Show card</string>
@@ -189,7 +185,6 @@
     <string name="menu_send_file">Send file</string>
     <string name="label_geoloc_msg">Geoloc</string>
     <string name="label_gc_from_subject">From: %1$s\nSubject: %2$s</string>
-    <string name="label_chat_send">Send</string>
     <string name="label_groupchat_event">Contact has %1$s</string>
     <string name="menu_chat_service_config">Chat service configuration</string>
     <string name="label_WarnSF">Warning SF:</string>
@@ -393,15 +388,11 @@
     <string name="menu_cms_item1">Synchronization</string>
     <string name="menu_cms_item2">Messaging</string>
     <string name="menu_cms_messaging_title">CMS messaging</string>
+    <string name="menu_cms_log_title">One to one messaging log</string>
+    <string name="menu_cms_initiate_title">Initiate one to one conversation</string>
     <string name="menu_cms_messaging_item1">Initiate conversation</string>
     <string name="menu_cms_messaging_item2">CMS log</string>
-    <string name="label_cms_sms_contact">SMS with %1$s</string>
-    <string name="label_cms_mms_contact">MMS with %1$s</string>
-    <string name="label_rcs_chat_contact">Chat with %1$s</string>
-    <string name="label_rcs_ft_contact">Transfer with %1$s</string>
     <string name="menu_open_xms_talk">Open</string>
-    <string name="menu_delete_xms_talk">Delete</string>
-    <string name="menu_select_parts">Select attachments</string>
     <string name="menu_cms_sync_title">CMS synchronize</string>
     <string name="menu_cms_sync_all">Sync all</string>
     <string name="menu_cms_sync_one_to_one">Sync one-to-one conversation</string>
@@ -439,7 +430,6 @@
     <string name="ri_settings_summary_resend_ft">Switch RCS to MMS in case of image transfer failure</string>
     <string name="checkbox_cms_save_switch_xms">Don\'t ask again</string>
     <string name="menu_resend_via_sms">Re-send by SMS</string>
-    <string name="menu_resend_by_mms">Re-send by MMS</string>
     <string name="menu_switch_to_sms">Switch to SMS</string>
     <string name="menu_switch_to_rcs">Try switch to RCS</string>
     <string name="ri_settings_summary_sync_mode">Set the CMS synchronization mode</string>

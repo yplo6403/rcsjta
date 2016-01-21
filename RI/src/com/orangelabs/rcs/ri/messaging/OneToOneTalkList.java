@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  * <p/>
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@
 
 package com.orangelabs.rcs.ri.messaging;
 
-import com.gsma.services.rcs.RcsService;
+import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
@@ -33,8 +34,6 @@ import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
-import com.gsma.services.rcs.history.HistoryLog;
-import com.gsma.services.rcs.history.HistoryUriBuilder;
 
 import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
@@ -42,7 +41,7 @@ import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayAdapter;
 import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayItem;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
 
@@ -50,7 +49,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,10 +64,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -78,30 +75,9 @@ import java.util.Set;
  * @author Philippe LEMORDANT
  */
 public class OneToOneTalkList extends RcsActivity {
-    // @formatter:off
-    private static final String[] PROJECTION = new String[]{
-            HistoryLog.BASECOLUMN_ID,
-            HistoryLog.ID,
-            HistoryLog.PROVIDER_ID,
-            HistoryLog.MIME_TYPE,
-            HistoryLog.CONTENT,
-            HistoryLog.TIMESTAMP,
-            HistoryLog.STATUS,
-            HistoryLog.DIRECTION,
-            HistoryLog.CONTACT,
-            HistoryLog.FILENAME,
-            HistoryLog.FILESIZE,
-            HistoryLog.TRANSFERRED,
-            HistoryLog.READ_STATUS,
-            HistoryLog.REASON_CODE
-    };
-    // @formatter:on
-
-    private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=" + HistoryLog.CONTACT;
 
     private CmsService mCmsService;
     private boolean mXmsMessageListenerSet;
-    private Uri mUriHistoryProvider;
     private OneToOneTalkArrayAdapter mAdapter;
     private Handler mHandler = new Handler();
     private List<OneToOneTalkArrayItem> mMessageLogs;
@@ -118,6 +94,8 @@ public class OneToOneTalkList extends RcsActivity {
     private boolean mFileTransferListenerSet;
     private OneToOneFileTransferListener mOneToOneFileTransferListener;
     private MessagingObserver mObserver;
+    private OneToOneTalkListUpdate.TaskCompleted mUpdateTalkListListener;
+    private boolean mActivityVisible;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +103,18 @@ public class OneToOneTalkList extends RcsActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.xms_list);
         initialize();
+        if (RiSettings.isSyncAutomatic(this)) {
+            try {
+                /* Perform CMS synchronization */
+                mCmsService.syncAll();
+
+            } catch (RcsServiceNotAvailableException e) {
+                Log.w(LOGTAG, "Cannot sync: service is not available!");
+
+            } catch (RcsGenericException e) {
+                showExceptionThenExit(e);
+            }
+        }
     }
 
     @Override
@@ -154,19 +144,18 @@ public class OneToOneTalkList extends RcsActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        mActivityVisible = true;
         if (mObserver == null) {
-            queryHistoryLogAndRefreshView();
-            mObserver = new MessagingObserver(mHandler);
-            ContentResolver resolver = getContentResolver();
-            resolver.registerContentObserver(XmsMessageLog.CONTENT_URI, true, mObserver);
-            resolver.registerContentObserver(ChatLog.Message.CONTENT_URI, true, mObserver);
-            resolver.registerContentObserver(FileTransferLog.CONTENT_URI, true, mObserver);
+            OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
+                    mUpdateTalkListListener);
+            updateTalkList.execute();
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        mActivityVisible = false;
         if (mObserver != null) {
             getContentResolver().unregisterContentObserver(mObserver);
             mObserver = null;
@@ -185,6 +174,9 @@ public class OneToOneTalkList extends RcsActivity {
         super.onPrepareOptionsMenu(menu);
         if (!isServiceConnected(RcsServiceName.CMS)) {
             menu.findItem(R.id.menu_clear_log).setVisible(false);
+            menu.findItem(R.id.menu_sync_xms).setVisible(false);
+        }
+        if (RiSettings.isSyncAutomatic(this)) {
             menu.findItem(R.id.menu_sync_xms).setVisible(false);
         }
         return true;
@@ -248,6 +240,9 @@ public class OneToOneTalkList extends RcsActivity {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_log_xms_item, menu);
+        if (RiSettings.isSyncAutomatic(this)) {
+            menu.findItem(R.id.menu_sync_xms).setVisible(false);
+        }
     }
 
     @Override
@@ -314,12 +309,6 @@ public class OneToOneTalkList extends RcsActivity {
     private void initialize() {
         mCtx = this;
         mMessageLogs = new ArrayList<>();
-
-        HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
-        uriBuilder.appendProvider(XmsMessageLog.HISTORYLOG_MEMBER_ID);
-        uriBuilder.appendProvider(ChatLog.Message.HISTORYLOG_MEMBER_ID);
-        uriBuilder.appendProvider(FileTransferLog.HISTORYLOG_MEMBER_ID);
-        mUriHistoryProvider = uriBuilder.build();
 
         mCmsService = getCmsApi();
         mChatService = getChatApi();
@@ -435,78 +424,35 @@ public class OneToOneTalkList extends RcsActivity {
             public void onGroupConversationSynchronized(String chatId) {
             }
         };
-    }
 
-    void queryHistoryLogAndRefreshView() {
-        Map<ContactId, OneToOneTalkArrayItem> dataMap = new HashMap<>();
-        Cursor cursor = null;
-        try {
-            cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION, WHERE_CLAUSE,
-                    null, null);
-            if (cursor == null) {
-                throw new IllegalStateException("Cannot query History Log");
-            }
-            int columnTimestamp = cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP);
-            int columnProviderId = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
-            int columnDirection = cursor.getColumnIndexOrThrow(HistoryLog.DIRECTION);
-            int columnContact = cursor.getColumnIndexOrThrow(HistoryLog.CONTACT);
-            int columnContent = cursor.getColumnIndexOrThrow(HistoryLog.CONTENT);
-            int columnFilename = cursor.getColumnIndexOrThrow(HistoryLog.FILENAME);
-            int columnStatus = cursor.getColumnIndexOrThrow(HistoryLog.STATUS);
-            int columnReason = cursor.getColumnIndexOrThrow(HistoryLog.REASON_CODE);
-            int columnMimeType = cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE);
-            int columnFileSize = cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE);
-            int columnTransferred = cursor.getColumnIndexOrThrow(HistoryLog.TRANSFERRED);
-            while (cursor.moveToNext()) {
-                long timestamp = cursor.getLong(columnTimestamp);
-                String phoneNumber = cursor.getString(columnContact);
-                ContactId contact = ContactUtil.formatContact(phoneNumber);
-                OneToOneTalkArrayItem item = dataMap.get(contact);
-                if (item != null && timestamp < item.getTimestamp()) {
-                    continue;
+        mUpdateTalkListListener = new OneToOneTalkListUpdate.TaskCompleted() {
+            @Override
+            public void onTaskComplete(Collection<OneToOneTalkArrayItem> result) {
+                if (!mActivityVisible) {
+                    return;
                 }
-                int providerId = cursor.getInt(columnProviderId);
-                int state = cursor.getInt(columnStatus);
-                int reason = cursor.getInt(columnReason);
-                RcsService.Direction dir = RcsService.Direction.valueOf(cursor
-                        .getInt(columnDirection));
-                String content = cursor.getString(columnContent);
-                String mimeType = cursor.getString(columnMimeType);
-                switch (providerId) {
-                    case XmsMessageLog.HISTORYLOG_MEMBER_ID:
-                    case ChatLog.Message.HISTORYLOG_MEMBER_ID:
-                        dataMap.put(contact, new OneToOneTalkArrayItem(providerId, contact,
-                                timestamp, state, reason, dir, content, mimeType));
-                        break;
-
-                    case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                        String filename = cursor.getString(columnFilename);
-                        long fileSize = cursor.getLong(columnFileSize);
-                        long transferred = cursor.getLong(columnTransferred);
-                        dataMap.put(contact, new OneToOneTalkArrayItem(contact, timestamp, state,
-                                reason, dir, content, mimeType, filename, fileSize, transferred));
-                        break;
-
-                    default:
-                        throw new IllegalArgumentException("Invalid provider ID: '" + providerId
-                                + "'!");
+                mMessageLogs.clear();
+                mMessageLogs.addAll(result);
+                /* Sort by descending timestamp */
+                Collections.sort(mMessageLogs);
+                mAdapter.notifyDataSetChanged();
+                if (mObserver == null) {
+                    mObserver = new MessagingObserver(mHandler, mCtx);
+                    ContentResolver resolver = getContentResolver();
+                    resolver.registerContentObserver(XmsMessageLog.CONTENT_URI, true, mObserver);
+                    resolver.registerContentObserver(ChatLog.Message.CONTENT_URI, true, mObserver);
+                    resolver.registerContentObserver(FileTransferLog.CONTENT_URI, true, mObserver);
                 }
             }
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-        mMessageLogs.clear();
-        mMessageLogs.addAll(dataMap.values());
-        /* Sort by ascending timestamp */
-        Collections.sort(mMessageLogs);
-        mAdapter.notifyDataSetChanged();
+        };
     }
 
     private class MessagingObserver extends ContentObserver {
-        public MessagingObserver(Handler handler) {
+        private final Context mCtx;
+
+        public MessagingObserver(Handler handler, Context ctx) {
             super(handler);
+            mCtx = ctx;
         }
 
         @Override
@@ -516,7 +462,13 @@ public class OneToOneTalkList extends RcsActivity {
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
-            queryHistoryLogAndRefreshView();
+            if (mObserver != null) {
+                getContentResolver().unregisterContentObserver(mObserver);
+                mObserver = null;
+                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
+                        mUpdateTalkListListener);
+                updateTalkList.execute();
+            }
         }
     }
 }

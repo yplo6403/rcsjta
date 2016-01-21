@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ package com.orangelabs.rcs.ri.messaging.adapter;
 
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
-import com.gsma.services.rcs.filetransfer.FileTransferLog;
 
 import com.orangelabs.rcs.ri.R;
 
@@ -32,76 +31,35 @@ import android.widget.TextView;
  */
 public class OneToOneTalkArrayItem implements Comparable<OneToOneTalkArrayItem> {
 
-    private final int mProviderId;
     private final long mTimestamp;
-    private final int mState;
-    private final int mReason;
     private final RcsService.Direction mDirection;
     private final ContactId mContact;
     private final String mContent;
     private final String mMimeType;
-    private String mFilename;
-    private Long mTransferred;
-    private Long mFileSize;
+    private int mUnreadCount;
 
     /**
      * Constructor for XMS and RCS chat information
      *
-     * @param providerId the provider ID
      * @param contact the contact ID
      * @param timestamp the timestamp
-     * @param state the state
-     * @param reason the reason
      * @param direction the direction
      * @param content the content
      * @param mimeType the mime type
+     * @param unreadCount the read status
      */
-    public OneToOneTalkArrayItem(int providerId, ContactId contact, long timestamp, int state,
-            int reason, RcsService.Direction direction, String content, String mimeType) {
-        mProviderId = providerId;
+    public OneToOneTalkArrayItem(ContactId contact, long timestamp, RcsService.Direction direction,
+            String content, String mimeType, int unreadCount) {
         mContact = contact;
         mTimestamp = timestamp;
-        mState = state;
-        mReason = reason;
         mDirection = direction;
         mContent = content;
         mMimeType = mimeType;
-    }
-
-    /**
-     * Constructor for RCS file transfer message
-     *
-     * @param contact the contact ID
-     * @param timestamp the timestamp
-     * @param state the state
-     * @param reason the reason
-     * @param direction the direction
-     * @param content the content
-     * @param mimeType the mime type
-     * @param filename the filename
-     * @param fileSize the file size
-     * @param transferred the transferred size
-     */
-    public OneToOneTalkArrayItem(ContactId contact, long timestamp, int state, int reason,
-            RcsService.Direction direction, String content, String mimeType, String filename,
-            long fileSize, long transferred) {
-        this(FileTransferLog.HISTORYLOG_MEMBER_ID, contact, timestamp, state, reason, direction,
-                content, mimeType);
-        mFilename = filename;
-        mFileSize = fileSize;
-        mTransferred = transferred;
-    }
-
-    public int getProviderId() {
-        return mProviderId;
+        mUnreadCount = unreadCount;
     }
 
     public long getTimestamp() {
         return mTimestamp;
-    }
-
-    public int getState() {
-        return mState;
     }
 
     public RcsService.Direction getDirection() {
@@ -116,24 +74,8 @@ public class OneToOneTalkArrayItem implements Comparable<OneToOneTalkArrayItem> 
         return mContent;
     }
 
-    public String getFilename() {
-        return mFilename;
-    }
-
     public String getMimeType() {
         return mMimeType;
-    }
-
-    public Long getTransferred() {
-        return mTransferred;
-    }
-
-    public Long getFileSize() {
-        return mFileSize;
-    }
-
-    public int getReason() {
-        return mReason;
     }
 
     @Override
@@ -141,7 +83,15 @@ public class OneToOneTalkArrayItem implements Comparable<OneToOneTalkArrayItem> 
         if (another == null) {
             throw new NullPointerException("Cannot compare to null");
         }
-        return Long.valueOf(mTimestamp).compareTo(another.getTimestamp());
+        return Long.valueOf(another.getTimestamp()).compareTo(mTimestamp);
+    }
+
+    public int getUnreadCount() {
+        return mUnreadCount;
+    }
+
+    public void incrementUnreadCount() {
+        mUnreadCount++;
     }
 
     static public class ViewHolder {
