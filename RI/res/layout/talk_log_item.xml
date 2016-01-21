@@ -21,7 +21,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:padding="2dip">
+    android:padding="5dip">
 
     <TextView
         android:id="@+id/contact_text"
@@ -29,11 +29,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:drawableLeft="@drawable/ri_filetransfer"
-        android:drawablePadding="2dip"
-        android:drawableStart="@drawable/ri_filetransfer"
         android:text="contact"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <TextView
         android:id="@+id/content_text"
@@ -44,10 +41,10 @@
         android:layout_below="@+id/contact_text"
         android:layout_marginLeft="5dip"
         android:layout_marginStart="5dip"
-        android:layout_toLeftOf="@+id/timestamp_text"
-        android:layout_toStartOf="@+id/timestamp_text"
-        android:maxLines="3"
-        android:singleLine="false"
+        android:layout_toLeftOf="@+id/status_text"
+        android:layout_toStartOf="@+id/status_text"
+        android:ellipsize="end"
+        android:singleLine="true"
         android:text="content"
         android:textAppearance="?android:attr/textAppearanceSmall" />
 
@@ -55,25 +52,25 @@
         android:id="@+id/status_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
-        android:layout_alignTop="@id/contact_text"
         android:layout_marginEnd="2dip"
         android:layout_marginRight="2dip"
-        android:drawableLeft="@drawable/ri_outgoing_call"
-        android:drawablePadding="5dip"
-        android:drawableStart="@drawable/ri_outgoing_call"
-        android:text="status"
+        android:layout_marginStart="5dip"
+        android:layout_marginLeft="5dip"
+        android:background="@drawable/counter_circle"
+        android:text=" 0"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textStyle="bold" />
+        android:textColor="@android:color/black" />
 
     <TextView
         android:id="@id/timestamp_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
+        android:layout_alignTop="@id/contact_text"
         android:layout_marginEnd="2dip"
         android:layout_marginRight="2dip"
         android:text="timestamp"

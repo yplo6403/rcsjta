@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,15 +237,6 @@ public class ContactListAdapter extends CursorAdapter {
      * @return the formated text
      */
     private String formatText(Context context, Cursor c, ViewHolder holder) {
-        // Get phone label
-        String label = c.getString(holder.columnLabel);
-        if (label == null) {
-            // Label is not custom, get the string corresponding to the phone
-            // type
-            int type = c.getInt(holder.columnType);
-            label = context.getString(Phone.getTypeLabelResource(type));
-        }
-
         String name = null;
         String[] selectionArgs = new String[] {
             Long.toString(c.getLong(holder.columnContactId))
@@ -261,11 +252,9 @@ public class ContactListAdapter extends CursorAdapter {
         }
         personCursor.close();
         if (name == null) {
-            // Return "phone number"
             return c.getString(holder.columnNumber);
         } else {
-            // Return "name (phone label)"
-            return name + " (" + label + ")";
+            return name;
         }
     }
 
