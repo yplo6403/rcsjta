@@ -16,8 +16,6 @@
 
 package com.sonymobile.rcs.imap;
 
-import com.gsma.rcs.utils.StringUtils;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;

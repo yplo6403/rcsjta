@@ -27,8 +27,10 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
 
+import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,14 +60,14 @@ public class ShowMessagesTask implements Runnable {
     public void run() {
         List<ImapMessage> messages = new ArrayList<>();
         try {
-            mImapServiceController.initService();
+            mImapServiceController.createService().init();
             messages = getMessages(mImapServiceController.getService());
 
-        } catch (ImapServiceNotAvailableException | NetworkException e) {
+        } catch (ImapServiceNotAvailableException | IOException e) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to get messages!" + e.getMessage());
             }
-        } catch (PayloadException | RuntimeException e) {
+        } catch (ImapException | RuntimeException e) {
             sLogger.error("Failed to get messages!", e);
         } finally {
             try {
