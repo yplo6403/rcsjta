@@ -18,6 +18,7 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
+import com.sonymobile.rcs.imap.ImapService;
 
 import android.os.AsyncTask;
 
@@ -63,15 +64,15 @@ public class PushMessageTask extends AsyncTask<String, String, List<String>> {
         currentThread.setName(BasicSynchronizationTask.class.getSimpleName());
 
         try {
-            mImapService = mImapServiceController.getService();
-            mImapServiceController.initService();
+            mImapService = mImapServiceController.createService();
+            mImapService.init();
             return pushMessages(mMessages);
 
-        } catch (ImapServiceNotAvailableException | NetworkException e) {
+        } catch (ImapServiceNotAvailableException | IOException e) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to push messages! error=" + e.getMessage());
             }
-        } catch (PayloadException | RuntimeException e) {
+        } catch (ImapException | RuntimeException e) {
             sLogger.error("Failed to push messages!", e);
 
         } finally {

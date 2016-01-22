@@ -81,10 +81,16 @@ public class Synchronizer {
     public void syncAll() throws ImapServiceNotAvailableException, FileAccessException,
             NetworkException, PayloadException {
         try {
-            mImapServiceController.initService();
+            mImapServiceController.createService().init();
             BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
                     mRcsSettings, mImapServiceController, mLocalStorage, null);
             syncTask.syncAll();
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to sync", e);
+
+        } catch (IOException e) {
+            throw new NetworkException("Failed to sync", e);
+
         } finally {
             mImapServiceController.closeService();
         }

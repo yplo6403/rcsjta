@@ -68,16 +68,16 @@ public class DeleteTask implements Runnable {
     public void run() {
         boolean result = false;
         try {
-            mImapServiceController.initService();
+            mImapServiceController.createService().init();
             delete(mMailbox);
             result = true;
 
-        } catch (ImapServiceNotAvailableException | NetworkException e) {
+        } catch (ImapServiceNotAvailableException | IOException | NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to delete mailbox: '" + mMailbox + "'! error="
                         + e.getMessage());
             }
-        } catch (PayloadException | RuntimeException e) {
+        } catch (ImapException | PayloadException | RuntimeException e) {
             sLogger.error("Failed to delete mailbox: '" + mMailbox + "'!", e);
 
         } finally {
