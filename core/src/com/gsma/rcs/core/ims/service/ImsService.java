@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,7 +72,7 @@ public abstract class ImsService {
         PRESENCE,
         /**
          * Common Message Store Service
-        */
+         */
         CMS,
         /**
          * SIP service
@@ -89,12 +89,12 @@ public abstract class ImsService {
     /**
      * ImsServiceSessionCache with session dialog path's CallId as key
      */
-    private Map<String, ImsServiceSession> mImsServiceSessionCache = new HashMap<String, ImsServiceSession>();
+    private Map<String, ImsServiceSession> mImsServiceSessionCache = new HashMap<>();
 
     /**
      * ImsServiceSessionWithoutDialogPathCache with session Id as key
      */
-    private Map<String, ImsServiceSession> mImsServiceSessionWithoutDialogPathCache = new HashMap<String, ImsServiceSession>();
+    private Map<String, ImsServiceSession> mImsServiceSessionWithoutDialogPathCache = new HashMap<>();
 
     private static final Logger sLogger = Logger.getLogger(ImsService.class.getSimpleName());
 
@@ -223,11 +223,13 @@ public abstract class ImsService {
 
     /**
      * Stop the IMS service
-     * 
+     *
+     * @param reasonCode the reason to stop services
      * @throws NetworkException
      * @throws PayloadException
      */
-    public abstract void stop() throws PayloadException, NetworkException;
+    public abstract void stop(TerminationReason reasonCode) throws PayloadException,
+            NetworkException;
 
     /**
      * Check the IMS service
@@ -249,8 +251,7 @@ public abstract class ImsService {
              * Iterate over a copy of the session set to allow removal in the cache map while
              * iterating.
              */
-            for (ImsServiceSession session : new HashSet<ImsServiceSession>(
-                    mImsServiceSessionCache.values())) {
+            for (ImsServiceSession session : new HashSet<>(mImsServiceSessionCache.values())) {
                 session.terminateSession(reason);
             }
 
@@ -258,7 +259,7 @@ public abstract class ImsService {
              * Iterate over a copy of the session set to allow removal in the cache map while
              * iterating.
              */
-            for (ImsServiceSession session : new HashSet<ImsServiceSession>(
+            for (ImsServiceSession session : new HashSet<>(
                     mImsServiceSessionWithoutDialogPathCache.values())) {
                 session.terminateSession(reason);
             }
