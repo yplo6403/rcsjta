@@ -630,17 +630,21 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 /* Either it is the first conversation loading or switch to another conversation */
                 loadConversation(newContact);
             }
-            /*
-             * Open chat to accept session if the parameter IM SESSION START is 0. Client
-             * application is not aware of the one to one chat session state nor of the IM session
-             * start mode so we call the method systematically.
-             */
-            mChat.openChat();
+
             /* Set activity title with display name */
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
             setTitle(getString(R.string.title_chat, displayName));
             markMessagesAsRead();
             switch (action) {
+                case OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE:
+                    /*
+                     * Open chat to accept session if the parameter IM SESSION START is 0. Client
+                     * application is not aware of the one to one chat session state nor of the IM
+                     * session start mode so we call the method systematically.
+                     */
+                    mChat.openChat();
+                    break;
+
                 case OneToOneChatIntent.ACTION_MESSAGE_DELIVERY_EXPIRED:
                     processUndeliveredMessages(displayName);
                     break;

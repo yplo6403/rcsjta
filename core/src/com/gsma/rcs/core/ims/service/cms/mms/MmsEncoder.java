@@ -18,9 +18,9 @@
 
 package com.gsma.rcs.core.ims.service.cms.mms;
 
+import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.utils.FileUtils;
 
 import android.content.Context;
 
@@ -217,14 +217,9 @@ import java.util.Map;
                 if (body != null) {
                     content = body.getBytes();
                 } else {
-                    content = part.getCompressed();
+                    content = part.getPdu();
                     if (content == null) {
-                        String filePath = FileUtils.getPath(mCtx, part.getFile());
-                        try {
-                            content = FileUtils.getContent(filePath);
-                        } catch (IOException e) {
-                            throw new FileAccessException("Failed to read part: " + filePath, e);
-                        }
+                        content = MmsUtils.getContent(mCtx.getContentResolver(), part.getFile());
                     }
                 }
                 outBuffer.write(encodePart(content, mimeType));

@@ -44,6 +44,7 @@ public class MmsDataObject extends XmsDataObject {
     public static final int MMS_PARTS_MAX_FILE_SIZE = 200000; /* International limit */
 
     private final List<MmsPart> mMmsParts;
+
     /**
      * The MMS Identifier created by the native SMS/MMS application.
      */
@@ -138,12 +139,11 @@ public class MmsDataObject extends XmsDataObject {
             for (Map.Entry<MmsPart, Long> entry : imagesWithTargetSize.entrySet()) {
                 MmsPart part = entry.getKey();
                 Long maxSize = entry.getValue();
-                String imageFilename = FileUtils.getPath(ctx, part.getFile());
-                part.setCompressed(ImageUtils.compressImage(imageFilename, maxSize,
+                String imagePath = FileUtils.getPath(ctx, part.getFile());
+                part.setPdu(ImageUtils.compressImage(imagePath, maxSize,
                         MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT));
             }
         }
-
     }
 
     public String getMmsId() {
@@ -175,8 +175,8 @@ public class MmsDataObject extends XmsDataObject {
         private final Uri mFile;
         private final byte[] mFileIcon;
 
-        /* By default there is no image compression */
-        private byte[] mCompressed;
+        /* Only for outgoing MMS */
+        private byte[] mPdu;
 
         private final String mFileName;
         private final Long mFileSize;
@@ -202,7 +202,7 @@ public class MmsDataObject extends XmsDataObject {
             mFileName = null;
             mFileSize = null;
             mFile = null;
-            mCompressed = null;
+            mPdu = null;
             mFileIcon = null;
         }
 
@@ -238,12 +238,12 @@ public class MmsDataObject extends XmsDataObject {
             return mFileSize;
         }
 
-        public byte[] getCompressed() {
-            return mCompressed;
+        public byte[] getPdu() {
+            return mPdu;
         }
 
-        public void setCompressed(byte[] compressed) {
-            mCompressed = compressed;
+        public void setPdu(byte[] pdu) {
+            mPdu = pdu;
         }
 
         @Override

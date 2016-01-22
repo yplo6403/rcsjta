@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,9 +18,7 @@
  *  *****************************************************************************
  */
 
-package com.gsma.rcs.xms;
-
-import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
+package com.gsma.rcs.xmsimport com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.utils.CloseableUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
@@ -49,6 +47,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+p;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
@@ -160,7 +159,8 @@ public class XmsManager {
         SmsManager.getDefault().sendMultimediaMessage(mCtx, writerUri, null, null,
                 mSentPendingIntent);
         if (sLogger.isActivated()) {
-            sLogger.debug("Send MMS mId=" + messageId + " tId=" + transId + " contact=" + contact);
+            sLogger.debug("Send MMS mId=" + messageId + " tId=" + transId + " contact=" + contact
+                    + " size=" + pdu.length);
         }
     }
 

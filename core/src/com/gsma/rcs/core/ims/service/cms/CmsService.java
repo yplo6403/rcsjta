@@ -30,6 +30,7 @@ import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.ImsService;
+import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -57,7 +58,7 @@ import java.util.List;
 public class CmsService extends ImsService {
     private static final String CMS_OPERATION_THREAD_NAME = "CmsOperations";
     private final static Logger sLogger = Logger.getLogger(CmsService.class.getSimpleName());
-    private Handler mOperationHandler;
+    private final Handler mOperationHandler;
     private final XmsLog mXmsLog;
     private CmsServiceImpl mCmsServiceImpl;
     private ChatServiceImpl mChatServiceImpl;
@@ -84,6 +85,7 @@ public class CmsService extends ImsService {
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mCore = core;
+        mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mCmsManager = new CmsManager(context, imapLog, xmsLog, messagingLog, rcsSettings);
     }
 
@@ -114,21 +116,21 @@ public class CmsService extends ImsService {
         }
         setServiceStarted(true);
         // TODO FGI : mOperationHandler is no more a final member, could be null!
-        mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster(),
                 mChatServiceImpl); // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
 
     @Override
-    public void stop() throws PayloadException {
+    public void stop(ImsServiceSession.TerminationReason reasonCode) throws PayloadException {
         if (!isServiceStarted()) {
             return;
         }
         setServiceStarted(false);
         mCmsManager.stop();
-        mOperationHandler.getLooper().quit();
-        mOperationHandler.getLooper().getThread().interrupt();
+        if (ImsServiceSession.TerminationReason.TERMINATION_BY_SYSTEM == reasonCode) {
+            mOperationHandler.getLooper().quit();
+        }
     }
 
     @Override

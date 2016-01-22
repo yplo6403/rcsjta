@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,8 +90,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context context, CmsService cmsService, ChatServiceImpl chatService, XmsLog xmsLog,
-            RcsSettings rcsSettings, XmsManager xmsManager) {
+    public CmsServiceImpl(Context context, CmsService cmsService, ChatServiceImpl chatService,
+            XmsLog xmsLog, RcsSettings rcsSettings, XmsManager xmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -175,7 +175,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        if(!mCmsService.isAllowedToSync()){
+        if (!mCmsService.isAllowedToSync()) {
             if (sLogger.isActivated()) {
                 sLogger.debug("A previous sync is already in progress");
             }
@@ -214,7 +214,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        if(!mCmsService.isAllowedToSync()){
+        if (!mCmsService.isAllowedToSync()) {
             if (sLogger.isActivated()) {
                 sLogger.debug("A previous sync is already in progress");
             }
@@ -249,7 +249,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (!mCmsService.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        if(!mCmsService.isAllowedToSync()){
+        if (!mCmsService.isAllowedToSync()) {
             if (sLogger.isActivated()) {
                 sLogger.debug("A previous sync is already in progress");
             }
@@ -372,7 +372,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                     subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
                     maxFileIconSize);
             mmsDataObject.setReadStatus(ReadStatus.READ);
-            mXmsLog.addMms(mmsDataObject);
+            mXmsLog.addOutgoingMms(mmsDataObject);
             XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
             mCmsService.tryToDequeueMmsMessages();
             return mms;
@@ -652,7 +652,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
     }
 
-    public XmsMessageEventBroadcaster getXmsMessageBroadcaster(){
+    public XmsMessageEventBroadcaster getXmsMessageBroadcaster() {
         return mXmsMessageBroadcaster;
     }
 }

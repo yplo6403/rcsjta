@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,23 +42,25 @@ public class ImapMmsMessage extends ImapCpimMessage {
 
     private final static Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getSimpleName());
 
-
     private String mSubject;
     private String mMmsId;
     private long mDate;
 
-    public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
+    public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
         mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
-        if(mMmsId == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_ID + " IMAP header is missing");
+        if (mMmsId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_ID
+                    + " IMAP header is missing");
         }
         mSubject = getHeader(Constants.HEADER_SUBJECT);
 
         String dateHeader = getHeader(Constants.HEADER_DATE);
-        if(dateHeader == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE + " IMAP header is missing");
+        if (dateHeader == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
+                    + " IMAP header is missing");
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
@@ -101,8 +103,11 @@ public class ImapMmsMessage extends ImapCpimMessage {
             // If not text or SMIL ?
             if (MimeManager.isImageType(mimeType)) { // base 64
                 try {
-                    byte[] bytes = MmsUtils.getContent(context.getContentResolver(),
-                            mmsPart.getFile());
+                    byte[] bytes = mmsPart.getPdu();
+                    if (bytes == null) {
+                        bytes = MmsUtils
+                                .getContent(context.getContentResolver(), mmsPart.getFile());
+                    }
                     transferEncoding = Constants.HEADER_BASE64;
                     content = Base64.encodeBase64ToString(bytes);
 
@@ -142,19 +147,19 @@ public class ImapMmsMessage extends ImapCpimMessage {
         }
     }
 
-    public String getMmsId(){
+    public String getMmsId() {
         return mMmsId;
     }
 
-    public String getSubject(){
+    public String getSubject() {
         return mSubject;
     }
 
-    public long getDate(){
+    public long getDate() {
         return mDate;
     }
 
     public MultipartCpimBody getCpimBody() {
-        return (MultipartCpimBody)getCpimMessage().getBody();
+        return (MultipartCpimBody) getCpimMessage().getBody();
     }
 }

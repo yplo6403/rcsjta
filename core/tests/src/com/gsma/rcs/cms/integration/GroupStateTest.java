@@ -91,7 +91,7 @@ public class GroupStateTest extends AndroidTestCase{
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
         LocalContentResolver localContentResolver = new LocalContentResolver(context);
-        mXmsLog = XmsLog.createInstance(localContentResolver);
+        mXmsLog = XmsLog.createInstance(context, localContentResolver);
         mMessagingLog = MessagingLog.createInstance(localContentResolver, mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
 

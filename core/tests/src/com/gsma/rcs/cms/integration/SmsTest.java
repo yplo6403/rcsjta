@@ -67,7 +67,7 @@ public class SmsTest extends AndroidTestCase {
         mSettings = RcsSettingsMock.getMockSettings(context);
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
-        mXmsLog = XmsLog.createInstance(new LocalContentResolver(context));
+        mXmsLog = XmsLog.createInstance(context, new LocalContentResolver(context));
         MessagingLog messagingLog = MessagingLog.createInstance(new LocalContentResolver(context),
                 mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 
 package com.gsma.rcs.cms.observer;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.services.rcs.cms.XmsMessage.State;
-import com.gsma.services.rcs.contact.ContactId;
 
 public interface XmsObserverListener {
 
@@ -32,9 +32,10 @@ public interface XmsObserverListener {
 
     void onIncomingMms(MmsDataObject message);
 
-    void onOutgoingMms(MmsDataObject message);
+    void onOutgoingMms(MmsDataObject message) throws FileAccessException;
 
     void onDeleteSmsFromNativeApp(long nativeProviderId);
+
     void onDeleteMmsFromNativeApp(String mmsId);
 
     void onReadXmsConversationFromNativeApp(long nativeThreadId);

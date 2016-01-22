@@ -19,18 +19,16 @@
 
 package com.gsma.rcs.provider.xms.model;
 
+import android.content.Context;
+import android.net.Uri;
+
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
 import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
 import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody.Part;
 import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.cms.utils.MmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -45,9 +43,6 @@ import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.Context;
-import android.net.Uri;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,8 +96,8 @@ public class XmsDataObjectFactory {
                 String fileName = FileUtils.getFileName(context, uri);
                 Long fileLength = (long) data.length;
                 long maxIconSize = rcsSettings.getMaxFileIconSize();
-                String imageFilename = FileUtils.getPath(context, uri);
-                byte[] fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxIconSize);
+                String imagePath = FileUtils.getPath(context, uri);
+                byte[] fileIcon = ImageUtils.tryGetThumbnail(imagePath, maxIconSize);
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
                         contentType, uri, fileIcon));
 

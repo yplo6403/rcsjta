@@ -242,7 +242,7 @@ public class ImsModule implements SipEventListener {
         mCnxManager.terminate();
         mServiceDispatcher.terminate();
         mExtensionManager.stop();
-        getCmsService().stop();
+        getCmsService().stop(TerminationReason.TERMINATION_BY_SYSTEM);
         if (sLogger.isActivated()) {
             sLogger.info("IMS module has been stopped");
         }

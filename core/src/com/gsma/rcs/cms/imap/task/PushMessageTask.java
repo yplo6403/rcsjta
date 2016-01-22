@@ -40,8 +40,8 @@ import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
-
 import com.gsma.services.rcs.contact.ContactId;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
 
@@ -97,8 +97,8 @@ public class PushMessageTask implements Runnable {
      * @param listener
      */
     public PushMessageTask(Context context, RcsSettings rcsSettings,
-                           ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
-                           ContactId contact, PushMessageTaskListener listener) {
+            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
+            ContactId contact, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mImapServiceController = imapServiceController;
@@ -114,7 +114,8 @@ public class PushMessageTask implements Runnable {
         try {
             List<XmsDataObject> messagesToPush = new ArrayList<>();
             String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
-            for (MessageData messageData : mImapLog.getXmsMessages(folder, PushStatus.PUSH_REQUESTED)) {
+            for (MessageData messageData : mImapLog.getXmsMessages(folder,
+                    PushStatus.PUSH_REQUESTED)) {
                 XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
                 if (xms != null) {
                     messagesToPush.add(xms);
@@ -160,13 +161,13 @@ public class PushMessageTask implements Runnable {
 
         try {
             BasicImapService imapService = mImapServiceController.getService();
-            List<String> existingFolders = new ArrayList<String>();
+            List<String> existingFolders = new ArrayList<>();
             for (ImapFolder imapFolder : imapService.listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
             String prevSelectedFolder = "";
             for (XmsDataObject message : messages) {
-                List<Flag> flags = new ArrayList<Flag>();
+                List<Flag> flags = new ArrayList<>();
                 switch (message.getDirection()) {
                     case INCOMING:
                         from = CmsUtils.contactToHeader(message.getContact());
@@ -205,7 +206,7 @@ public class PushMessageTask implements Runnable {
                     imapService.create(remoteFolder);
                     existingFolders.add(remoteFolder);
                 }
-                if(!remoteFolder.equals(prevSelectedFolder)){
+                if (!remoteFolder.equals(prevSelectedFolder)) {
                     imapService.selectCondstore(remoteFolder);
                     prevSelectedFolder = remoteFolder;
                 }

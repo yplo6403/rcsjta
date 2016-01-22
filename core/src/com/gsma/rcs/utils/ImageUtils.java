@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class ImageUtils {
 
     private static Logger sLogger = Logger.getLogger(ImageUtils.class.getSimpleName());
 
-    private static BitmapFactory.Options readImageOptions(String imageFilename) {
+    private static BitmapFactory.Options readImageOptions(String imagePath) {
         /*
          * Read the dimensions and type of the image data prior to construction (and memory
          * allocation) of the bitmap
@@ -58,7 +58,7 @@ public class ImageUtils {
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         /* Decode image just to display dimension */
-        BitmapFactory.decodeFile(imageFilename, options);
+        BitmapFactory.decodeFile(imagePath, options);
         return options;
     }
 

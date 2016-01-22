@@ -69,7 +69,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         super.setUp();
         mContext = getInstrumentation().getContext();
         LocalContentResolver mLocalContentResolver = new LocalContentResolver(mContext.getContentResolver());
-        mXmsLog = XmsLog.createInstance(mLocalContentResolver);
+        mXmsLog = XmsLog.createInstance(mContext, mLocalContentResolver);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact = contactUtils.formatContact("+33786589041");
         mMessageId = "1234567890";
@@ -156,7 +156,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
                 timestamp, files, null, 50000L);
-        mXmsLog.addMms(mms);
+        mXmsLog.addIncomingMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
         assertTrue(cursor.moveToNext());
@@ -226,7 +226,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
                 timestamp, new ArrayList<Uri>(), null,50000L);
-        mXmsLog.addMms(mms);
+        mXmsLog.addIncomingMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(1, cursor.getCount());
         cursor.close();

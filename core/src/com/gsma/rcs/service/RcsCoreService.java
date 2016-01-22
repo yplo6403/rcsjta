@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,6 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
-import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
@@ -169,7 +168,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mMessagingLog = MessagingLog.createInstance(mLocalContentResolver, mRcsSettings);
         mContactManager = ContactManager.createInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
-        mXmsLog = XmsLog.createInstance(mLocalContentResolver);
+        mXmsLog = XmsLog.createInstance(mCtx, mLocalContentResolver);
         mImapLog = ImapLog.createInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
@@ -309,7 +308,8 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mXmsLog, mRcsSettings, core.getXmsManager());
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mXmsLog,
+                    mRcsSettings, core.getXmsManager());
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 

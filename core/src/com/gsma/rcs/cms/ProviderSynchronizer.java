@@ -112,7 +112,7 @@ public class ProviderSynchronizer implements Runnable {
         mSettings = settings;
     }
 
-    private void syncSms() {
+    private void syncSms() throws FileAccessException {
         updateSetOfNativeSmsIds();
         Map<Long, MessageData> rcsMessages = mImapLog.getNativeMessages(MessageType.SMS);
         checkDeletedMessages(MessageType.SMS, rcsMessages);
@@ -120,7 +120,7 @@ public class ProviderSynchronizer implements Runnable {
         checkReadMessages(MessageType.SMS, rcsMessages);
     }
 
-    private void syncMms() {
+    private void syncMms() throws FileAccessException {
         updateSetOfNativeMmsIds();
         Map<Long, MessageData> rcsMessages = mImapLog.getNativeMessages(MessageType.MMS);
         checkDeletedMessages(MessageType.MMS, rcsMessages);
@@ -199,7 +199,7 @@ public class ProviderSynchronizer implements Runnable {
     }
 
     private void checkNewMessages(MessageData.MessageType messageType,
-            Map<Long, MessageData> rcsMessages) {
+            Map<Long, MessageData> rcsMessages) throws FileAccessException {
         if (mNativeIds.isEmpty()) {
             return;
         }
@@ -227,7 +227,11 @@ public class ProviderSynchronizer implements Runnable {
                     if (sLogger.isActivated()) {
                         sLogger.debug(" Importing new MMS message :" + id);
                     }
-                    mXmsLog.addMms(mmsData);
+                    if (Direction.OUTGOING == mmsData.getDirection()) {
+                        mXmsLog.addOutgoingMms(mmsData);
+                    } else {
+                        mXmsLog.addIncomingMms(mmsData);
+                    }
                     mImapLog.addMessage(new MessageData(
                             CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
                             mmsData.getReadStatus() == ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD
@@ -474,14 +478,10 @@ public class ProviderSynchronizer implements Runnable {
             if (isActivated) {
                 sLogger.info(" <<< end sync providers");
             }
-        } catch (RuntimeException e) {
-            /*
-             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-             * which should be handled/fixed within the code. However the cases when we are
-             * executing operations on a thread unhandling such exceptions will eventually lead to
-             * exit the system and thus can bring the whole system down, which is not intended.
-             */
+
+        } catch (RuntimeException | FileAccessException e) {
             sLogger.error("CMS sync failure", e);
+
         }
     }
 }

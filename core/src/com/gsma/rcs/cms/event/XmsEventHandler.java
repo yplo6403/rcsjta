@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  * <p/>
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
@@ -60,9 +61,10 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
      * @param imapLog the IMAP log accessor
      * @param xmsLog the XMS log accessor
      * @param settings the RCS settings accessor
+     * @param xmsMessageEventBroadcaster the broadcaster
      */
     public XmsEventHandler(ImapLog imapLog, XmsLog xmsLog, RcsSettings settings,
-            IXmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+                           IXmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
@@ -131,7 +133,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         if (sLogger.isActivated()) {
             sLogger.debug("onIncomingMms ".concat(message.toString()));
         }
-        mXmsLog.addMms(message);
+        mXmsLog.addIncomingMms(message);
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                 message.getContact()), ReadStatus.UNREAD, MessageData.DeleteStatus.NOT_DELETED,
                 mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
@@ -141,7 +143,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     }
 
     @Override
-    public void onOutgoingMms(MmsDataObject message) {
+    public void onOutgoingMms(MmsDataObject message) throws FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.debug("onOutgoingMms ".concat(message.toString()));
         }
@@ -150,7 +152,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
          * the transactionId.
          */
         if (!mXmsLog.isMessagePersisted(message.getTransId())) {
-            mXmsLog.addMms(message);
+            mXmsLog.addOutgoingMms(message);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
                     mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,

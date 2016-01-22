@@ -70,7 +70,7 @@ public class MmsTest extends AndroidTestCase {
         mSettings = RcsSettingsMock.getMockSettings(context);
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
-        mXmsLog = XmsLog.createInstance(new LocalContentResolver(context));
+        mXmsLog = XmsLog.createInstance(context, new LocalContentResolver(context));
         MessagingLog messagingLog = MessagingLog.createInstance(new LocalContentResolver(context),
                 mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
@@ -332,7 +332,7 @@ public class MmsTest extends AndroidTestCase {
 
         // create messages in local storage
         for (MmsDataObject mms : Test1.conversation) {
-            mXmsLog.addMms(mms);
+            mXmsLog.addIncomingMms(mms);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     mms.getContact()), MessageData.ReadStatus.READ, DeleteStatus.NOT_DELETED,
                     PushStatus.PUSHED, MessageType.MMS, mms.getMessageId(), null));
@@ -363,7 +363,7 @@ public class MmsTest extends AndroidTestCase {
 
         // create messages in local storage
         for (MmsDataObject mms : Test7.conversation) {
-            mXmsLog.addMms(mms);
+            mXmsLog.addIncomingMms(mms);
             String messageId = mms.getMessageId();
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     mms.getContact()), Test7.imapReadStatus, Test7.imapDeleteStatus,
@@ -404,7 +404,7 @@ public class MmsTest extends AndroidTestCase {
 
         // create messages in local storage
         for (MmsDataObject mms : Test8.conversation_local) {
-            mXmsLog.addMms(mms);
+            mXmsLog.addIncomingMms(mms);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     mms.getContact()), Test8.imapReadStatus, Test8.imapDeleteStatus,
                     PushStatus.PUSHED, MessageType.MMS, mms.getMessageId(), null));
@@ -445,7 +445,7 @@ public class MmsTest extends AndroidTestCase {
 
         // create messages in local storage
         for (MmsDataObject mms : Test9.conversation_local) {
-            mXmsLog.addMms(mms);
+            mXmsLog.addIncomingMms(mms);
             String messageId = mms.getMessageId();
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     mms.getContact()), Test9.imapReadStatus, Test9.imapDeleteStatus,
@@ -477,7 +477,7 @@ public class MmsTest extends AndroidTestCase {
 
         createRemoteMessages(MmsIntegrationUtils.Test10.conversation_2);
         for (MmsDataObject mms : MmsIntegrationUtils.Test10.conversation_2) {
-            mXmsLog.addMms(mms);
+            mXmsLog.addOutgoingMms(mms);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     mms.getContact()), Test9.imapReadStatus, Test9.imapDeleteStatus,
                     PushStatus.PUSHED, MessageType.MMS, mms.getMessageId(), null));
@@ -516,7 +516,7 @@ public class MmsTest extends AndroidTestCase {
             createRemoteMessages(MmsIntegrationUtils.Test10.conversation_2);
             for (MmsDataObject mms : MmsIntegrationUtils.Test10.conversation_2) {
                 String msgId = IdGenerator.generateMessageID();
-                mXmsLog.addMms(new MmsDataObject(mms.getMmsId(), msgId, mms.getContact(), mms
+                mXmsLog.addOutgoingMms(new MmsDataObject(mms.getMmsId(), msgId, mms.getContact(), mms
                         .getSubject(), mms.getDirection(), mms.getReadStatus(), mms.getTimestamp(),
                         mms.getNativeProviderId(), mms.getNativeThreadId(), mms.getMmsParts()));
                 mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,

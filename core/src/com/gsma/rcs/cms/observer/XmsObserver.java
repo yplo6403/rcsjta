@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.observer;
-
-import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
+package com.gsma.rcs.cms.observimport static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
 import static com.gsma.rcs.provider.CursorUtil.close;
 
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
@@ -63,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+Set;
 
 /**
  * Class in charge of detecting changes on XMS messages in the native content provider.<br>
@@ -132,10 +131,13 @@ public class XmsObserver implements XmsObserverListener {
                     checkSmsEvents(uri);
                     return;
                 }
-                if (uri.toString().equals(MMS_SMS_URI.toString())) { // handle read notification and
-                                                                     // delete
-                    if (checkMmsEvents()) {
-                        return;
+                if (MMS_SMS_URI.equals(uri)) { // handle read notification and delete
+                    try {
+                        if (checkMmsEvents()) {
+                            return;
+                        }
+                    } catch (FileAccessException e) {
+                        sLogger.error("Check MMS events failure", e);
                     }
                     Map<Long, Boolean> currentConversations = getConversations();
                     if (!checkDeleteConversationEvent(currentConversations)) {
@@ -159,7 +161,7 @@ public class XmsObserver implements XmsObserverListener {
         /**
          * Check SMS events from content provider
          * 
-         * @param uri
+         * @param uri the URI of the SMS
          */
         private void checkSmsEvents(Uri uri) {
             Set<Long> currentSmsIds = getSmsIds();
@@ -177,7 +179,7 @@ public class XmsObserver implements XmsObserverListener {
         /**
          * Notify listeners of a new SMS in the native content provider
          * 
-         * @param uri
+         * @param uri the URI of the SMS
          */
         private void handleNewSms(Uri uri) {
             Cursor cursor = null;
@@ -223,7 +225,7 @@ public class XmsObserver implements XmsObserverListener {
         /**
          * Notify listeners that the SMS status has changed
          * 
-         * @param uri
+         * @param uri the URI of the SMS
          */
         private void handleSmsUpdateStatus(Uri uri) {
             Cursor cursor = null;
@@ -247,7 +249,7 @@ public class XmsObserver implements XmsObserverListener {
         /**
          * Check MMS events from content provider
          */
-        private boolean checkMmsEvents() {
+        private boolean checkMmsEvents() throws FileAccessException {
             Set<String> mmsIds = getMmsIds();
             int diff = mmsIds.size() - mMmsIds.size();
             if (diff == 0) {
@@ -677,7 +679,7 @@ public class XmsObserver implements XmsObserverListener {
     }
 
     @Override
-    public void onOutgoingMms(MmsDataObject message) {
+    public void onOutgoingMms(MmsDataObject message) throws FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.info("onOutgoingMms : ".concat(String.valueOf(message.getNativeProviderId())));
             sLogger.info("listeners size : ".concat(String.valueOf(mXmsObserverListeners.size())));
