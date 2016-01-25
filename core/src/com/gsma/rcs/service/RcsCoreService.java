@@ -326,6 +326,9 @@ public class RcsCoreService extends Service implements CoreListener {
             FileFactory.createDirectory(mRcsSettings.getVideoRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getFileRootDirectory());
             FileFactory.createDirectory(mRcsSettings.getMmsRootDirectory());
+            String fileIconDirectory = mRcsSettings.getFileIconRootDirectory();
+            FileFactory.createDirectory(fileIconDirectory);
+            FileFactory.setNoMedia(fileIconDirectory);
 
             // Init CPU manager
             mCpuManager = new CpuManager(mRcsSettings);
