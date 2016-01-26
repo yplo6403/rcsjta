@@ -19,12 +19,9 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
-
 import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
@@ -33,7 +30,7 @@ import java.io.IOException;
  * Task used to delete mailboxes or messages on the CMS server. Used by the 'CMS Toolkit' or
  * integration test
  */
-public class DeleteTask implements Runnable {
+public class DeleteTask extends CmsTask {
 
     public enum Operation {
         DELETE_ALL, // delete all content for a user
@@ -41,7 +38,6 @@ public class DeleteTask implements Runnable {
         DELETE_MESSAGES // delete messages of a mailbox
     }
 
-    private final ImapServiceController mImapServiceController;
     private final Operation mOperation;
     private final DeleteTaskListener mListener;
     private final String mMailbox;
@@ -49,16 +45,13 @@ public class DeleteTask implements Runnable {
 
     /**
      * Constructor
-     * 
-     * @param imapServiceController the IMAP service controller
+     *
      * @param operation the operation
      * @param mailbox the mailbox
      * @param listener the listener
-     * @throws ImapServiceNotAvailableException
      */
-    public DeleteTask(ImapServiceController imapServiceController, Operation operation,
-            String mailbox, DeleteTaskListener listener) throws ImapServiceNotAvailableException {
-        mImapServiceController = imapServiceController;
+    public DeleteTask(Operation operation,
+            String mailbox, DeleteTaskListener listener) {
         mOperation = operation;
         mMailbox = mailbox;
         mListener = listener;
@@ -68,28 +61,18 @@ public class DeleteTask implements Runnable {
     public void run() {
         boolean result = false;
         try {
-            mImapServiceController.createService().init();
             delete(mMailbox);
             result = true;
 
-        } catch (ImapServiceNotAvailableException | IOException | NetworkException e) {
+        } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to delete mailbox: '" + mMailbox + "'! error="
                         + e.getMessage());
             }
-        } catch (ImapException | PayloadException | RuntimeException e) {
+        } catch (PayloadException | RuntimeException e) {
             sLogger.error("Failed to delete mailbox: '" + mMailbox + "'!", e);
 
         } finally {
-            try {
-                mImapServiceController.closeService();
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
-                }
-            } catch (PayloadException e) {
-                sLogger.error("Failed to close CMS service", e);
-            }
             if (mListener != null) {
                 mListener.onDeleteTaskExecuted(result);
             }
@@ -101,9 +84,7 @@ public class DeleteTask implements Runnable {
      * 
      * @param mailbox the mailbox
      */
-    public void delete(String mailbox) throws NetworkException, PayloadException,
-            ImapServiceNotAvailableException {
-
+    public void delete(String mailbox) throws NetworkException, PayloadException {
         try {
             switch (mOperation) {
                 case DELETE_ALL:
@@ -125,21 +106,19 @@ public class DeleteTask implements Runnable {
         }
     }
 
-    private void deleteAll() throws IOException, ImapException, ImapServiceNotAvailableException {
-        for (String imapFolder : mImapServiceController.getService().list()) {
-            mImapServiceController.getService().delete(imapFolder);
+    private void deleteAll() throws IOException, ImapException {
+        for (String imapFolder : getBasicImapService().list()) {
+            getBasicImapService().delete(imapFolder);
         }
     }
 
-    private void deleteMailbox(String mailbox) throws IOException, ImapException,
-            ImapServiceNotAvailableException {
-        mImapServiceController.getService().delete(mailbox);
+    private void deleteMailbox(String mailbox) throws IOException, ImapException {
+        getBasicImapService().delete(mailbox);
     }
 
-    private void deleteMessages(String mailbox) throws IOException, ImapException,
-            ImapServiceNotAvailableException {
-        mImapServiceController.getService().select(mailbox);
-        mImapServiceController.getService().expunge();
+    private void deleteMessages(String mailbox) throws IOException, ImapException {
+        getBasicImapService().select(mailbox);
+        getBasicImapService().expunge();
     }
 
     /**

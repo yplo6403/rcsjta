@@ -44,7 +44,14 @@ public class SocketIoService implements IoService {
 
     private boolean mUseSsl = true;
 
+    private Integer mSoTimeout;
+
     private Logger mLogger = Logger.getLogger(getClass().getName());
+
+    public SocketIoService(String url, int soTimeout) {
+        this(url);
+        mSoTimeout = soTimeout;
+    }
 
     public SocketIoService(String url) {
         super();
@@ -88,7 +95,9 @@ public class SocketIoService implements IoService {
         } else {
             mSocket = new Socket(mHost, mPort);
         }
-
+        if(mSoTimeout != null){
+            mSocket.setSoTimeout(mSoTimeout); // timeout in ms, prevent readline command from being blocking
+        }
         mIn = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
         mOut = new PrintWriter(mSocket.getOutputStream(), true);
     }

@@ -19,9 +19,6 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
@@ -44,26 +41,23 @@ import java.util.Set;
 /**
  * Task used to update flag status on the CMS server.
  */
-public class UpdateFlagTask implements Runnable {
+public class UpdateFlagTask extends CmsTask  {
 
     private static final Logger sLogger = Logger.getLogger(UpdateFlagTask.class.getSimpleName());
 
     private final UpdateFlagTaskListener mListener;
-    private final ImapServiceController mImapServiceController;
     private ImapLog mImapLog;
     private List<FlagChange> mFlagChanges;
     private final List<FlagChange> mSuccessFullFlagChanges;
 
     /**
      * Constructor
-     * 
-     * @param imapServiceController the IMAP service controller
+     *
      * @param flagChanges the list of changed flags
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapServiceController imapServiceController,
+    public UpdateFlagTask(
             List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
-        mImapServiceController = imapServiceController;
         mListener = listener;
         mFlagChanges = flagChanges;
         mSuccessFullFlagChanges = new ArrayList<>();
@@ -72,13 +66,11 @@ public class UpdateFlagTask implements Runnable {
     /**
      * Constructor
      *
-     * @param imapServiceController the IMAP service controller
      * @param imapLog the IMAP log accessor
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapServiceController imapServiceController, ImapLog imapLog,
+    public UpdateFlagTask(ImapLog imapLog,
             UpdateFlagTaskListener listener) {
-        mImapServiceController = imapServiceController;
         mListener = listener;
         mImapLog = imapLog;
         mSuccessFullFlagChanges = new ArrayList<>();
@@ -87,7 +79,6 @@ public class UpdateFlagTask implements Runnable {
     @Override
     public void run() {
         try {
-            mImapServiceController.createService();
             if (mFlagChanges == null) { // get from db
                 mFlagChanges = new ArrayList<>();
                 mFlagChanges.addAll(getReadChanges());
@@ -95,7 +86,7 @@ public class UpdateFlagTask implements Runnable {
             }
             updateFlags();
 
-        } catch (ImapServiceNotAvailableException | NetworkException e) {
+        } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.info(e.getMessage());
             }
@@ -103,18 +94,8 @@ public class UpdateFlagTask implements Runnable {
             sLogger.error("Runtime error while updating flag status on CMS server!", e);
 
         } finally {
-            try {
-                mImapServiceController.closeService();
-                if (mListener != null) {
-                    mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
-                }
-
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info(e.getMessage());
-                }
-            } catch (PayloadException | RuntimeException e) {
-                sLogger.error("Runtime error while updating flag status on CMS server!", e);
+            if (mListener != null) {
+                mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
             }
         }
     }
@@ -172,25 +153,21 @@ public class UpdateFlagTask implements Runnable {
     /**
      * Update flags
      */
-    public void updateFlags() throws ImapServiceNotAvailableException, NetworkException,
-            PayloadException {
+    public void updateFlags() throws NetworkException, PayloadException {
         String previousFolder = null;
         try {
-            BasicImapService imapService = mImapServiceController.getService();
             for (FlagChange flagChange : mFlagChanges) {
                 String folder = flagChange.getFolder();
                 if (!folder.equals(previousFolder)) {
-
-                    imapService.select(folder);
-
+                    getBasicImapService().select(folder);
                     previousFolder = folder;
                 }
                 switch (flagChange.getOperation()) {
                     case ADD_FLAG:
-                        imapService.addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        getBasicImapService().addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
                         break;
                     case REMOVE_FLAG:
-                        imapService.removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        getBasicImapService().removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
                         break;
                 }
                 mSuccessFullFlagChanges.add(flagChange);

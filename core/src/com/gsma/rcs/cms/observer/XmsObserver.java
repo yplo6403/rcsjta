@@ -17,7 +17,9 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.cms.observimport static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
+package com.gsma.rcs.cms.observer;
+
+import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
 import static com.gsma.rcs.provider.CursorUtil.close;
 
 import com.gsma.rcs.cms.observer.XmsObserverUtils.Conversation;
@@ -61,7 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-Set;
 
 /**
  * Class in charge of detecting changes on XMS messages in the native content provider.<br>

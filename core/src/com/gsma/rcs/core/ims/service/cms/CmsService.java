@@ -19,15 +19,18 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.os.Handler;
+import android.os.HandlerThread;
+
 import com.gsma.rcs.cms.CmsManager;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.sync.Synchronizer;
-import com.gsma.rcs.cms.utils.CmsUtils;
+import com.gsma.rcs.cms.scheduler.CmsOperation;
+import com.gsma.rcs.cms.scheduler.CmsOperationListener;
+import com.gsma.rcs.cms.scheduler.CmsScheduler.SyncType;
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ims.ImsModule;
-import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
@@ -44,11 +47,6 @@ import com.gsma.rcs.service.api.ServerApiUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.Context;
-import android.database.Cursor;
-import android.os.Handler;
-import android.os.HandlerThread;
 
 import java.util.List;
 
@@ -115,9 +113,8 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
-        // TODO FGI : mOperationHandler is no more a final member, could be null!
-        mCmsManager.start(mOperationHandler, mCmsServiceImpl.getXmsMessageBroadcaster(),
-                mChatServiceImpl); // must be started before trying to dequeue MMS messages
+        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl);
+        // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
 
@@ -152,18 +149,14 @@ public class CmsService extends ImsService {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS");
+                    sLogger.debug("Synchronize CMS : syncAll");
                 }
-                try {
-                    new Synchronizer(mContext, mRcsSettings, mCmsManager).syncAll();
-                    mCmsServiceImpl.broadcastAllSynchronized();
-
-                } catch (ImapServiceNotAvailableException | NetworkException e) {
+                // Operations of sync with the message store are executed in a dedicated background handler.
+                // So it does not interact with other operations of this API impacting the calling UI
+                if(!mCmsManager.getSyncScheduler().scheduleSync()){
                     if (sLogger.isActivated()) {
-                        sLogger.info("Failed to sync all conversations! error=" + e.getMessage());
+                        sLogger.debug("Can not schedule a syncAll operation");
                     }
-                } catch (PayloadException | FileAccessException | RuntimeException e) {
-                    sLogger.error("Failed to sync CMS", e);
                 }
             }
         });
@@ -176,26 +169,33 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
-                try {
-                    new Synchronizer(mContext, mRcsSettings, mCmsManager).syncFolder(CmsUtils
-                            .contactToCmsFolder(mRcsSettings, contact));
-                    mCmsServiceImpl.broadcastOneToOneConversationSynchronized(contact);
-
-                } catch (ImapServiceNotAvailableException e) {
+                // Operations of sync with the message store are executed in a dedicated background handler.
+                // So it does not interact with other operations of this API impacting the calling UI
+                if(!mCmsManager.getSyncScheduler().scheduleSyncForOneToOneConversation(contact)){
                     if (sLogger.isActivated()) {
-                        sLogger.info("Failed to sync CMS for contact " + contact
-                                + ": IMAP service not available");
+                        sLogger.debug("Can not schedule a syncOneToOneConversation operation : " + contact);
                     }
-                } catch (PayloadException | NetworkException | FileAccessException
-                        | RuntimeException e) {
-                    sLogger.error("Failed to sync CMS for contact " + contact, e);
                 }
             }
         });
     }
 
     public void syncGroupConversation(final String chatId) {
-        // TODO
+        mOperationHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Synchronize CMS for chatId " + chatId);
+                }
+                // Operations of sync with the message store are executed in a dedicated background handler.
+                // So it does not interact with other operations of this API impacting the calling UI
+                if(!mCmsManager.getSyncScheduler().scheduleSyncForGroupConversation(chatId)){
+                    if (sLogger.isActivated()) {
+                        sLogger.debug("Can not schedule a syncGroupConversation operation : " + chatId);
+                    }
+                }
+            }
+        });
     }
 
     public void tryToDequeueMmsMessages() {
@@ -286,7 +286,4 @@ public class CmsService extends ImsService {
         return mCmsManager;
     }
 
-    public boolean isAllowedToSync() {
-        return mCmsManager.getImapServiceController().isSyncAvailable();
-    }
 }

@@ -84,7 +84,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                 message.getContact()), MessageData.ReadStatus.UNREAD,
                 MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, message.getMessageId(), message.getNativeProviderId()));
         mXmsMessageEventBroadcaster.broadcastNewMessage(message.getMimeType(),
                 message.getMessageId());
@@ -99,7 +99,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                 message.getContact()), MessageData.ReadStatus.READ,
                 MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, message.getMessageId(), message.getNativeProviderId()));
     }
 
@@ -136,7 +136,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mXmsLog.addIncomingMms(message);
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                 message.getContact()), ReadStatus.UNREAD, MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
         mXmsMessageEventBroadcaster.broadcastNewMessage(message.getMimeType(),
                 message.getMessageId());
@@ -155,7 +155,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             mXmsLog.addOutgoingMms(message);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                    mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                    mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                     MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
         }
     }

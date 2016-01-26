@@ -23,10 +23,10 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_imap_server_address" />
+                android:text="@string/message_store_url" />
 
             <EditText
-                android:id="@+id/cms_imap_server_address"
+                android:id="@+id/message_store_url"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
@@ -39,10 +39,10 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_imap_user_login" />
+                android:text="@string/message_store_auth" />
 
             <EditText
-                android:id="@+id/cms_imap_user_login"
+                android:id="@+id/message_store_auth"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
@@ -55,10 +55,26 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_imap_user_pwd" />
+                android:text="@string/message_store_user" />
 
             <EditText
-                android:id="@+id/cms_imap_user_pwd"
+                android:id="@+id/message_store_user"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/message_store_pwd" />
+
+            <EditText
+                android:id="@+id/message_store_pwd"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
@@ -70,29 +86,29 @@
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_push_sms"
-                android:text="@string/cms_push_sms"/>
+                android:id="@+id/message_store_push_sms"
+                android:text="@string/message_store_push_sms"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_push_mms"
-                android:text="@string/cms_push_mms"/>
+                android:id="@+id/message_store_push_mms"
+                android:text="@string/message_store_push_mms"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/cms_update_flag_imap_xms"
-                android:text="@string/cms_update_flag_imap_xms" />
+                android:id="@+id/message_store_update_flag_imap_xms"
+                android:text="@string/message_store_update_flag_imap_xms" />
 
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_default_directory_name" />
+                android:text="@string/message_store_default_directory_name" />
 
             <EditText
-                android:id="@+id/cms_default_directory_name"
+                android:id="@+id/message_store_default_directory_name"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
@@ -105,10 +121,42 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/cms_default_directory_separator" />
+                android:text="@string/message_store_default_directory_separator" />
 
             <EditText
-                android:id="@+id/cms_default_directory_separator"
+                android:id="@+id/message_store_default_directory_separator"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/data_connection_sync_timer" />
+
+            <EditText
+                android:id="@+id/data_connection_sync_timer"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/message_store_sync_timer" />
+
+            <EditText
+                android:id="@+id/message_store_sync_timer"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"

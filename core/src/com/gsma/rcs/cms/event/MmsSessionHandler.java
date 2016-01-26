@@ -62,7 +62,7 @@ public class MmsSessionHandler implements MmsSessionListener {
     public void onMmsTransferred(ContactId contact, String mmsId) {
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings, contact),
                 ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, mmsId, null));
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);

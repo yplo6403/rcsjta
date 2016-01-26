@@ -18,7 +18,9 @@
  *  *****************************************************************************
  */
 
-package com.gsma.rcs.xmsimport com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
+package com.gsma.rcs.xms;
+
+import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
 import com.gsma.rcs.utils.CloseableUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
@@ -47,7 +49,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-p;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.

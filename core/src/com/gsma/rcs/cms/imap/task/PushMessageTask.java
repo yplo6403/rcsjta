@@ -19,20 +19,17 @@
 
 package com.gsma.rcs.cms.imap.task;
 
+import android.content.Context;
+
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
 import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
-import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.utils.CmsUtils;
-import com.gsma.rcs.core.ims.network.NetworkException;
-import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -41,11 +38,8 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.contact.ContactId;
-
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
-
-import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,12 +51,11 @@ import java.util.UUID;
 /**
  * Task executed to push messages on the CMS server
  */
-public class PushMessageTask implements Runnable {
+public class PushMessageTask extends CmsTask {
 
     private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
 
     /* package private */final PushMessageTaskListener mListener;
-    /* package private */final ImapServiceController mImapServiceController;
     /* package private */final RcsSettings mRcsSettings;
     /* package private */final Context mContext;
     /* package private */final XmsLog mXmsLog;
@@ -76,13 +69,11 @@ public class PushMessageTask implements Runnable {
      *
      * @param context
      * @param rcsSettings
-     * @param imapServiceController
      * @param xmsLog
      * @param imapLog
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog) {
-        this(context, rcsSettings, imapServiceController, xmsLog, imapLog, null, null);
+    public PushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog, ImapLog imapLog) {
+        this(context, rcsSettings, xmsLog, imapLog, null, null);
     }
 
     /**
@@ -90,18 +81,16 @@ public class PushMessageTask implements Runnable {
      *
      * @param context
      * @param rcsSettings
-     * @param imapServiceController
      * @param xmsLog
      * @param imapLog
      * @param contact
      * @param listener
      */
     public PushMessageTask(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, XmsLog xmsLog, ImapLog imapLog,
-            ContactId contact, PushMessageTaskListener listener) {
+                           XmsLog xmsLog, ImapLog imapLog,
+                           ContactId contact, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
-        mImapServiceController = imapServiceController;
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mContact = contact;
@@ -111,41 +100,23 @@ public class PushMessageTask implements Runnable {
 
     @Override
     public void run() {
-        try {
-            List<XmsDataObject> messagesToPush = new ArrayList<>();
-            String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
-            for (MessageData messageData : mImapLog.getXmsMessages(folder,
-                    PushStatus.PUSH_REQUESTED)) {
-                XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
-                if (xms != null) {
-                    messagesToPush.add(xms);
-                }
+        List<XmsDataObject> messagesToPush = new ArrayList<>();
+        String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
+        for (MessageData messageData : mImapLog.getXmsMessages(folder, PushStatus.PUSH_REQUESTED)) {
+            XmsDataObject xms = mXmsLog.getXmsDataObject(messageData.getMessageId());
+            if (xms != null) {
+                messagesToPush.add(xms);
             }
-            if (messagesToPush.isEmpty()) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("no message to push");
-                }
-            }
-            mImapServiceController.createService();
-            pushMessages(messagesToPush);
-
-        } catch (ImapServiceNotAvailableException e) {
+        }
+        if (messagesToPush.isEmpty()) {
             if (sLogger.isActivated()) {
-                sLogger.info(e.getMessage());
+                sLogger.debug("no message to push");
             }
-        } finally {
-            try {
-                mImapServiceController.closeService();
-                if (mListener != null) {
-                    mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
-                }
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info(e.getMessage());
-                }
-            } catch (PayloadException | RuntimeException e) {
-                sLogger.error("Failed to close connection with CMS server", e);
-            }
+        }
+        pushMessages(messagesToPush);
+
+        if (mListener != null) {
+            mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
         }
     }
 
@@ -160,9 +131,8 @@ public class PushMessageTask implements Runnable {
         from = to = direction = null;
 
         try {
-            BasicImapService imapService = mImapServiceController.getService();
             List<String> existingFolders = new ArrayList<>();
-            for (ImapFolder imapFolder : imapService.listStatus()) {
+            for (ImapFolder imapFolder : getBasicImapService().listStatus()) {
                 existingFolders.add(imapFolder.getName());
             }
             String prevSelectedFolder = "";
@@ -203,17 +173,17 @@ public class PushMessageTask implements Runnable {
                 String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings,
                         message.getContact());
                 if (!existingFolders.contains(remoteFolder)) {
-                    imapService.create(remoteFolder);
+                    getBasicImapService().create(remoteFolder);
                     existingFolders.add(remoteFolder);
                 }
                 if (!remoteFolder.equals(prevSelectedFolder)) {
-                    imapService.selectCondstore(remoteFolder);
+                    getBasicImapService().selectCondstore(remoteFolder);
                     prevSelectedFolder = remoteFolder;
                 }
-                int uid = imapService.append(remoteFolder, flags, imapMessage.toPayload());
+                int uid = getBasicImapService().append(remoteFolder, flags, imapMessage.toPayload());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
-        } catch (IOException | ImapException | ImapServiceNotAvailableException e) {
+        } catch (IOException | ImapException e) {
             if (sLogger.isActivated()) {
                 sLogger.debug(e.getMessage());
                 e.printStackTrace(); // FIX ME : debug purpose

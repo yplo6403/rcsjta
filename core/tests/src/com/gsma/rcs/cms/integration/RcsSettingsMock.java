@@ -26,29 +26,29 @@ public class RcsSettingsMock{
     public static RcsSettings getMockSettings(Context context){
         RcsSettings settings = RcsSettings.createInstance(new LocalContentResolver(context));
 
-        mOriServerAddress = settings.getCmsServerAddress();
-        mOriUserLogin = settings.getCmsUserLogin();
-        mOriUserPwd = settings.getCmsUserPwd();
-        mOriDefaultDirectory = settings.getCmsDefaultDirectoryName();
-        mOriDirectorySeparator = settings.getCmsDirectorySeparator();
+        mOriServerAddress = settings.getMessageStoreUrl();
+        mOriUserLogin = settings.getMessageStoreUser();
+        mOriUserPwd = settings.getMessageStorePwd();
+        mOriDefaultDirectory = settings.getMessageStoreDefaultDirectoryName();
+        mOriDirectorySeparator = settings.getMessageStoreDirectorySeparator();
         mOriContact = settings.getUserProfileImsUserName();
 
-        settings.setCmsServerAddress(mServerAddress);
-        settings.setCmsUserLogin(mUserLogin);
-        settings.setCmsUserPwd(mUserPwd);
-        settings.setCmsDefaultDirectoryName(mDefaultDirectory);
-        settings.setCmsDirectorySeparator(mDirectorySeparator);
+        settings.setMessageStoreUrl(mServerAddress);
+        settings.setMessageStoreUser(mUserLogin);
+        settings.setMessageStorePwd(mUserPwd);
+        settings.setMessageStoreDefaultDirectoryName(mDefaultDirectory);
+        settings.setMessageStoreDirectorySeparator(mDirectorySeparator);
         settings.setUserProfileImsUserName(ContactUtil.createContactIdFromTrustedData("+33601020304"));
         return settings;
     }
 
     public static void restoreSettings(){
         RcsSettings settings = RcsSettings.createInstance(null);
-        settings.setCmsServerAddress(mOriServerAddress);
-        settings.setCmsUserLogin(mOriUserLogin);
-        settings.setCmsUserPwd(mOriUserPwd);
-        settings.setCmsDefaultDirectoryName(mOriDefaultDirectory);
-        settings.setCmsDirectorySeparator(mOriDirectorySeparator);
+        settings.setMessageStoreUrl(mOriServerAddress);
+        settings.setMessageStoreUser(mOriUserLogin);
+        settings.setMessageStorePwd(mOriUserPwd);
+        settings.setMessageStoreDefaultDirectoryName(mOriDefaultDirectory);
+        settings.setMessageStoreDirectorySeparator(mOriDirectorySeparator);
         settings.setUserProfileImsUserName(mOriContact);
     }
 

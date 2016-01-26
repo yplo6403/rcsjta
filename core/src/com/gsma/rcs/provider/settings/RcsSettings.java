@@ -410,11 +410,18 @@ public class RcsSettings {
      */
     public void setUserProfileImsUserName(ContactId contact) {
         writeContactId(RcsSettingsData.USERPROFILE_IMS_USERNAME, contact);
-        if(contact!=null && getCmsUserLogin().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN)){
-            setCmsUserLogin(contact.toString());
+        if(contact == null){
+            return;
         }
-        if(contact!=null && getCmsUserPwd().equals(RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD)){
-            setCmsUserPwd(contact.toString());
+        String messageStoreUser = contact.toString();
+        if(messageStoreUser.startsWith("+")){
+            messageStoreUser = messageStoreUser.substring(1);
+        }
+        if(getMessageStoreUser().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_USER)){
+            setMessageStoreUser(messageStoreUser);
+        }
+        if(getMessageStorePwd().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD)){
+            setMessageStorePwd(messageStoreUser);
         }
     }
 
@@ -2433,67 +2440,76 @@ public class RcsSettings {
     /**
      * Cms settings
      */
-    public void setCmsServerAddress(String serverAddress){
-        writeString(RcsSettingsData.CMS_IMAP_SERVER_ADDRESS, serverAddress);
+    public void setMessageStoreUrl(String messageStoreUrl){
+        writeString(RcsSettingsData.MESSAGE_STORE_URL, messageStoreUrl);
     }
 
-    public String getCmsServerAddress(){
-        return readString(RcsSettingsData.CMS_IMAP_SERVER_ADDRESS);
+    public String getMessageStoreUrl(){
+        return readString(RcsSettingsData.MESSAGE_STORE_URL);
     }
 
-    public String getCmsUserLogin() {
-        return readString(RcsSettingsData.CMS_IMAP_USER_LOGIN);
+    public String getMessageStoreAuth() {
+        return readString(RcsSettingsData.MESSAGE_STORE_AUTH);
     }
 
-    public void setCmsUserLogin(String userLogin){
-        writeString(RcsSettingsData.CMS_IMAP_USER_LOGIN, userLogin);
+    public String getMessageStoreUser() {
+        return readString(RcsSettingsData.MESSAGE_STORE_USER);
     }
 
-    public String getCmsUserPwd(){
-        return readString(RcsSettingsData.CMS_IMAP_USER_PWD);
+    public void setMessageStoreUser(String messageStoreUser){
+        writeString(RcsSettingsData.MESSAGE_STORE_USER, messageStoreUser);
     }
 
-    public void setCmsUserPwd(String userPwd){
-        writeString(RcsSettingsData.CMS_IMAP_USER_PWD, userPwd);
+    public String getMessageStorePwd(){
+        return readString(RcsSettingsData.MESSAGE_STORE_PWD);
     }
 
-    public Boolean getCmsPushSms(){
-        return readBoolean(RcsSettingsData.CMS_PUSH_SMS);
+    public void setMessageStorePwd(String messageStorePwd){
+        writeString(RcsSettingsData.MESSAGE_STORE_PWD, messageStorePwd);
     }
 
-    public void setCmsPushSms(boolean enable){
-        writeBoolean(RcsSettingsData.CMS_PUSH_SMS, enable);
+    public Boolean getMessageStorePushSms(){
+        return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
     }
 
-    public Boolean getCmsPushMms(){
-        return readBoolean(RcsSettingsData.CMS_PUSH_MMS);
+    public Boolean getMessageStorePushMms(){
+        return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
     }
 
-    public void setCmsPushMms(boolean enable){
-        writeBoolean(RcsSettingsData.CMS_PUSH_MMS, enable);
+    public Boolean getMessageStoreUpdateFlagsWithImapXms(){
+        return readBoolean(RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS);
     }
 
-    public Boolean getCmsUpdateFlagsWithImapXms(){
-        return readBoolean(RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
+    public String getMessageStoreDefaultDirectoryName(){
+        return readString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME);
     }
 
-    public void setCmsUpdateFlagsWithImapXms(boolean update){
-        writeBoolean(RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS, update);
+    public void setMessageStoreDefaultDirectoryName(String defaultDirectory){
+        writeString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, defaultDirectory);
     }
 
-    public String getCmsDefaultDirectoryName(){
-        return readString(RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME);
+    public String getMessageStoreDirectorySeparator(){
+        return readString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR);
     }
 
-    public void setCmsDefaultDirectoryName(String defaultDirectory){
-        writeString(RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME, defaultDirectory);
+    public void setMessageStoreDirectorySeparator(String directorySeparator){
+        writeString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, directorySeparator);
     }
 
-    public String getCmsDirectorySeparator(){
-        return readString(RcsSettingsData.CMS_DIRECTORY_SEPARATOR);
+    public int getDataConnectionSyncTimer(){
+        return readInteger(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
     }
 
-    public void setCmsDirectorySeparator(String directorySeparator){
-        writeString(RcsSettingsData.CMS_DIRECTORY_SEPARATOR, directorySeparator);
+    public void setDataConnectionSyncTimer(int dataConnectionSyncTimer){
+        writeInteger(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, dataConnectionSyncTimer);
     }
+
+    public int getMessageStoreSyncTimer(){
+        return readInteger(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER);
+    }
+
+    public void setMessageStoreSyncTimer(int dataConnectionSyncTimer){
+        writeInteger(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, dataConnectionSyncTimer);
+    }
+
 }

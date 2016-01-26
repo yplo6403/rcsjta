@@ -21,38 +21,26 @@ package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
-import com.gsma.rcs.core.ims.network.NetworkException;
-import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
-
-import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.ImapMessage;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Task used to show messages from the CMS server. Used by the 'CMS Toolkit'
  */
-public class ShowMessagesTask implements Runnable {
+public class ShowMessagesTask extends CmsTask  {
 
     private final ShowMessagesTaskListener mListener;
-    private final ImapServiceController mImapServiceController;
     private static final Logger sLogger = Logger.getLogger(ShowMessagesTask.class.getSimpleName());
 
     /**
      * Constructor
-     * 
-     * @param imapServiceController
+     *
      * @param listener
-     * @throws ImapServiceNotAvailableException
      */
-    public ShowMessagesTask(ImapServiceController imapServiceController,
-            ShowMessagesTaskListener listener) throws ImapServiceNotAvailableException {
-        mImapServiceController = imapServiceController;
+    public ShowMessagesTask(ShowMessagesTaskListener listener) {
         mListener = listener;
     }
 
@@ -60,25 +48,10 @@ public class ShowMessagesTask implements Runnable {
     public void run() {
         List<ImapMessage> messages = new ArrayList<>();
         try {
-            mImapServiceController.createService().init();
-            messages = getMessages(mImapServiceController.getService());
-
-        } catch (ImapServiceNotAvailableException | IOException e) {
-            if (sLogger.isActivated()) {
-                sLogger.info("Failed to get messages!" + e.getMessage());
-            }
-        } catch (ImapException | RuntimeException e) {
+            messages = getMessages(getBasicImapService());
+        } catch (RuntimeException e) {
             sLogger.error("Failed to get messages!", e);
         } finally {
-            try {
-                mImapServiceController.closeService();
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
-                }
-            } catch (PayloadException | RuntimeException e) {
-                sLogger.error("Failed to close CMS service", e);
-            }
             if (mListener != null) {
                 mListener.onShowMessagesTaskExecuted(messages);
             }

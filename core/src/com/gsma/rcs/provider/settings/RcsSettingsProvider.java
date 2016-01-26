@@ -411,23 +411,30 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_PROV_REJECT_BUTTON);
             addParameter(db, RcsSettingsData.LOCAL_DISPLAY_LANGUAGE,
                     RcsSettingsData.DEFAULT_LOCAL_DISPLAY_LANGUAGE);
-            //cms
-            addParameter(db, RcsSettingsData.CMS_IMAP_SERVER_ADDRESS,
-                    RcsSettingsData.DEFAULT_CMS_IMAP_SERVER_ADDRESS);
-            addParameter(db, RcsSettingsData.CMS_IMAP_USER_LOGIN,
-                    RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN);
-            addParameter(db, RcsSettingsData.CMS_IMAP_USER_PWD,
-                    RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD);
-            addParameter(db, RcsSettingsData.CMS_PUSH_SMS,
-                    RcsSettingsData.DEFAULT_CMS_PUSH_SMS);
-            addParameter(db, RcsSettingsData.CMS_PUSH_MMS,
-                    RcsSettingsData.DEFAULT_CMS_PUSH_MMS);
-            addParameter(db, RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS,
-                    RcsSettingsData.DEFAULT_CMS_UPDATE_FLAGS_WITH_IMAP_XMS);
-            addParameter(db, RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME,
-                    RcsSettingsData.DEFAULT_CMS_DEFAULT_DIRECTORY_NAME);
-            addParameter(db, RcsSettingsData.CMS_DIRECTORY_SEPARATOR,
-                    RcsSettingsData.DEFAULT_CMS_DIRECTORY_SEPARATOR);
+            //message store
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_URL,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_URL);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_AUTH,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_AUTH);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_USER,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_USER);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_PWD,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_PUSH_SMS,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_SMS);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_MMS);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_DIRECTORY_SEPARATOR);
+            addParameter(db, RcsSettingsData.DATA_CONNECTION_SYNC_TIMER,
+                    RcsSettingsData.DEFAULT_DATA_CONNECTION_SYNC_TIMER);
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_SYNC_TIMER,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_SYNC_TIMER);
+
         }
 
         @Override

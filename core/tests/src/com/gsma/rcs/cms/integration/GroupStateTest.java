@@ -5,36 +5,17 @@ import android.test.AndroidTestCase;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.event.CmsEventHandler;
-import com.gsma.rcs.cms.imap.message.ImapChatMessage;
 import com.gsma.rcs.cms.imap.message.ImapChatMessageTest;
-import com.gsma.rcs.cms.imap.message.ImapGroupStateMessage;
-import com.gsma.rcs.cms.imap.message.ImapImdnMessage;
 import com.gsma.rcs.cms.imap.message.ImapImdnMessageTest;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.imap.service.ImapServiceHandler;
 import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
-import com.gsma.rcs.cms.imap.task.PushMessageTask;
-import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.Test1;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.Test2;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.Test7;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.Test8;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.Test9;
-import com.gsma.rcs.cms.integration.SmsIntegrationUtils.TestLoad;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.ImapLogEnvIntegration;
-import com.gsma.rcs.cms.provider.imap.MessageData;
-import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
-import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.provider.xms.XmsLogEnvIntegration;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
-import com.gsma.rcs.cms.sync.strategy.FlagChange;
-import com.gsma.rcs.cms.toolkit.operations.Message;
-import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.cms.utils.DateUtils;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
@@ -43,25 +24,10 @@ import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
-import com.gsma.rcs.utils.IdGenerator;
-import com.gsma.services.rcs.RcsService.ReadStatus;
-import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactUtil;
-import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.Status;
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.ImapMessage;
-import com.sonymobile.rcs.imap.ImapMessageMetadata;
-import com.sonymobile.rcs.imap.Part;
 
-import junit.framework.Assert;
-
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -74,7 +40,7 @@ public class GroupStateTest extends AndroidTestCase{
     private XmsLogEnvIntegration mXmsLogEnvIntegration;
     private RcsSettings mSettings;
     private LocalStorage mLocalStorage;
-    private ImapServiceController mImapServiceController;
+    private ImapServiceHandler mImapServiceHandler;
     private BasicImapService mBasicImapService;
     private BasicSyncStrategy mSyncStrategy;
     private ImapLog mImapLog;
@@ -103,15 +69,15 @@ public class GroupStateTest extends AndroidTestCase{
 
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mImapLog, mXmsLog, mMessagingLog, chatService, mSettings, null);
         mLocalStorage = new LocalStorage(mImapLog, cmsEventHandler );
-        mImapServiceController = new ImapServiceController(mSettings);
-        mBasicImapService = mImapServiceController.createService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mImapServiceController, mLocalStorage);
+        mImapServiceHandler = new ImapServiceHandler(mSettings);
+        mBasicImapService = mImapServiceHandler.openService();
+        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, mLocalStorage);
         mBasicImapService.init();
     }
 
     protected void tearDown() throws Exception {
         super.tearDown();
-        mImapServiceController.closeService();
+        mImapServiceHandler.closeService();
         RcsSettingsMock.restoreSettings();
     }
 
@@ -204,7 +170,8 @@ public class GroupStateTest extends AndroidTestCase{
     }
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
-        DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_MAILBOX, mailbox, null);
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
+        deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
             mBasicImapService.close();

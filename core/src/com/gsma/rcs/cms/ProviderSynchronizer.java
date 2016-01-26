@@ -218,7 +218,7 @@ public class ProviderSynchronizer implements Runnable {
                             smsData.getReadStatus() == ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD
                                     : MessageData.ReadStatus.READ_REPORT_REQUESTED,
                             MessageData.DeleteStatus.NOT_DELETED,
-                            mSettings.getCmsPushSms() ? PushStatus.PUSH_REQUESTED
+                            mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
                                     : PushStatus.PUSHED, MessageType.SMS, smsData.getMessageId(),
                             smsData.getNativeProviderId()));
                 }
@@ -237,7 +237,7 @@ public class ProviderSynchronizer implements Runnable {
                             mmsData.getReadStatus() == ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD
                                     : MessageData.ReadStatus.READ_REPORT_REQUESTED,
                             MessageData.DeleteStatus.NOT_DELETED,
-                            mSettings.getCmsPushMms() ? PushStatus.PUSH_REQUESTED
+                            mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
                                     : PushStatus.PUSHED, MessageType.MMS, mmsData.getMessageId(),
                             mmsData.getNativeProviderId()));
                 }

@@ -3,8 +3,7 @@ package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.cms.event.CmsEventHandler;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.imap.service.ImapServiceHandler;
 import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.Operation;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
@@ -53,7 +52,7 @@ public class SmsTest extends AndroidTestCase {
 
     private XmsLogEnvIntegration mXmsLogEnvIntegration;
     private RcsSettings mSettings;
-    private ImapServiceController mImapServiceController;
+    private ImapServiceHandler mImapServiceHandler;
     private BasicImapService mBasicImapService;
     private BasicSyncStrategy mSyncStrategy;
     private ImapLog mImapLog;
@@ -74,16 +73,16 @@ public class SmsTest extends AndroidTestCase {
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mImapLog, mXmsLog,
                 messagingLog, null, mSettings, null);
         LocalStorage localStorage = new LocalStorage(mImapLog, cmsEventHandler);
-        mImapServiceController = new ImapServiceController(mSettings);
-        mBasicImapService = mImapServiceController.createService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mImapServiceController,
+        mImapServiceHandler = new ImapServiceHandler(mSettings);
+        mBasicImapService = mImapServiceHandler.openService();
+        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService,
                 localStorage);
         mBasicImapService.init();
     }
 
     protected void tearDown() throws Exception {
         super.tearDown();
-        mImapServiceController.closeService();
+        mImapServiceHandler.closeService();
         RcsSettingsMock.restoreSettings();
     }
 
@@ -95,8 +94,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 2 : start a sync</li>
      * </ul>
      */
-    public void test1() throws FileAccessException, ImapServiceNotAvailableException,
-            NetworkException, PayloadException {
+    public void test1() throws FileAccessException, NetworkException, PayloadException {
         Map<Integer, MessageData> imapData;
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -141,7 +139,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync : messages are marked as deleted in local storage</li>
      * </ul>
      */
-    public void test2() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test2() throws FileAccessException,
             NetworkException, PayloadException {
         test1();
 
@@ -190,8 +188,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 5 : start sync : messages are marked as deleted in local storage</li>
      * </ul>
      */
-    public void test3() throws FileAccessException, ImapServiceNotAvailableException,
-            NetworkException, PayloadException {
+    public void test3() throws FileAccessException, NetworkException, PayloadException {
         test1();
 
         List<SmsDataObject> messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
@@ -233,7 +230,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : check that conversation is marked as seen</li>
      * </ul>
      */
-    public void test4() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test4() throws FileAccessException,
             NetworkException, PayloadException {
         test1();
         // delete mailbox on CMS
@@ -279,7 +276,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : check that conversation is marked as seen</li>
      * </ul>
      */
-    public void test5() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test5() throws FileAccessException,
             NetworkException, PayloadException {
         test1();
 
@@ -327,7 +324,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test6() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test6() throws FileAccessException,
             NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -358,7 +355,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test7() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test7() throws FileAccessException,
             NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -400,7 +397,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test8() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test8() throws FileAccessException,
             NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -442,7 +439,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>storage step 3 : start a sync</li>
      * </ul>
      */
-    public void test9() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test9() throws FileAccessException,
             NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -476,7 +473,7 @@ public class SmsTest extends AndroidTestCase {
     /**
      * Test10 : multi contact
      */
-    public void test10() throws FileAccessException, ImapServiceNotAvailableException,
+    public void test10() throws FileAccessException,
             NetworkException, PayloadException {
 
         deleteLocalStorage(true, true);
@@ -513,7 +510,7 @@ public class SmsTest extends AndroidTestCase {
                 mImapLogEnvIntegration.getMessages(SmsIntegrationUtils.Test10.folder3).size());
     }
 
-    public void testLoad() throws FileAccessException, ImapServiceNotAvailableException,
+    public void testLoad() throws FileAccessException,
             NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -562,23 +559,25 @@ public class SmsTest extends AndroidTestCase {
         }
     }
 
-    private void createRemoteMessages(XmsDataObject[] messages)
-            throws ImapServiceNotAvailableException {
-        PushMessageTask task = new PushMessageTask(mContext, mSettings, mImapServiceController,
+    private void createRemoteMessages(XmsDataObject[] messages) {
+        PushMessageTask task = new PushMessageTask(mContext, mSettings,
                 mXmsLog, mImapLog);
+        task.setBasicImapService(mBasicImapService);
         task.pushMessages(Arrays.asList(messages));
     }
 
-    private void deleteRemoteStorage() throws ImapServiceNotAvailableException, NetworkException,
+    private void deleteRemoteStorage() throws NetworkException,
             PayloadException {
-        DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_ALL, null,
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null,
                 null);
+        deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(null);
     }
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
-        DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_MAILBOX,
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX,
                 mailbox, null);
+        deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
             mBasicImapService.close();
@@ -587,20 +586,22 @@ public class SmsTest extends AndroidTestCase {
         mBasicImapService.init();
     }
 
-    private void deleteRemoteMessages(String mailbox) throws ImapServiceNotAvailableException,
+    private void deleteRemoteMessages(String mailbox) throws
             NetworkException, PayloadException {
-        DeleteTask deleteTask = new DeleteTask(mImapServiceController, Operation.DELETE_MESSAGES,
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES,
                 mailbox, null);
+        deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
     }
 
     private void updateRemoteFlags(List<FlagChange> changes)
-            throws ImapServiceNotAvailableException, NetworkException, PayloadException {
-        UpdateFlagTask task = new UpdateFlagTask(mImapServiceController, changes, null);
+            throws NetworkException, PayloadException {
+        UpdateFlagTask task = new UpdateFlagTask(changes, null);
+        task.setBasicImapService(mBasicImapService);
         task.updateFlags();
     }
 
-    private void startSynchro() throws FileAccessException, ImapServiceNotAvailableException,
+    private void startSynchro() throws FileAccessException,
             NetworkException, PayloadException {
         mSyncStrategy.execute();
     }

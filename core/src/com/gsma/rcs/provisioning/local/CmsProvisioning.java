@@ -39,8 +39,10 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
 
 import static com.gsma.rcs.provisioning.local.Provisioning.saveCheckBoxParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.saveIntegerEditTextParam;
 import static com.gsma.rcs.provisioning.local.Provisioning.saveStringEditTextParam;
 import static com.gsma.rcs.provisioning.local.Provisioning.setCheckBoxParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.setIntegerEditTextParam;
 import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextParam;
 
 /**
@@ -95,23 +97,25 @@ public class CmsProvisioning extends Activity {
 
         ProvisioningHelper helper = new ProvisioningHelper(this, mRcsSettings, bundle);
 
-        saveStringEditTextParam(R.id.cms_imap_server_address, RcsSettingsData.CMS_IMAP_SERVER_ADDRESS, helper);
-        saveStringEditTextParam(R.id.cms_imap_user_login, RcsSettingsData.CMS_IMAP_USER_LOGIN, helper);
-        saveStringEditTextParam(R.id.cms_imap_user_pwd, RcsSettingsData.CMS_IMAP_USER_PWD, helper);
+        saveStringEditTextParam(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URL, helper);
+        saveStringEditTextParam(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH, helper);
+        saveStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
+        saveStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
 
         ImapLog imapLog = ImapLog.getInstance();
-        saveCheckBoxParam(R.id.cms_push_sms, RcsSettingsData.CMS_PUSH_SMS, helper);
-        if(!((CheckBox)findViewById(R.id.cms_push_sms)).isChecked()){
+        saveCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS, helper);
+        if(!((CheckBox)findViewById(R.id.message_store_push_sms)).isChecked()){
             imapLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
         }
-        saveCheckBoxParam(R.id.cms_push_mms, RcsSettingsData.CMS_PUSH_MMS, helper);
-        if(!((CheckBox)findViewById(R.id.cms_push_mms)).isChecked()){
+        saveCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS, helper);
+        if(!((CheckBox)findViewById(R.id.message_store_push_mms)).isChecked()){
             imapLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
-        saveCheckBoxParam(R.id.cms_update_flag_imap_xms, RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
-
-        saveStringEditTextParam(R.id.cms_default_directory_name, RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME, helper);
-        saveStringEditTextParam(R.id.cms_default_directory_separator, RcsSettingsData.CMS_DIRECTORY_SEPARATOR, helper);
+        saveCheckBoxParam(R.id.message_store_update_flag_imap_xms, RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
+        saveStringEditTextParam(R.id.message_store_default_directory_name, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
+        saveStringEditTextParam(R.id.message_store_default_directory_separator, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
+        saveIntegerEditTextParam(R.id.data_connection_sync_timer, RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
+        saveIntegerEditTextParam(R.id.message_store_sync_timer, RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
     }
 
     /**
@@ -122,16 +126,20 @@ public class CmsProvisioning extends Activity {
     private void updateView(Bundle bundle) {
         ProvisioningHelper helper = new ProvisioningHelper(this, mRcsSettings, bundle);
 
-        setStringEditTextParam(R.id.cms_imap_server_address, RcsSettingsData.CMS_IMAP_SERVER_ADDRESS, helper);
-        setStringEditTextParam(R.id.cms_imap_user_login, RcsSettingsData.CMS_IMAP_USER_LOGIN, helper);
-        setStringEditTextParam(R.id.cms_imap_user_pwd, RcsSettingsData.CMS_IMAP_USER_PWD, helper);
+        setStringEditTextParam(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URL, helper);
+        setStringEditTextParam(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH, helper);
+        setStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
+        setStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
 
-        setCheckBoxParam(R.id.cms_push_sms, RcsSettingsData.CMS_PUSH_SMS, helper);
-        setCheckBoxParam(R.id.cms_push_mms, RcsSettingsData.CMS_PUSH_MMS, helper);
-        setCheckBoxParam(R.id.cms_update_flag_imap_xms, RcsSettingsData.CMS_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
+        setCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS, helper);
+        setCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS, helper);
+        setCheckBoxParam(R.id.message_store_update_flag_imap_xms, RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
 
-        setStringEditTextParam(R.id.cms_default_directory_name, RcsSettingsData.CMS_DEFAULT_DIRECTORY_NAME, helper);
-        setStringEditTextParam(R.id.cms_default_directory_separator, RcsSettingsData.CMS_DIRECTORY_SEPARATOR, helper);
+        setStringEditTextParam(R.id.message_store_default_directory_name, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
+        setStringEditTextParam(R.id.message_store_default_directory_separator, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
+
+        setIntegerEditTextParam(R.id.data_connection_sync_timer, RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
+        setIntegerEditTextParam(R.id.message_store_sync_timer, RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
     }
 
     /**
@@ -141,7 +149,7 @@ public class CmsProvisioning extends Activity {
         public void onClick(View v) {
             // Save parameters
             saveInstanceState(null);
-            Toast.makeText(CmsProvisioning.this, getString(R.string.cms_save_ok), Toast.LENGTH_LONG).show();
+            Toast.makeText(CmsProvisioning.this, getString(R.string.message_store_save_ok), Toast.LENGTH_LONG).show();
         }
     };
 }

@@ -1,57 +1,34 @@
 
 package com.gsma.rcs.cms.event;
 
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.task.PushMessageTask;
-import com.gsma.rcs.cms.imap.task.PushMessageTask.PushMessageTaskListener;
-import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
-import com.gsma.rcs.cms.imap.task.UpdateFlagTask.UpdateFlagTaskListener;
+import android.content.Context;
+
 import com.gsma.rcs.cms.observer.XmsObserverListener;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
-import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
-import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
-import com.gsma.rcs.cms.sync.strategy.FlagChange;
+import com.gsma.rcs.cms.scheduler.CmsScheduler;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.Context;
-import android.os.Handler;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 /**
  * This class should be removed. Should be used for testing purpose only It creates SMS messages on
  * the CMS server with IMAP command.
  */
-public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessageListener,
-        PushMessageTaskListener, UpdateFlagTaskListener {
+public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessageListener {
 
     private static final Logger sLogger = Logger.getLogger(ImapEventFrameworkHandler.class
             .getSimpleName());
 
     private final Context mContext;
     private final RcsSettings mSettings;
-    private final XmsLog mXmsLog;
-    private final ImapLog mImapLog;
-    private final Handler mHandler;
-    private final ImapServiceController mImapServiceController;
+    private final CmsScheduler mScheduler;
 
-    public ImapEventFrameworkHandler(Handler handler, Context context, RcsSettings settings,
-                                     ImapLog imapLog, XmsLog xmsLog, ImapServiceController imapServiceController) {
-        mHandler = handler;
+    public ImapEventFrameworkHandler(Context context, CmsScheduler scheduler, RcsSettings settings) {
         mContext = context;
+        mScheduler = scheduler;
         mSettings = settings;
-        mImapLog = imapLog;
-        mXmsLog = xmsLog;
-        mImapServiceController = imapServiceController;
     }
 
     @SuppressWarnings("unchecked")
@@ -59,17 +36,13 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
     public void onIncomingSms(SmsDataObject message) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.info("onIncomingSms");
+            sLogger.info("onIncomingSms, schedule push messages operation");
         }
-        if (!mImapServiceController.isSyncAvailable()) {
-            if (logActivated) {
-                sLogger.debug("IMAP sync not available");
-                sLogger.debug(" --> PushMessageTask will not be started now");
+        if(!mScheduler.schedulePushMessages(message.getContact())){
+            if(logActivated){
+                sLogger.info("--> can not schedule operation");
             }
-            return;
         }
-        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, message.getContact(), this));
     }
 
     @SuppressWarnings("unchecked")
@@ -77,17 +50,13 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
     public void onOutgoingSms(SmsDataObject message) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.info("onOutgoingSms");
+            sLogger.info("onOutgoingSms, schedule push messages operation");
         }
-        if (!mImapServiceController.isSyncAvailable()) {
+        if (!mScheduler.schedulePushMessages(message.getContact())){
             if (logActivated) {
-                sLogger.debug("IMAP sync not available");
-                sLogger.debug(" --> PushMessageTask will not be started now");
+                sLogger.info("--> can not schedule operation");
             }
-            return;
         }
-        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, message.getContact(), this));
     }
 
     @Override
@@ -96,7 +65,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (isLogActivated) {
             sLogger.info("onDeleteNativeSms");
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -107,36 +76,28 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
 
     @Override
     public void onIncomingMms(MmsDataObject message) {
-        boolean isLogActivated = sLogger.isActivated();
-        if (isLogActivated) {
-            sLogger.info("onIncomingMms");
+        boolean logActivated = sLogger.isActivated();
+        if (logActivated) {
+            sLogger.info("onIncomingMms, schedule push messages operation");
         }
-        if (!mImapServiceController.isSyncAvailable()) {
-            if (isLogActivated) {
-                sLogger.debug("IMAP sync not available");
-                sLogger.debug(" --> PushMessageTask will not be started now");
+        if (!mScheduler.schedulePushMessages(message.getContact())){
+            if (logActivated) {
+                sLogger.info("--> can not schedule operation");
             }
-            return;
         }
-        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, message.getContact(), this));
     }
 
     @Override
     public void onOutgoingMms(MmsDataObject message) {
-        boolean isLogActivated = sLogger.isActivated();
-        if (isLogActivated) {
-            sLogger.info("onOutgoingMms");
+        boolean logActivated = sLogger.isActivated();
+        if (logActivated) {
+            sLogger.info("onOutgoingMms, schedule push messages operation");
         }
-        if (!mImapServiceController.isSyncAvailable()) {
-            if (isLogActivated) {
-                sLogger.debug("IMAP sync not available");
-                sLogger.debug(" --> PushMessageTask will not be started now");
+        if (!mScheduler.schedulePushMessages(message.getContact())){
+            if (logActivated) {
+                sLogger.info("--> can not schedule operation");
             }
-            return;
         }
-        mHandler.post(new PushMessageTask(mContext, mSettings, mImapServiceController, mXmsLog,
-                mImapLog, message.getContact(), this));
     }
 
     @Override
@@ -145,7 +106,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (isLogActivated) {
             sLogger.info("onDeleteNativeMms");
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -164,7 +125,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (isLogActivated) {
             sLogger.info("onReadNativeConversation");
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -179,7 +140,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (isLogActivated) {
             sLogger.info("onDeleteNativeConversation: " + nativeThreadId);
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -190,14 +151,11 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
 
     @SuppressWarnings("unchecked")
     private void updateFlags() {
-        if (!mImapServiceController.isSyncAvailable()) {
-            if (sLogger.isActivated()) {
-                sLogger.debug("IMAP sync not available");
-                sLogger.debug(" --> UpdateFlagTask will not be started now");
+        if (!mScheduler.scheduleUpdateFlags()){
+            if (sLogger.isActivated()){
+                sLogger.info("--> can not schedule operation");
             }
-            return;
         }
-        mHandler.post(new UpdateFlagTask(mImapServiceController, mImapLog, this));
     }
 
     @Override
@@ -206,7 +164,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (isLogActivated) {
             sLogger.info("onReadXmsMessage: ".concat(messageId));
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -222,7 +180,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
             sLogger.info("onReadXmsConversation: ".concat(contactId.toString()));
         }
 
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -237,7 +195,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteXmsMessage: ".concat(messageId));
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -252,7 +210,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteXmsConversation:".concat(contactId.toString()));
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -267,7 +225,7 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         if (sLogger.isActivated()) {
             sLogger.info("onDeleteAllXmsMessage");
         }
-        if (!mSettings.getCmsUpdateFlagsWithImapXms()) {
+        if (!mSettings.getMessageStoreUpdateFlagsWithImapXms()) {
             if (isLogActivated) {
                 sLogger.info("Update flags with IMAP command not enabled for XMS");
             }
@@ -275,36 +233,4 @@ public class ImapEventFrameworkHandler implements XmsObserverListener, XmsMessag
         }
         updateFlags();
     }
-
-    @Override
-    public void onPushMessageTaskCallbackExecuted(Map<String, Integer> uidsMap) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onPushMessageTaskCallbackExecuted");
-        }
-        for (Entry<String, Integer> entry : uidsMap.entrySet()) {
-            String baseId = entry.getKey();
-            Integer uid = entry.getValue();
-            mImapLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
-        }
-    }
-
-    @Override
-    public void onUpdateFlagTaskExecuted(List<FlagChange> flags) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onUpdateFlagTaskExecuted");
-        }
-        for (FlagChange fg : flags) {
-            boolean deleted = fg.isDeleted();
-            boolean seen = fg.isSeen();
-            String folderName = fg.getFolder();
-            for (Integer uid : fg.getUids()) {
-                if (deleted) {
-                    mImapLog.updateDeleteStatus(folderName, uid, DeleteStatus.DELETED);
-                } else if (seen) {
-                    mImapLog.updateReadStatus(folderName, uid, ReadStatus.READ);
-                }
-            }
-        }
-    }
-
 }

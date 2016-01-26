@@ -1,17 +1,14 @@
 
 package com.gsma.rcs.cms.toolkit.operations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-
 import com.sonymobile.rcs.imap.Flag;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class Message {
 

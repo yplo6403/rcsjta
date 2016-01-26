@@ -19,8 +19,9 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import android.content.Context;
+
+import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
 import com.gsma.rcs.core.FileAccessException;
@@ -28,8 +29,6 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
-
-import android.content.Context;
 
 /**
  * Task executed for a complete sync with the CMS server. In a first step, change from CMS server
@@ -45,7 +44,7 @@ public class BasicSynchronizationTask implements Runnable {
     private final RcsSettings mRcsSettings;
     private final BasicSynchronizationTaskListener mListener;
     private final LocalStorage mLocalStorageHandler;
-    private final ImapServiceController mImapServiceController;
+    private final BasicImapService mBasicImapService;
     private final String mFolderName;
 
     /**
@@ -53,17 +52,17 @@ public class BasicSynchronizationTask implements Runnable {
      * 
      * @param context the context
      * @param rcsSettings the RCS settings accessor
-     * @param imapServiceController the IMAP service controller
+     * @param basicImapService the IMAP service
      * @param localStorageHandler the local storage accessor
      * @param folderName the folder name
      * @param listener the sync listener
      */
     public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, LocalStorage localStorageHandler,
+            BasicImapService basicImapService, LocalStorage localStorageHandler,
             String folderName, BasicSynchronizationTaskListener listener) {
         mContext = context;
         mRcsSettings = rcsSettings;
-        mImapServiceController = imapServiceController;
+        mBasicImapService = basicImapService;
         mLocalStorageHandler = localStorageHandler;
         mListener = listener;
         mFolderName = folderName;
@@ -74,27 +73,26 @@ public class BasicSynchronizationTask implements Runnable {
      * 
      * @param context the context
      * @param rcsSettings the RCS settings accessor
-     * @param imapServiceController the IMAP service controller
+     * @param basicImapService the IMAP service
      * @param localStorageHandler the local storage accessor
      * @param listener the sync listener
      */
     public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, LocalStorage localStorageHandler,
+            BasicImapService basicImapService, LocalStorage localStorageHandler,
             BasicSynchronizationTaskListener listener) {
-        this(context, rcsSettings, imapServiceController, localStorageHandler, null, listener);
+        this(context, rcsSettings, basicImapService, localStorageHandler, null, listener);
     }
 
     @Override
     public void run() {
         boolean result = false;
         try {
-            mImapServiceController.createService();
             if (mFolderName != null) {
                 result = syncFolder(mFolderName);
             } else {
                 result = syncAll();
             }
-        } catch (ImapServiceNotAvailableException | NetworkException e) {
+        } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 if (mFolderName != null) {
                     sLogger.info("Failed to sync CMS for folder=" + mFolderName + ": "
@@ -110,17 +108,8 @@ public class BasicSynchronizationTask implements Runnable {
                 sLogger.error("Failed to sync CMS", e);
             }
         } finally {
-            try {
-                mImapServiceController.closeService();
-                if (mListener != null) {
-                    mListener.onBasicSynchronizationTaskExecuted(result);
-                }
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info("Failed to close CMS service! error=" + e.getMessage());
-                }
-            } catch (PayloadException | RuntimeException e) {
-                sLogger.error("Failed to close CMS service", e);
+            if (mListener != null) {
+                mListener.onBasicSynchronizationTaskExecuted(result);
             }
         }
     }
@@ -130,15 +119,14 @@ public class BasicSynchronizationTask implements Runnable {
      * 
      * @param folder the folder
      * @return True if sync is successful
-     * @throws ImapServiceNotAvailableException, ImapException, FileAccessException, IOException
+     * @throws FileAccessException, PayloadException, NetworkException
      */
-    public boolean syncFolder(String folder) throws ImapServiceNotAvailableException,
-            FileAccessException, PayloadException, NetworkException {
+    public boolean syncFolder(String folder) throws FileAccessException, PayloadException, NetworkException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync folder: ".concat(folder));
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                mImapServiceController, mLocalStorageHandler);
+                mBasicImapService, mLocalStorageHandler);
         strategy.execute(folder);
         return strategy.getExecutionResult();
     }
@@ -147,15 +135,15 @@ public class BasicSynchronizationTask implements Runnable {
      * Method used to start a sync on all conversations in a synchronous way
      * 
      * @return True if sync is successful
-     * @throws ImapServiceNotAvailableException, ImapException, FileAccessException, IOException
+     * @throws PayloadException, NetworkException, FileAccessException
      */
-    public boolean syncAll() throws ImapServiceNotAvailableException, PayloadException,
+    public boolean syncAll() throws PayloadException,
             NetworkException, FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync all");
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                mImapServiceController, mLocalStorageHandler);
+                mBasicImapService, mLocalStorageHandler);
         strategy.execute();
         return strategy.getExecutionResult();
     }

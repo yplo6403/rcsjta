@@ -13,7 +13,6 @@ import android.widget.ListView;
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.toolkit.delete.DeleteOperations;
 import com.gsma.rcs.cms.toolkit.operations.RemoteOperations;
-import com.gsma.rcs.cms.toolkit.xms.XmsList;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -24,7 +23,7 @@ public class Toolkit extends ListActivity {
 
     private static final Logger sLogger = Logger.getLogger(Toolkit.class.getSimpleName());
 
-    private RcsSettings mRcsSettings;
+    private static RcsSettings mRcsSettings;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -44,7 +43,6 @@ public class Toolkit extends ListActivity {
         String[] items = {
                 getString(R.string.menu_cms_toolkit_remote_operations),
                 getString(R.string.menu_cms_toolkit_delete),
-                getString(R.string.menu_cms_toolkit_sms),
         };
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items);
         setListAdapter(arrayAdapter);        
@@ -66,25 +64,18 @@ public class Toolkit extends ListActivity {
                 }
                 startActivity(new Intent(this, DeleteOperations.class));
                 break;
-
-            case 2:
-                if(!checkSettings()){
-                    return;
-                }
-                startActivity(new Intent(this, XmsList.class));
-                break;
         }
     }
 
     private boolean checkSettings() {
 
-        String defaultCmsServerAddress = RcsSettingsData.DEFAULT_CMS_IMAP_SERVER_ADDRESS;
-        String defaultLogin = RcsSettingsData.DEFAULT_CMS_IMAP_USER_LOGIN;
-        String defaultPwd = RcsSettingsData.DEFAULT_CMS_IMAP_USER_PWD;
+        String defaultCmsServerAddress = RcsSettingsData.DEFAULT_MESSAGE_STORE_URL;
+        String defaultLogin = RcsSettingsData.DEFAULT_MESSAGE_STORE_USER;
+        String defaultPwd = RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD;
 
-        if(mRcsSettings.getCmsServerAddress().equals(defaultCmsServerAddress) ||
-            mRcsSettings.getCmsUserLogin().equals(defaultLogin) ||
-            mRcsSettings.getCmsUserPwd().equals(defaultPwd)
+        if(mRcsSettings.getMessageStoreUrl().equals(defaultCmsServerAddress) ||
+            mRcsSettings.getMessageStoreUser().equals(defaultLogin) ||
+            mRcsSettings.getMessageStorePwd().equals(defaultPwd)
                 ) {
             AlertDialogUtils.showMessage(this, getString(R.string.cms_toolkit_settings_set_provisoning));
             return false;
@@ -100,11 +91,4 @@ public class Toolkit extends ListActivity {
         return core;
     }
 
-    public static boolean checkCore(Context context, Core core ){
-        if(core != Core.getInstance()){
-            AlertDialogUtils.showMessage(context, "You have to restart the Toolkit");
-            return false;
-        }
-        return true;
-    }
 }

@@ -26,23 +26,22 @@ import com.gsma.rcs.cms.event.ImapEventFrameworkHandler;
 import com.gsma.rcs.cms.event.MmsSessionHandler;
 import com.gsma.rcs.cms.event.XmsEventHandler;
 import com.gsma.rcs.cms.event.XmsMessageListener;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
 import com.gsma.rcs.cms.observer.XmsObserver;
 import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.cms.scheduler.CmsOperation;
+import com.gsma.rcs.cms.scheduler.CmsScheduler;
 import com.gsma.rcs.cms.storage.LocalStorage;
-import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
-import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
+import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
-import android.os.Handler;
 
 public class CmsManager implements XmsMessageListener {
 
@@ -57,8 +56,8 @@ public class CmsManager implements XmsMessageListener {
     private GroupChatEventHandler mGroupChatEventHandler;
     private LocalStorage mLocalStorage;
     private ImapEventFrameworkHandler mImapEventFrameworkHandler;
-    private ImapServiceController mImapServiceController;
     private MmsSessionHandler mMmsSessionHandler;
+    private CmsScheduler mSyncScheduler;
     private final static Logger sLogger = Logger.getLogger(CmsManager.class.getSimpleName());
 
     /**
@@ -81,28 +80,26 @@ public class CmsManager implements XmsMessageListener {
 
     /**
      * Start the CmsManager
-     * 
-     * @param operationHandler the operation handler
-     * @param xmsMessageEventBroadcaster the XMS event broadcaster
+     *
+     * @param cmsService the Cms service
      * @param chatService the RCS chat service
      */
-    public void start(Handler operationHandler,
-            XmsMessageEventBroadcaster xmsMessageEventBroadcaster, ChatServiceImpl chatService) {
-        // execute sync between providers in handler
-        operationHandler.post(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings,
-                mXmsLog, mImapLog));
+    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService) {
+        // execute sync between providers in a dedicated thread
+        new Thread(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings,
+                mXmsLog, mImapLog)).start();
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
 
         // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
         mXmsEventHandler = new XmsEventHandler(mImapLog, mXmsLog, mRcsSettings,
-                xmsMessageEventBroadcaster);
+                cmsService.getXmsMessageBroadcaster());
         mXmsObserver.registerListener(mXmsEventHandler);
 
         // instantiate CmsEventHandler in charge of handling events from Cms
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog,
-                mMessagingLog, chatService, mRcsSettings, xmsMessageEventBroadcaster);
+                mMessagingLog, chatService, mRcsSettings, cmsService.getXmsMessageBroadcaster());
 
         // instantiate ChatEventHandler in charge of handling events from ChatSession,read or
         // deletion of messages
@@ -115,14 +112,14 @@ public class CmsManager implements XmsMessageListener {
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
         mLocalStorage = new LocalStorage(mImapLog, cmsEventHandler);
 
-        // handle imap connection
-        mImapServiceController = new ImapServiceController(mRcsSettings);
-        mImapServiceController.start();
+        // start scheduler for sync
+        mSyncScheduler = new CmsScheduler(mContext, mRcsSettings, mLocalStorage, mImapLog, mXmsLog);
+        mSyncScheduler.registerListener(CmsOperation.SYNC_FOR_USER_ACTIVITY, cmsService);
+        mSyncScheduler.start();
 
         // instantiate ImapEventFrameworkHandler in charge of Pushing messages and updating flags with
         // Imap command
-        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(operationHandler, mContext,
-                mRcsSettings, mImapLog, mXmsLog, mImapServiceController);
+        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(mContext, mSyncScheduler, mRcsSettings);
         mXmsObserver.registerListener(mImapEventFrameworkHandler);
 
         mMmsSessionHandler = new MmsSessionHandler(mImapLog, mXmsLog, mRcsSettings,
@@ -142,16 +139,9 @@ public class CmsManager implements XmsMessageListener {
             mXmsObserver = null;
         }
 
-        if (mImapServiceController != null) {
-            try {
-                mImapServiceController.stop();
-
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("Failed to close IMAP controller ", e);
-                }
-            }
-            mImapServiceController = null;
+        if(mSyncScheduler != null){
+            mSyncScheduler.stop();
+            mSyncScheduler = null;
         }
 
         mLocalStorage = null;
@@ -243,10 +233,6 @@ public class CmsManager implements XmsMessageListener {
         return mLocalStorage;
     }
 
-    public ImapServiceController getImapServiceController() {
-        return mImapServiceController;
-    }
-
     public ChatEventHandler getChatEventHandler() {
         return mChatEventHandler;
     }
@@ -257,5 +243,9 @@ public class CmsManager implements XmsMessageListener {
 
     public MmsSessionHandler getMmsSessionHandler() {
         return mMmsSessionHandler;
+    }
+
+    public CmsScheduler getSyncScheduler(){
+        return mSyncScheduler;
     }
 }

@@ -1399,31 +1399,64 @@ public class RcsSettingsData {
     /**
      * Cms settings
      */
-    public static final String CMS_IMAP_SERVER_ADDRESS = "cms_imap_server_address";
-    public static final String DEFAULT_CMS_IMAP_SERVER_ADDRESS = "imap://";
 
-    public static final String CMS_IMAP_USER_LOGIN = "cms_imap_user_login";
-    public  static final String DEFAULT_CMS_IMAP_USER_LOGIN = "";
+    /**
+     * Message store url
+     */
+    public static final String MESSAGE_STORE_URL = "messageStoreUrl";
+    public static final String DEFAULT_MESSAGE_STORE_URL = "imap://";
 
-    public static final String CMS_IMAP_USER_PWD = "cms_imap_user_pwd";
-    public static final String DEFAULT_CMS_IMAP_USER_PWD = "";
+    /**
+     * Message store user
+     */
+    public static final String MESSAGE_STORE_USER = "messageStoreUser";
+    public  static final String DEFAULT_MESSAGE_STORE_USER = "";
+
+    /**
+     * Message store pwd
+     */
+    public static final String MESSAGE_STORE_PWD = "messageStorePwd";
+    public static final String DEFAULT_MESSAGE_STORE_PWD = "";
+
+    /**
+     * Message store auth
+     * 0 : plain user and pwd
+     * 1 : SASL
+     */
+    public static final String MESSAGE_STORE_AUTH = "messageStoreAuth";
+    public static final int DEFAULT_MESSAGE_STORE_AUTH = 0;
+
+    /**
+     * Data connection sync timer in ms
+     * 0 : timer not activated, all synchronization requests due to data
+     *     connection state change shall be sent
+     */
+    public static final String DATA_CONNECTION_SYNC_TIMER = "dataConnectionSyncTimer";
+    public static final int DEFAULT_DATA_CONNECTION_SYNC_TIMER = 120000;
+
+    /**
+     * Message store sync timer in ms
+     * 0 : no automatic client request for synchronization.
+     */
+    public static final String MESSAGE_STORE_SYNC_TIMER = "messageStoreSyncTimer";
+    public static final int DEFAULT_MESSAGE_STORE_SYNC_TIMER = 120000;
 
     /* Push SMS */
-    public static final String CMS_PUSH_SMS = "cms_push_sms";
-    /* package private */static final Boolean DEFAULT_CMS_PUSH_SMS = true;
+    public static final String MESSAGE_STORE_PUSH_SMS = "messageStorePushSms";
+    /* package private */static final Boolean DEFAULT_MESSAGE_STORE_PUSH_SMS = true;
 
     /* Push MMS */
-    public static final String CMS_PUSH_MMS = "cms_push_mms";
-    /* package private */static final Boolean DEFAULT_CMS_PUSH_MMS = true;
+    public static final String MESSAGE_STORE_PUSH_MMS = "messageStorePushMms";
+    /* package private */static final Boolean DEFAULT_MESSAGE_STORE_PUSH_MMS = true;
 
     /* Update flag with IMAP command for XMS messages*/
-    public static final String CMS_UPDATE_FLAGS_WITH_IMAP_XMS = "cms_update_flags_with_imap_xms";
-    /* package private */static final Boolean DEFAULT_CMS_UPDATE_FLAGS_WITH_IMAP_XMS = true;
+    public static final String MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS = "messageStoreUpdateFlagsWithImapXms";
+    /* package private */static final Boolean DEFAULT_MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS = true;
 
-    public static final String CMS_DEFAULT_DIRECTORY_NAME = "cms_default_directory";
-    /* package private */static final String DEFAULT_CMS_DEFAULT_DIRECTORY_NAME = "Default";
+    public static final String MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "messageStoreDefaultDirectory";
+    /* package private */static final String DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "Default";
 
-    public static final String CMS_DIRECTORY_SEPARATOR = "cms_directory_separator";
-    /* package private */static final String DEFAULT_CMS_DIRECTORY_SEPARATOR = "/";
+    public static final String MESSAGE_STORE_DIRECTORY_SEPARATOR = "messageStoreDirectorySeparator";
+    /* package private */static final String DEFAULT_MESSAGE_STORE_DIRECTORY_SEPARATOR = "/";
 
 }

@@ -6,7 +6,6 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -14,13 +13,11 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.gsma.rcs.R;
-import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
+import com.gsma.rcs.cms.imap.task.CmsTask;
+import com.gsma.rcs.cms.scheduler.CmsScheduler;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.Toolkit;
-import com.gsma.rcs.cms.toolkit.operations.remote.CreateMessages;
 import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -49,7 +46,6 @@ public class RemoteOperations extends ListActivity {
         /* Set items */
         String[] items = {
                 getString(R.string.cms_toolkit_remote_operations_delete_messages),
-                getString(R.string.cms_toolkit_remote_operations_create_messages),
                 getString(R.string.cms_toolkit_remote_operations_show_messages)
         };
         setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items));
@@ -60,60 +56,45 @@ public class RemoteOperations extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         switch (position) {
             case 0:
-                try {
-                    new DeleteTask(RemoteOperations.this).execute(new String[0]);
-                    mInProgressDialog = AlertDialogUtils.displayInfo(RemoteOperations.this,
-                            getString(R.string.cms_toolkit_in_progress));
-
-                } catch (ImapServiceNotAvailableException e) {
-                    e.printStackTrace();
-                    Toast.makeText(this, getString(R.string.label_cms_toolkit_xms_sync_impossible), Toast.LENGTH_LONG).show();
-                }
+                CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager().getSyncScheduler();
+                scheduler.scheduleToolkitTask(new DeleteTask(RemoteOperations.this));
+                mInProgressDialog = AlertDialogUtils.displayInfo(RemoteOperations.this,
+                        getString(R.string.cms_toolkit_in_progress));
                 break;
             case 1:
-                startActivity(new Intent(this, CreateMessages.class));
-                break;
-            case 2:
                 startActivity(new Intent(this, ShowMessages.class));
                 break;
         }
     }
 
-    public class DeleteTask extends AsyncTask<String, String, Boolean> {
+    public class DeleteTask extends CmsTask {
 
         private Context mContext;
-        private ImapServiceController mImapServiceController;
 
         /**
          * @param ctx
-         * @throws ImapServiceNotAvailableException 
          */
-        public DeleteTask(Context ctx) throws ImapServiceNotAvailableException {            
+        public DeleteTask(Context ctx) {
             mContext = ctx;
-            mImapServiceController  = Core.getInstance().getCmsService().getCmsManager().getImapServiceController();
         }
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        public void run() {
+            boolean result;
             try {
-                BasicImapService imapService = mImapServiceController.createService();
-                imapService.init();
-                boolean res = deleteExistingMessages((BasicImapService) imapService);
-                mImapServiceController.closeService();
-                return res;
+                getBasicImapService().init();
+                result = deleteExistingMessages(getBasicImapService());
             } catch (Exception e) {
-                return false;
+                result = false;
             }
-        }
 
-        @Override
-        protected void onPostExecute(Boolean result) {
             if (mInProgressDialog != null) {
                 mInProgressDialog.dismiss();
             }
             String message = result ? getString(R.string.cms_toolkit_result_ok)
                     : getString(R.string.cms_toolkit_result_ko);
             AlertDialogUtils.showMessage(mContext, message);
+
         }
 
         /**

@@ -21,8 +21,6 @@ package com.gsma.rcs.cms.sync.strategy;
 
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
-import com.gsma.rcs.cms.imap.service.ImapServiceController;
-import com.gsma.rcs.cms.imap.service.ImapServiceNotAvailableException;
 import com.gsma.rcs.cms.imap.task.PushMessageTask;
 import com.gsma.rcs.cms.provider.imap.DataUtils;
 import com.gsma.rcs.cms.provider.imap.FolderData;
@@ -32,7 +30,6 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.ISyncProcessor;
 import com.gsma.rcs.cms.sync.SyncProcessorImpl;
-import com.gsma.rcs.cms.utils.CmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -65,29 +62,28 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
 
     private boolean mExecutionResult;
 
-    private final ImapServiceController mImapServiceController;
+    private final BasicImapService mBasicImapService;
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final LocalStorage mLocalStorageHandler;
     private ISyncProcessor mSynchronizer;
 
     /**
-     * @param imapServiceController IMAP service controller
+     * @param basicImapService IMAP service
      * @param localStorageHandler local storage handler
      */
     public BasicSyncStrategy(Context context, RcsSettings rcsSettings,
-            ImapServiceController imapServiceController, LocalStorage localStorageHandler) {
+            BasicImapService basicImapService, LocalStorage localStorageHandler) {
         mContext = context;
         mRcsSettings = rcsSettings;
-        mImapServiceController = imapServiceController;
+        mBasicImapService = basicImapService;
         mLocalStorageHandler = localStorageHandler;
     }
 
     /**
      * Execute a full sync
      */
-    public void execute() throws FileAccessException, ImapServiceNotAvailableException,
-            NetworkException, PayloadException {
+    public void execute() throws FileAccessException, NetworkException, PayloadException {
         execute(null);
     }
 
@@ -96,19 +92,17 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
      * 
      * @param folderName the folder to synchronize
      */
-    public void execute(String folderName) throws ImapServiceNotAvailableException,
-            FileAccessException, NetworkException, PayloadException {
+    public void execute(String folderName) throws FileAccessException, NetworkException, PayloadException {
         mExecutionResult = false;
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.debug(">>> BasicSyncStrategy.execute");
         }
         Map<String, FolderData> localFolders = mLocalStorageHandler.getLocalFolders();
-        BasicImapService imapService = mImapServiceController.getService();
-        mSynchronizer = new SyncProcessorImpl(imapService);
+        mSynchronizer = new SyncProcessorImpl(mBasicImapService);
 
         try {
-            for (ImapFolder remoteFolder : imapService.listStatus()) {
+            for (ImapFolder remoteFolder : mBasicImapService.listStatus()) {
                 String remoteFolderName = remoteFolder.getName();
                 if (folderName != null && !remoteFolderName.equals(folderName)) {
                     continue;
@@ -212,7 +206,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         }
         if (!messagesToPush.isEmpty()) {
             PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
-                    mImapServiceController, xmsLog, imapLog);
+                    xmsLog, imapLog);
+            pushMessageTask.setBasicImapService(mBasicImapService);
             pushMessageTask.pushMessages(messagesToPush);
             for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
                 String baseId = entry.getKey();

@@ -29,7 +29,7 @@ import com.gsma.services.rcs.contact.ContactId;
 public class CmsUtils {
 
     public static String contactToCmsFolder(RcsSettings settings, ContactId contactId) {
-        return settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
+        return settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
                 + Constants.TEL_PREFIX + contactId.toString();
     }
 
@@ -39,7 +39,7 @@ public class CmsUtils {
 
     public static ContactId cmsFolderToContact(RcsSettings settings, String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
-        String prefix = settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
+        String prefix = settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
                 + (Constants.TEL_PREFIX);
         if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
@@ -65,7 +65,7 @@ public class CmsUtils {
 
     public static String groupChatToCmsFolder(RcsSettings settings, String conversationId,
             String contributionId) {
-        return settings.getCmsDefaultDirectoryName() + settings.getCmsDirectorySeparator()
-                + conversationId + settings.getCmsDirectorySeparator() + contributionId;
+        return settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
+                + conversationId + settings.getMessageStoreDirectorySeparator() + contributionId;
     }
 }
