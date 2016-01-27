@@ -1,19 +1,23 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.toolkit.operations.remote;
-
-import android.app.AlertDialog;
-import android.app.ListActivity;
-import android.content.pm.ActivityInfo;
-import android.os.Bundle;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.Constants;
@@ -31,15 +35,30 @@ import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.Base64;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapMessage;
+
+import android.app.AlertDialog;
+import android.app.ListActivity;
+import android.content.pm.ActivityInfo;
+import android.os.Bundle;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-public class ShowMessages extends ListActivity implements ShowMessagesTaskListener, UpdateFlagTaskListener {
+public class ShowMessages extends ListActivity implements ShowMessagesTaskListener,
+        UpdateFlagTaskListener {
 
     private final int MENU_ITEM_SET_READ_FLAG = 0;
     private final int MENU_ITEM_UNSET_READ_FLAG = 1;
@@ -55,7 +74,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(Toolkit.checkCore(this) == null){
+        if (Toolkit.checkCore(this) == null) {
             return;
         }
         /* Set layout */
@@ -68,7 +87,8 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         registerForContextMenu(mListView);
         mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
 
-        CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager().getSyncScheduler();
+        CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager()
+                .getSyncScheduler();
         scheduler.scheduleToolkitTask(new ShowMessagesTask(this));
         mInProgressDialog = AlertDialogUtils.displayInfo(ShowMessages.this,
                 getString(R.string.cms_toolkit_in_progress));
@@ -84,20 +104,34 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         Set<Flag> flags = message.getImapMessage().getMetadata().getFlags();
 
         if (flags.contains(Flag.Seen)) {
-            menu.add(0, MENU_ITEM_UNSET_READ_FLAG, MENU_ITEM_UNSET_READ_FLAG,
+            menu.add(
+                    0,
+                    MENU_ITEM_UNSET_READ_FLAG,
+                    MENU_ITEM_UNSET_READ_FLAG,
                     getResources().getString(
                             R.string.cms_toolkit_remote_operations_show_messages_unset_read_flag));
         } else {
-            menu.add(0, MENU_ITEM_SET_READ_FLAG, MENU_ITEM_SET_READ_FLAG, getResources()
-                    .getString(R.string.cms_toolkit_remote_operations_show_messages_set_read_flag));
+            menu.add(
+                    0,
+                    MENU_ITEM_SET_READ_FLAG,
+                    MENU_ITEM_SET_READ_FLAG,
+                    getResources().getString(
+                            R.string.cms_toolkit_remote_operations_show_messages_set_read_flag));
         }
 
         if (flags.contains(Flag.Deleted)) {
-            menu.add(0, MENU_ITEM_UNSET_DELETED_FLAG, MENU_ITEM_UNSET_DELETED_FLAG,
-                    getResources().getString(
-                            R.string.cms_toolkit_remote_operations_show_messages_unset_deleted_flag));
+            menu.add(
+                    0,
+                    MENU_ITEM_UNSET_DELETED_FLAG,
+                    MENU_ITEM_UNSET_DELETED_FLAG,
+                    getResources()
+                            .getString(
+                                    R.string.cms_toolkit_remote_operations_show_messages_unset_deleted_flag));
         } else {
-            menu.add(0, MENU_ITEM_SET_DELETED_FLAG, MENU_ITEM_SET_DELETED_FLAG,
+            menu.add(
+                    0,
+                    MENU_ITEM_SET_DELETED_FLAG,
+                    MENU_ITEM_SET_DELETED_FLAG,
                     getResources().getString(
                             R.string.cms_toolkit_remote_operations_show_messages_set_deleted_flag));
         }
@@ -105,34 +139,32 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-         Message message = (Message) (mArrayAdapter.getItem(info.position));
+        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
+        Message message = (Message) (mArrayAdapter.getItem(info.position));
 
-         Operation operation = null;
-         Flag flag = null;
-         switch (item.getItemId()) {
-             case MENU_ITEM_SET_READ_FLAG:
-                 operation = Operation.ADD_FLAG;
-                 flag = Flag.Seen;
-                 break;
-             case MENU_ITEM_UNSET_READ_FLAG:
-                 operation = Operation.REMOVE_FLAG;
-                 flag = Flag.Seen;
-                 break;
-             case MENU_ITEM_SET_DELETED_FLAG:
-                 operation = Operation.ADD_FLAG;
-                 flag = Flag.Deleted;
-                 break;
-             case MENU_ITEM_UNSET_DELETED_FLAG:
-                 operation = Operation.REMOVE_FLAG;
-                 flag = Flag.Deleted;
-                 break;
-             }
-         FlagChange flagChange =  new FlagChange(message.getImapMessage().getFolderPath(), message.getImapMessage().getUid(), flag,  operation);
-         new Thread(new UpdateFlagTask(
-                 Arrays.asList(flagChange),
-                 this
-         )).start();
+        Operation operation = null;
+        Flag flag = null;
+        switch (item.getItemId()) {
+            case MENU_ITEM_SET_READ_FLAG:
+                operation = Operation.ADD_FLAG;
+                flag = Flag.Seen;
+                break;
+            case MENU_ITEM_UNSET_READ_FLAG:
+                operation = Operation.REMOVE_FLAG;
+                flag = Flag.Seen;
+                break;
+            case MENU_ITEM_SET_DELETED_FLAG:
+                operation = Operation.ADD_FLAG;
+                flag = Flag.Deleted;
+                break;
+            case MENU_ITEM_UNSET_DELETED_FLAG:
+                operation = Operation.REMOVE_FLAG;
+                flag = Flag.Deleted;
+                break;
+        }
+        FlagChange flagChange = new FlagChange(message.getImapMessage().getFolderPath(), message
+                .getImapMessage().getUid(), flag, operation);
+        new Thread(new UpdateFlagTask(Arrays.asList(flagChange), this)).start();
         mInProgressDialog.show();
         return true;
     }
@@ -167,34 +199,34 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
             sb.append("UID:").append(mImapMessage.getUid()).append("\r\n");
             sb.append("MODSEQ:").append(mImapMessage.getMetadata().getModseq()).append("\r\n");
             String body;
-            String encoding = mImapMessage.getBody().getHeader(Constants.HEADER_CONTENT_TRANSFER_ENCODING);
-            if(encoding!=null && Constants.HEADER_BASE64.equals(encoding)){
+            String encoding = mImapMessage.getBody().getHeader(
+                    Constants.HEADER_CONTENT_TRANSFER_ENCODING);
+            if (encoding != null && Constants.HEADER_BASE64.equals(encoding)) {
                 body = new String(Base64.decodeBase64(mImapMessage.getTextBody().getBytes()));
-            }
-            else{
+            } else {
                 body = mImapMessage.getTextBody();
             }
             sb.append(body);
             sb.append("\r\n").append(mImapMessage.getMetadata().getFlags());
             return sb.toString();
         }
-        
-        public ImapMessage getImapMessage(){
+
+        public ImapMessage getImapMessage() {
             return mImapMessage;
         }
     }
-    
-    private List<Message> formatImapMessage(List<ImapMessage> imapMessages){
+
+    private List<Message> formatImapMessage(List<ImapMessage> imapMessages) {
         List<Message> messages = new ArrayList<Message>();
         for (ImapMessage imapMessage : imapMessages) {
             messages.add(new Message(imapMessage));
-        }   
+        }
         return messages;
     }
 
     @Override
     public void onUpdateFlagTaskExecuted(List<FlagChange> changes) {
-       new ShowMessagesTask(this).run();
+        new ShowMessagesTask(this).run();
     }
 
     @Override
@@ -202,14 +234,14 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         if (mInProgressDialog != null) {
             mInProgressDialog.dismiss();
         }
-        if(result == null){
+        if (result == null) {
             return;
         }
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mArrayAdapter = new ArrayAdapter<Message>(ShowMessages.this, android.R.layout.simple_list_item_1,
-                        formatImapMessage(result));
+                mArrayAdapter = new ArrayAdapter<Message>(ShowMessages.this,
+                        android.R.layout.simple_list_item_1, formatImapMessage(result));
                 mListView.setAdapter(mArrayAdapter);
             }
         });

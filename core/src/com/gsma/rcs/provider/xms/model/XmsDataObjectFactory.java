@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@
  ******************************************************************************/
 
 package com.gsma.rcs.provider.xms.model;
-
-import android.content.Context;
-import android.net.Uri;
 
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
@@ -44,6 +41,9 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.content.Context;
+import android.net.Uri;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,8 +62,7 @@ public class XmsDataObjectFactory {
         String content = (cpimMessage == null ? "" : ((TextCpimBody) cpimMessage.getBody())
                 .getContent());
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contact,
-                content,direction,
-                imapSmsMessage.getDate(), readStatus,
+                content, direction, imapSmsMessage.getDate(), readStatus,
                 imapSmsMessage.getCorrelator());
         State state;
         if (Direction.INCOMING == direction) {
@@ -103,7 +102,7 @@ public class XmsDataObjectFactory {
 
             } else if (Constants.CONTENT_TYPE_TEXT_PLAIN.equals(contentType)) {
                 String content = part.getContent();
-                mmsParts.add(new MmsDataObject.MmsPart(messageId,contactId, contentType, content));
+                mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, contentType, content));
             } else {
                 if (sLogger.isActivated()) {
                     sLogger.warn("Discard part having type " + contentType);
@@ -111,9 +110,8 @@ public class XmsDataObjectFactory {
             }
         }
         ReadStatus readStatus = imapMmsMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
-        MmsDataObject mmsDataObject = new MmsDataObject(
-                imapMmsMessage.getMmsId(), messageId, contactId,
-                imapMmsMessage.getSubject(), direction, readStatus,
+        MmsDataObject mmsDataObject = new MmsDataObject(imapMmsMessage.getMmsId(), messageId,
+                contactId, imapMmsMessage.getSubject(), direction, readStatus,
                 imapMmsMessage.getDate(), null, null, mmsParts);
         State state;
         if (Direction.INCOMING == direction) {

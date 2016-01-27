@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2016 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,8 @@ public class GroupStateParser extends DefaultHandler {
             mLastfocussessionid = attr.getValue(GroupStateDocument.LASTFOCUSSESSIONID_ATTR);
             mTimestamp = attr.getValue(GroupStateDocument.TIMESTAMP_ATTR);
         } else if (GroupStateDocument.PARTICIPANT_ELEMENT.equals(localName)) {
-            mParticipants.add(CmsUtils.headerToContact(attr.getValue(GroupStateDocument.COMM_ADDR_ATTR)));
+            mParticipants.add(CmsUtils.headerToContact(attr
+                    .getValue(GroupStateDocument.COMM_ADDR_ATTR)));
         }
     }
 
@@ -123,7 +124,7 @@ public class GroupStateParser extends DefaultHandler {
     }
 
     public GroupStateDocument getGroupStateDocument() {
-        if (mTimestamp == null || mLastfocussessionid == null ) {
+        if (mTimestamp == null || mLastfocussessionid == null) {
             return null;
         }
         return new GroupStateDocument(mLastfocussessionid, mTimestamp, mParticipants);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -217,8 +217,8 @@ public class ProviderSynchronizer implements Runnable {
                             CmsUtils.contactToCmsFolder(mSettings, smsData.getContact()),
                             smsData.getReadStatus() == ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD
                                     : MessageData.ReadStatus.READ_REPORT_REQUESTED,
-                            MessageData.DeleteStatus.NOT_DELETED,
-                            mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+                            MessageData.DeleteStatus.NOT_DELETED, mSettings
+                                    .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
                                     : PushStatus.PUSHED, MessageType.SMS, smsData.getMessageId(),
                             smsData.getNativeProviderId()));
                 }
@@ -236,8 +236,8 @@ public class ProviderSynchronizer implements Runnable {
                             CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
                             mmsData.getReadStatus() == ReadStatus.UNREAD ? MessageData.ReadStatus.UNREAD
                                     : MessageData.ReadStatus.READ_REPORT_REQUESTED,
-                            MessageData.DeleteStatus.NOT_DELETED,
-                            mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                            MessageData.DeleteStatus.NOT_DELETED, mSettings
+                                    .getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
                                     : PushStatus.PUSHED, MessageType.MMS, mmsData.getMessageId(),
                             mmsData.getNativeProviderId()));
                 }

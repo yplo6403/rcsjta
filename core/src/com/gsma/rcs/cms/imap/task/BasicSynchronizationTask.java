@@ -19,8 +19,6 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import android.content.Context;
-
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.storage.LocalStorage;
 import com.gsma.rcs.cms.sync.strategy.BasicSyncStrategy;
@@ -29,6 +27,8 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
+
+import android.content.Context;
 
 /**
  * Task executed for a complete sync with the CMS server. In a first step, change from CMS server
@@ -58,8 +58,8 @@ public class BasicSynchronizationTask implements Runnable {
      * @param listener the sync listener
      */
     public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            BasicImapService basicImapService, LocalStorage localStorageHandler,
-            String folderName, BasicSynchronizationTaskListener listener) {
+            BasicImapService basicImapService, LocalStorage localStorageHandler, String folderName,
+            BasicSynchronizationTaskListener listener) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mBasicImapService = basicImapService;
@@ -121,7 +121,8 @@ public class BasicSynchronizationTask implements Runnable {
      * @return True if sync is successful
      * @throws FileAccessException, PayloadException, NetworkException
      */
-    public boolean syncFolder(String folder) throws FileAccessException, PayloadException, NetworkException {
+    public boolean syncFolder(String folder) throws FileAccessException, PayloadException,
+            NetworkException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync folder: ".concat(folder));
         }
@@ -137,8 +138,7 @@ public class BasicSynchronizationTask implements Runnable {
      * @return True if sync is successful
      * @throws PayloadException, NetworkException, FileAccessException
      */
-    public boolean syncAll() throws PayloadException,
-            NetworkException, FileAccessException {
+    public boolean syncAll() throws PayloadException, NetworkException, FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync all");
         }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,8 +61,8 @@ public class MmsSessionHandler implements MmsSessionListener {
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
         mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED, mSettings
+                        .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, mmsId, null));
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);

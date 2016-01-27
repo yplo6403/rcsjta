@@ -41,7 +41,7 @@ import java.util.Set;
 /**
  * Task used to update flag status on the CMS server.
  */
-public class UpdateFlagTask extends CmsTask  {
+public class UpdateFlagTask extends CmsTask {
 
     private static final Logger sLogger = Logger.getLogger(UpdateFlagTask.class.getSimpleName());
 
@@ -56,8 +56,7 @@ public class UpdateFlagTask extends CmsTask  {
      * @param flagChanges the list of changed flags
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(
-            List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
+    public UpdateFlagTask(List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
         mListener = listener;
         mFlagChanges = flagChanges;
         mSuccessFullFlagChanges = new ArrayList<>();
@@ -69,8 +68,7 @@ public class UpdateFlagTask extends CmsTask  {
      * @param imapLog the IMAP log accessor
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapLog imapLog,
-            UpdateFlagTaskListener listener) {
+    public UpdateFlagTask(ImapLog imapLog, UpdateFlagTaskListener listener) {
         mListener = listener;
         mImapLog = imapLog;
         mSuccessFullFlagChanges = new ArrayList<>();
@@ -164,10 +162,12 @@ public class UpdateFlagTask extends CmsTask  {
                 }
                 switch (flagChange.getOperation()) {
                     case ADD_FLAG:
-                        getBasicImapService().addFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        getBasicImapService().addFlags(flagChange.getJoinedUids(),
+                                flagChange.getFlag());
                         break;
                     case REMOVE_FLAG:
-                        getBasicImapService().removeFlags(flagChange.getJoinedUids(), flagChange.getFlag());
+                        getBasicImapService().removeFlags(flagChange.getJoinedUids(),
+                                flagChange.getFlag());
                         break;
                 }
                 mSuccessFullFlagChanges.add(flagChange);

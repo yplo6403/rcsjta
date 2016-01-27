@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,12 +72,12 @@ public class XmsPersistedStorageAccessor {
         mContact = xms.getContact();
         mDirection = xms.getDirection();
         mMimeType = xms.getMimeType();
-        if(xms instanceof SmsDataObject){
-            mContent = ((SmsDataObject)xms).getBody();
-            mCorrelator = ((SmsDataObject)xms).getCorrelator();
-        } else if (xms instanceof MmsDataObject){
+        if (xms instanceof SmsDataObject) {
+            mContent = ((SmsDataObject) xms).getBody();
+            mCorrelator = ((SmsDataObject) xms).getCorrelator();
+        } else if (xms instanceof MmsDataObject) {
             mCorrelator = null;
-            mContent = ((MmsDataObject)xms).getSubject();
+            mContent = ((MmsDataObject) xms).getSubject();
         }
         mTimestamp = xms.getTimestamp();
         mChatId = xms.getChatId();

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2016 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,25 +37,26 @@ public class GroupStateDocument {
     private final String mLastfocussessionid;
     private final List<ContactId> mParticipants;
 
-    public GroupStateDocument(String lastfocussessionid, String timestamp, List<ContactId> participants) {
+    public GroupStateDocument(String lastfocussessionid, String timestamp,
+            List<ContactId> participants) {
         mLastfocussessionid = lastfocussessionid;
         mTimestamp = timestamp;
         mParticipants = participants;
     }
 
-    public String getLastfocussessionid(){
+    public String getLastfocussessionid() {
         return mLastfocussessionid;
     }
 
-    public String getTimestamp(){
+    public String getTimestamp() {
         return mTimestamp;
     }
 
-    public List<ContactId> getParticipants(){
+    public List<ContactId> getParticipants() {
         return mParticipants;
     }
 
-    public long getDate(){
+    public long getDate() {
         return DateUtils.decodeDate(mTimestamp);
     }
 }

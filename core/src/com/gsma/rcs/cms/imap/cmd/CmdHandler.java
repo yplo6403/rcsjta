@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public abstract class CmdHandler {
                 handler = new SelectCondstoreCmdHandler();
                 break;
             case FETCH_FLAGS:
-                handler = new FetchFlagCmdHandler((String)params[0]);
+                handler = new FetchFlagCmdHandler((String) params[0]);
                 break;
             case FETCH_HEADERS:
                 handler = new FetchHeaderCmdHandler();
@@ -70,6 +70,7 @@ public abstract class CmdHandler {
 
     /**
      * Build an IMAP command
+     * 
      * @param params
      * @return
      */

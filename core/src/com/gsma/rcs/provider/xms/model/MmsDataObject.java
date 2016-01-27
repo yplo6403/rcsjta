@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,8 +140,8 @@ public class MmsDataObject extends XmsDataObject {
                 MmsPart part = entry.getKey();
                 Long maxSize = entry.getValue();
                 String imagePath = FileUtils.getPath(ctx, part.getFile());
-                part.setPdu(ImageUtils.compressImage(imagePath, maxSize,
-                        MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT));
+                part.setPdu(ImageUtils.compressImage(imagePath, maxSize, MAX_IMAGE_WIDTH,
+                        MAX_IMAGE_HEIGHT));
             }
         }
     }

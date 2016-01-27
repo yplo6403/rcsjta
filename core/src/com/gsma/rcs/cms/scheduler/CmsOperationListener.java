@@ -23,5 +23,6 @@ import com.gsma.rcs.cms.scheduler.CmsScheduler.SyncType;
 
 public interface CmsOperationListener {
 
-    void onCmsOperationExecuted(CmsOperation operation, SyncType syncType, boolean result, Object param);
+    void onCmsOperationExecuted(CmsOperation operation, SyncType syncType, boolean result,
+            Object param);
 }

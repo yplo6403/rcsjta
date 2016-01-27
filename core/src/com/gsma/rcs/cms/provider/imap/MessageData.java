@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,6 @@ public final class MessageData {
          */
         READ(2);
 
-
         private final int mValue;
 
         private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<ReadStatus>();
@@ -151,7 +150,6 @@ public final class MessageData {
          */
         DELETED(2);
 
-
         private final int mValue;
 
         private static SparseArray<DeleteStatus> mValueToEnum = new SparseArray<DeleteStatus>();
@@ -203,7 +201,6 @@ public final class MessageData {
          * The message has been pushed on CMS
          */
         PUSHED(1);
-
 
         private final int mValue;
 
@@ -259,8 +256,8 @@ public final class MessageData {
      * @param messageType
      * @param messageId
      */
-    public MessageData(String folder, ReadStatus readStatus, DeleteStatus deleteStatus, PushStatus pushStatus,
-                       MessageType messageType, String messageId, Long nativeProviderId) {
+    public MessageData(String folder, ReadStatus readStatus, DeleteStatus deleteStatus,
+            PushStatus pushStatus, MessageType messageType, String messageId, Long nativeProviderId) {
         super();
         mFolder = folder;
         mReadStatus = readStatus;
@@ -279,8 +276,9 @@ public final class MessageData {
      * @param messageType
      * @param messageId
      */
-    public MessageData(String folder, Integer uid, ReadStatus readStatus, DeleteStatus deleteStatus, PushStatus pushStatus,
-            MessageType messageType, String messageId, Long nativeProviderId) {
+    public MessageData(String folder, Integer uid, ReadStatus readStatus,
+            DeleteStatus deleteStatus, PushStatus pushStatus, MessageType messageType,
+            String messageId, Long nativeProviderId) {
         super();
         mFolder = folder;
         mUid = uid;
@@ -356,19 +354,29 @@ public final class MessageData {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
 
         MessageData that = (MessageData) o;
 
-        if (!mFolder.equals(that.mFolder)) return false;
-        if (mUid != null ? !mUid.equals(that.mUid) : that.mUid != null) return false;
-        if (mReadStatus != that.mReadStatus) return false;
-        if (mDeleteStatus != that.mDeleteStatus) return false;
-        if (mPushStatus != that.mPushStatus) return false;
-        if (mMessageType != that.mMessageType) return false;
-        if (!mMessageId.equals(that.mMessageId)) return false;
-        return !(mNativeProviderId != null ? !mNativeProviderId.equals(that.mNativeProviderId) : that.mNativeProviderId != null);
+        if (!mFolder.equals(that.mFolder))
+            return false;
+        if (mUid != null ? !mUid.equals(that.mUid) : that.mUid != null)
+            return false;
+        if (mReadStatus != that.mReadStatus)
+            return false;
+        if (mDeleteStatus != that.mDeleteStatus)
+            return false;
+        if (mPushStatus != that.mPushStatus)
+            return false;
+        if (mMessageType != that.mMessageType)
+            return false;
+        if (!mMessageId.equals(that.mMessageId))
+            return false;
+        return !(mNativeProviderId != null ? !mNativeProviderId.equals(that.mNativeProviderId)
+                : that.mNativeProviderId != null);
 
     }
 

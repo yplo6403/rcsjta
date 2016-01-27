@@ -1,16 +1,23 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.toolkit.operations;
-
-import android.app.AlertDialog;
-import android.app.ListActivity;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
@@ -22,7 +29,18 @@ import com.gsma.rcs.cms.toolkit.operations.remote.ShowMessages;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
+
 import com.sonymobile.rcs.imap.ImapException;
+
+import android.app.AlertDialog;
+import android.app.ListActivity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import java.io.IOException;
 
@@ -35,7 +53,7 @@ public class RemoteOperations extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(Toolkit.checkCore(this) == null){
+        if (Toolkit.checkCore(this) == null) {
             return;
         }
         mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
@@ -56,7 +74,8 @@ public class RemoteOperations extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         switch (position) {
             case 0:
-                CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager().getSyncScheduler();
+                CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager()
+                        .getSyncScheduler();
                 scheduler.scheduleToolkitTask(new DeleteTask(RemoteOperations.this));
                 mInProgressDialog = AlertDialogUtils.displayInfo(RemoteOperations.this,
                         getString(R.string.cms_toolkit_in_progress));

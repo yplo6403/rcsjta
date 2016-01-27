@@ -19,16 +19,8 @@
 
 package com.gsma.rcs.core.ims.service.cms;
 
-import android.content.Context;
-import android.database.Cursor;
-import android.os.Handler;
-import android.os.HandlerThread;
-
 import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.scheduler.CmsOperation;
-import com.gsma.rcs.cms.scheduler.CmsOperationListener;
-import com.gsma.rcs.cms.scheduler.CmsScheduler.SyncType;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -47,6 +39,11 @@ import com.gsma.rcs.service.api.ServerApiUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 import java.util.List;
 
@@ -151,9 +148,11 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS : syncAll");
                 }
-                // Operations of sync with the message store are executed in a dedicated background handler.
-                // So it does not interact with other operations of this API impacting the calling UI
-                if(!mCmsManager.getSyncScheduler().scheduleSync()){
+                // Operations of sync with the message store are executed in a dedicated background
+                // handler.
+                // So it does not interact with other operations of this API impacting the calling
+                // UI
+                if (!mCmsManager.getSyncScheduler().scheduleSync()) {
                     if (sLogger.isActivated()) {
                         sLogger.debug("Can not schedule a syncAll operation");
                     }
@@ -169,11 +168,14 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS for contact " + contact);
                 }
-                // Operations of sync with the message store are executed in a dedicated background handler.
-                // So it does not interact with other operations of this API impacting the calling UI
-                if(!mCmsManager.getSyncScheduler().scheduleSyncForOneToOneConversation(contact)){
+                // Operations of sync with the message store are executed in a dedicated background
+                // handler.
+                // So it does not interact with other operations of this API impacting the calling
+                // UI
+                if (!mCmsManager.getSyncScheduler().scheduleSyncForOneToOneConversation(contact)) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Can not schedule a syncOneToOneConversation operation : " + contact);
+                        sLogger.debug("Can not schedule a syncOneToOneConversation operation : "
+                                + contact);
                     }
                 }
             }
@@ -187,11 +189,14 @@ public class CmsService extends ImsService {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS for chatId " + chatId);
                 }
-                // Operations of sync with the message store are executed in a dedicated background handler.
-                // So it does not interact with other operations of this API impacting the calling UI
-                if(!mCmsManager.getSyncScheduler().scheduleSyncForGroupConversation(chatId)){
+                // Operations of sync with the message store are executed in a dedicated background
+                // handler.
+                // So it does not interact with other operations of this API impacting the calling
+                // UI
+                if (!mCmsManager.getSyncScheduler().scheduleSyncForGroupConversation(chatId)) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Can not schedule a syncGroupConversation operation : " + chatId);
+                        sLogger.debug("Can not schedule a syncGroupConversation operation : "
+                                + chatId);
                     }
                 }
             }

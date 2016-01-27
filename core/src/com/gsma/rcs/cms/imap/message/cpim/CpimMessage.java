@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,23 +22,24 @@ package com.gsma.rcs.cms.imap.message.cpim;
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.message.BodyPart;
 import com.gsma.rcs.cms.imap.message.HeaderPart;
+
 import com.sonymobile.rcs.imap.Header;
 
-public class CpimMessage extends BodyPart{
+public class CpimMessage extends BodyPart {
 
     protected final HeaderPart mHeaders;
     protected final CpimBody mBody;
 
-    public CpimMessage(HeaderPart headers, CpimBody body){
+    public CpimMessage(HeaderPart headers, CpimBody body) {
         super();
         mHeaders = headers;
         mBody = body;
     }
 
     public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF,2);
-        if(2 == parts.length ){
-            for(Header header : Header.parseHeaders(parts[0]).values()){
+        String[] parts = payload.split(Constants.CRLFCRLF, 2);
+        if (2 == parts.length) {
+            for (Header header : Header.parseHeaders(parts[0]).values()) {
                 mHeaders.addHeader(header.getKey(), header.getValue());
             }
             mBody.parseBody(parts[1]);
@@ -46,7 +47,7 @@ public class CpimMessage extends BodyPart{
     }
 
     @Override
-    public String getPayload(){
+    public String getPayload() {
         StringBuilder sb = new StringBuilder();
         sb.append(mHeaders);
         sb.append(Constants.CRLF);
@@ -54,15 +55,15 @@ public class CpimMessage extends BodyPart{
         return sb.toString();
     }
 
-    public CpimBody getBody(){
+    public CpimBody getBody() {
         return mBody;
     }
 
-    public String getHeader(String headerName){
+    public String getHeader(String headerName) {
         return mHeaders.getHeaderValue(headerName);
     }
 
-    public String getContentType(){
+    public String getContentType() {
         return mBody.getContentType();
     }
 }

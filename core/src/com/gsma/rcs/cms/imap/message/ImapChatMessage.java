@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,30 +31,33 @@ public class ImapChatMessage extends ImapCpimMessage {
     private final boolean isOneToOne;
     private final String mChatId;
 
-    public ImapChatMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
+    public ImapChatMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
         mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
-        if(mChatId == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID + " IMAP header is missing");
+        if (mChatId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
+                    + " IMAP header is missing");
         }
 
         String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
-        if(from == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM + " IMAP header is missing");
+        if (from == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
+                    + " IMAP header is missing");
         }
         isOneToOne = ANONYMOUS.equals(from);
     }
 
-    public String getText(){
-        return ((TextCpimBody)getCpimMessage().getBody()).getContent();
+    public String getText() {
+        return ((TextCpimBody) getCpimMessage().getBody()).getContent();
     }
 
-    public boolean isOneToOne(){
+    public boolean isOneToOne() {
         return isOneToOne;
     }
 
-    public String getChatId(){
+    public String getChatId() {
         return mChatId;
     }
 }

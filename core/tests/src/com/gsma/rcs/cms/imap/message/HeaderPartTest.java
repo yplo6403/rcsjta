@@ -1,13 +1,31 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 package com.gsma.rcs.cms.imap.message;
 
-import android.test.AndroidTestCase;
-
 import com.gsma.rcs.cms.Constants;
+
+import android.test.AndroidTestCase;
 
 public class HeaderPartTest extends AndroidTestCase {
 
     public static StringBuilder headerContent = new StringBuilder();
-    static{
+    static {
         headerContent.append("From: +33643202148").append(Constants.CRLF);
         headerContent.append("To: +33643209850").append(Constants.CRLF);
         headerContent.append("Date: ven., 30 10 2015 16:26:16.0 +0100").append(Constants.CRLF);
@@ -20,7 +38,7 @@ public class HeaderPartTest extends AndroidTestCase {
         headerContent.append("Content-Type: Message/CPIM").append(Constants.CRLF);
     }
 
-    public void test(){
+    public void test() {
         HeaderPart headers = new HeaderPart();
         headers.addHeader(Constants.HEADER_FROM, "+33643202148");
         headers.addHeader(Constants.HEADER_TO, "+33643209850");

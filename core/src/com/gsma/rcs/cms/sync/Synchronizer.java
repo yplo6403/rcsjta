@@ -47,24 +47,24 @@ public class Synchronizer {
      * @param localStorage the local storage
      * @param basicImapService the basic imap service
      */
-    public Synchronizer(Context context, RcsSettings rcsSettings, LocalStorage localStorage, BasicImapService basicImapService) {
+    public Synchronizer(Context context, RcsSettings rcsSettings, LocalStorage localStorage,
+            BasicImapService basicImapService) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mLocalStorage = localStorage;
         mBasicImapService = basicImapService;
     }
 
-    public void syncFolder(String folder) throws
-            FileAccessException, PayloadException, NetworkException {
-            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
-                    mRcsSettings, mBasicImapService, mLocalStorage, null);
-            syncTask.syncFolder(folder);
+    public void syncFolder(String folder) throws FileAccessException, PayloadException,
+            NetworkException {
+        BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings,
+                mBasicImapService, mLocalStorage, null);
+        syncTask.syncFolder(folder);
     }
 
-    public void syncAll() throws FileAccessException,
-            NetworkException, PayloadException {
-            BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext,
-                    mRcsSettings, mBasicImapService, mLocalStorage, null);
-            syncTask.syncAll();
+    public void syncAll() throws FileAccessException, NetworkException, PayloadException {
+        BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings,
+                mBasicImapService, mLocalStorage, null);
+        syncTask.syncAll();
     }
 }

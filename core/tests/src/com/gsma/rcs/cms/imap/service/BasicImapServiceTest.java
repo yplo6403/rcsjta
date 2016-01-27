@@ -1,15 +1,34 @@
-package com.gsma.rcs.cms.imap.service;
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
-import android.content.Context;
-import android.test.AndroidTestCase;
+package com.gsma.rcs.cms.imap.service;
 
 import com.gsma.rcs.cms.integration.RcsSettingsMock;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactUtil;
+
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.IoService;
 import com.sonymobile.rcs.imap.SocketIoService;
+
+import android.content.Context;
+import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
@@ -18,7 +37,8 @@ import java.net.SocketTimeoutException;
 
 public class BasicImapServiceTest extends AndroidTestCase {
 
-    private static final Logger sLogger = Logger.getLogger(BasicImapServiceTest.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(BasicImapServiceTest.class
+            .getSimpleName());
 
     private RcsSettings mSettings;
     private boolean mIsBlocked = true;
@@ -38,18 +58,19 @@ public class BasicImapServiceTest extends AndroidTestCase {
         service.init();
         mIsBlocked = true;
 
-        Thread myThread =  new Thread(new Runnable() {
+        Thread myThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     io.readLine();
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
                 mIsBlocked = false;
             }
         });
 
         myThread.start();
-        //wait 5 seconds
+        // wait 5 seconds
         sLogger.info("wait for 5 seconds ...");
         myThread.join(5000);
         sLogger.info("after join, check if thread is always waiting on IO");
@@ -66,7 +87,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
         service.init();
         mIsBlocked = true;
 
-        Thread myThread =  new Thread(new Runnable() {
+        Thread myThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -74,12 +95,13 @@ public class BasicImapServiceTest extends AndroidTestCase {
                 } catch (SocketTimeoutException e) {
                     sLogger.info("--> SocketTimeoutException");
                     mIsBlocked = false;
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
         });
 
         myThread.start();
-        //wait 5 seconds
+        // wait 5 seconds
         sLogger.info("wait for 5 seconds ...");
         myThread.join(5000);
         sLogger.info("after join, check if thread is always waiting on IO");

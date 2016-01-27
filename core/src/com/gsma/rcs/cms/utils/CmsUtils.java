@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,9 @@ import com.gsma.services.rcs.contact.ContactId;
 public class CmsUtils {
 
     public static String contactToCmsFolder(RcsSettings settings, ContactId contactId) {
-        return settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
-                + Constants.TEL_PREFIX + contactId.toString();
+        return settings.getMessageStoreDefaultDirectoryName()
+                + settings.getMessageStoreDirectorySeparator() + Constants.TEL_PREFIX
+                + contactId.toString();
     }
 
     public static String contactToHeader(ContactId contactId) {
@@ -39,13 +40,13 @@ public class CmsUtils {
 
     public static ContactId cmsFolderToContact(RcsSettings settings, String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
-        String prefix = settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
-                + (Constants.TEL_PREFIX);
+        String prefix = settings.getMessageStoreDefaultDirectoryName()
+                + settings.getMessageStoreDirectorySeparator() + (Constants.TEL_PREFIX);
         if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
         }
         PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(contact);
-        if(phoneNumber != null){
+        if (phoneNumber != null) {
             return ContactUtil.createContactIdFromValidatedData(phoneNumber);
         }
         return null;
@@ -65,7 +66,8 @@ public class CmsUtils {
 
     public static String groupChatToCmsFolder(RcsSettings settings, String conversationId,
             String contributionId) {
-        return settings.getMessageStoreDefaultDirectoryName() + settings.getMessageStoreDirectorySeparator()
-                + conversationId + settings.getMessageStoreDirectorySeparator() + contributionId;
+        return settings.getMessageStoreDefaultDirectoryName()
+                + settings.getMessageStoreDirectorySeparator() + conversationId
+                + settings.getMessageStoreDirectorySeparator() + contributionId;
     }
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,8 +63,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         }
         mImapLog.addMessage(new MessageData(CmsUtils.groupChatToCmsFolder(mSettings,
                 conversationId, contributionId), ReadStatus.UNREAD,
-                MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.GROUP_STATE, contributionId, null));
+                MessageData.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.GROUP_STATE,
+                contributionId, null));
     }
 
     @Override
@@ -72,7 +72,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteGroupChat: " + chatId);
         }
-        mImapLog.updateDeleteStatus(MessageType.GROUP_STATE, chatId, DeleteStatus.DELETED_REPORT_REQUESTED);
+        mImapLog.updateDeleteStatus(MessageType.GROUP_STATE, chatId,
+                DeleteStatus.DELETED_REPORT_REQUESTED);
     }
 
     @Override

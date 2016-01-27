@@ -92,7 +92,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
      * 
      * @param folderName the folder to synchronize
      */
-    public void execute(String folderName) throws FileAccessException, NetworkException, PayloadException {
+    public void execute(String folderName) throws FileAccessException, NetworkException,
+            PayloadException {
         mExecutionResult = false;
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
@@ -119,7 +120,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                     isMailboxSelected = true;
                 }
 
-                if(!isMailboxSelected){
+                if (!isMailboxSelected) {
                     mSynchronizer.selectFolder(remoteFolderName);
                 }
                 /* sync CMS with local change */
@@ -181,19 +182,18 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         return sync;
     }
 
-    private void pushLocalMessages(String localFolderName){
+    private void pushLocalMessages(String localFolderName) {
 
         XmsLog xmsLog = XmsLog.getInstance();
         ImapLog imapLog = ImapLog.getInstance();
-        if(xmsLog == null || imapLog == null){
+        if (xmsLog == null || imapLog == null) {
             return;
         }
 
         List<MessageData> messageDataList;
-        if(localFolderName == null) { // get all messages
+        if (localFolderName == null) { // get all messages
             messageDataList = imapLog.getXmsMessages(PushStatus.PUSH_REQUESTED);
-        }
-        else{
+        } else {
             messageDataList = imapLog.getXmsMessages(localFolderName, PushStatus.PUSH_REQUESTED);
         }
 
@@ -205,8 +205,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
         }
         if (!messagesToPush.isEmpty()) {
-            PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings,
-                    xmsLog, imapLog);
+            PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings, xmsLog,
+                    imapLog);
             pushMessageTask.setBasicImapService(mBasicImapService);
             pushMessageTask.pushMessages(messagesToPush);
             for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {

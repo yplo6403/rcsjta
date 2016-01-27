@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@
 package com.gsma.rcs.cms.imap.message;
 
 public interface IImapMessage {
-    
+
     String getFolder();
-    
+
     Integer getUid();
-    
+
     String toPayload();
 
     boolean isSeen();
-    
+
     boolean isDeleted();
 
     String getHeader(String headerName);

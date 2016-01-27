@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
 import com.gsma.rcs.core.FileAccessException;
 
 /**
- * Interface used to take into account remote changes from CMS server.
- * These changes shall be apply in local storage
+ * Interface used to take into account remote changes from CMS server. These changes shall be apply
+ * in local storage
  */
 public interface CmsEventListener {
 

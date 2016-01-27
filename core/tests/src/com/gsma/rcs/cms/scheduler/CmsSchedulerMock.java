@@ -1,6 +1,22 @@
-package com.gsma.rcs.cms.scheduler;
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
-import android.content.Context;
+package com.gsma.rcs.cms.scheduler;
 
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.cms.imap.service.ImapServiceHandler;
@@ -12,17 +28,20 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
-public class CmsSchedulerMock extends CmsScheduler{
+import android.content.Context;
+
+public class CmsSchedulerMock extends CmsScheduler {
 
     private static final Logger sLogger = Logger.getLogger(CmsSchedulerMock.class.getSimpleName());
 
     private long mExecutionDuration = 100; // in ms
 
-    public CmsSchedulerMock(Context context, RcsSettings rcsSettings, LocalStorage localStorage, ImapLog imapLog, XmsLog xmsLog) {
+    public CmsSchedulerMock(Context context, RcsSettings rcsSettings, LocalStorage localStorage,
+            ImapLog imapLog, XmsLog xmsLog) {
         super(context, rcsSettings, localStorage, imapLog, xmsLog);
     }
 
-    void executeSync(BasicImapService basicImapService, SyncParams syncParams){
+    void executeSync(BasicImapService basicImapService, SyncParams syncParams) {
         sLogger.info("executeSync");
         try {
             Thread.sleep(mExecutionDuration, 0);
@@ -31,7 +50,7 @@ public class CmsSchedulerMock extends CmsScheduler{
         }
     }
 
-    void executePush(BasicImapService basicImapService, ContactId contact){
+    void executePush(BasicImapService basicImapService, ContactId contact) {
         sLogger.info("executePush");
         try {
             Thread.sleep(mExecutionDuration, 0);
@@ -40,7 +59,7 @@ public class CmsSchedulerMock extends CmsScheduler{
         }
     }
 
-    void executeUpdate(BasicImapService basicImapService){
+    void executeUpdate(BasicImapService basicImapService) {
         sLogger.info("executeUpdate");
         try {
             Thread.sleep(mExecutionDuration, 0);
@@ -49,7 +68,7 @@ public class CmsSchedulerMock extends CmsScheduler{
         }
     }
 
-    void executeCmsTask(BasicImapService basicImapService, CmsTask cmsTask){
+    void executeCmsTask(BasicImapService basicImapService, CmsTask cmsTask) {
         sLogger.info("executeCmsTask");
         try {
             Thread.sleep(mExecutionDuration, 0);
@@ -58,11 +77,11 @@ public class CmsSchedulerMock extends CmsScheduler{
         }
     }
 
-    void setExecutionDuration(int executionDuration){
+    void setExecutionDuration(int executionDuration) {
         mExecutionDuration = executionDuration;
     }
 
-    void setImapServiceHandler(ImapServiceHandler imapServiceHandler){
+    void setImapServiceHandler(ImapServiceHandler imapServiceHandler) {
         mImapServiceHandler = imapServiceHandler;
     }
 }

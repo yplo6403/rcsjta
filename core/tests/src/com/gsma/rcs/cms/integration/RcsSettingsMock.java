@@ -1,14 +1,32 @@
-package com.gsma.rcs.cms.integration;
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
-import android.content.Context;
+package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
 
-public class RcsSettingsMock{
-    
+import android.content.Context;
+
+public class RcsSettingsMock {
+
     private static final String mServerAddress = "imap://172.20.65.102";
     private static final String mUserLogin = "test_integration";
     private static final String mUserPwd = "test_integration";
@@ -23,7 +41,7 @@ public class RcsSettingsMock{
     private static String mOriDirectorySeparator;
     private static ContactId mOriContact;
 
-    public static RcsSettings getMockSettings(Context context){
+    public static RcsSettings getMockSettings(Context context) {
         RcsSettings settings = RcsSettings.createInstance(new LocalContentResolver(context));
 
         mOriServerAddress = settings.getMessageStoreUrl();
@@ -38,11 +56,12 @@ public class RcsSettingsMock{
         settings.setMessageStorePwd(mUserPwd);
         settings.setMessageStoreDefaultDirectoryName(mDefaultDirectory);
         settings.setMessageStoreDirectorySeparator(mDirectorySeparator);
-        settings.setUserProfileImsUserName(ContactUtil.createContactIdFromTrustedData("+33601020304"));
+        settings.setUserProfileImsUserName(ContactUtil
+                .createContactIdFromTrustedData("+33601020304"));
         return settings;
     }
 
-    public static void restoreSettings(){
+    public static void restoreSettings() {
         RcsSettings settings = RcsSettings.createInstance(null);
         settings.setMessageStoreUrl(mOriServerAddress);
         settings.setMessageStoreUser(mOriUserLogin);

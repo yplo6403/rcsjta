@@ -22,6 +22,7 @@ package com.gsma.rcs.cms.imap.task;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.service.BasicImapService;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.ImapMessage;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.List;
 /**
  * Task used to show messages from the CMS server. Used by the 'CMS Toolkit'
  */
-public class ShowMessagesTask extends CmsTask  {
+public class ShowMessagesTask extends CmsTask {
 
     private final ShowMessagesTaskListener mListener;
     private static final Logger sLogger = Logger.getLogger(ShowMessagesTask.class.getSimpleName());

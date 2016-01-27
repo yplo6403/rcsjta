@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,44 +28,46 @@ import java.util.Map;
 
 public class HeaderPart {
 
-    class Header{
+    class Header {
         private String mKey;
         private String mValue;
-        public Header (String key, String value){
+
+        public Header(String key, String value) {
             mKey = key;
             mValue = value;
         }
 
-        public String toString(){
-            return new StringBuilder(mKey).append(Constants.HEADER_SEP).append(mValue).append(Constants.CRLF).toString();
+        public String toString() {
+            return new StringBuilder(mKey).append(Constants.HEADER_SEP).append(mValue)
+                    .append(Constants.CRLF).toString();
         }
     }
 
-    Map<String,Header> mHeadersMap;
+    Map<String, Header> mHeadersMap;
     List<Header> mHeadersList;
 
-    public HeaderPart(){
+    public HeaderPart() {
         mHeadersMap = new HashMap<>();
         mHeadersList = new ArrayList<>();
     }
 
-    public void addHeader(String key, String value){
+    public void addHeader(String key, String value) {
         addHeader(new Header(key, value));
     }
 
-    public void addHeader(Header header){
+    public void addHeader(Header header) {
         mHeadersList.add(header);
         mHeadersMap.put(header.mKey, header);
     }
 
-    public String getHeaderValue(String headerName){
+    public String getHeaderValue(String headerName) {
         Header header = mHeadersMap.get(headerName);
         return (header == null ? null : header.mValue);
     }
 
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        for(Header header : mHeadersList){
+        for (Header header : mHeadersList) {
             sb.append(header);
         }
         return sb.toString();

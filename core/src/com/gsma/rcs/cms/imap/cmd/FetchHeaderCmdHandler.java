@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ public class FetchHeaderCmdHandler extends CmdHandler {
         return String.format(sCommand, params);
     }
 
-
     @Override
     public boolean handleLine(String oneLine) {
 
@@ -81,10 +80,10 @@ public class FetchHeaderCmdHandler extends CmdHandler {
 
     @Override
     public List<ImapMessage> getResult() {
-        
+
         List<ImapMessage> messages = new ArrayList<ImapMessage>();
-        Iterator<Entry<Integer, Map<String, String>>> iter = mData.entrySet().iterator();        
-        while(iter.hasNext()){
+        Iterator<Entry<Integer, Map<String, String>>> iter = mData.entrySet().iterator();
+        while (iter.hasNext()) {
             Entry<Integer, Map<String, String>> entry = iter.next();
             Integer uid = entry.getKey();
             ImapMessageMetadata metadata = new ImapMessageMetadata(uid);

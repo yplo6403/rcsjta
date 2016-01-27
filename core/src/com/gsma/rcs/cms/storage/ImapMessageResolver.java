@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,61 +47,67 @@ public class ImapMessageResolver {
     public ImapMessageResolver() {
     }
 
-    public MessageType resolveType(com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
+    public MessageType resolveType(com.sonymobile.rcs.imap.ImapMessage imapMessage)
+            throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
 
         String messageContext = imapMessage.getBody().getHeader(Constants.HEADER_MESSAGE_CONTEXT);
         if (messageContext != null) {
             messageContext = messageContext.toLowerCase();
-            if (Constants.PAGER_MESSAGE.toLowerCase().equals(messageContext)) { // SMS legacy message
+            if (Constants.PAGER_MESSAGE.toLowerCase().equals(messageContext)) { // SMS legacy
+                                                                                // message
                 return MessageType.SMS;
-            } else if (Constants.MULTIMEDIA_MESSAGE.toLowerCase().equals(messageContext)) { // MMS legacy message
+            } else if (Constants.MULTIMEDIA_MESSAGE.toLowerCase().equals(messageContext)) { // MMS
+                                                                                            // legacy
+                                                                                            // message
                 return MessageType.MMS;
             }
         }
 
         String imapContentType = imapMessage.getBody().getHeader(Constants.HEADER_CONTENT_TYPE);
-        if(imapContentType == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE + " IMAP header is missing");
+        if (imapContentType == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE
+                    + " IMAP header is missing");
         }
         imapContentType = imapContentType.toLowerCase();
-        if(Constants.MESSAGE_CPIM.toLowerCase().equals(imapContentType)){
+        if (Constants.MESSAGE_CPIM.toLowerCase().equals(imapContentType)) {
 
             String rawBody = imapMessage.getTextBody();
-            if(rawBody.isEmpty()){ // we have only imap headers -->not able to determine more precisely the type of the message
+            if (rawBody.isEmpty()) { // we have only imap headers -->not able to determine more
+                                     // precisely the type of the message
                 return MessageType.MESSAGE_CPIM;
             }
 
             CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
             cpimMessage.parsePayload(rawBody);
             String contentType = cpimMessage.getContentType();
-            if(contentType == null){
-                throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE + " Cpim header is missing");
+            if (contentType == null) {
+                throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE
+                        + " Cpim header is missing");
             }
 
-            if(contentType.toLowerCase().contains(Constants.CONTENT_TYPE_TEXT_PLAIN.toLowerCase())){
+            if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_TEXT_PLAIN.toLowerCase())) {
                 return MessageType.CHAT_MESSAGE;
-            }
-            else if(contentType.toLowerCase().contains(Constants.CONTENT_TYPE_MESSAGE_IMDN_XML.toLowerCase())){
+            } else if (contentType.toLowerCase().contains(
+                    Constants.CONTENT_TYPE_MESSAGE_IMDN_XML.toLowerCase())) {
                 return MessageType.IMDN;
             }
-            throw new CmsSyncMessageNotSupportedException("unsupported cpim message type : ".concat(contentType));
-        }
-        else if(imapContentType.contains(Constants.APPLICATION_SESSION.toLowerCase())) {
+            throw new CmsSyncMessageNotSupportedException(
+                    "unsupported cpim message type : ".concat(contentType));
+        } else if (imapContentType.contains(Constants.APPLICATION_SESSION.toLowerCase())) {
             return MessageType.SESSION_INFO;
-        }
-        else if(imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
+        } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
             return MessageType.GROUP_STATE;
-        }
-        else if(imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
+        } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
             return MessageType.FILE_TRANSFER;
         }
 
-        StringBuilder msg = new StringBuilder("Can not determine the type of the message").append(Constants.CRLF)
-                .append(imapMessage.getPayload());
+        StringBuilder msg = new StringBuilder("Can not determine the type of the message").append(
+                Constants.CRLF).append(imapMessage.getPayload());
         throw new CmsSyncMessageNotSupportedException(msg.toString());
     }
 
-    public IImapMessage resolveMessage(MessageType messageType, com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncException {
+    public IImapMessage resolveMessage(MessageType messageType,
+            com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncException {
 
         switch (messageType) {
             case SMS:
@@ -117,6 +123,7 @@ public class ImapMessageResolver {
             case GROUP_STATE:
                 return new ImapGroupStateMessage(imapMessage);
         }
-        throw new CmsSyncMessageNotSupportedException("unsupported message type : ".concat(messageType.toString()));
+        throw new CmsSyncMessageNotSupportedException(
+                "unsupported message type : ".concat(messageType.toString()));
     }
 }

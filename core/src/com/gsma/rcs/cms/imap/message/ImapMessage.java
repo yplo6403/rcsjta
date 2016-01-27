@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 package com.gsma.rcs.cms.imap.message;
 
 import com.gsma.rcs.cms.Constants;
+
 import com.sonymobile.rcs.imap.Flag;
 
 public abstract class ImapMessage implements IImapMessage {
@@ -28,7 +29,7 @@ public abstract class ImapMessage implements IImapMessage {
     private HeaderPart mHeaderPart;
     private BodyPart mBodyPart;
 
-    protected ImapMessage(){
+    protected ImapMessage() {
         mHeaderPart = new HeaderPart();
     }
 
@@ -38,12 +39,12 @@ public abstract class ImapMessage implements IImapMessage {
         parsePayload(mRawMessage.getPayload());
     }
 
-    public void addHeader(String name, String value){
+    public void addHeader(String name, String value) {
         mHeaderPart.addHeader(name, value);
     }
 
     @Override
-    public String toPayload(){
+    public String toPayload() {
         StringBuilder sb = new StringBuilder();
         sb.append(mHeaderPart);
         sb.append(Constants.CRLF);
@@ -54,12 +55,12 @@ public abstract class ImapMessage implements IImapMessage {
     protected abstract void parsePayload(String payload);
 
     @Override
-    public String getHeader(String headerName){
+    public String getHeader(String headerName) {
         return mHeaderPart.getHeaderValue(headerName);
     }
 
     @Override
-    public BodyPart getBodyPart(){
+    public BodyPart getBodyPart() {
         return mBodyPart;
     }
 
@@ -73,7 +74,6 @@ public abstract class ImapMessage implements IImapMessage {
         return mRawMessage.getUid();
     }
 
-
     @Override
     public boolean isSeen() {
         return mRawMessage.getMetadata().getFlags().contains(Flag.Seen);
@@ -84,7 +84,7 @@ public abstract class ImapMessage implements IImapMessage {
         return mRawMessage.getMetadata().getFlags().contains(Flag.Deleted);
     }
 
-    public void setBodyPart(BodyPart bodyPart){
+    public void setBodyPart(BodyPart bodyPart) {
         mBodyPart = bodyPart;
     }
 

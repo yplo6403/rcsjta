@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,28 +32,32 @@ public class ImapSmsMessage extends ImapCpimMessage {
     private String mCorrelator;
     private long mDate;
 
-    public ImapSmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
+    public ImapSmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
         mCorrelator = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
-        if(mCorrelator == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR + " IMAP header is missing");
+        if (mCorrelator == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR
+                    + " IMAP header is missing");
         }
 
         String dateHeader = getHeader(Constants.HEADER_DATE);
-        if(dateHeader == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE + " IMAP header is missing");
+        if (dateHeader == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
+                    + " IMAP header is missing");
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
-    
-    public ImapSmsMessage(String from, String to, String direction, long date,
-                          String content, String conversationId, String contributionId, String imdnMessageId) {
+
+    public ImapSmsMessage(String from, String to, String direction, long date, String content,
+            String conversationId, String contributionId, String imdnMessageId) {
         super();
 
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);
-        addHeader(Constants.HEADER_DATE,  DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
+        addHeader(Constants.HEADER_DATE,
+                DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
         addHeader(Constants.HEADER_CONVERSATION_ID, conversationId);
         addHeader(Constants.HEADER_CONTRIBUTION_ID, contributionId);
         addHeader(Constants.HEADER_IMDN_MESSAGE_ID, imdnMessageId);
@@ -68,18 +72,19 @@ public class ImapSmsMessage extends ImapCpimMessage {
         cpimHeaders.addHeader("NS", "imdn <urn:ietf:params:imdn>");
         cpimHeaders.addHeader("NS", "rcs <http://www.gsma.com>");
         cpimHeaders.addHeader("imdn.Message-ID", imdnMessageId);
-        cpimHeaders.addHeader(Constants.HEADER_DATE_TIME, DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
+        cpimHeaders.addHeader(Constants.HEADER_DATE_TIME,
+                DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT));
 
         TextCpimBody textCpimBody = new TextCpimBody("text/plain; charset=utf-8", content);
         CpimMessage cpimMessage = new CpimMessage(cpimHeaders, textCpimBody);
         setBodyPart(cpimMessage);
     }
 
-    public String getCorrelator(){
+    public String getCorrelator() {
         return mCorrelator;
     }
 
-    public long getDate(){
+    public long getDate() {
         return mDate;
     }
 }

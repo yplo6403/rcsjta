@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +26,20 @@ public abstract class CpimBody {
 
     protected final HeaderPart mHeaders;
 
-    protected CpimBody(){
+    protected CpimBody() {
         mHeaders = new HeaderPart();
     }
 
-    protected CpimBody(String contentType){
+    protected CpimBody(String contentType) {
         this();
         mHeaders.addHeader(Constants.HEADER_CONTENT_TYPE, contentType);
     }
 
-    public String getContentType(){
+    public String getContentType() {
         return mHeaders.getHeaderValue(Constants.HEADER_CONTENT_TYPE);
     }
 
     protected abstract void parseBody(String body);
+
     protected abstract String toPayload();
 }

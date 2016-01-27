@@ -19,8 +19,6 @@
 
 package com.gsma.rcs.cms.imap.task;
 
-import android.content.Context;
-
 import com.gsma.rcs.cms.Constants;
 import com.gsma.rcs.cms.imap.ImapFolder;
 import com.gsma.rcs.cms.imap.message.IImapMessage;
@@ -38,8 +36,11 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.contact.ContactId;
+
 import com.sonymobile.rcs.imap.Flag;
 import com.sonymobile.rcs.imap.ImapException;
+
+import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,9 +87,8 @@ public class PushMessageTask extends CmsTask {
      * @param contact
      * @param listener
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings,
-                           XmsLog xmsLog, ImapLog imapLog,
-                           ContactId contact, PushMessageTaskListener listener) {
+    public PushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog,
+            ImapLog imapLog, ContactId contact, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mXmsLog = xmsLog;
@@ -180,7 +180,8 @@ public class PushMessageTask extends CmsTask {
                     getBasicImapService().selectCondstore(remoteFolder);
                     prevSelectedFolder = remoteFolder;
                 }
-                int uid = getBasicImapService().append(remoteFolder, flags, imapMessage.toPayload());
+                int uid = getBasicImapService()
+                        .append(remoteFolder, flags, imapMessage.toPayload());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
         } catch (IOException | ImapException e) {

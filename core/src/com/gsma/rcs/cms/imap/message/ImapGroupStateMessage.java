@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.gsma.rcs.cms.imap.message.groupstate.GroupStateParser;
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
+
 import com.sonymobile.rcs.imap.Header;
 
 import org.xml.sax.InputSource;
@@ -47,22 +48,25 @@ public class ImapGroupStateMessage extends ImapMessage {
     private String mRejoinId;
     private List<ContactId> mParticipants;
 
-    public ImapGroupStateMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncException {
+    public ImapGroupStateMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+            throws CmsSyncException {
         super(rawMessage);
 
-        //TODO FGI : check if direction available in IMAP header
+        // TODO FGI : check if direction available in IMAP header
         mDirection = Direction.OUTGOING;
         try {
             mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
-            if(mChatId == null){
-                throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID + " IMAP header is missing");
+            if (mChatId == null) {
+                throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
+                        + " IMAP header is missing");
             }
 
             mSubject = getHeader(Constants.HEADER_SUBJECT);
 
             String xml = getBodyPart().getPayload();
-            if(!xml.isEmpty()){
-                GroupStateParser parser = new GroupStateParser(new InputSource(new ByteArrayInputStream(xml.toString().getBytes())));
+            if (!xml.isEmpty()) {
+                GroupStateParser parser = new GroupStateParser(new InputSource(
+                        new ByteArrayInputStream(xml.toString().getBytes())));
                 GroupStateDocument document = parser.parse().getGroupStateDocument();
                 mTimestamp = document.getDate();
                 mRejoinId = document.getLastfocussessionid();
@@ -77,36 +81,36 @@ public class ImapGroupStateMessage extends ImapMessage {
 
     @Override
     public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF,2);
-        if(2 == parts.length ){
-            for(Header header : Header.parseHeaders(parts[0]).values()){
+        String[] parts = payload.split(Constants.CRLFCRLF, 2);
+        if (2 == parts.length) {
+            for (Header header : Header.parseHeaders(parts[0]).values()) {
                 addHeader(header.getKey(), header.getValue());
             }
             setBodyPart(new BodyPart(parts[1]));
         }
     }
 
-    public String getRejoinId(){
+    public String getRejoinId() {
         return mRejoinId;
     }
 
-    public String getSubject(){
+    public String getSubject() {
         return mSubject;
     }
 
-    public List<ContactId> getParticipants(){
+    public List<ContactId> getParticipants() {
         return mParticipants;
     }
 
-    public long getTimestamp(){
+    public long getTimestamp() {
         return mTimestamp;
     }
 
-    public String getChatId(){
+    public String getChatId() {
         return mChatId;
     }
 
-    public Direction getDirection(){
+    public Direction getDirection() {
         return mDirection;
     }
 }

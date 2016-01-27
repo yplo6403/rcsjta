@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ public abstract class CmsSyncException extends Exception {
 
     /**
      * Constructor
+     * 
      * @param message
      */
     public CmsSyncException(String message) {
@@ -33,6 +34,7 @@ public abstract class CmsSyncException extends Exception {
 
     /**
      * Constructor
+     * 
      * @param e
      */
     public CmsSyncException(Exception e) {

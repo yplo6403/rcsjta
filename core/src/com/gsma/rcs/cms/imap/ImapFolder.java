@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,9 +83,10 @@ public class ImapFolder {
     public String toString() {
         return new StringBuilder("ImapFolder [mName=").append(mName).append(", ")
                 .append(Constants.METADATA_MESSAGES).append("=").append(getMessages()).append(", ")
-                .append(Constants.METADATA_UIDVALIDITY).append("=").append(getUidValidity()).append(", ")
-                .append(Constants.METADATA_HIGHESTMODSEQ).append("=").append(getHighestModseq()).append(", ")
-                .append(Constants.METADATA_UIDNEXT).append("=").append(getUidNext()).append(", ").append("]").toString();
+                .append(Constants.METADATA_UIDVALIDITY).append("=").append(getUidValidity())
+                .append(", ").append(Constants.METADATA_HIGHESTMODSEQ).append("=")
+                .append(getHighestModseq()).append(", ").append(Constants.METADATA_UIDNEXT)
+                .append("=").append(getUidNext()).append(", ").append("]").toString();
 
     }
 

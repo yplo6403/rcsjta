@@ -50,13 +50,14 @@ public class BasicImapService extends DefaultImapService {
 
     /**
      * Execute LIST command on CMS server
+     * 
      * @return
      * @throws IOException
      * @throws ImapException
      */
     public List<String> list() throws IOException, ImapException {
-        ListCmdHandler handler = (ListCmdHandler) CmdHandler.getHandler(
-                CommandType.LIST, getCapabilities());
+        ListCmdHandler handler = (ListCmdHandler) CmdHandler.getHandler(CommandType.LIST,
+                getCapabilities());
         writeCommand(handler.buildCommand());
         handler.handleLines(readToEndOfResponse());
         return handler.getResult();

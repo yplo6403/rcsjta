@@ -1,3 +1,20 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 
 package com.gsma.rcs.cms.integration;
 
@@ -78,8 +95,7 @@ public class MmsTest extends AndroidTestCase {
         LocalStorage localStorage = new LocalStorage(mImapLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService,
-                localStorage);
+        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage);
         mBasicImapService.init();
     }
 
@@ -143,8 +159,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync : messages are marked as deleted in local storage</li>
      * </ul>
      */
-    public void test2() throws NetworkException, PayloadException,
-             FileAccessException {
+    public void test2() throws NetworkException, PayloadException, FileAccessException {
         test1();
 
         // update messages with 'seen' flag on CMS
@@ -191,8 +206,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 5 : start sync : messages are marked as deleted in local storage</li>
      * </ul>
      */
-    public void test3() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test3() throws FileAccessException, NetworkException, PayloadException {
         test1();
 
         List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
@@ -276,8 +290,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : check that conversation is marked as seen</li>
      * </ul>
      */
-    public void test5() throws NetworkException, FileAccessException,
-            PayloadException {
+    public void test5() throws NetworkException, FileAccessException, PayloadException {
         test1();
 
         // mark messages as deleted on server and expunge them.
@@ -319,8 +332,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test6() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test6() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -350,8 +362,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test7() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test7() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -391,8 +402,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test8() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test8() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -432,8 +442,7 @@ public class MmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test9() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test9() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -502,8 +511,7 @@ public class MmsTest extends AndroidTestCase {
                 mImapLogEnvIntegration.getMessages(MmsIntegrationUtils.Test10.folder3).size());
     }
 
-    public void testLoad() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void testLoad() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -512,9 +520,10 @@ public class MmsTest extends AndroidTestCase {
             createRemoteMessages(MmsIntegrationUtils.Test10.conversation_2);
             for (MmsDataObject mms : MmsIntegrationUtils.Test10.conversation_2) {
                 String msgId = IdGenerator.generateMessageID();
-                mXmsLog.addOutgoingMms(new MmsDataObject(mms.getMmsId(), msgId, mms.getContact(), mms
-                        .getSubject(), mms.getDirection(), mms.getReadStatus(), mms.getTimestamp(),
-                        mms.getNativeProviderId(), mms.getNativeThreadId(), mms.getMmsParts()));
+                mXmsLog.addOutgoingMms(new MmsDataObject(mms.getMmsId(), msgId, mms.getContact(),
+                        mms.getSubject(), mms.getDirection(), mms.getReadStatus(), mms
+                                .getTimestamp(), mms.getNativeProviderId(),
+                        mms.getNativeThreadId(), mms.getMmsParts()));
                 mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                         mms.getContact()),
                         mms.getReadStatus() == ReadStatus.READ ? MessageData.ReadStatus.READ
@@ -550,23 +559,20 @@ public class MmsTest extends AndroidTestCase {
     }
 
     private void createRemoteMessages(XmsDataObject[] messages) {
-        PushMessageTask task = new PushMessageTask(mContext, mSettings,
-                mXmsLog, mImapLog);
+        PushMessageTask task = new PushMessageTask(mContext, mSettings, mXmsLog, mImapLog);
         task.setBasicImapService(mBasicImapService);
         task.pushMessages(Arrays.asList(messages));
     }
 
-    private void deleteRemoteStorage() throws PayloadException,
-            NetworkException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null,
-                null);
+    private void deleteRemoteStorage() throws PayloadException, NetworkException {
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(null);
     }
 
-    private void deleteRemoteMailbox(String mailbox) throws NetworkException, PayloadException, IOException, ImapException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX,
-                mailbox, null);
+    private void deleteRemoteMailbox(String mailbox) throws NetworkException, PayloadException,
+            IOException, ImapException {
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
@@ -577,14 +583,13 @@ public class MmsTest extends AndroidTestCase {
     }
 
     private void deleteRemoteMessages(String mailbox) throws NetworkException, PayloadException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES,
-                mailbox, null);
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
     }
 
-    private void updateRemoteFlags(List<FlagChange> changes)
-            throws NetworkException, PayloadException {
+    private void updateRemoteFlags(List<FlagChange> changes) throws NetworkException,
+            PayloadException {
         UpdateFlagTask task = new UpdateFlagTask(changes, null);
         task.setBasicImapService(mBasicImapService);
         task.updateFlags();

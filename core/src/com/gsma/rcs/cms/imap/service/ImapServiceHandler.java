@@ -23,6 +23,7 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.IoService;
 import com.sonymobile.rcs.imap.SocketIoService;
@@ -30,13 +31,13 @@ import com.sonymobile.rcs.imap.SocketIoService;
 import java.io.IOException;
 
 /**
- * Class used to open and close an IMAP service.
- * The synchronization process relies on this service for executing command with the message store
+ * Class used to open and close an IMAP service. The synchronization process relies on this service
+ * for executing command with the message store
  */
 public class ImapServiceHandler {
 
-    private static final Logger sLogger = Logger.getLogger(ImapServiceHandler.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger
+            .getLogger(ImapServiceHandler.class.getSimpleName());
 
     private static final int SOCKET_TIMEOUT_IN_MS = 30000;
 
@@ -52,8 +53,8 @@ public class ImapServiceHandler {
         mRcsSettings = rcsSettings;
         IoService io = new SocketIoService(mRcsSettings.getMessageStoreUrl(), SOCKET_TIMEOUT_IN_MS);
         mBasicImapService = new BasicImapService(io);
-        //TODO FGI : Handle SSL authentication with message store
-        //TODO FGI : See MESSAGE_STORE_AUTH parameter in provisioning
+        // TODO FGI : Handle SSL authentication with message store
+        // TODO FGI : See MESSAGE_STORE_AUTH parameter in provisioning
         mBasicImapService.setAuthenticationDetails(mRcsSettings.getMessageStoreUser(),
                 mRcsSettings.getMessageStorePwd(), null, null, false);
     }

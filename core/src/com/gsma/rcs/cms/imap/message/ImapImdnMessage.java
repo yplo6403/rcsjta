@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,31 +37,35 @@ public class ImapImdnMessage extends ImapCpimMessage {
     private String mImdnId;
     private final boolean isOneToOne;
 
-    public ImapImdnMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
+    public ImapImdnMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
         mImdnId = getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
-        if(mImdnId == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID + " IMAP header is missing");
+        if (mImdnId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
+                    + " IMAP header is missing");
         }
 
         String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
-        if(from == null){
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM + " IMAP header is missing");
+        if (from == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
+                    + " IMAP header is missing");
         }
         isOneToOne = ANONYMOUS.equals(from);
 
     }
 
-    public ImdnDocument getImdnDocument() throws ParseFailureException, SAXException, ParserConfigurationException {
+    public ImdnDocument getImdnDocument() throws ParseFailureException, SAXException,
+            ParserConfigurationException {
         return ChatUtils.parseCpimDeliveryReport(getCpimMessage().getPayload());
     }
 
-    public String getImdnId(){
+    public String getImdnId() {
         return mImdnId;
     }
 
-    public boolean isOneToOne(){
+    public boolean isOneToOne() {
         return isOneToOne;
     }
 }

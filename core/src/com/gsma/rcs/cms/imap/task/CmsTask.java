@@ -25,11 +25,11 @@ public abstract class CmsTask implements Runnable {
 
     private BasicImapService mBasicImapService;
 
-    public void setBasicImapService(BasicImapService basicImapService){
+    public void setBasicImapService(BasicImapService basicImapService) {
         mBasicImapService = basicImapService;
     }
 
-    public BasicImapService getBasicImapService(){
+    public BasicImapService getBasicImapService() {
         return mBasicImapService;
     }
 }

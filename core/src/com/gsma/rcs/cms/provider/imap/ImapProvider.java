@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2015 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@
 
 package com.gsma.rcs.cms.provider.imap;
 
+import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
+import com.gsma.rcs.utils.DatabaseUtils;
+
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
@@ -29,9 +32,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
-
-import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
-import com.gsma.rcs.utils.DatabaseUtils;
 
 public class ImapProvider extends ContentProvider {
 
@@ -56,16 +56,14 @@ public class ImapProvider extends ContentProvider {
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
-        sUriMatcher.addURI(FolderData.CONTENT_URI.getAuthority(),
-                FolderData.CONTENT_URI.getPath().substring(1), UriType.Folder.FOLDER);
-        sUriMatcher.addURI(FolderData.CONTENT_URI.getAuthority(),
-                FolderData.CONTENT_URI.getPath().substring(1).concat("/*"),
-                UriType.Folder.FOLDER_WITH_ID);
-        sUriMatcher.addURI(MessageData.CONTENT_URI.getAuthority(),
-                MessageData.CONTENT_URI.getPath().substring(1), UriType.Message.MESSAGE);
-        sUriMatcher.addURI(MessageData.CONTENT_URI.getAuthority(),
-                MessageData.CONTENT_URI.getPath().substring(1).concat("/*"),
-                UriType.Message.MESSAGE_WITH_ID);
+        sUriMatcher.addURI(FolderData.CONTENT_URI.getAuthority(), FolderData.CONTENT_URI.getPath()
+                .substring(1), UriType.Folder.FOLDER);
+        sUriMatcher.addURI(FolderData.CONTENT_URI.getAuthority(), FolderData.CONTENT_URI.getPath()
+                .substring(1).concat("/*"), UriType.Folder.FOLDER_WITH_ID);
+        sUriMatcher.addURI(MessageData.CONTENT_URI.getAuthority(), MessageData.CONTENT_URI
+                .getPath().substring(1), UriType.Message.MESSAGE);
+        sUriMatcher.addURI(MessageData.CONTENT_URI.getAuthority(), MessageData.CONTENT_URI
+                .getPath().substring(1).concat("/*"), UriType.Message.MESSAGE_WITH_ID);
     }
 
     private static final class UriType {
@@ -103,14 +101,30 @@ public class ImapProvider extends ContentProvider {
 
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + FolderData.KEY_NAME + " TEXT NOT NULL," + FolderData.KEY_NEXT_UID + " INTEGER," + FolderData.KEY_HIGHESTMODSEQ + " INTEGER," + FolderData.KEY_UID_VALIDITY + " INTEGER)");
-            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + BaseColumns._ID + "_idx" + " ON " + TABLE_FOLDER + '(' + BaseColumns._ID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + FolderData.KEY_NAME + "_idx" + " ON " + TABLE_FOLDER + '(' + FolderData.KEY_NAME + ')');
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + BaseColumns._ID
+                    + " INTEGER PRIMARY KEY AUTOINCREMENT," + FolderData.KEY_NAME
+                    + " TEXT NOT NULL," + FolderData.KEY_NEXT_UID + " INTEGER,"
+                    + FolderData.KEY_HIGHESTMODSEQ + " INTEGER," + FolderData.KEY_UID_VALIDITY
+                    + " INTEGER)");
+            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + BaseColumns._ID + "_idx" + " ON "
+                    + TABLE_FOLDER + '(' + BaseColumns._ID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + FolderData.KEY_NAME + "_idx" + " ON "
+                    + TABLE_FOLDER + '(' + FolderData.KEY_NAME + ')');
 
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + MessageData.KEY_FOLDER_NAME + " TEXT," + MessageData.KEY_UID + " INTEGER," + MessageData.KEY_READ_STATUS + " INTEGER NOT NULL," + MessageData.KEY_DELETE_STATUS + " INTEGER NOT NULL," + MessageData.KEY_PUSH_STATUS + " INTEGER NOT NULL," + MessageData.KEY_MESSAGE_TYPE + " TEXT NOT NULL," + MessageData.KEY_MESSAGE_ID + " TEXT NOT NULL," + MessageData.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + BaseColumns._ID + "_idx" + " ON " + TABLE_MESSAGE + '(' + BaseColumns._ID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_idx" + " ON " + TABLE_MESSAGE + '(' + MessageData.KEY_FOLDER_NAME + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_" + MessageData.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '(' + MessageData.KEY_FOLDER_NAME + "," + MessageData.KEY_UID + ')');
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + BaseColumns._ID
+                    + " INTEGER PRIMARY KEY AUTOINCREMENT," + MessageData.KEY_FOLDER_NAME
+                    + " TEXT," + MessageData.KEY_UID + " INTEGER," + MessageData.KEY_READ_STATUS
+                    + " INTEGER NOT NULL," + MessageData.KEY_DELETE_STATUS + " INTEGER NOT NULL,"
+                    + MessageData.KEY_PUSH_STATUS + " INTEGER NOT NULL,"
+                    + MessageData.KEY_MESSAGE_TYPE + " TEXT NOT NULL," + MessageData.KEY_MESSAGE_ID
+                    + " TEXT NOT NULL," + MessageData.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + BaseColumns._ID + "_idx" + " ON "
+                    + TABLE_MESSAGE + '(' + BaseColumns._ID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_idx"
+                    + " ON " + TABLE_MESSAGE + '(' + MessageData.KEY_FOLDER_NAME + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + MessageData.KEY_FOLDER_NAME + "_"
+                    + MessageData.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
+                    + MessageData.KEY_FOLDER_NAME + "," + MessageData.KEY_UID + ')');
 
             // TODO
             // define another index
@@ -145,8 +159,7 @@ public class ImapProvider extends ContentProvider {
             case UriType.Message.MESSAGE_WITH_ID:
                 return CursorType.Message.TYPE_ITEM;
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported URI " + uri + "!");
+                throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
     }
 
@@ -159,7 +172,7 @@ public class ImapProvider extends ContentProvider {
 
     private String[] getSelectionArgsWithId(String[] selectionArgs, String id) {
         String[] keySelectionArg = new String[] {
-                id
+            id
         };
         if (selectionArgs == null) {
             return keySelectionArg;
@@ -194,8 +207,8 @@ public class ImapProvider extends ContentProvider {
                         sort);
                 return cursor;
             default:
-                throw new IllegalArgumentException(
-                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
+                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
+                        .append(uri).append("!").toString());
         }
 
     }
@@ -220,8 +233,8 @@ public class ImapProvider extends ContentProvider {
                 db = mOpenHelper.getReadableDatabase();
                 return db.update(TABLE_MESSAGE, values, selection, selectionArgs);
             default:
-                throw new IllegalArgumentException(
-                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
+                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
+                        .append(uri).append("!").toString());
         }
     }
 
@@ -233,9 +246,8 @@ public class ImapProvider extends ContentProvider {
             case UriType.Folder.FOLDER:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 if (db.insert(TABLE_FOLDER, null, initialValues) == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(
-                            new StringBuilder("Unable to insert row for URI ").append(uri)
-                                    .append('!').toString());
+                    throw new ServerApiPersistentStorageException(new StringBuilder(
+                            "Unable to insert row for URI ").append(uri).append('!').toString());
                 }
                 return uri;
             case UriType.Message.MESSAGE_WITH_ID:
@@ -243,14 +255,13 @@ public class ImapProvider extends ContentProvider {
             case UriType.Message.MESSAGE:
                 db = mOpenHelper.getWritableDatabase();
                 if (db.insert(TABLE_MESSAGE, null, initialValues) == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(
-                            new StringBuilder("Unable to insert row for URI ").append(uri)
-                                    .append('!').toString());
+                    throw new ServerApiPersistentStorageException(new StringBuilder(
+                            "Unable to insert row for URI ").append(uri).append('!').toString());
                 }
                 return uri;
             default:
-                throw new IllegalArgumentException(
-                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
+                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
+                        .append(uri).append("!").toString());
         }
     }
 
@@ -263,9 +274,8 @@ public class ImapProvider extends ContentProvider {
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 int nb = db.delete(TABLE_FOLDER, where, whereArgs);
                 if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(
-                            new StringBuilder("Unable to insert row for URI ").append(uri)
-                                    .append('!').toString());
+                    throw new ServerApiPersistentStorageException(new StringBuilder(
+                            "Unable to insert row for URI ").append(uri).append('!').toString());
                 }
                 return nb;
             case UriType.Message.MESSAGE_WITH_ID:
@@ -274,14 +284,13 @@ public class ImapProvider extends ContentProvider {
                 db = mOpenHelper.getWritableDatabase();
                 nb = db.delete(TABLE_MESSAGE, where, whereArgs);
                 if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(
-                            new StringBuilder("Unable to insert row for URI ").append(uri)
-                                    .append('!').toString());
+                    throw new ServerApiPersistentStorageException(new StringBuilder(
+                            "Unable to insert row for URI ").append(uri).append('!').toString());
                 }
                 return nb;
             default:
-                throw new IllegalArgumentException(
-                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
+                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
+                        .append(uri).append("!").toString());
         }
     }
 }

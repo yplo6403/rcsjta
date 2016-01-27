@@ -86,8 +86,8 @@ public class CmsManager implements XmsMessageListener {
      */
     public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService) {
         // execute sync between providers in a dedicated thread
-        new Thread(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings,
-                mXmsLog, mImapLog)).start();
+        new Thread(new ProviderSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog,
+                mImapLog)).start();
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(mContext);
@@ -117,9 +117,11 @@ public class CmsManager implements XmsMessageListener {
         mSyncScheduler.registerListener(CmsOperation.SYNC_FOR_USER_ACTIVITY, cmsService);
         mSyncScheduler.start();
 
-        // instantiate ImapEventFrameworkHandler in charge of Pushing messages and updating flags with
+        // instantiate ImapEventFrameworkHandler in charge of Pushing messages and updating flags
+        // with
         // Imap command
-        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(mContext, mSyncScheduler, mRcsSettings);
+        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(mContext, mSyncScheduler,
+                mRcsSettings);
         mXmsObserver.registerListener(mImapEventFrameworkHandler);
 
         mMmsSessionHandler = new MmsSessionHandler(mImapLog, mXmsLog, mRcsSettings,
@@ -139,7 +141,7 @@ public class CmsManager implements XmsMessageListener {
             mXmsObserver = null;
         }
 
-        if(mSyncScheduler != null){
+        if (mSyncScheduler != null) {
             mSyncScheduler.stop();
             mSyncScheduler = null;
         }
@@ -245,7 +247,7 @@ public class CmsManager implements XmsMessageListener {
         return mMmsSessionHandler;
     }
 
-    public CmsScheduler getSyncScheduler(){
+    public CmsScheduler getSyncScheduler() {
         return mSyncScheduler;
     }
 }

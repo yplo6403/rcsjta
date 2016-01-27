@@ -64,7 +64,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
      * @param xmsMessageEventBroadcaster the broadcaster
      */
     public XmsEventHandler(ImapLog imapLog, XmsLog xmsLog, RcsSettings settings,
-                           IXmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
+            IXmsMessageEventBroadcaster xmsMessageEventBroadcaster) {
         mXmsLog = xmsLog;
         mImapLog = imapLog;
         mSettings = settings;
@@ -155,8 +155,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             mXmsLog.addOutgoingMms(message);
             mImapLog.addMessage(new MessageData(CmsUtils.contactToCmsFolder(mSettings,
                     message.getContact()), ReadStatus.READ, MessageData.DeleteStatus.NOT_DELETED,
-                    mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                    MessageType.MMS, message.getMessageId(), message.getNativeProviderId()));
+                    mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                            : PushStatus.PUSHED, MessageType.MMS, message.getMessageId(), message
+                            .getNativeProviderId()));
         }
     }
 

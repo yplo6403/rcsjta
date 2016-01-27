@@ -1,4 +1,20 @@
-
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
 package com.gsma.rcs.cms.integration;
 
 import com.gsma.rcs.cms.event.CmsEventHandler;
@@ -75,8 +91,7 @@ public class SmsTest extends AndroidTestCase {
         LocalStorage localStorage = new LocalStorage(mImapLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService,
-                localStorage);
+        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage);
         mBasicImapService.init();
     }
 
@@ -139,8 +154,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync : messages are marked as deleted in local storage</li>
      * </ul>
      */
-    public void test2() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test2() throws FileAccessException, NetworkException, PayloadException {
         test1();
 
         // update messages with 'seen' flag on CMS
@@ -230,8 +244,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : check that conversation is marked as seen</li>
      * </ul>
      */
-    public void test4() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test4() throws FileAccessException, NetworkException, PayloadException {
         test1();
         // delete mailbox on CMS
         try {
@@ -276,8 +289,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : check that conversation is marked as seen</li>
      * </ul>
      */
-    public void test5() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test5() throws FileAccessException, NetworkException, PayloadException {
         test1();
 
         // mark messages as deleted on server and expunge them.
@@ -324,8 +336,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test6() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test6() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -355,8 +366,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test7() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test7() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -397,8 +407,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>step 3 : start a sync</li>
      * </ul>
      */
-    public void test8() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test8() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -439,8 +448,7 @@ public class SmsTest extends AndroidTestCase {
      * <li>storage step 3 : start a sync</li>
      * </ul>
      */
-    public void test9() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test9() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -473,8 +481,7 @@ public class SmsTest extends AndroidTestCase {
     /**
      * Test10 : multi contact
      */
-    public void test10() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void test10() throws FileAccessException, NetworkException, PayloadException {
 
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
@@ -510,8 +517,7 @@ public class SmsTest extends AndroidTestCase {
                 mImapLogEnvIntegration.getMessages(SmsIntegrationUtils.Test10.folder3).size());
     }
 
-    public void testLoad() throws FileAccessException,
-            NetworkException, PayloadException {
+    public void testLoad() throws FileAccessException, NetworkException, PayloadException {
         deleteLocalStorage(true, true);
         deleteRemoteStorage();
 
@@ -560,23 +566,19 @@ public class SmsTest extends AndroidTestCase {
     }
 
     private void createRemoteMessages(XmsDataObject[] messages) {
-        PushMessageTask task = new PushMessageTask(mContext, mSettings,
-                mXmsLog, mImapLog);
+        PushMessageTask task = new PushMessageTask(mContext, mSettings, mXmsLog, mImapLog);
         task.setBasicImapService(mBasicImapService);
         task.pushMessages(Arrays.asList(messages));
     }
 
-    private void deleteRemoteStorage() throws NetworkException,
-            PayloadException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null,
-                null);
+    private void deleteRemoteStorage() throws NetworkException, PayloadException {
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(null);
     }
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX,
-                mailbox, null);
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
@@ -586,23 +588,20 @@ public class SmsTest extends AndroidTestCase {
         mBasicImapService.init();
     }
 
-    private void deleteRemoteMessages(String mailbox) throws
-            NetworkException, PayloadException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES,
-                mailbox, null);
+    private void deleteRemoteMessages(String mailbox) throws NetworkException, PayloadException {
+        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
     }
 
-    private void updateRemoteFlags(List<FlagChange> changes)
-            throws NetworkException, PayloadException {
+    private void updateRemoteFlags(List<FlagChange> changes) throws NetworkException,
+            PayloadException {
         UpdateFlagTask task = new UpdateFlagTask(changes, null);
         task.setBasicImapService(mBasicImapService);
         task.updateFlags();
     }
 
-    private void startSynchro() throws FileAccessException,
-            NetworkException, PayloadException {
+    private void startSynchro() throws FileAccessException, NetworkException, PayloadException {
         mSyncStrategy.execute();
     }
 

@@ -22,6 +22,7 @@ package com.gsma.rcs.cms.imap.task;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
+
 import com.sonymobile.rcs.imap.ImapException;
 
 import java.io.IOException;
@@ -50,8 +51,7 @@ public class DeleteTask extends CmsTask {
      * @param mailbox the mailbox
      * @param listener the listener
      */
-    public DeleteTask(Operation operation,
-            String mailbox, DeleteTaskListener listener) {
+    public DeleteTask(Operation operation, String mailbox, DeleteTaskListener listener) {
         mOperation = operation;
         mMailbox = mailbox;
         mListener = listener;
