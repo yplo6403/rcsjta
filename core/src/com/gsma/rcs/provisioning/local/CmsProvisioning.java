@@ -22,13 +22,13 @@
 
 package com.gsma.rcs.provisioning.local;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.Toast;
+import static com.gsma.rcs.provisioning.local.Provisioning.saveCheckBoxParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.saveIntegerEditTextParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.saveStringEditTextParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.setCheckBoxParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.setIntegerEditTextParam;
+import static com.gsma.rcs.provisioning.local.Provisioning.setSpinnerParameter;
+import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextParam;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
@@ -37,13 +37,17 @@ import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
+import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 
-import static com.gsma.rcs.provisioning.local.Provisioning.saveCheckBoxParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.saveIntegerEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.saveStringEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setCheckBoxParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setIntegerEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextParam;
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 /**
  * Cms parameters provisioning File
@@ -51,6 +55,12 @@ import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextPara
 public class CmsProvisioning extends Activity {
 
     private RcsSettings mRcsSettings;
+
+    private String[] mEventFramework = new String[]{
+            EventFrameworkMode.DISABLED.toString(),
+            EventFrameworkMode.IMAP.toString(),
+            EventFrameworkMode.SIP.toString()
+    };
 
     private boolean isInFront;
     @Override
@@ -63,7 +73,7 @@ public class CmsProvisioning extends Activity {
         // Set buttons callback
         Button btn = (Button) findViewById(R.id.save_btn);
         btn.setOnClickListener(saveBtnListener);
-        mRcsSettings = RcsSettings.createInstance(new LocalContentResolver(this));
+        mRcsSettings = RcsSettings.getInstance(new LocalContentResolver(this));
         updateView(bundle);
         isInFront = true;
     }
@@ -111,7 +121,23 @@ public class CmsProvisioning extends Activity {
         if(!((CheckBox)findViewById(R.id.message_store_push_mms)).isChecked()){
             imapLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
-        saveCheckBoxParam(R.id.message_store_update_flag_imap_xms, RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
+
+        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_xms_spinner);
+        String selected = (String) spinner.getSelectedItem();
+        if (bundle != null) {
+            bundle.putInt(RcsSettingsData.EVENT_FRAMEWORK_XMS, EventFrameworkMode.valueOf(selected).toInt());
+        } else {
+            mRcsSettings.writeInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS, EventFrameworkMode.valueOf(selected).toInt());
+        }
+
+        spinner = (Spinner) findViewById(R.id.message_store_event_framework_chat_spinner);
+        selected = (String) spinner.getSelectedItem();
+        if (bundle != null) {
+            bundle.putInt(RcsSettingsData.EVENT_FRAMEWORK_CHAT, EventFrameworkMode.valueOf(selected).toInt());
+        } else {
+            mRcsSettings.writeInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT, EventFrameworkMode.valueOf(selected).toInt());
+        }
+
         saveStringEditTextParam(R.id.message_store_default_directory_name, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
         saveStringEditTextParam(R.id.message_store_default_directory_separator, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
         saveIntegerEditTextParam(R.id.data_connection_sync_timer, RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
@@ -133,7 +159,32 @@ public class CmsProvisioning extends Activity {
 
         setCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS, helper);
         setCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS, helper);
-        setCheckBoxParam(R.id.message_store_update_flag_imap_xms, RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS, helper);
+
+        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_xms_spinner);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(CmsProvisioning.this,
+                android.R.layout.simple_spinner_item, mEventFramework);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        setSpinnerParameter(
+                spinner,
+                RcsSettingsData.EVENT_FRAMEWORK_XMS,
+                true,
+                mEventFramework,
+                helper
+        );
+
+        spinner = (Spinner) findViewById(R.id.message_store_event_framework_chat_spinner);
+        adapter = new ArrayAdapter<>(CmsProvisioning.this,
+                android.R.layout.simple_spinner_item, mEventFramework);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        setSpinnerParameter(
+                spinner,
+                RcsSettingsData.EVENT_FRAMEWORK_CHAT,
+                true,
+                mEventFramework,
+                helper
+        );
 
         setStringEditTextParam(R.id.message_store_default_directory_name, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
         setStringEditTextParam(R.id.message_store_default_directory_separator, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
@@ -149,7 +200,7 @@ public class CmsProvisioning extends Activity {
         public void onClick(View v) {
             // Save parameters
             saveInstanceState(null);
-            Toast.makeText(CmsProvisioning.this, getString(R.string.message_store_save_ok), Toast.LENGTH_LONG).show();
+            Toast.makeText(CmsProvisioning.this, getString(R.string.message_store_save_ok_label), Toast.LENGTH_LONG).show();
         }
     };
 }

@@ -97,6 +97,7 @@ public final class MessageData {
         private final int mValue;
 
         private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<ReadStatus>();
+
         static {
             for (ReadStatus entry : ReadStatus.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -153,6 +154,7 @@ public final class MessageData {
         private final int mValue;
 
         private static SparseArray<DeleteStatus> mValueToEnum = new SparseArray<DeleteStatus>();
+
         static {
             for (DeleteStatus entry : DeleteStatus.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -205,6 +207,7 @@ public final class MessageData {
         private final int mValue;
 
         private static SparseArray<PushStatus> mValueToEnum = new SparseArray<PushStatus>();
+
         static {
             for (PushStatus entry : PushStatus.values()) {
                 mValueToEnum.put(entry.toInt(), entry);

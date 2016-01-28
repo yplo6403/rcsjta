@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.cms.event;
 
+import com.gsma.rcs.cms.event.framework.EventFrameworkHandler;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
@@ -38,7 +39,7 @@ public class MmsSessionHandler implements MmsSessionListener {
     private final ImapLog mImapLog;
     private final XmsLog mXmsLog;
     private final RcsSettings mSettings;
-    private final ImapEventFrameworkHandler mImapEventFrameworkHandler;
+    private final EventFrameworkHandler mImapEventFrameworkHandler;
 
     /**
      * Default constructor
@@ -47,7 +48,7 @@ public class MmsSessionHandler implements MmsSessionListener {
      * @param settings the RCS settings accessor
      */
     public MmsSessionHandler(ImapLog imapLog, XmsLog xmsLog, RcsSettings settings,
-            ImapEventFrameworkHandler imapEventFrameworkHandler) {
+            EventFrameworkHandler imapEventFrameworkHandler) {
         mImapLog = imapLog;
         mXmsLog = xmsLog;
         mSettings = settings;

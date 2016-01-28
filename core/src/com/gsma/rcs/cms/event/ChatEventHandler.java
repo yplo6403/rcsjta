@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.cms.event;
 
+import com.gsma.rcs.cms.event.framework.EventFrameworkHandler;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
 import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
@@ -43,15 +44,19 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     protected final MessagingLog mMessagingLog;
     protected final ImapLog mImapLog;
     protected final RcsSettings mSettings;
+    protected final EventFrameworkHandler mEventFrameworkHandler;
 
     /**
      * Default constructor
      *
+     * @param eventFrameworkHandler
      * @param imapLog the IMAP log accessor
      * @param messagingLog the messaging log accessor
      * @param settings the RCS settings accessor
      */
-    public ChatEventHandler(ImapLog imapLog, MessagingLog messagingLog, RcsSettings settings) {
+    public ChatEventHandler(EventFrameworkHandler eventFrameworkHandler, ImapLog imapLog,
+            MessagingLog messagingLog, RcsSettings settings) {
+        mEventFrameworkHandler = eventFrameworkHandler;
         mMessagingLog = messagingLog;
         mImapLog = imapLog;
         mSettings = settings;
@@ -155,11 +160,13 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     public void onReadChatMessage(String messageId) {
         mImapLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
                 ReadStatus.READ_REPORT_REQUESTED);
+        mEventFrameworkHandler.onReadChatMessage(messageId);
     }
 
     @Override
     public void onDeleteChatMessage(String messageId) {
         mImapLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId,
                 DeleteStatus.DELETED_REPORT_REQUESTED);
+        mEventFrameworkHandler.onDeleteChatMessage(messageId);
     }
 }

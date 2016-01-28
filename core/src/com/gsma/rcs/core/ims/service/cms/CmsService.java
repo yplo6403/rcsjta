@@ -59,7 +59,6 @@ public class CmsService extends ImsService {
     private ChatServiceImpl mChatServiceImpl;
     private final Core mCore;
     private final Context mContext;
-    private final RcsSettings mRcsSettings;
     private final CmsManager mCmsManager;
 
     /**
@@ -78,7 +77,6 @@ public class CmsService extends ImsService {
         super(parent, true);
         mContext = context;
         mXmsLog = xmsLog;
-        mRcsSettings = rcsSettings;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mCmsManager = new CmsManager(context, imapLog, xmsLog, messagingLog, rcsSettings);

@@ -142,6 +142,8 @@ public class MmsDataObject extends XmsDataObject {
                 String imagePath = FileUtils.getPath(ctx, part.getFile());
                 part.setPdu(ImageUtils.compressImage(imagePath, maxSize, MAX_IMAGE_WIDTH,
                         MAX_IMAGE_HEIGHT));
+                // images are compressed in jpeg format
+                part.setMimeType("image/jpeg");
             }
         }
     }
@@ -170,7 +172,7 @@ public class MmsDataObject extends XmsDataObject {
 
     public static class MmsPart {
         private final String mMessageId;
-        private final String mMimeType;
+        private String mMimeType;
         private final String mContentText;
         private final Uri mFile;
         private final byte[] mFileIcon;
@@ -244,6 +246,10 @@ public class MmsDataObject extends XmsDataObject {
 
         public void setPdu(byte[] pdu) {
             mPdu = pdu;
+        }
+
+        public void setMimeType(String mimeType) {
+            mMimeType = mimeType;
         }
 
         @Override

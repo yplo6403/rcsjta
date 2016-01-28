@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 package com.gsma.rcs.cms.toolkit.delete;
+
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.imap.task.DeleteTask;
 import com.gsma.rcs.cms.imap.task.DeleteTask.DeleteTaskListener;
@@ -28,6 +29,7 @@ import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.Toolkit;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 
@@ -40,11 +42,11 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-
 public class DeleteOperations extends ListActivity implements DeleteTaskListener {
 
     private RcsSettings mSettings;
     private ImapLog mImapLog;
+    private MessagingLog mMessagingLog;
     private XmsLog mXmsLog;
     private AlertDialog mInProgressDialog;
 
@@ -55,9 +57,11 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
             return;
         }
         Context context = getApplicationContext();
-        mSettings = RcsSettings.createInstance(new LocalContentResolver(context));
+        LocalContentResolver localContentResolver = new LocalContentResolver(context);
+        mSettings = RcsSettings.getInstance(localContentResolver);
         mImapLog = ImapLog.getInstance();
         mXmsLog = XmsLog.getInstance();
+        mMessagingLog = MessagingLog.getInstance(localContentResolver, mSettings);
 
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -69,7 +73,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                 getString(R.string.cms_toolkit_delete_rcs_messages),
                 getString(R.string.cms_toolkit_delete_cms_messages),
         };
-        setListAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items));
+        setListAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
 
     }
 
@@ -81,6 +85,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
                 try {
                     mImapLog.removeFolders(true);
                     mXmsLog.deleteAllEntries();
+                    mMessagingLog.deleteAllEntries();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -101,6 +106,7 @@ public class DeleteOperations extends ListActivity implements DeleteTaskListener
             case 2:
                 try {
                     mXmsLog.deleteAllEntries();
+                    mMessagingLog.deleteAllEntries();
                     message = getString(R.string.cms_toolkit_result_ok);
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -439,6 +439,60 @@ public class RcsSettingsData {
 
     }
 
+    /**
+     * Configuration of the event framework for the message store
+     */
+    public enum EventFrameworkMode {
+
+        /**
+         * Event framework disabled
+         */
+        DISABLED(0),
+        /**
+         * Event framework via IMAP protocol
+         */
+        IMAP(1),
+        /**
+         * Event framework via SIP protocol
+         */
+        SIP(2);
+
+        private final int mValue;
+
+        private static SparseArray<EventFrameworkMode> mValueToEnum = new SparseArray<>();
+        static {
+            for (EventFrameworkMode entry : EventFrameworkMode.values()) {
+                mValueToEnum.put(entry.toInt(), entry);
+            }
+        }
+
+        private EventFrameworkMode(int value) {
+            mValue = value;
+        }
+
+        /**
+         * @return value
+         */
+        public final int toInt() {
+            return mValue;
+        }
+
+        /**
+         * @param value
+         * @return EventFrameworkMode
+         */
+        public final static EventFrameworkMode valueOf(int value) {
+            EventFrameworkMode entry = mValueToEnum.get(value);
+            if (entry != null) {
+                return entry;
+            }
+            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
+                    .append(EventFrameworkMode.class.getName()).append(".").append(value)
+                    .toString());
+        }
+
+    }
+
     // ---------------------------------------------------------------------------
     // UI settings
     // ---------------------------------------------------------------------------
@@ -1449,9 +1503,14 @@ public class RcsSettingsData {
     public static final String MESSAGE_STORE_PUSH_MMS = "messageStorePushMms";
     /* package private */static final Boolean DEFAULT_MESSAGE_STORE_PUSH_MMS = true;
 
-    /* Update flag with IMAP command for XMS messages*/
-    public static final String MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS = "messageStoreUpdateFlagsWithImapXms";
-    /* package private */static final Boolean DEFAULT_MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS = true;
+    /* Flag events for XMS messages*/
+    public static final String EVENT_FRAMEWORK_XMS = "eventFrameworkXms";
+    public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_XMS = EventFrameworkMode.IMAP;
+
+    /* Flag events for Chat messages*/
+    public static final String EVENT_FRAMEWORK_CHAT = "eventFrameworkChat";
+    public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_CHAT = EventFrameworkMode.IMAP;
+
 
     public static final String MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "messageStoreDefaultDirectory";
     /* package private */static final String DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "Default";

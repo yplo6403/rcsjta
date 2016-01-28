@@ -71,10 +71,6 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mXmsMessageEventBroadcaster = xmsMessageEventBroadcaster;
     }
 
-    /********************************************************************/
-    /****************** Native SMS Events *******************************/
-    /********************************************************************/
-
     @Override
     public void onIncomingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
@@ -125,9 +121,6 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
     }
 
-    /********************************************************************/
-    /****************** Native MMS Events *******************************/
-    /********************************************************************/
     @Override
     public void onIncomingMms(MmsDataObject message) {
         if (sLogger.isActivated()) {

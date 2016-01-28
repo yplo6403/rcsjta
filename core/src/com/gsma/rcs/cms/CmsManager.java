@@ -22,12 +22,11 @@ package com.gsma.rcs.cms;
 import com.gsma.rcs.cms.event.ChatEventHandler;
 import com.gsma.rcs.cms.event.CmsEventHandler;
 import com.gsma.rcs.cms.event.GroupChatEventHandler;
-import com.gsma.rcs.cms.event.ImapEventFrameworkHandler;
 import com.gsma.rcs.cms.event.MmsSessionHandler;
 import com.gsma.rcs.cms.event.XmsEventHandler;
 import com.gsma.rcs.cms.event.XmsMessageListener;
+import com.gsma.rcs.cms.event.framework.EventFrameworkHandler;
 import com.gsma.rcs.cms.observer.XmsObserver;
-import com.gsma.rcs.cms.observer.XmsObserverListener;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.scheduler.CmsOperation;
 import com.gsma.rcs.cms.scheduler.CmsScheduler;
@@ -55,7 +54,7 @@ public class CmsManager implements XmsMessageListener {
     private ChatEventHandler mChatEventHandler;
     private GroupChatEventHandler mGroupChatEventHandler;
     private LocalStorage mLocalStorage;
-    private ImapEventFrameworkHandler mImapEventFrameworkHandler;
+    private EventFrameworkHandler mEventFrameworkHandler;
     private MmsSessionHandler mMmsSessionHandler;
     private CmsScheduler mSyncScheduler;
     private final static Logger sLogger = Logger.getLogger(CmsManager.class.getSimpleName());
@@ -101,9 +100,15 @@ public class CmsManager implements XmsMessageListener {
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog,
                 mMessagingLog, chatService, mRcsSettings, cmsService.getXmsMessageBroadcaster());
 
+        // instantiate EventFrameworkHandler in charge of Pushing messages and updating flags on the
+        // message store
+        mEventFrameworkHandler = new EventFrameworkHandler(mContext, mSyncScheduler, mRcsSettings);
+        mXmsObserver.registerListener(mEventFrameworkHandler);
+
         // instantiate ChatEventHandler in charge of handling events from ChatSession,read or
         // deletion of messages
-        mChatEventHandler = new ChatEventHandler(mImapLog, mMessagingLog, mRcsSettings);
+        mChatEventHandler = new ChatEventHandler(mEventFrameworkHandler, mImapLog, mMessagingLog,
+                mRcsSettings);
 
         // instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
         // deletion of messages
@@ -117,15 +122,8 @@ public class CmsManager implements XmsMessageListener {
         mSyncScheduler.registerListener(CmsOperation.SYNC_FOR_USER_ACTIVITY, cmsService);
         mSyncScheduler.start();
 
-        // instantiate ImapEventFrameworkHandler in charge of Pushing messages and updating flags
-        // with
-        // Imap command
-        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(mContext, mSyncScheduler,
-                mRcsSettings);
-        mXmsObserver.registerListener(mImapEventFrameworkHandler);
-
         mMmsSessionHandler = new MmsSessionHandler(mImapLog, mXmsLog, mRcsSettings,
-                mImapEventFrameworkHandler);
+                mEventFrameworkHandler);
 
         // start content observer on native SMS/MMS content provider
         mXmsObserver.start();
@@ -148,29 +146,7 @@ public class CmsManager implements XmsMessageListener {
 
         mLocalStorage = null;
         mXmsEventHandler = null;
-        mImapEventFrameworkHandler = null;
-    }
-
-    /**
-     * Register a NativeXmsMessageListener
-     * 
-     * @param listener The listener
-     */
-    public void registerSmsObserverListener(XmsObserverListener listener) {
-        if (mXmsObserver != null) {
-            mXmsObserver.registerListener(listener);
-        }
-    }
-
-    /**
-     * Unregister the listener
-     * 
-     * @param listener The listener
-     */
-    public void unregisterSmsObserverListener(XmsObserverListener listener) {
-        if (mXmsObserver != null) {
-            mXmsObserver.unregisterListener(listener);
-        }
+        mEventFrameworkHandler = null;
     }
 
     @Override
@@ -178,8 +154,8 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onReadXmsMessage(messageId);
         }
-        if (mImapEventFrameworkHandler != null) {
-            mImapEventFrameworkHandler.onReadXmsMessage(messageId);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onReadXmsMessage(messageId);
         }
     }
 
@@ -188,8 +164,8 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onDeleteXmsMessage(messageId);
         }
-        if (mImapEventFrameworkHandler != null) {
-            mImapEventFrameworkHandler.onDeleteXmsMessage(messageId);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onDeleteXmsMessage(messageId);
         }
     }
 
@@ -198,8 +174,8 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onReadXmsConversation(contact);
         }
-        if (mImapEventFrameworkHandler != null) {
-            mImapEventFrameworkHandler.onReadXmsConversation(contact);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onReadXmsConversation(contact);
         }
     }
 
@@ -208,8 +184,8 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onDeleteXmsConversation(contact);
         }
-        if (mImapEventFrameworkHandler != null) {
-            mImapEventFrameworkHandler.onDeleteXmsConversation(contact);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onDeleteXmsConversation(contact);
         }
     }
 
@@ -218,21 +194,9 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onDeleteAllXmsMessage();
         }
-        if (mImapEventFrameworkHandler != null) {
-            mImapEventFrameworkHandler.onDeleteAllXmsMessage();
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onDeleteAllXmsMessage();
         }
-    }
-
-    public Context getContext() {
-        return mContext;
-    }
-
-    public XmsLog getXmsLog() {
-        return mXmsLog;
-    }
-
-    public LocalStorage getLocalStorage() {
-        return mLocalStorage;
     }
 
     public ChatEventHandler getChatEventHandler() {
@@ -250,4 +214,5 @@ public class CmsManager implements XmsMessageListener {
     public CmsScheduler getSyncScheduler() {
         return mSyncScheduler;
     }
+
 }

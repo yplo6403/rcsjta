@@ -30,6 +30,7 @@ import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettingsData.AuthenticationProcedure;
 import com.gsma.rcs.provider.settings.RcsSettingsData.ConfigurationMode;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EnableRcseSwitch;
+import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.provider.settings.RcsSettingsData.FileTransferProtocol;
 import com.gsma.rcs.provider.settings.RcsSettingsData.GsmaRelease;
 import com.gsma.rcs.provider.settings.RcsSettingsData.ImMsgTech;
@@ -2476,8 +2477,20 @@ public class RcsSettings {
         return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
     }
 
-    public Boolean getMessageStoreUpdateFlagsWithImapXms(){
-        return readBoolean(RcsSettingsData.MESSAGE_STORE_UPDATE_FLAGS_WITH_IMAP_XMS);
+    public boolean isEventFrameworkEnabledForXms(){
+        return EventFrameworkMode.DISABLED != EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS));
+    }
+
+    public EventFrameworkMode getEventFrameworkForXms(){
+        return EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS));
+    }
+
+    public boolean isEventFrameworkEnabledForChat(){
+        return EventFrameworkMode.DISABLED != EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT));
+    }
+
+    public EventFrameworkMode getEventFrameworkForChat(){
+        return EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT));
     }
 
     public String getMessageStoreDefaultDirectoryName(){

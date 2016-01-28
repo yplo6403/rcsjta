@@ -21,7 +21,6 @@ package com.gsma.rcs.cms.toolkit.operations.remote;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.service.ImapServiceHandler;
 import com.gsma.rcs.cms.imap.task.ShowMessagesTask;
 import com.gsma.rcs.cms.imap.task.ShowMessagesTask.ShowMessagesTaskListener;
 import com.gsma.rcs.cms.imap.task.UpdateFlagTask;
@@ -32,8 +31,6 @@ import com.gsma.rcs.cms.sync.strategy.FlagChange.Operation;
 import com.gsma.rcs.cms.toolkit.AlertDialogUtils;
 import com.gsma.rcs.cms.toolkit.Toolkit;
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.provider.LocalContentResolver;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.Base64;
 
 import com.sonymobile.rcs.imap.Flag;
@@ -67,9 +64,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
 
     private ListView mListView;
     private ArrayAdapter<Message> mArrayAdapter;
-    private RcsSettings mSettings;
     private AlertDialog mInProgressDialog;
-    private ImapServiceHandler mImapServiceHandler;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -85,8 +80,6 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         mListView = (ListView) findViewById(android.R.id.list);
         mListView.setEmptyView(emptyView);
         registerForContextMenu(mListView);
-        mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
-
         CmsScheduler scheduler = Core.getInstance().getCmsService().getCmsManager()
                 .getSyncScheduler();
         scheduler.scheduleToolkitTask(new ShowMessagesTask(this));
@@ -240,7 +233,7 @@ public class ShowMessages extends ListActivity implements ShowMessagesTaskListen
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mArrayAdapter = new ArrayAdapter<Message>(ShowMessages.this,
+                mArrayAdapter = new ArrayAdapter<>(ShowMessages.this,
                         android.R.layout.simple_list_item_1, formatImapMessage(result));
                 mListView.setAdapter(mArrayAdapter);
             }

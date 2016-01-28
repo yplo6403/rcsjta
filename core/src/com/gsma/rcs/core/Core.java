@@ -24,7 +24,6 @@ package com.gsma.rcs.core;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
-import com.gsma.rcs.cms.CmsManager;
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;

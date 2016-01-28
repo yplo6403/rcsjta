@@ -29,6 +29,7 @@ public enum CmsOperation {
     private int mValue;
 
     private static SparseArray<CmsOperation> mValueToEnum = new SparseArray<>();
+
     static {
         for (CmsOperation entry : CmsOperation.values()) {
             mValueToEnum.put(entry.toInt(), entry);

@@ -23,7 +23,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_url" />
+                android:text="@string/message_store_url_label" />
 
             <EditText
                 android:id="@+id/message_store_url"
@@ -39,7 +39,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_auth" />
+                android:text="@string/message_store_auth_label" />
 
             <EditText
                 android:id="@+id/message_store_auth"
@@ -55,7 +55,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_user" />
+                android:text="@string/message_store_user_label" />
 
             <EditText
                 android:id="@+id/message_store_user"
@@ -71,7 +71,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_pwd" />
+                android:text="@string/message_store_pwd_label" />
 
             <EditText
                 android:id="@+id/message_store_pwd"
@@ -87,25 +87,47 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/message_store_push_sms"
-                android:text="@string/message_store_push_sms"/>
+                android:text="@string/message_store_push_sms_label"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/message_store_push_mms"
-                android:text="@string/message_store_push_mms"/>
-
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/message_store_update_flag_imap_xms"
-                android:text="@string/message_store_update_flag_imap_xms" />
+                android:text="@string/message_store_push_mms_label"/>
 
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_default_directory_name" />
+                android:text="@string/message_store_event_framework_label" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/message_store_event_framework_xms_label" />
+
+            <Spinner
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/message_store_event_framework_xms_spinner"/>
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/message_store_event_framework_chat_label" />
+
+            <Spinner
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/message_store_event_framework_chat_spinner"/>
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/message_store_default_directory_name_label" />
 
             <EditText
                 android:id="@+id/message_store_default_directory_name"
@@ -121,7 +143,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_default_directory_separator" />
+                android:text="@string/message_store_default_directory_separator_label" />
 
             <EditText
                 android:id="@+id/message_store_default_directory_separator"
@@ -137,7 +159,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/data_connection_sync_timer" />
+                android:text="@string/data_connection_sync_timer_label" />
 
             <EditText
                 android:id="@+id/data_connection_sync_timer"
@@ -153,7 +175,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_sync_timer" />
+                android:text="@string/message_store_sync_timer_label" />
 
             <EditText
                 android:id="@+id/message_store_sync_timer"

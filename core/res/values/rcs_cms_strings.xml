@@ -6,11 +6,7 @@
     <string name="menu_cms_toolkit_settings">Settings</string>
     <string name="menu_cms_toolkit_delete">Delete operations</string>
     <string name="menu_cms_toolkit_remote_operations">CMS Server operation</string>
-    <string name="menu_cms_toolkit_local_operations">Local operation</string>
-    <string name="menu_cms_toolkit_synchronizer">Start synchronization</string>
-    <string name="menu_cms_toolkit_sms">Xms messages</string>
-    <string name="menu_cms_toolkit_import">Import Xms from native provider</string>
-        
+
     <!-- CMS Tester -->
     <string name="cms_toolkit_app_name">CMS Toolkit</string>
     <string name="cms_toolkit_settings_set_provisoning">Fill the settings parameters before using this application</string>
@@ -18,41 +14,8 @@
     <string name="cms_toolkit_result_ok">Successful !</string>
     <string name="cms_toolkit_result_ko">A problem occured !</string>
 
-    <!-- Send message-->
-    <string name="cms_toolkit_send_message_sent">Messages sent</string>
-
     <!-- Remote Operation -->
     <string name="cms_toolkit_remote_operations_delete_messages">Delete existing messages</string>
-    <string name="cms_toolkit_remote_operations_create_messages">Create message(s) on the CMS server</string>
-    
-    <!-- Create message on CMS -->
-    <string name="cms_toolkit_create_message_btn_label">Create new message(s) on the server</string>
-    <string name="cms_toolkit_create_message_direction_label">Direction</string>
-    <string name="cms_toolkit_create_message_to_label">To :</string>
-    <string name="cms_toolkit_create_message_from_label">From :</string>
-    <string name="cms_toolkit_create_message_subject_label">Subject :</string>
-    <string name="cms_toolkit_create_message_content_label">Content :</string>    
-    <string name="cms_toolkit_create_message_select_flags_label">Select flags</string>
-    <string name="cms_toolkit_create_message_selected_flags_label">Selected flags:</string>
-    <string name="cms_toolkit_create_message_number_label">Number of messages to create:</string>
-    <string-array name="cms_toolkit_create_message_spinner_direction">
-        <item>Incoming</item>
-        <item>Outgoing</item>
-    </string-array>    
-    <string-array name="cms_toolkit_create_message_flags">
-        <item>Seen</item>
-        <item>Deleted</item>
-    </string-array>
-    <string-array name="cms_toolkit_create_message_spinner_number">
-        <item>1</item>
-        <item>5</item>
-        <item>10</item>
-        <item>50</item>
-        <item>100</item>
-        <item>500</item>
-        <item>1000</item>
-        <item>5000</item>        
-    </string-array>    
     
 	<!-- Delete operations menu -->
 	<string name="cms_toolkit_delete_local_storage">Delete local storage (IMAP+RCS messages)</string>
@@ -66,38 +29,5 @@
 	<string name="cms_toolkit_remote_operations_show_messages_unset_read_flag">Remove read flag</string>
 	<string name="cms_toolkit_remote_operations_show_messages_set_deleted_flag">Set deleted flag</string>
 	<string name="cms_toolkit_remote_operations_show_messages_unset_deleted_flag">Remove deleted flag</string>
-	
-	<!-- Local Operation -->
-    <string name="cms_toolkit_local_operations_delete_all">Delete IMAP data (folder and messages)</string>
-    <string name="cms_toolkit_local_operations_delete_folder">Delete a specific folder</string>
-    <string name="cms_toolkit_local_operations_delete_message">Delete a specific message</string>
-    
-	<!-- Synchronization -->
-    <string name="cms_toolkit_synchronizer_start_basic">Start a basic synchronization</string>
-    
-
-    
-    <!-- CMS Sync adapter-->
-    <string name="rcs_cms_account_label">CMS Sync</string>
-    <string name="rcs_cms_account_name">Messaging</string>
-    <string name="rcs_cms_account_type">com.gsma.rcs.cms</string>
-    <string name="rcs_cms_provider_authority">com.gsma.rcs.cms</string>    
-    <string name="rcs_cms_sync_message_label">Synchronize messages with CMS server</string>
-    
-
-    <!-- XMS-->
-    <string name="cms_toolkit_xms_contact_bad_format">Please check the contact number</string>
-    <string name="label_cms_toolkit_xms_log_empty">Log is empty</string>
-    <string name="label_cms_toolkit_xms_send_message">Send a new message</string>
-    <string name="label_cms_toolkit_xms_send">Send</string>
-    <string name="label_cms_toolkit_xms_message_contact">Contact: </string>
-    <string name="label_cms_toolkit_xms_message_content">Content: </string>
-    <string name="label_cms_toolkit_xms_type_message">Enter your message ... </string>
-    <string name="label_cms_toolkit_xms_sync_already_in_progress">sync already in progress</string>
-    <string name="label_cms_toolkit_xms_sync_impossible">Can not execute synchronization</string>
-    <string name="label_cms_toolkit_xms_sync_btn">Sync</string>
-    
-    <string name="rcs_cms_toolkit_xms_message_delete">Delete</string>
-    <string name="rcs_cms_toolkit_xms_conversation_delete">Delete the entire conversation</string>
 
 </resources>

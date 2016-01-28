@@ -46,7 +46,7 @@ public class Toolkit extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         mRcsSettings = RcsSettings
-                .createInstance(new LocalContentResolver(getApplicationContext()));
+                .getInstance(new LocalContentResolver(getApplicationContext()));
         super.onCreate(savedInstanceState);
 
         if (checkCore(this) == null) {

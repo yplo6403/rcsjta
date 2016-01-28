@@ -56,7 +56,7 @@ public class RemoteOperations extends ListActivity {
         if (Toolkit.checkCore(this) == null) {
             return;
         }
-        mSettings = RcsSettings.createInstance(new LocalContentResolver(getApplicationContext()));
+        mSettings = RcsSettings.getInstance(new LocalContentResolver(getApplicationContext()));
 
         /* Set layout */
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);

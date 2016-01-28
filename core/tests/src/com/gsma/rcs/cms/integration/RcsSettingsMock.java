@@ -42,7 +42,7 @@ public class RcsSettingsMock {
     private static ContactId mOriContact;
 
     public static RcsSettings getMockSettings(Context context) {
-        RcsSettings settings = RcsSettings.createInstance(new LocalContentResolver(context));
+        RcsSettings settings = RcsSettings.getInstance(new LocalContentResolver(context));
 
         mOriServerAddress = settings.getMessageStoreUrl();
         mOriUserLogin = settings.getMessageStoreUser();
@@ -62,7 +62,7 @@ public class RcsSettingsMock {
     }
 
     public static void restoreSettings() {
-        RcsSettings settings = RcsSettings.createInstance(null);
+        RcsSettings settings = RcsSettings.getInstance(null);
         settings.setMessageStoreUrl(mOriServerAddress);
         settings.setMessageStoreUser(mOriUserLogin);
         settings.setMessageStorePwd(mOriUserPwd);

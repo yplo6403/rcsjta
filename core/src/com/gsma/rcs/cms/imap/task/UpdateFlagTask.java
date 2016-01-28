@@ -21,10 +21,12 @@ package com.gsma.rcs.cms.imap.task;
 
 import com.gsma.rcs.cms.provider.imap.ImapLog;
 import com.gsma.rcs.cms.provider.imap.MessageData;
+import com.gsma.rcs.cms.provider.imap.MessageData.DeleteStatus;
 import com.gsma.rcs.cms.provider.imap.MessageData.ReadStatus;
 import com.gsma.rcs.cms.sync.strategy.FlagChange;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.utils.logger.Logger;
 
 import com.sonymobile.rcs.imap.Flag;
@@ -46,9 +48,12 @@ public class UpdateFlagTask extends CmsTask {
     private static final Logger sLogger = Logger.getLogger(UpdateFlagTask.class.getSimpleName());
 
     private final UpdateFlagTaskListener mListener;
-    private ImapLog mImapLog;
-    private List<FlagChange> mFlagChanges;
+    private final ImapLog mImapLog;
+    private final EventFrameworkMode mXmsMode;
+    private final EventFrameworkMode mChatMode;
     private final List<FlagChange> mSuccessFullFlagChanges;
+
+    private List<FlagChange> mFlagChanges;
 
     /**
      * Constructor
@@ -58,6 +63,8 @@ public class UpdateFlagTask extends CmsTask {
      */
     public UpdateFlagTask(List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
         mListener = listener;
+        mImapLog = null;
+        mXmsMode = mChatMode = EventFrameworkMode.DISABLED;
         mFlagChanges = flagChanges;
         mSuccessFullFlagChanges = new ArrayList<>();
     }
@@ -68,9 +75,12 @@ public class UpdateFlagTask extends CmsTask {
      * @param imapLog the IMAP log accessor
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(ImapLog imapLog, UpdateFlagTaskListener listener) {
-        mListener = listener;
+    public UpdateFlagTask(ImapLog imapLog, EventFrameworkMode xmsMode, EventFrameworkMode chatMode,
+            UpdateFlagTaskListener listener) {
         mImapLog = imapLog;
+        mXmsMode = xmsMode;
+        mChatMode = chatMode;
+        mListener = listener;
         mSuccessFullFlagChanges = new ArrayList<>();
     }
 
@@ -100,7 +110,21 @@ public class UpdateFlagTask extends CmsTask {
 
     private List<FlagChange> getReadChanges() {
         Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
-        for (MessageData messageData : mImapLog.getMessages(ReadStatus.READ_REPORT_REQUESTED)) {
+        List<FlagChange> flagChanges = new ArrayList<>();
+        if (EventFrameworkMode.DISABLED == mXmsMode && EventFrameworkMode.DISABLED == mChatMode) {
+            return flagChanges;
+        }
+
+        List<MessageData> messageDataList;
+        if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
+            messageDataList = mImapLog.getMessages(ReadStatus.READ_REPORT_REQUESTED);
+        } else if (EventFrameworkMode.IMAP == mXmsMode) {
+            messageDataList = mImapLog.getXmsMessages(ReadStatus.READ_REPORT_REQUESTED);
+        } else {
+            messageDataList = mImapLog.getChatMessages(ReadStatus.READ_REPORT_REQUESTED);
+        }
+
+        for (MessageData messageData : messageDataList) {
             Integer uid = messageData.getUid();
             if (uid == null) {
                 continue;
@@ -113,7 +137,7 @@ public class UpdateFlagTask extends CmsTask {
             }
             uids.add(uid);
         }
-        List<FlagChange> flagChanges = new ArrayList<>();
+
         for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
             String folderName = entry.getKey();
             Set<Integer> uids = entry.getValue();
@@ -124,8 +148,21 @@ public class UpdateFlagTask extends CmsTask {
 
     private List<FlagChange> getDeleteChanges() {
         Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
-        for (MessageData messageData : mImapLog
-                .getMessages(MessageData.DeleteStatus.DELETED_REPORT_REQUESTED)) {
+        List<FlagChange> flagChanges = new ArrayList<>();
+        if (EventFrameworkMode.DISABLED == mXmsMode && EventFrameworkMode.DISABLED == mChatMode) {
+            return flagChanges;
+        }
+
+        List<MessageData> messageDataList;
+        if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
+            messageDataList = mImapLog.getMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
+        } else if (EventFrameworkMode.IMAP == mXmsMode) {
+            messageDataList = mImapLog.getXmsMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
+        } else {
+            messageDataList = mImapLog.getChatMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
+        }
+
+        for (MessageData messageData : messageDataList) {
             String folderName = messageData.getFolder();
             Integer uid = messageData.getUid();
             if (uid == null) {
@@ -139,7 +176,6 @@ public class UpdateFlagTask extends CmsTask {
             uids.add(uid);
         }
 
-        List<FlagChange> flagChanges = new ArrayList<>();
         for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
             String folderName = entry.getKey();
             Set<Integer> uids = entry.getValue();

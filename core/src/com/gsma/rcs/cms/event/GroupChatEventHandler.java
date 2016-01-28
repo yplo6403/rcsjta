@@ -53,7 +53,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
      * @param settings the RCS settings accessor
      */
     public GroupChatEventHandler(ImapLog imapLog, MessagingLog messagingLog, RcsSettings settings) {
-        super(imapLog, messagingLog, settings);
+        super(null, imapLog, messagingLog, settings);
     }
 
     @Override

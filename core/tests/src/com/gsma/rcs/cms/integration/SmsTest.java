@@ -83,7 +83,7 @@ public class SmsTest extends AndroidTestCase {
         mImapLog = ImapLog.createInstance(context);
         mImapLogEnvIntegration = ImapLogEnvIntegration.getInstance(context);
         mXmsLog = XmsLog.createInstance(context, new LocalContentResolver(context));
-        MessagingLog messagingLog = MessagingLog.createInstance(new LocalContentResolver(context),
+        MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(context),
                 mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mImapLog, mXmsLog,

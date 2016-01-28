@@ -56,7 +56,7 @@ public class CmsSchedulerTest extends AndroidTestCase {
         mSettings = RcsSettingsMock.getMockSettings(mContext);
         mImapLog = ImapLog.createInstance(mContext);
         mXmsLog = XmsLog.createInstance(mContext, new LocalContentResolver(mContext));
-        MessagingLog messagingLog = MessagingLog.createInstance(new LocalContentResolver(mContext),
+        MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mImapLog, mXmsLog,
                 messagingLog, null, mSettings, null);
