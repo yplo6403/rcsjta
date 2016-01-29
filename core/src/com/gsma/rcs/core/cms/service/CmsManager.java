@@ -101,6 +101,14 @@ public class CmsManager implements XmsMessageListener {
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
                 mMessagingLog, chatService, mRcsSettings, cmsService.getXmsMessageBroadcaster());
 
+        // instantiate LocalStorage in charge of handling events relatives to IMAP sync
+        mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
+
+        // start scheduler for sync
+        mSyncScheduler = new Scheduler(mContext, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
+        mSyncScheduler.registerListener(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY, cmsService);
+        mSyncScheduler.start();
+
         // instantiate EventFrameworkHandler in charge of Pushing messages and updating flags on the
         // message store
         mEventFrameworkHandler = new EventFrameworkHandler(mContext, mSyncScheduler, mRcsSettings);
@@ -114,14 +122,6 @@ public class CmsManager implements XmsMessageListener {
         // instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
         // deletion of messages
         mGroupChatEventHandler = new GroupChatEventHandler(mCmsLog, mMessagingLog, mRcsSettings);
-
-        // instantiate LocalStorage in charge of handling events relatives to IMAP sync
-        mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
-
-        // start scheduler for sync
-        mSyncScheduler = new Scheduler(mContext, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
-        mSyncScheduler.registerListener(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY, cmsService);
-        mSyncScheduler.start();
 
         mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings,
                 mEventFrameworkHandler);
