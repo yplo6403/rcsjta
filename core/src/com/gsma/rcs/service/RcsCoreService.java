@@ -23,7 +23,7 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
@@ -146,7 +146,7 @@ public class RcsCoreService extends Service implements CoreListener {
 
     private XmsLog mXmsLog;
 
-    private ImapLog mImapLog;
+    private CmsLog mCmsLog;
 
     private CountDownLatch mLatch;
 
@@ -169,7 +169,7 @@ public class RcsCoreService extends Service implements CoreListener {
         mContactManager = ContactManager.getInstance(mCtx, mContentResolver,
                 mLocalContentResolver, mRcsSettings);
         mXmsLog = XmsLog.createInstance(mCtx, mLocalContentResolver);
-        mImapLog = ImapLog.createInstance(mCtx);
+        mCmsLog = CmsLog.createInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -288,7 +288,7 @@ public class RcsCoreService extends Service implements CoreListener {
         try {
             core = Core.createCore(mCtx, this, mRcsSettings, mContentResolver,
                     mLocalContentResolver, mContactManager, mMessagingLog, mHistoryLog,
-                    mRichCallHistory, mXmsLog, mImapLog);
+                    mRichCallHistory, mXmsLog, mCmsLog);
 
             InstantMessagingService imService = core.getImService();
             RichcallService richCallService = core.getRichcallService();

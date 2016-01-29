@@ -18,7 +18,7 @@
 
 package com.gsma.rcs.provider.xms.model;
 
-import com.gsma.rcs.cms.utils.HeaderCorrelatorUtils;
+import com.gsma.rcs.core.cms.utils.HeaderCorrelatorUtils;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog;

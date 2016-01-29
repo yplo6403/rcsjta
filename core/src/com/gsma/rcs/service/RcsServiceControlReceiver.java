@@ -23,7 +23,7 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.ims.service.cms.CmsService;
+import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData.TermsAndConditionsResponse;

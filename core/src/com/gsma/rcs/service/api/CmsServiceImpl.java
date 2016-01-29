@@ -18,12 +18,12 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.cms.scheduler.CmsOperation;
-import com.gsma.rcs.cms.scheduler.CmsOperationListener;
-import com.gsma.rcs.cms.scheduler.CmsScheduler.SyncType;
-import com.gsma.rcs.core.ims.service.cms.CmsService;
-import com.gsma.rcs.core.ims.service.cms.mms.MmsSessionListener;
-import com.gsma.rcs.core.ims.service.cms.mms.OriginatingMmsSession;
+import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTaskType;
+import com.gsma.rcs.core.cms.sync.scheduler.SchedulerListener;
+import com.gsma.rcs.core.cms.sync.scheduler.Scheduler.SyncType;
+import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
+import com.gsma.rcs.core.cms.xms.mms.OriginatingMmsSession;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
@@ -34,7 +34,7 @@ import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.rcs.xms.XmsManager;
+import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.ICmsService;
@@ -66,7 +66,7 @@ import java.util.Set;
  *
  * @author Philippe LEMORDANT
  */
-public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener, CmsOperationListener {
+public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener, SchedulerListener {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
     private final CmsEventBroadcaster mCmsBroadcaster = new CmsEventBroadcaster();
@@ -643,7 +643,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
 
     @Override
-    public void onCmsOperationExecuted(CmsOperation operation, SyncType syncType, boolean result, Object param) {
+    public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType, boolean result, Object param) {
 
         if(syncType == SyncType.ONE_TO_ONE){
             broadcastOneToOneConversationSynchronized((ContactId)param);

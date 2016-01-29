@@ -19,7 +19,7 @@
 package com.gsma.rcs.provider.xms.model;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.ims.service.cms.mms.MmsFileSizeException;
+import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.ImageUtils;
 import com.gsma.rcs.utils.MimeManager;

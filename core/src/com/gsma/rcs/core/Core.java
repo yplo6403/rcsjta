@@ -24,13 +24,13 @@ package com.gsma.rcs.core;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.security.cert.KeyStoreManager;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
-import com.gsma.rcs.core.ims.service.cms.CmsService;
+import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.richcall.RichcallService;
 import com.gsma.rcs.core.ims.service.sip.SipService;
@@ -45,7 +45,7 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.rcs.xms.XmsManager;
+import com.gsma.rcs.core.cms.xms.XmsManager;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -119,7 +119,7 @@ public class Core {
     public static Core createCore(Context ctx, CoreListener listener, RcsSettings rcsSettings,
             ContentResolver contentResolver, LocalContentResolver localContentResolver,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) throws IOException,
+            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog) throws IOException,
             KeyStoreException {
         if (sInstance != null) {
             return sInstance;
@@ -129,7 +129,7 @@ public class Core {
                 KeyStoreManager.loadKeyStore(rcsSettings);
                 sInstance = new Core(ctx, listener, contentResolver, localContentResolver,
                         rcsSettings, contactManager, messagingLog, historyLog, richCallHistory,
-                        xmsLog, imapLog);
+                        xmsLog, cmsLog);
             }
         }
         return sInstance;
@@ -168,7 +168,7 @@ public class Core {
     private Core(Context ctx, CoreListener listener, ContentResolver contentResolver,
             LocalContentResolver localContentResolver, RcsSettings rcsSettings,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog, ImapLog imapLog) {
+            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.info("Terminal core initialization");
@@ -193,7 +193,7 @@ public class Core {
 
         /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
-                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, imapLog);
+                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
 
         if (logActivated) {
             sLogger.info("Terminal core is created with success");

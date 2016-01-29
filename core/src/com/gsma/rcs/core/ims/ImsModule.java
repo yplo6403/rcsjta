@@ -23,7 +23,7 @@
 package com.gsma.rcs.core.ims;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.ims.network.ImsConnectionManager;
@@ -40,7 +40,7 @@ import com.gsma.rcs.core.ims.service.ImsService.ImsServiceType;
 import com.gsma.rcs.core.ims.service.ImsServiceDispatcher;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
-import com.gsma.rcs.core.ims.service.cms.CmsService;
+import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.ims.service.extension.ServiceExtensionManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.HttpTransferManager;
@@ -108,12 +108,12 @@ public class ImsModule implements SipEventListener {
      * @param richCallHistory The rich call accessor
      * @param addressBookManager The address book manager instance
      * @param xmsLog The XMS log accessor
-     * @param imapLog The Imap log accessor
+     * @param cmsLog The Imap log accessor
      */
     public ImsModule(Core core, Context ctx, LocalContentResolver localContentResolver,
             RcsSettings rcsSettings, ContactManager contactManager, MessagingLog messagingLog,
             HistoryLog historyLog, RichCallHistory richCallHistory,
-            AddressBookManager addressBookManager, XmsLog xmsLog, ImapLog imapLog) {
+            AddressBookManager addressBookManager, XmsLog xmsLog, CmsLog cmsLog) {
         mCore = core;
         mRcsSettings = rcsSettings;
 
@@ -139,7 +139,7 @@ public class ImsModule implements SipEventListener {
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
         mServices.put(ImsServiceType.CMS, new CmsService(mCore, this, ctx, rcsSettings, xmsLog,
-                messagingLog, imapLog));
+                messagingLog, cmsLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {

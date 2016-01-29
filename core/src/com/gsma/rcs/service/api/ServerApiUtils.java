@@ -24,7 +24,6 @@ package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.RcsServiceRegistration;
 
 import android.content.Context;

@@ -19,7 +19,7 @@
 package com.gsma.rcs.utils;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.ims.service.cms.mms.MmsFileSizeException;
+import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.ContentResolver;

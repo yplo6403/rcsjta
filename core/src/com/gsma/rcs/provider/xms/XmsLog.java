@@ -18,7 +18,7 @@
 
 package com.gsma.rcs.provider.xms;
 
-import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;

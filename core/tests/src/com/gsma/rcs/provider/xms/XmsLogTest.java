@@ -28,7 +28,7 @@ import android.os.RemoteException;
 import android.test.InstrumentationTestCase;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.ims.service.cms.mms.MmsFileSizeException;
+import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;

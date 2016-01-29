@@ -31,9 +31,9 @@ import static com.gsma.rcs.provisioning.local.Provisioning.setSpinnerParameter;
 import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextParam;
 
 import com.gsma.rcs.R;
-import com.gsma.rcs.cms.provider.imap.ImapLog;
-import com.gsma.rcs.cms.provider.imap.MessageData.MessageType;
-import com.gsma.rcs.cms.provider.imap.MessageData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
@@ -112,14 +112,14 @@ public class CmsProvisioning extends Activity {
         saveStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
         saveStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
 
-        ImapLog imapLog = ImapLog.getInstance();
+        CmsLog cmsLog = CmsLog.getInstance();
         saveCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS, helper);
         if(!((CheckBox)findViewById(R.id.message_store_push_sms)).isChecked()){
-            imapLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
+            cmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
         }
         saveCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS, helper);
         if(!((CheckBox)findViewById(R.id.message_store_push_mms)).isChecked()){
-            imapLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
+            cmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
 
         Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_xms_spinner);

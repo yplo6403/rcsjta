@@ -19,14 +19,14 @@
 
 package com.gsma.rcs.provider.xms.model;
 
-import com.gsma.rcs.cms.Constants;
-import com.gsma.rcs.cms.imap.message.ImapMmsMessage;
-import com.gsma.rcs.cms.imap.message.ImapSmsMessage;
-import com.gsma.rcs.cms.imap.message.cpim.CpimMessage;
-import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody;
-import com.gsma.rcs.cms.imap.message.cpim.multipart.MultipartCpimBody.Part;
-import com.gsma.rcs.cms.imap.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.cms.utils.MmsUtils;
+import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.protocol.message.ImapMmsMessage;
+import com.gsma.rcs.core.cms.protocol.message.ImapSmsMessage;
+import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
+import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
+import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody.Part;
+import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
+import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
