@@ -19,16 +19,6 @@
 
 package com.gsma.services.rcs.cms;
 
-import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.content.pm.ResolveInfo;
-import android.net.Uri;
-import android.os.IBinder;
-import android.os.IInterface;
-
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsIllegalArgumentException;
 import com.gsma.services.rcs.RcsPermissionDeniedException;
@@ -40,6 +30,16 @@ import com.gsma.services.rcs.RcsServiceListener;
 import com.gsma.services.rcs.RcsServiceListener.ReasonCode;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.pm.ResolveInfo;
+import android.net.Uri;
+import android.os.IBinder;
+import android.os.IInterface;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -55,8 +55,6 @@ import java.util.WeakHashMap;
 public final class CmsService extends RcsService {
 
     private static boolean sApiCompatible = false;
-
-    private final Map<CmsSynchronizationListener, WeakReference<ICmsSynchronizationListener>> mCmsSyncListeners = new WeakHashMap<>();
 
     private final Map<XmsMessageListener, WeakReference<IXmsMessageListener>> mXmsMessageListeners = new WeakHashMap<>();
 
@@ -95,7 +93,7 @@ public final class CmsService extends RcsService {
     /**
      * Constructor
      *
-     * @param ctx      Application context
+     * @param ctx Application context
      * @param listener Service listener
      */
     public CmsService(Context ctx, RcsServiceListener listener) {
@@ -148,66 +146,12 @@ public final class CmsService extends RcsService {
     }
 
     /**
-     * Adds a listener on CMS synchronization events
-     *
-     * @param listener The CMS synchronization listener
-     * @throws RcsServiceNotAvailableException
-     * @throws RcsGenericException
-     */
-    public void addEventListener(CmsSynchronizationListener listener)
-            throws RcsServiceNotAvailableException, RcsGenericException {
-        if (listener == null) {
-            throw new RcsIllegalArgumentException("listener must not be null!");
-        }
-        if (mApi == null) {
-            throw new RcsServiceNotAvailableException();
-        }
-        try {
-            ICmsSynchronizationListener rcsListener = new CmsSynchronizationListenerImpl(listener);
-            mCmsSyncListeners.put(listener, new WeakReference<>(rcsListener));
-            mApi.addEventListener(rcsListener);
-        } catch (Exception e) {
-            RcsIllegalArgumentException.assertException(e);
-            throw new RcsGenericException(e);
-        }
-    }
-
-    /**
-     * Removes a listener on CMS synchronization events
-     *
-     * @param listener The CMS synchronization listener
-     * @throws RcsServiceNotAvailableException
-     * @throws RcsGenericException
-     */
-    public void removeEventListener(CmsSynchronizationListener listener)
-            throws RcsServiceNotAvailableException, RcsGenericException {
-        if (mApi == null) {
-            throw new RcsServiceNotAvailableException();
-        }
-        try {
-            WeakReference<ICmsSynchronizationListener> weakRef = mCmsSyncListeners
-                    .remove(listener);
-            if (weakRef == null) {
-                return;
-            }
-            ICmsSynchronizationListener rcsListener = weakRef.get();
-            if (rcsListener != null) {
-                mApi.removeEventListener(rcsListener);
-            }
-        } catch (Exception e) {
-            RcsIllegalArgumentException.assertException(e);
-            throw new RcsGenericException(e);
-        }
-    }
-
-    /**
      * Synchronizes all local CMS repository with network CMS repository.
      *
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void syncAll() throws RcsServiceNotAvailableException,
-            RcsGenericException {
+    public void syncAll() throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -222,12 +166,12 @@ public final class CmsService extends RcsService {
     /**
      * Synchronizes local CMS messages with network CMS repository for a given contact.
      *
-	 * @param contact The remote contact
+     * @param contact The remote contact
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void syncOneToOneConversation(ContactId contact) throws RcsServiceNotAvailableException,
-            RcsGenericException {
+    public void syncOneToOneConversation(ContactId contact)
+            throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -270,7 +214,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage getXmsMessage(String messageId) throws RcsGenericException, RcsServiceNotAvailableException {
+    public XmsMessage getXmsMessage(String messageId)
+            throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -283,7 +228,7 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Sends a text based SMS message
      *
      * @param contact The remote contact
@@ -291,7 +236,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void sendTextMessage(ContactId contact, String message) throws RcsGenericException, RcsServiceNotAvailableException {
+    public void sendTextMessage(ContactId contact, String message)
+            throws RcsGenericException, RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -312,8 +258,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public boolean isAllowedToSendMultimediaMessage() throws RcsServiceNotAvailableException,
-            RcsGenericException {
+    public boolean isAllowedToSendMultimediaMessage()
+            throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -325,17 +271,19 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Sends a MMS message
      *
      * @param contact The remote contact
-	 * @param files The list of file URIs (image or video)
+     * @param files The list of file URIs (image or video)
      * @param subject The subject
-	 * @param body The body text message
+     * @param body The body text message
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject, String body) throws RcsGenericException, RcsServiceNotAvailableException, RcsPersistentStorageException, RcsPermissionDeniedException {
+    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject,
+            String body) throws RcsGenericException, RcsServiceNotAvailableException,
+                    RcsPersistentStorageException, RcsPermissionDeniedException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -377,7 +325,7 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Adds a XMS message event listener.
      *
      * @param listener The XMS message event listener.
@@ -395,7 +343,7 @@ public final class CmsService extends RcsService {
         try {
             IXmsMessageListener rcsListener = new XmsMessageListenerImpl(listener);
             mXmsMessageListeners.put(listener, new WeakReference<>(rcsListener));
-            mApi.addEventListener2(rcsListener);
+            mApi.addEventListener(rcsListener);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -403,7 +351,7 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Removes a XMS message event listener.
      *
      * @param listener The XMS message event listener.
@@ -416,14 +364,13 @@ public final class CmsService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            WeakReference<IXmsMessageListener> weakRef = mXmsMessageListeners
-                    .remove(listener);
+            WeakReference<IXmsMessageListener> weakRef = mXmsMessageListeners.remove(listener);
             if (weakRef == null) {
                 return;
             }
             IXmsMessageListener rcsListener = weakRef.get();
             if (rcsListener != null) {
-                mApi.removeEventListener2(rcsListener);
+                mApi.removeEventListener(rcsListener);
             }
 
         } catch (Exception e) {
@@ -432,7 +379,7 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Deletes all XMS messages from history.
      *
      * @throws RcsServiceNotAvailableException
@@ -449,14 +396,15 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Deletes all XMS messages for a given contact from history.
      *
      * @param contact The remote contact.
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void deleteXmsMessages(ContactId contact) throws RcsServiceNotAvailableException, RcsGenericException {
+    public void deleteXmsMessages(ContactId contact)
+            throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -467,14 +415,15 @@ public final class CmsService extends RcsService {
         }
     }
 
-	/**
+    /**
      * Deletes a XMS message specified by its unique ID from history.
      *
      * @param msgId The message ID.
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void deleteXmsMessage(String msgId) throws RcsServiceNotAvailableException, RcsGenericException {
+    public void deleteXmsMessage(String msgId)
+            throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -495,11 +444,30 @@ public final class CmsService extends RcsService {
             return;
         }
         Intent cmsServiceIntent = new Intent(ICmsService.class.getName());
-        List<ResolveInfo> stackServices = mCtx.getPackageManager().queryIntentServices(
-                cmsServiceIntent, 0);
+        List<ResolveInfo> stackServices = mCtx.getPackageManager()
+                .queryIntentServices(cmsServiceIntent, 0);
         for (ResolveInfo stackService : stackServices) {
             mCtx.grantUriPermission(stackService.serviceInfo.packageName, file,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
     }
+
+    /**
+     * Deletes IMAP data.<br>
+     * This method is only available for debug purposes.
+     *
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public void deleteImapData() throws RcsServiceNotAvailableException, RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            mApi.deleteImapData();
+        } catch (Exception e) {
+            throw new RcsGenericException(e);
+        }
+    }
+
 }

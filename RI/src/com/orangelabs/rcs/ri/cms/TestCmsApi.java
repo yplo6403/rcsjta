@@ -18,17 +18,22 @@
 
 package com.orangelabs.rcs.ri.cms;
 
-import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.cms.messaging.TestCmsMessagingApi;
-import com.orangelabs.rcs.ri.cms.synchronization.TestSyncApi;
+import com.gsma.services.rcs.RcsServiceException;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.cms.messaging.TestCmsMessagingApi;
+import com.orangelabs.rcs.ri.cms.synchronization.TestSyncApi;
 
 /**
  * Created by yplo6403 on 10/11/2015.
@@ -58,4 +63,25 @@ public class TestCmsApi extends RcsListActivity {
 
         }
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = new MenuInflater(getApplicationContext());
+        inflater.inflate(R.menu.menu_delete_imap_data, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (R.id.menu_delete_imap_data == item.getItemId()) {
+            try {
+                getCmsApi().deleteImapData();
+
+            } catch (RcsServiceException e) {
+                showExceptionThenExit(e);
+            }
+        }
+        return true;
+    }
+
 }

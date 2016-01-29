@@ -28,7 +28,6 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.service.broadcaster.CmsEventBroadcaster;
 import com.gsma.rcs.service.broadcaster.XmsMessageEventBroadcaster;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
@@ -38,7 +37,6 @@ import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.ICmsService;
-import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
 import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessage;
@@ -69,7 +67,6 @@ import java.util.Set;
 public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener, SchedulerListener {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
-    private final CmsEventBroadcaster mCmsBroadcaster = new CmsEventBroadcaster();
     private final XmsMessageEventBroadcaster mXmsMessageBroadcaster = new XmsMessageEventBroadcaster();
 
     /**
@@ -85,7 +82,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     private final RcsSettings mRcsSettings;
 
     public static final String[] BLACK_LISTED_MODELS = new String[] {
-        "LG-H955"
+            "LG-H955"
     };
     public static final Set<String> sBlackListedModel = new HashSet<>(
             Arrays.asList(BLACK_LISTED_MODELS));
@@ -118,54 +115,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     }
 
     @Override
-    public void addEventListener(ICmsSynchronizationListener listener) throws RemoteException {
-        if (listener == null) {
-            throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a CMS sync event listener");
-        }
-        try {
-            synchronized (lock) {
-                mCmsBroadcaster.addEventListener(listener);
-            }
-        } catch (ServerApiBaseException e) {
-            if (!e.shouldNotBeLogged()) {
-                sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            }
-            throw e;
-
-        } catch (Exception e) {
-            sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            throw new ServerApiGenericException(e);
-        }
-    }
-
-    @Override
-    public void removeEventListener(ICmsSynchronizationListener listener) throws RemoteException {
-        if (listener == null) {
-            throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a CMS sync event listener");
-        }
-        try {
-            synchronized (lock) {
-                mCmsBroadcaster.removeEventListener(listener);
-            }
-        } catch (ServerApiBaseException e) {
-            if (!e.shouldNotBeLogged()) {
-                sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            }
-            throw e;
-
-        } catch (Exception e) {
-            sLogger.error(ExceptionUtil.getFullStackTrace(e));
-            throw new ServerApiGenericException(e);
-        }
-    }
-
-    @Override
     public int getServiceVersion() {
         return RcsService.Build.API_VERSION;
     }
@@ -182,8 +131,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.info("Sync One-to-One conversation for contact ".concat(contact
-                            .toString()));
+                    sLogger.info(
+                            "Sync One-to-One conversation for contact ".concat(contact.toString()));
                 }
                 try {
                     mCmsService.syncOneToOneConversation(contact);
@@ -335,8 +284,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
             final String subject, final String body) throws RemoteException {
         if (sLogger.isActivated()) {
-            sLogger.debug("send MMS to " + contact + " subject='" + subject + "' body='" + body
-                    + "'");
+            sLogger.debug(
+                    "send MMS to " + contact + " subject='" + subject + "' body='" + body + "'");
         }
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
@@ -387,8 +336,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             String extension = MimeManager.getFileExtension(fileName);
             String mimeType = MimeManager.getInstance().getMimeType(extension);
             if (mimeType == null) {
-                throw new ServerApiIllegalArgumentException("Invalid mime type for Uri '" + file
-                        + "'!");
+                throw new ServerApiIllegalArgumentException(
+                        "Invalid mime type for Uri '" + file + "'!");
             }
             if (!MimeManager.isImageType(mimeType)) {
                 if (!MimeManager.isVideoType(mimeType)) {
@@ -418,8 +367,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                             }
                         }
                     } else {
-                        sLogger.warn("Cannot mark as read: message ID'" + messageId
-                                + "' not found!");
+                        sLogger.warn(
+                                "Cannot mark as read: message ID'" + messageId + "' not found!");
                     }
 
                 } catch (RuntimeException e) {
@@ -434,7 +383,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     }
 
     @Override
-    public void addEventListener2(IXmsMessageListener listener) throws RemoteException {
+    public void addEventListener(IXmsMessageListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
@@ -458,7 +407,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     }
 
     @Override
-    public void removeEventListener2(IXmsMessageListener listener) throws RemoteException {
+    public void removeEventListener(IXmsMessageListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
@@ -547,25 +496,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         });
     }
 
-    /**
-     * Broadcasts all synchronized
-     */
-    public void broadcastAllSynchronized() {
-        mCmsBroadcaster.broadcastAllSynchronized();
-    }
-
-    /**
-     * Broadcasts One-to-One conversation synchronized
-     */
-    public void broadcastOneToOneConversationSynchronized(ContactId contact) {
-        mCmsBroadcaster.broadcastOneToOneConversationSynchronized(contact);
-    }
-
-    /**
-     * Broadcasts Group conversation synchronized
-     */
-    public void broadcastGroupConversationSynchronized(String chatId) {
-        mCmsBroadcaster.broadcastGroupConversationSynchronized(chatId);
+    @Override
+    public void deleteImapData() throws RemoteException {
+        //TODO
+        if (sLogger.isActivated()) {
+            sLogger.info("Delete IMAP data");
+        }
     }
 
     public void broadcastNewMessage(String mimeType, String msgId) {
@@ -590,8 +526,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
         /* For outgoing MMS transfer, timestampSent = timestamp */
-        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact,
-                subject, parts, mRcsSettings, mXmsManager);
+        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact, subject,
+                parts, mRcsSettings, mXmsManager);
         session.addListener(this);
         session.addListener(mCmsService.getCmsManager().getMmsSessionHandler());
         mCmsService.scheduleImOperation(session);
@@ -600,15 +536,15 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void setXmsStateAndReasonCode(String messageId, String mimeType, ContactId contact,
             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
         if (mXmsLog.setStateAndReasonCode(messageId, state, reasonCode)) {
-            mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
-                    state, reasonCode);
+            mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId, state,
+                    reasonCode);
         }
     }
 
     public void setXmsStateAndTimestamp(String mmsId, ContactId contact, XmsMessage.State state,
             long timestamp, long timestampSent) {
-        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED,
-                timestamp, timestampSent)) {
+        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED, timestamp,
+                timestampSent)) {
             broadcastMessageStateChanged(contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, mmsId,
                     state, XmsMessage.ReasonCode.UNSPECIFIED);
         }
@@ -641,18 +577,27 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         return mXmsMessageBroadcaster;
     }
 
-
     @Override
     public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType, boolean result, Object param) {
-
-        if(syncType == SyncType.ONE_TO_ONE){
-            broadcastOneToOneConversationSynchronized((ContactId)param);
-        }
-        else if(syncType == SyncType.GROUP){
-            broadcastGroupConversationSynchronized((String)param);
-        }
-        else if(syncType == SyncType.ALL){
-            broadcastAllSynchronized();
+        switch (syncType) {
+            case ALL:
+                if (sLogger.isActivated()) {
+                    sLogger.debug("CMS sync finished for all (result=" + result + ")");
+                }
+                break;
+            case GROUP:
+                if (sLogger.isActivated()) {
+                    sLogger.debug(
+                            "CMS sync finished for group=" + param + " (result=" + result + ")");
+                }
+                break;
+            case ONE_TO_ONE:
+                if (sLogger.isActivated()) {
+                    ContactId contact = (ContactId) param;
+                    sLogger.debug("CMS sync finished for contact=" + contact + " (result=" + result
+                            + ")");
+                }
+                break;
         }
     }
 }

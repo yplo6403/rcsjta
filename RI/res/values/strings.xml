@@ -436,6 +436,7 @@
     <string name="ri_settings_title_sync_mode">CMS synchronization</string>
     <string name="switch_mms_subject">MMS from %1$s</string>
     <string name="switch_mms_body">Automatic backup from RCS to MMS</string>
+    <string name="menu_delete_imap_data">Delete IMAP data</string>
 
     <!-- States -->
 

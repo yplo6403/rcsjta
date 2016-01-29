@@ -1,6 +1,5 @@
 package com.gsma.services.rcs.cms;
 
-import com.gsma.services.rcs.cms.ICmsSynchronizationListener;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.cms.IXmsMessage;
 import com.gsma.services.rcs.cms.IXmsMessageListener;
@@ -10,10 +9,6 @@ import android.net.Uri;
  * Common Message Store service API
  */
 interface ICmsService {
-
-	void addEventListener(in ICmsSynchronizationListener listener);
-
-	void removeEventListener(in ICmsSynchronizationListener listener);
 
 	int getServiceVersion();
 
@@ -33,13 +28,15 @@ interface ICmsService {
 
     void markXmsMessageAsRead(in String messageId);
 
-	void addEventListener2(in IXmsMessageListener listener);
+	void addEventListener(in IXmsMessageListener listener);
 
-    void removeEventListener2(in IXmsMessageListener listener);
+    void removeEventListener(in IXmsMessageListener listener);
 
     void deleteXmsMessages();
 
     void deleteXmsMessages2(in ContactId contact);
 
     void deleteXmsMessage(in String messageId);
+
+    void deleteImapData();
 }

@@ -24,22 +24,12 @@ import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.GroupChat;
 import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.contact.ContactId;
-
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -58,6 +48,12 @@ import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+
 import java.util.Map;
 
 /**
@@ -65,8 +61,8 @@ import java.util.Map;
  *
  * @author Philippe LEMORDANT
  */
-public class CmsSyncGroup extends RcsFragmentActivity implements
-        LoaderManager.LoaderCallbacks<Cursor> {
+public class CmsSyncGroup extends RcsFragmentActivity
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String SORT_ORDER = ChatLog.GroupChat.TIMESTAMP + " DESC";
 
@@ -89,8 +85,6 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
 
     private ListView mListView;
     private SyncGroupListAdapter mAdapter;
-    private Handler mHandler = new Handler();
-    private CmsSynchronizationListener mCmsSyncListener;
     private CmsService mCmsService;
 
     @Override
@@ -99,8 +93,6 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.chat_list);
-
-        initialize();
 
         /* Set list adapter */
         mListView = (ListView) findViewById(android.R.id.list);
@@ -121,25 +113,7 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
             return;
         }
         startMonitorServices(ConnectionManager.RcsServiceName.CMS);
-        try {
-            mCmsService = getCmsApi();
-            mCmsService.addEventListener(mCmsSyncListener);
-        } catch (RcsServiceException e) {
-            showExceptionThenExit(e);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (mCmsService != null && isServiceConnected(ConnectionManager.RcsServiceName.CMS)) {
-            /* Remove CMS synchronization listener */
-            try {
-                mCmsService.removeEventListener(mCmsSyncListener);
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
+        mCmsService = getCmsApi();
     }
 
     @Override
@@ -205,30 +179,6 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
         mAdapter.swapCursor(null);
     }
 
-    private void initialize() {
-        mCmsSyncListener = new CmsSynchronizationListener() {
-            @Override
-            public void onAllSynchronized() {
-            }
-
-            @Override
-            public void onOneToOneConversationSynchronized(final ContactId contact) {
-
-            }
-
-            @Override
-            public void onGroupConversationSynchronized(final String chatId) {
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Utils.displayLongToast(CmsSyncGroup.this,
-                                getString(R.string.cms_sync_completed));
-                    }
-                });
-            }
-        };
-
-    }
-
     /**
      * CMS sync group list adapter
      */
@@ -257,14 +207,14 @@ public class CmsSyncGroup extends RcsFragmentActivity implements
         public void bindView(View view, Context context, Cursor cursor) {
             final GroupChatListItemViewHolder holder = (GroupChatListItemViewHolder) view.getTag();
             long date = cursor.getLong(holder.columnDate);
-            holder.dateText.setText(DateUtils.getRelativeTimeSpanString(date,
-                    System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.FORMAT_ABBREV_RELATIVE));
+            holder.dateText
+                    .setText(DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
+                            DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
 
             String subject = cursor.getString(holder.columnSubject);
             if (TextUtils.isEmpty(subject)) {
-                holder.subjectText.setText(context.getString(R.string.label_subject_notif, "<"
-                        + context.getString(R.string.label_no_subject) + ">"));
+                holder.subjectText.setText(context.getString(R.string.label_subject_notif,
+                        "<" + context.getString(R.string.label_no_subject) + ">"));
             } else {
                 holder.subjectText
                         .setText(context.getString(R.string.label_subject_notif, subject));

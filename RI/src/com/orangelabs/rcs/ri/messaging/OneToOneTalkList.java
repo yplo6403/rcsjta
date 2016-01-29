@@ -25,7 +25,6 @@ import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessageLog;
@@ -83,8 +82,6 @@ public class OneToOneTalkList extends RcsActivity {
     private List<OneToOneTalkArrayItem> mMessageLogs;
     private static final String LOGTAG = LogUtils.getTag(OneToOneTalkList.class.getSimpleName());
 
-    private CmsSynchronizationListener mCmsSynchronizationListener;
-    private boolean mCmsSynchronizationListenerSet;
     private XmsMessageListener mXmsMessageListener;
     private ChatService mChatService;
     private FileTransferService mFileTransferService;
@@ -126,9 +123,6 @@ public class OneToOneTalkList extends RcsActivity {
         try {
             if (mXmsMessageListenerSet) {
                 mCmsService.removeEventListener(mXmsMessageListener);
-            }
-            if (mCmsSynchronizationListenerSet) {
-                mCmsService.removeEventListener(mCmsSynchronizationListener);
             }
             if (mOneToOneChatListenerSet) {
                 mChatService.removeEventListener(mOneToOneChatListener);
@@ -222,10 +216,6 @@ public class OneToOneTalkList extends RcsActivity {
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "start a XMS sync");
                     }
-                    if (!mCmsSynchronizationListenerSet) {
-                        mCmsService.addEventListener(mCmsSynchronizationListener);
-                        mCmsSynchronizationListenerSet = true;
-                    }
                     mCmsService.syncAll();
                     break;
             }
@@ -289,10 +279,6 @@ public class OneToOneTalkList extends RcsActivity {
                 case R.id.menu_sync_xms:
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "Sync XMS messages for contact=".concat(contact.toString()));
-                    }
-                    if (!mCmsSynchronizationListenerSet) {
-                        mCmsService.addEventListener(mCmsSynchronizationListener);
-                        mCmsSynchronizationListenerSet = true;
                     }
                     mCmsService.syncOneToOneConversation(contact);
                     return true;
@@ -390,38 +376,6 @@ public class OneToOneTalkList extends RcsActivity {
             @Override
             public void onStateChanged(ContactId contact, String mimeType, String messageId,
                     XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
-            }
-        };
-
-        mCmsSynchronizationListener = new CmsSynchronizationListener() {
-            @Override
-            public void onAllSynchronized() {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onAllSynchronized");
-                }
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Utils.displayLongToast(OneToOneTalkList.this,
-                                getString(R.string.label_cms_sync_end));
-                    }
-                });
-            }
-
-            @Override
-            public void onOneToOneConversationSynchronized(final ContactId contact) {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onOneToOneConversationSynchronized contact=" + contact);
-                }
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Utils.displayLongToast(OneToOneTalkList.this,
-                                getString(R.string.label_cms_sync_talk_end, contact.toString()));
-                    }
-                });
-            }
-
-            @Override
-            public void onGroupConversationSynchronized(String chatId) {
             }
         };
 

@@ -19,47 +19,29 @@
 package com.orangelabs.rcs.ri.cms.synchronization;
 
 import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
-import com.gsma.services.rcs.contact.ContactId;
-
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.RcsListActivity;
+import com.orangelabs.rcs.ri.R;
 
 /**
  * Created by yplo6403 on 10/11/2015.
  */
 public class TestSyncApi extends RcsListActivity {
 
-    private CmsSynchronizationListener mCmsSyncListener;
-
-    private CmsService mCmsService;
-
-    private Handler mHandler = new Handler();
-
-    private static final String LOGTAG = LogUtils.getTag(TestSyncApi.class.getSimpleName());
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initialize();
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         String[] items = {
-                getString(R.string.menu_cms_sync_all),
-                getString(R.string.menu_cms_sync_one_to_one),
+                getString(R.string.menu_cms_sync_all), getString(R.string.menu_cms_sync_one_to_one),
                 getString(R.string.menu_cms_sync_group),
         };
         setListAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, items));
@@ -69,49 +51,6 @@ public class TestSyncApi extends RcsListActivity {
             return;
         }
         startMonitorServices(ConnectionManager.RcsServiceName.CMS);
-        try {
-            mCmsService = getCmsApi();
-            mCmsService.addEventListener(mCmsSyncListener);
-        } catch (RcsServiceException e) {
-            showExceptionThenExit(e);
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mCmsService != null && isServiceConnected(ConnectionManager.RcsServiceName.CMS)) {
-            /* Remove CMS synchronization listener */
-            try {
-                mCmsService.removeEventListener(mCmsSyncListener);
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-    }
-
-    private void initialize() {
-        mCmsSyncListener = new CmsSynchronizationListener() {
-            @Override
-            public void onAllSynchronized() {
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Utils.displayLongToast(TestSyncApi.this,
-                                getString(R.string.cms_sync_completed));
-                    }
-                });
-            }
-
-            @Override
-            public void onOneToOneConversationSynchronized(ContactId contact) {
-                /* Here we only consider full CMS sync */
-            }
-
-            @Override
-            public void onGroupConversationSynchronized(String chatId) {
-                /* Here we only consider full CMS sync */
-            }
-        };
     }
 
     @Override
@@ -119,7 +58,7 @@ public class TestSyncApi extends RcsListActivity {
         switch (position) {
             case 0:
                 try {
-                    mCmsService.syncAll();
+                    getCmsApi().syncAll();
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
                 }
@@ -134,4 +73,5 @@ public class TestSyncApi extends RcsListActivity {
                 break;
         }
     }
+
 }

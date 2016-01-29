@@ -20,45 +20,30 @@ package com.orangelabs.rcs.ri.cms.synchronization;
 
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.content.pm.ActivityInfo;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Spinner;
+
 import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.utils.ContactListAdapter;
 import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
-import android.content.pm.ActivityInfo;
-import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Spinner;
-import android.widget.TextView;
-
-import java.text.SimpleDateFormat;
-import java.util.Locale;
 
 /**
  * Created by yplo6403 on 12/11/2015.
  */
 public class CmsSyncContact extends RcsActivity {
 
-    private final static SimpleDateFormat sDateFormat = new SimpleDateFormat("yy-MM-dd HH:mm:ss",
-            Locale.getDefault());
-    private static final String LOGTAG = LogUtils.getTag(CmsSyncContact.class.getSimpleName());
     /**
      * Spinner for contact selection
      */
     private Spinner mSpinner;
     private View.OnClickListener mBtnSyncListener;
-    private CmsSynchronizationListener mCmsSyncListener;
-    private Handler mHandler = new Handler();
     private CmsService mCmsService;
 
     @Override
@@ -92,32 +77,9 @@ public class CmsSyncContact extends RcsActivity {
             return;
         }
         startMonitorServices(ConnectionManager.RcsServiceName.CMS);
-        try {
-            mCmsService = getCmsApi();
-            mCmsService.addEventListener(mCmsSyncListener);
-        } catch (RcsServiceException e) {
-            showExceptionThenExit(e);
-        }
+        mCmsService = getCmsApi();
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mCmsService != null && isServiceConnected(ConnectionManager.RcsServiceName.CMS)) {
-            /* Remove CMS synchronization listener */
-            try {
-                mCmsService.removeEventListener(mCmsSyncListener);
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-    }
-
-    /**
-     * Returns the selected contact
-     *
-     * @return Contact
-     */
     private ContactId getSelectedContact() {
         // get selected phone number
         ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
@@ -125,28 +87,6 @@ public class CmsSyncContact extends RcsActivity {
     }
 
     private void initialize() {
-        mCmsSyncListener = new CmsSynchronizationListener() {
-            @Override
-            public void onAllSynchronized() {
-            }
-
-            @Override
-            public void onOneToOneConversationSynchronized(final ContactId contact) {
-                mHandler.post(new Runnable() {
-                    public void run() {
-                        Utils.displayLongToast(CmsSyncContact.this,
-                                getString(R.string.cms_sync_contact_completed, contact.toString()));
-                        TextView timestamp = (TextView) findViewById(R.id.timestamp);
-                        timestamp.setText(sDateFormat.format(System.currentTimeMillis()));
-                    }
-                });
-            }
-
-            @Override
-            public void onGroupConversationSynchronized(String chatId) {
-            }
-        };
-
         mBtnSyncListener = new View.OnClickListener() {
             public void onClick(View v) {
                 ContactId contact = getSelectedContact();
@@ -160,7 +100,6 @@ public class CmsSyncContact extends RcsActivity {
                 }
             }
         };
-
     }
 
 }
