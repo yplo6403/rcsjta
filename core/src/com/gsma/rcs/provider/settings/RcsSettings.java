@@ -2445,8 +2445,8 @@ public class RcsSettings {
         writeString(RcsSettingsData.MESSAGE_STORE_URL, messageStoreUrl);
     }
 
-    public String getMessageStoreUrl(){
-        return readString(RcsSettingsData.MESSAGE_STORE_URL);
+    public Uri getMessageStoreUrl(){
+        return readUri(RcsSettingsData.MESSAGE_STORE_URL);
     }
 
     public String getMessageStoreAuth() {

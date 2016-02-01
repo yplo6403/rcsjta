@@ -1458,7 +1458,7 @@ public class RcsSettingsData {
      * Message store url
      */
     public static final String MESSAGE_STORE_URL = "messageStoreUrl";
-    public static final String DEFAULT_MESSAGE_STORE_URL = "imap://";
+    public static final Uri DEFAULT_MESSAGE_STORE_URL = null;
 
     /**
      * Message store user

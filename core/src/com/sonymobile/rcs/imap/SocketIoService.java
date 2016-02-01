@@ -16,6 +16,8 @@
 
 package com.sonymobile.rcs.imap;
 
+import android.net.Uri;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,44 +35,40 @@ import javax.net.ssl.X509TrustManager;
 public class SocketIoService implements IoService {
 
     private Socket mSocket = null;
-
     private BufferedReader mIn;
-
     private PrintWriter mOut;
-
     private final String mHost;
-
     private final int mPort;
-
-    private boolean mUseSsl = true;
-
+    private final boolean mUseSsl;
     private Integer mSoTimeout;
-
+    private static final String PROTOCOL_IMAPS = "imaps";
+    private static final int DEFAULT_IMAPS_PORT = 993;
+    private static final int DEFAULT_IMAP_PORT = 143;
     private Logger mLogger = Logger.getLogger(getClass().getName());
 
-    public SocketIoService(String url, int soTimeout) {
+    public SocketIoService(Uri url, int soTimeout) {
         this(url);
         mSoTimeout = soTimeout;
     }
 
-    public SocketIoService(String url) {
+    public SocketIoService(Uri url) {
         super();
-        int defport = 993; // default imap SSL port
-        if (url.startsWith("imap://")) {
-            mUseSsl = false;
-            defport = 143;
-            url = url.substring(7);
-        } else if (url.startsWith("imaps://")) { // default
-            url = url.substring(8);
-        }
-        int i = url.lastIndexOf(':');
-        if (i != -1) {
-            mPort = Integer.parseInt(url.substring(i + 1));
-            url = url.substring(0, i);
+        int port = url.getPort();
+        mUseSsl = PROTOCOL_IMAPS.equals(url.getScheme());
+        if (mUseSsl) {
+            if (-1 == port) {
+                mPort = DEFAULT_IMAPS_PORT;
+            } else {
+                mPort = port;
+            }
         } else {
-            mPort = defport;
+            if (-1 == port) {
+                mPort = DEFAULT_IMAP_PORT;
+            } else {
+                mPort = port;
+            }
         }
-        this.mHost = url;
+        mHost = url.getHost();
     }
 
     @Override
@@ -95,8 +93,9 @@ public class SocketIoService implements IoService {
         } else {
             mSocket = new Socket(mHost, mPort);
         }
-        if(mSoTimeout != null){
-            mSocket.setSoTimeout(mSoTimeout); // timeout in ms, prevent readline command from being blocking
+        if (mSoTimeout != null) {
+            mSocket.setSoTimeout(mSoTimeout); // timeout in ms, prevent readline command from being
+                                              // blocking
         }
         mIn = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));
         mOut = new PrintWriter(mSocket.getOutputStream(), true);
@@ -104,33 +103,32 @@ public class SocketIoService implements IoService {
 
     @Override
     public void startTLSHandshake() throws IOException {
-        SSLContext sc = null;
+        SSLContext sc;
         try {
             sc = SSLContext.getInstance("TLS");
             sc.init(null, new TrustManager[] {
-                new X509TrustManager() {
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return null;
-                    }
+                    new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
 
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] certs,
-                            String authType) {
-                    }
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs,
+                                String authType) {
+                        }
 
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] certs,
-                            String authType) {
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs,
+                                String authType) {
+                        }
                     }
-                }
             }, new java.security.SecureRandom());
         } catch (Exception e) {
             throw new IOException(e);
         }
-        SSLSocketFactory sslSocketFactory = ((SSLSocketFactory) sc.getSocketFactory());
-        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(mSocket, mSocket
-                .getInetAddress().getHostAddress(), mSocket.getPort(), true);
+        SSLSocketFactory sslSocketFactory = sc.getSocketFactory();
+        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(mSocket,
+                mSocket.getInetAddress().getHostAddress(), mSocket.getPort(), true);
         sslSocket.startHandshake();
         mSocket = sslSocket;
-        mUseSsl = true;
     }
 
     public String readLine() throws IOException {
