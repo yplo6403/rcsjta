@@ -55,8 +55,8 @@ import java.util.Set;
  * 
  * @author LEMORDANT Philippe
  */
-public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLog,
-        IGroupDeliveryInfoLog {
+public class MessagingLog
+        implements IGroupChatLog, IMessageLog, IFileTransferLog, IGroupDeliveryInfoLog {
     /**
      * Current instance
      */
@@ -121,7 +121,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setGroupChatStateAndReasonCode(String chatId, State state, ReasonCode reasonCode) {
+    public boolean setGroupChatStateAndReasonCode(String chatId, State state,
+            ReasonCode reasonCode) {
         return mGroupChatLog.setGroupChatStateAndReasonCode(chatId, state, reasonCode);
     }
 
@@ -132,7 +133,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setGroupChatRejoinId(String chatId, String rejoinId, boolean updateStateToStarted) {
+    public boolean setGroupChatRejoinId(String chatId, String rejoinId,
+            boolean updateStateToStarted) {
         return mGroupChatLog.setGroupChatRejoinId(chatId, rejoinId, updateStateToStarted);
     }
 
@@ -222,8 +224,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public boolean setFileTransferStateAndReasonCode(String fileTransferId,
             FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
-        return mFileTransferLog
-                .setFileTransferStateAndReasonCode(fileTransferId, state, reasonCode);
+        return mFileTransferLog.setFileTransferStateAndReasonCode(fileTransferId, state,
+                reasonCode);
     }
 
     @Override
@@ -237,9 +239,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setFileTransferStateAndTimestamp(String fileTransferId,
-            FileTransfer.State state, FileTransfer.ReasonCode reasonCode, long timestamp,
-            long timestampSent) {
+    public boolean setFileTransferStateAndTimestamp(String fileTransferId, FileTransfer.State state,
+            FileTransfer.ReasonCode reasonCode, long timestamp, long timestampSent) {
         return mFileTransferLog.setFileTransferStateAndTimestamp(fileTransferId, state, reasonCode,
                 timestamp, timestampSent);
     }
@@ -255,8 +256,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setFileTransferred(String fileTransferId, MmContent content,
-            long fileExpiration, long fileIconExpiration, long deliveryExpiration) {
+    public boolean setFileTransferred(String fileTransferId, MmContent content, long fileExpiration,
+            long fileIconExpiration, long deliveryExpiration) {
         return mFileTransferLog.setFileTransferred(fileTransferId, content, fileExpiration,
                 fileIconExpiration, deliveryExpiration);
     }
@@ -296,7 +297,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
 
     @Override
     public boolean setGroupChatDeliveryInfoStatusAndReasonCode(String chatId, ContactId contact,
-            String msgId, GroupDeliveryInfo.Status status, GroupDeliveryInfo.ReasonCode reasonCode) {
+            String msgId, GroupDeliveryInfo.Status status,
+            GroupDeliveryInfo.ReasonCode reasonCode) {
         return mGroupChatDeliveryInfoLog.setGroupChatDeliveryInfoStatusAndReasonCode(chatId,
                 contact, msgId, status, reasonCode);
     }
@@ -494,8 +496,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public boolean setGroupChatParticipantsStateAndReasonCode(String chatId,
             Map<ContactId, ParticipantStatus> participants, State state, ReasonCode reasonCode) {
-        return mGroupChatLog.setGroupChatParticipantsStateAndReasonCode(chatId, participants,
-                state, reasonCode);
+        return mGroupChatLog.setGroupChatParticipantsStateAndReasonCode(chatId, participants, state,
+                reasonCode);
     }
 
     @Override
@@ -591,7 +593,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public void setFileTransferTimestamps(String fileTransferId, long timestamp, long timestampSent) {
+    public void setFileTransferTimestamps(String fileTransferId, long timestamp,
+            long timestampSent) {
         mFileTransferLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);
     }
 
@@ -620,5 +623,15 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg) {
         mMessageLog.addGroupChatFailedDeliveryMessage(chatId, msg);
+    }
+
+    @Override
+    public Uri getFile(String fileTransferId) {
+        return mFileTransferLog.getFile(fileTransferId);
+    }
+
+    @Override
+    public Direction getFileTransferDirection(String fileTransferId) {
+        return mFileTransferLog.getFileTransferDirection(fileTransferId);
     }
 }

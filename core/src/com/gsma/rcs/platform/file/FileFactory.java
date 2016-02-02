@@ -42,6 +42,8 @@ public abstract class FileFactory {
      */
     private static FileFactory mFactory;
 
+    public static final String SENT_DIRECTORY = "sent/";
+
     /**
      * Load the factory
      * 
@@ -55,16 +57,16 @@ public abstract class FileFactory {
         try {
             mFactory = (FileFactory) Class.forName(classname).newInstance();
         } catch (InstantiationException e) {
-            throw new FactoryException(new StringBuilder("Can't load the factory ").append(
-                    classname).toString(), e);
+            throw new FactoryException(
+                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
 
         } catch (IllegalAccessException e) {
-            throw new FactoryException(new StringBuilder("Can't load the factory ").append(
-                    classname).toString(), e);
+            throw new FactoryException(
+                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
 
         } catch (ClassNotFoundException e) {
-            throw new FactoryException(new StringBuilder("Can't load the factory ").append(
-                    classname).toString(), e);
+            throw new FactoryException(
+                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
         }
     }
 

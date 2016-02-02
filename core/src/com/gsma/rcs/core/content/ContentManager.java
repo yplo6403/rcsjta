@@ -31,6 +31,7 @@ import com.gsma.rcs.core.ims.protocol.sdp.MediaAttribute;
 import com.gsma.rcs.core.ims.protocol.sdp.MediaDescription;
 import com.gsma.rcs.core.ims.protocol.sdp.SdpParser;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
+import com.gsma.rcs.platform.file.FileFactory;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.MimeManager;
 
@@ -88,8 +89,8 @@ public class ContentManager {
         }
 
         /* Return free destination URI */
-        return Uri.fromFile(new File(new StringBuilder(path).append(destination).append(extension)
-                .toString()));
+        return Uri.fromFile(
+                new File(new StringBuilder(path).append(destination).append(extension).toString()));
     }
 
     /**
@@ -104,9 +105,9 @@ public class ContentManager {
         String extension = MimeManager.getFileExtension(fileName);
         String mime = MimeManager.getInstance().getMimeType(extension);
         if (size < 0 || fileName == null || mime == null) {
-            throw new IllegalArgumentException(new StringBuilder("Invalid file, size ")
-                    .append(size).append(" fileName ").append(fileName).append(" mimeType ")
-                    .append(mime).append(" unable to create MmContent.").toString());
+            throw new IllegalArgumentException(new StringBuilder("Invalid file, size ").append(size)
+                    .append(" fileName ").append(fileName).append(" mimeType ").append(mime)
+                    .append(" unable to create MmContent.").toString());
         }
         return createMmContentFromMime(uri, mime, size, fileName);
     }
@@ -120,7 +121,8 @@ public class ContentManager {
      * @param fileName The file name
      * @return Content instance
      */
-    public static MmContent createMmContentFromMime(Uri uri, String mime, long size, String fileName) {
+    public static MmContent createMmContentFromMime(Uri uri, String mime, long size,
+            String fileName) {
         if (mime != null) {
             if (MimeManager.isImageType(mime)) {
                 return new PhotoContent(uri, mime, size, fileName);
@@ -221,8 +223,8 @@ public class ContentManager {
 
         String rtpmap = desc.getMediaAttribute("rtpmap").getValue();
         /* Extract the video encoding */
-        String encoding = rtpmap.substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length()
-                + 1);
+        String encoding = rtpmap
+                .substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length() + 1);
         String codec = encoding.toLowerCase().trim();
         int index = encoding.indexOf("/");
         if (index != -1) {
@@ -239,8 +241,8 @@ public class ContentManager {
                 index = value.indexOf(desc.mPayload);
                 int separator = value.indexOf('-');
                 if (index != -1 && separator != -1) {
-                    width = Integer.parseInt(value.substring(index + desc.mPayload.length() + 1,
-                            separator));
+                    width = Integer.parseInt(
+                            value.substring(index + desc.mPayload.length() + 1, separator));
                     height = Integer.parseInt(value.substring(separator + 1));
                 }
             } catch (NumberFormatException e) {
@@ -294,8 +296,8 @@ public class ContentManager {
         String rtpmap = desc.getMediaAttribute("rtpmap").getValue();
 
         /* Extract the audio encoding */
-        String encoding = rtpmap.substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length()
-                + 1);
+        String encoding = rtpmap
+                .substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length() + 1);
         String codec = encoding.toLowerCase().trim();
         int index = encoding.indexOf("/");
         if (index != -1) {
@@ -327,5 +329,77 @@ public class ContentManager {
         String filename = SipUtils.extractParameter(fileSelectorValue, "name:", "");
         Uri file = ContentManager.generateUriForReceivedContent(filename, mime, rcsSettings);
         return ContentManager.createMmContent(file, size, filename);
+    }
+
+    /**
+     * Get sent photo root directory
+     * 
+     * @param rcsSettings
+     * @return Path of sent photo root directory
+     */
+    public static String getSentPhotoRootDirectory(RcsSettings rcsSettings) {
+        return rcsSettings.getPhotoRootDirectory().concat(FileFactory.SENT_DIRECTORY);
+    }
+
+    /**
+     * Get sent video root directory
+     * 
+     * @param rcsSettings
+     * @return Path of sent video root directory
+     */
+    public static String getSentVideoRootDirectory(RcsSettings rcsSettings) {
+        return rcsSettings.getVideoRootDirectory().concat(FileFactory.SENT_DIRECTORY);
+    }
+
+    /**
+     * Get sent file root directory
+     * 
+     * @param rcsSettings
+     * @return Path of sent file root directory
+     */
+    public static String getSentFileRootDirectory(RcsSettings rcsSettings) {
+        return rcsSettings.getFileRootDirectory().concat(FileFactory.SENT_DIRECTORY);
+    }
+
+    /**
+     * Generate Uri for saving the content that has to be transferred
+     * 
+     * @param fileName
+     * @param mime
+     * @param rcsSettings
+     * @return Uri
+     */
+    public static Uri generateUriForSentContent(String fileName, String mime,
+            RcsSettings rcsSettings) {
+        String path;
+        if (MimeManager.isImageType(mime)) {
+            path = getSentPhotoRootDirectory(rcsSettings);
+        } else if (MimeManager.isVideoType(mime)) {
+            path = getSentVideoRootDirectory(rcsSettings);
+        } else {
+            path = getSentFileRootDirectory(rcsSettings);
+        }
+        /*
+         * Check that the fileName will not overwrite existing file We modify it if a file of the
+         * same name exists, by appending _1 before the extension For example if image.jpeg exists,
+         * next file will be image_1.jpeg, then image_2.jpeg etc.
+         */
+
+        if (fileName.indexOf('.') == -1) {
+            throw new RuntimeException("Filename without extension: fileName='" + fileName + "'!");
+        }
+        /* if extension is present, split it */
+        int extPosition = fileName.lastIndexOf('.');
+        String extension = "." + fileName.substring(extPosition + 1);
+        fileName = fileName.substring(0, extPosition);
+        String destination = fileName;
+        int incrementIndex = 1;
+        File generatedFile = new File(path + destination + extension);
+        while (generatedFile.exists()) {
+            destination = fileName + '_' + incrementIndex;
+            generatedFile = new File(path + destination + extension);
+            incrementIndex++;
+        }
+        return Uri.fromFile(generatedFile);
     }
 }

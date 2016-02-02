@@ -23,10 +23,10 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
-import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
+import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -37,6 +37,7 @@ import com.gsma.rcs.core.ims.service.sip.SipService;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.platform.file.FileFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.history.HistoryLog;
@@ -166,8 +167,8 @@ public class RcsCoreService extends Service implements CoreListener {
         mHistoryLog = HistoryLog.getInstance(mLocalContentResolver);
         mRichCallHistory = RichCallHistory.getInstance(mLocalContentResolver);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mRcsSettings);
-        mContactManager = ContactManager.getInstance(mCtx, mContentResolver,
-                mLocalContentResolver, mRcsSettings);
+        mContactManager = ContactManager.getInstance(mCtx, mContentResolver, mLocalContentResolver,
+                mRcsSettings);
         mXmsLog = XmsLog.createInstance(mCtx, mLocalContentResolver);
         mCmsLog = CmsLog.createInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
@@ -280,7 +281,8 @@ public class RcsCoreService extends Service implements CoreListener {
                 .getInstance(this);
         if (!contactUtil.isMyCountryCodeDefined()) {
             if (logActivated) {
-                sLogger.debug("Can't instantiate RCS core service, Reason : Country code not defined!");
+                sLogger.debug(
+                        "Can't instantiate RCS core service, Reason : Country code not defined!");
             }
             stopSelf();
             return;
@@ -329,6 +331,15 @@ public class RcsCoreService extends Service implements CoreListener {
             String fileIconDirectory = mRcsSettings.getFileIconRootDirectory();
             FileFactory.createDirectory(fileIconDirectory);
             FileFactory.setNoMedia(fileIconDirectory);
+            String sentPhotoDirectory = ContentManager.getSentPhotoRootDirectory(mRcsSettings);
+            FileFactory.createDirectory(sentPhotoDirectory);
+            FileFactory.setNoMedia(sentPhotoDirectory);
+            String sentVideoDirectory = ContentManager.getSentVideoRootDirectory(mRcsSettings);
+            FileFactory.createDirectory(sentVideoDirectory);
+            FileFactory.setNoMedia(sentVideoDirectory);
+            String sentFileDirectory = ContentManager.getSentFileRootDirectory(mRcsSettings);
+            FileFactory.createDirectory(sentFileDirectory);
+            FileFactory.setNoMedia(sentFileDirectory);
 
             // Init CPU manager
             mCpuManager = new CpuManager(mRcsSettings);
@@ -347,8 +358,8 @@ public class RcsCoreService extends Service implements CoreListener {
                 Handler handler = new Handler();
                 handler.postDelayed(new Runnable() {
                     public void run() {
-                        registerReceiver(mAccountChangedReceiver, new IntentFilter(
-                                "android.accounts.LOGIN_ACCOUNTS_CHANGED"));
+                        registerReceiver(mAccountChangedReceiver,
+                                new IntentFilter("android.accounts.LOGIN_ACCOUNTS_CHANGED"));
                     }
                 }, 2000);
             }
@@ -373,8 +384,8 @@ public class RcsCoreService extends Service implements CoreListener {
      * @throws NetworkException
      * @throws ContactManagerException
      */
-    private synchronized void stopCore() throws PayloadException, NetworkException,
-            ContactManagerException {
+    private synchronized void stopCore()
+            throws PayloadException, NetworkException, ContactManagerException {
         if (Core.getInstance() == null) {
             // Already stopped
             return;

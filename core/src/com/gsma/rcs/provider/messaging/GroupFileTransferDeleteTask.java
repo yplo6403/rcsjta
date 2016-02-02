@@ -29,12 +29,13 @@ import java.util.Set;
 
 public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
 
-    private static final Logger sLogger = Logger.getLogger(GroupFileTransferDeleteTask.class
-            .getName());
+    private static final Logger sLogger = Logger
+            .getLogger(GroupFileTransferDeleteTask.class.getName());
 
     private static final String SELECTION_ALL_GROUP_FILETRANSFERS = new StringBuilder(
             FileTransferData.KEY_CHAT_ID).append("<>").append(FileTransferData.KEY_CONTACT)
-            .append(" OR ").append(FileTransferData.KEY_CONTACT).append(" IS NULL").toString();
+                    .append(" OR ").append(FileTransferData.KEY_CONTACT).append(" IS NULL")
+                    .toString();
 
     private static final String SELECTION_FILETRANSFER_BY_CHATID = new StringBuilder(
             FileTransferData.KEY_CHAT_ID).append("=?").toString();
@@ -101,6 +102,7 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
         FileSharingSession session = mImService.getFileSharingSession(transferId);
         if (session == null) {
             mFileTransferService.ensureThumbnailIsDeleted(transferId);
+            mFileTransferService.ensureFileCopyIsDeletedIfExisting(transferId);
             mFileTransferService.removeGroupFileTransfer(transferId);
             return;
 
@@ -118,6 +120,7 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
             }
         }
         mFileTransferService.ensureThumbnailIsDeleted(transferId);
+        mFileTransferService.ensureFileCopyIsDeletedIfExisting(transferId);
         mFileTransferService.removeGroupFileTransfer(transferId);
     }
 

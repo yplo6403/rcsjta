@@ -31,12 +31,12 @@ import java.util.Set;
 
 public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactId {
 
-    private static final Logger sLogger = Logger.getLogger(OneToOneFileTransferDeleteTask.class
-            .getName());
+    private static final Logger sLogger = Logger
+            .getLogger(OneToOneFileTransferDeleteTask.class.getName());
 
     private static final String SELECTION_ALL_ONETOONE_FILETRANSFERS = new StringBuilder(
             FileTransferData.KEY_CHAT_ID).append("=").append(FileTransferData.KEY_CONTACT)
-            .toString();
+                    .toString();
 
     private final FileTransferServiceImpl mFileTransferService;
 
@@ -99,6 +99,7 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
         FileSharingSession session = mImService.getFileSharingSession(transferId);
         if (session == null) {
             mFileTransferService.ensureThumbnailIsDeleted(transferId);
+            mFileTransferService.ensureFileCopyIsDeletedIfExisting(transferId);
             mFileTransferService.removeOneToOneFileTransfer(transferId);
             return;
 
@@ -115,6 +116,8 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
                 sLogger.debug(e.getMessage());
             }
         }
+        mFileTransferService.ensureThumbnailIsDeleted(transferId);
+        mFileTransferService.ensureFileCopyIsDeletedIfExisting(transferId);
         mFileTransferService.removeOneToOneFileTransfer(transferId);
     }
 
