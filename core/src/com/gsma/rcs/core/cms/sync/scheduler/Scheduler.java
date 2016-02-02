@@ -175,14 +175,6 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
         return mStarted && schedule(SchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 
-    // TODO FGI : to be removed, defined for Cms Toolkit
-    public boolean scheduleToolkitTask(SchedulerTask schedulerTask) {
-        Message message = mSyncRequestHandler.obtainMessage(SchedulerTaskType.TOOLKIT_TASK.toInt(),
-                schedulerTask);
-        mSyncRequestHandler.sendMessage(message);
-        return true;
-    }
-
     public void init() {
 
         SyncParams parameters = new SyncParams(SyncType.ALL);
@@ -324,22 +316,14 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
                     executeUpdate(basicImapService, xmsMode, chatMode);
                     result = true;
                 }
-
-                else if (mCurrentOperation == SchedulerTaskType.TOOLKIT_TASK) { // TODO FGI : to be
-                    // removed, used by Cms
-                    // Toolkit only
-                    executeCmsTask(basicImapService, (SchedulerTask) msg.obj);
-                    result = true;
-                }
-
-            } catch (NetworkException | PayloadException e) {
+            } catch (NetworkException | PayloadException | RuntimeException e) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Failed to sync : " + e);
                 }
             } finally {
                 try {
                     mImapServiceHandler.closeService();
-                } catch (NetworkException | PayloadException e) {
+                } catch (NetworkException | PayloadException | RuntimeException e) {
                     if (sLogger.isActivated()) {
                         sLogger.debug("Failed to sync : " + e);
                     }
@@ -366,10 +350,6 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
             }
 
             mCurrentOperation = null;
-            if (msg.what == 5) { // TODO FGI : to be removed, used only for CMS task
-                return;
-            }
-
             sEndOfLastSync = System.currentTimeMillis();
             // schedule new periodic sync on all conversations
             syncParams = new SyncParams(SyncType.ALL);
@@ -419,11 +399,6 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
         UpdateFlagTask task = new UpdateFlagTask(mCmsLog, xmsMode, chatMode, this);
         task.setBasicImapService(basicImapService);
         task.run();
-    }
-
-    void executeCmsTask(BasicImapService basicImapService, SchedulerTask schedulerTask) {
-        schedulerTask.setBasicImapService(basicImapService);
-        schedulerTask.run();
     }
 
     static class SyncParams {

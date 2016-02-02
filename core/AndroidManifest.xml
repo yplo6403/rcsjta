@@ -259,28 +259,6 @@
         <service
             android:name="com.gsma.rcs.service.api.OneToOneDeliveryExpirationService"
             android:exported="false" />
-                
-        <!-- CMS Part -->
-        
-        <!-- CMS Tester -->
-             
-		<activity
-            android:name=".core.cms.toolkit.Toolkit"
-            android:icon="@drawable/rcs_icon"
-            android:label="@string/cms_toolkit_app_name" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".core.cms.toolkit.delete.DeleteOperations" />
-        <activity android:name=".core.cms.toolkit.operations.RemoteOperations" />
-        <activity android:name=".core.cms.toolkit.operations.remote.ShowMessages" />
-        <activity android:name=".core.cms.toolkit.operations.remote.CreateMessages" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsList" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsConversationView" android:windowSoftInputMode="adjustPan"/>            
-        <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsSendView" />
-        <activity android:name="com.gsma.rcs.cms.toolkit.xms.XmsImageView" />
 
     </application>
 

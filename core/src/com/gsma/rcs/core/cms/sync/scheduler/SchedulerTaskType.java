@@ -24,7 +24,7 @@ import android.util.SparseArray;
 public enum SchedulerTaskType {
 
     SYNC_FOR_USER_ACTIVITY(0), SYNC_PERIODIC(1), SYNC_FOR_DATA_CONNECTION(2), PUSH_MESSAGES(3), UPDATE_FLAGS(
-            4), TOOLKIT_TASK(5); // TODO FGI : to be removed, defined for Cms Toolkit
+            4);
 
     private int mValue;
 
