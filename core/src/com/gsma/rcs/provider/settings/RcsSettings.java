@@ -72,8 +72,8 @@ public class RcsSettings {
      */
     private static final int GROUP_CHAT_SUBJECT_MAX_LENGTH = 50;
 
-    private static final String WHERE_CLAUSE = new StringBuilder(RcsSettingsData.KEY_KEY).append(
-            "=?").toString();
+    private static final String WHERE_CLAUSE = new StringBuilder(RcsSettingsData.KEY_KEY)
+            .append("=?").toString();
 
     /**
      * Current instance
@@ -303,14 +303,14 @@ public class RcsSettings {
         Cursor c = null;
         try {
             String[] whereArg = new String[] {
-                key
+                    key
             };
             c = mLocalContentResolver.query(RcsSettingsData.CONTENT_URI, null, WHERE_CLAUSE,
                     whereArg, null);
             CursorUtil.assertCursorIsNotNull(c, RcsSettingsData.CONTENT_URI);
             if (!c.moveToFirst()) {
-                throw new IllegalArgumentException(new StringBuilder("Illegal setting key:")
-                        .append(key).toString());
+                throw new IllegalArgumentException(
+                        new StringBuilder("Illegal setting key:").append(key).toString());
             }
             return c.getString(c.getColumnIndexOrThrow(RcsSettingsData.KEY_VALUE));
 
@@ -335,7 +335,7 @@ public class RcsSettings {
         ContentValues values = new ContentValues();
         values.put(RcsSettingsData.KEY_VALUE, value);
         String[] whereArgs = new String[] {
-            key
+                key
         };
         return mLocalContentResolver.update(RcsSettingsData.CONTENT_URI, values, WHERE_CLAUSE,
                 whereArgs);
@@ -411,17 +411,17 @@ public class RcsSettings {
      */
     public void setUserProfileImsUserName(ContactId contact) {
         writeContactId(RcsSettingsData.USERPROFILE_IMS_USERNAME, contact);
-        if(contact == null){
+        if (contact == null) {
             return;
         }
         String messageStoreUser = contact.toString();
-        if(messageStoreUser.startsWith("+")){
+        if (messageStoreUser.startsWith("+")) {
             messageStoreUser = messageStoreUser.substring(1);
         }
-        if(getMessageStoreUser().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_USER)){
+        if (getMessageStoreUser().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_USER)) {
             setMessageStoreUser(messageStoreUser);
         }
-        if(getMessageStorePwd().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD)){
+        if (getMessageStorePwd().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD)) {
             setMessageStorePwd(messageStoreUser);
         }
     }
@@ -1898,11 +1898,11 @@ public class RcsSettings {
         return readString(RcsSettingsData.DIRECTORY_PATH_MMS);
     }
 
-        /**
-         * Set the root directory for files
-         *
-         * @param path Directory path
-         */
+    /**
+     * Set the root directory for files
+     *
+     * @param path Directory path
+     */
     public void setFileRootDirectory(String path) {
         writeString(RcsSettingsData.DIRECTORY_PATH_FILES, path);
     }
@@ -2441,12 +2441,12 @@ public class RcsSettings {
     /**
      * Cms settings
      */
-    public void setMessageStoreUrl(String messageStoreUrl){
-        writeString(RcsSettingsData.MESSAGE_STORE_URL, messageStoreUrl);
+    public void setMessageStoreUri(Uri messageStoreUri) {
+        writeUri(RcsSettingsData.MESSAGE_STORE_URI, messageStoreUri);
     }
 
-    public Uri getMessageStoreUrl(){
-        return readUri(RcsSettingsData.MESSAGE_STORE_URL);
+    public Uri getMessageStoreUri() {
+        return readUri(RcsSettingsData.MESSAGE_STORE_URI);
     }
 
     public String getMessageStoreAuth() {
@@ -2457,72 +2457,74 @@ public class RcsSettings {
         return readString(RcsSettingsData.MESSAGE_STORE_USER);
     }
 
-    public void setMessageStoreUser(String messageStoreUser){
+    public void setMessageStoreUser(String messageStoreUser) {
         writeString(RcsSettingsData.MESSAGE_STORE_USER, messageStoreUser);
     }
 
-    public String getMessageStorePwd(){
+    public String getMessageStorePwd() {
         return readString(RcsSettingsData.MESSAGE_STORE_PWD);
     }
 
-    public void setMessageStorePwd(String messageStorePwd){
+    public void setMessageStorePwd(String messageStorePwd) {
         writeString(RcsSettingsData.MESSAGE_STORE_PWD, messageStorePwd);
     }
 
-    public Boolean getMessageStorePushSms(){
+    public Boolean getMessageStorePushSms() {
         return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
     }
 
-    public Boolean getMessageStorePushMms(){
+    public Boolean getMessageStorePushMms() {
         return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
     }
 
-    public boolean isEventFrameworkEnabledForXms(){
-        return EventFrameworkMode.DISABLED != EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS));
+    public boolean isEventFrameworkEnabledForXms() {
+        return EventFrameworkMode.DISABLED != EventFrameworkMode
+                .valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS));
     }
 
-    public EventFrameworkMode getEventFrameworkForXms(){
+    public EventFrameworkMode getEventFrameworkForXms() {
         return EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS));
     }
 
-    public boolean isEventFrameworkEnabledForChat(){
-        return EventFrameworkMode.DISABLED != EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT));
+    public boolean isEventFrameworkEnabledForChat() {
+        return EventFrameworkMode.DISABLED != EventFrameworkMode
+                .valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT));
     }
 
-    public EventFrameworkMode getEventFrameworkForChat(){
+    public EventFrameworkMode getEventFrameworkForChat() {
         return EventFrameworkMode.valueOf(readInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT));
     }
 
-    public String getMessageStoreDefaultDirectoryName(){
+    public String getMessageStoreDefaultDirectoryName() {
         return readString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME);
     }
 
-    public void setMessageStoreDefaultDirectoryName(String defaultDirectory){
+    public void setMessageStoreDefaultDirectoryName(String defaultDirectory) {
         writeString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, defaultDirectory);
     }
 
-    public String getMessageStoreDirectorySeparator(){
+    public String getMessageStoreDirectorySeparator() {
         return readString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR);
     }
 
-    public void setMessageStoreDirectorySeparator(String directorySeparator){
+    public void setMessageStoreDirectorySeparator(String directorySeparator) {
         writeString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, directorySeparator);
     }
 
-    public int getDataConnectionSyncTimer(){
-        return readInteger(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
+    public long getDataConnectionSyncTimer() {
+        return readLong(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
     }
 
-    public void setDataConnectionSyncTimer(int dataConnectionSyncTimer){
-        writeInteger(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, dataConnectionSyncTimer);
+    public void setDataConnectionSyncTimer(long dataConnectionSyncTimer) {
+        writeLong(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, dataConnectionSyncTimer);
     }
 
-    public int getMessageStoreSyncTimer(){
-        return readInteger(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER);
+    public long getMessageStoreSyncTimer() {
+        return readLong(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER);
     }
 
-    public void setMessageStoreSyncTimer(int dataConnectionSyncTimer){
-        writeInteger(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, dataConnectionSyncTimer);
+    public void setMessageStoreSyncTimer(long dataConnectionSyncTimer) {
+        writeLong(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, dataConnectionSyncTimer);
     }
 
 }

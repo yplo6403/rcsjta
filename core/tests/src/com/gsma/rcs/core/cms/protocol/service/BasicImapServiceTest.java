@@ -23,12 +23,12 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactUtil;
 
+import android.content.Context;
+import android.test.AndroidTestCase;
+
 import com.sonymobile.rcs.imap.ImapException;
 import com.sonymobile.rcs.imap.IoService;
 import com.sonymobile.rcs.imap.SocketIoService;
-
-import android.content.Context;
-import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
@@ -37,8 +37,8 @@ import java.net.SocketTimeoutException;
 
 public class BasicImapServiceTest extends AndroidTestCase {
 
-    private static final Logger sLogger = Logger.getLogger(BasicImapServiceTest.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger
+            .getLogger(BasicImapServiceTest.class.getSimpleName());
 
     private RcsSettings mSettings;
     private boolean mIsBlocked = true;
@@ -51,7 +51,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithoutSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUrl());
+        final IoService io = new SocketIoService(mSettings.getMessageStoreUri());
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);
@@ -63,7 +63,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
             public void run() {
                 try {
                     io.readLine();
-                } catch (Exception e) {
+                } catch (Exception ignore) {
                 }
                 mIsBlocked = false;
             }
@@ -80,7 +80,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUrl(), 3000);
+        final IoService io = new SocketIoService(mSettings.getMessageStoreUri(), 3000);
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);
@@ -95,7 +95,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
                 } catch (SocketTimeoutException e) {
                     sLogger.info("--> SocketTimeoutException");
                     mIsBlocked = false;
-                } catch (Exception e) {
+                } catch (Exception ignore) {
                 }
             }
         });

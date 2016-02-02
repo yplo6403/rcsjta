@@ -24,17 +24,17 @@ import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
+import android.net.Uri;
 
 public class RcsSettingsMock {
 
-    private static final String mServerAddress = "imap://172.20.65.102";
+    private static final Uri mServerAddress = Uri.parse("imap://172.20.65.102");
     private static final String mUserLogin = "test_integration";
     private static final String mUserPwd = "test_integration";
     private static final String mDefaultDirectory = "Default";
     private static final String mDirectorySeparator = "/";
-    private static final String mContact = "+33601020304";
 
-    private static String mOriServerAddress;
+    private static Uri mOriServerUri;
     private static String mOriUserLogin;
     private static String mOriUserPwd;
     private static String mOriDefaultDirectory;
@@ -44,26 +44,26 @@ public class RcsSettingsMock {
     public static RcsSettings getMockSettings(Context context) {
         RcsSettings settings = RcsSettings.getInstance(new LocalContentResolver(context));
 
-        mOriServerAddress = settings.getMessageStoreUrl();
+        mOriServerUri = settings.getMessageStoreUri();
         mOriUserLogin = settings.getMessageStoreUser();
         mOriUserPwd = settings.getMessageStorePwd();
         mOriDefaultDirectory = settings.getMessageStoreDefaultDirectoryName();
         mOriDirectorySeparator = settings.getMessageStoreDirectorySeparator();
         mOriContact = settings.getUserProfileImsUserName();
 
-        settings.setMessageStoreUrl(mServerAddress);
+        settings.setMessageStoreUri(mServerAddress);
         settings.setMessageStoreUser(mUserLogin);
         settings.setMessageStorePwd(mUserPwd);
         settings.setMessageStoreDefaultDirectoryName(mDefaultDirectory);
         settings.setMessageStoreDirectorySeparator(mDirectorySeparator);
-        settings.setUserProfileImsUserName(ContactUtil
-                .createContactIdFromTrustedData("+33601020304"));
+        settings.setUserProfileImsUserName(
+                ContactUtil.createContactIdFromTrustedData("+33601020304"));
         return settings;
     }
 
     public static void restoreSettings() {
         RcsSettings settings = RcsSettings.getInstance(null);
-        settings.setMessageStoreUrl(mOriServerAddress);
+        settings.setMessageStoreUri(mOriServerUri);
         settings.setMessageStoreUser(mOriUserLogin);
         settings.setMessageStorePwd(mOriUserPwd);
         settings.setMessageStoreDefaultDirectoryName(mOriDefaultDirectory);

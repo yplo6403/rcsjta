@@ -257,7 +257,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip" />
+                android:layout_marginRight="5dip"
+                android:inputType="textUri" />
 
             <TextView
                 android:layout_width="fill_parent"
@@ -298,7 +299,8 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip" />
+                android:layout_marginRight="5dip"
+                android:inputType="textUri" />
 
             <TextView
                 android:layout_width="fill_parent"
@@ -340,7 +342,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
                 android:layout_marginRight="5dip"
-                android:maxLength="100" />
+                android:maxLength="100"
+                android:inputType="textUri" />
 
             <TextView
                 android:layout_width="fill_parent"
@@ -354,7 +357,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dip"
                 android:layout_marginRight="5dip"
-                android:maxLength="100" />
+                android:maxLength="100"
+                android:inputType="textUri"/>
 
             <TextView
                 android:layout_width="fill_parent"

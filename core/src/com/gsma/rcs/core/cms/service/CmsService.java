@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.cms.sync.scheduler.Scheduler;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.ImsService;
@@ -134,8 +135,8 @@ public class CmsService extends ImsService {
 
     public void onCoreLayerStarted() {
         /* Update interrupted MMS transfer status */
-        scheduleImOperation(new UpdateMmsStateAfterUngracefulTerminationTask(mXmsLog,
-                mCmsServiceImpl));
+        scheduleImOperation(
+                new UpdateMmsStateAfterUngracefulTerminationTask(mXmsLog, mCmsServiceImpl));
     }
 
     public void syncAll() {
@@ -143,15 +144,17 @@ public class CmsService extends ImsService {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS : syncAll");
+                    sLogger.debug("Synchronize CMS All");
                 }
-                // Operations of sync with the message store are executed in a dedicated background
-                // handler.
-                // So it does not interact with other operations of this API impacting the calling
-                // UI
-                if (!mCmsManager.getSyncScheduler().scheduleSync()) {
+                /*
+                 * Operations of sync with the message store are executed in a dedicated background
+                 * handler. So it does not interact with other operations of this API impacting the
+                 * calling UI.
+                 */
+                Scheduler scheduler = mCmsManager.getSyncScheduler();
+                if (scheduler != null && !scheduler.scheduleSync()) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Can not schedule a syncAll operation");
+                        sLogger.debug("Cannot schedule a syncAll operation");
                     }
                 }
             }
@@ -162,17 +165,20 @@ public class CmsService extends ImsService {
         mOperationHandler.post(new Runnable() {
             @Override
             public void run() {
+                String msisdn = contact.toString();
                 if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS for contact " + contact);
+                    sLogger.debug("Synchronize CMS for contact ".concat(msisdn));
                 }
-                // Operations of sync with the message store are executed in a dedicated background
-                // handler.
-                // So it does not interact with other operations of this API impacting the calling
-                // UI
-                if (!mCmsManager.getSyncScheduler().scheduleSyncForOneToOneConversation(contact)) {
+                /*
+                 * Operations of sync with the message store are executed in a dedicated background
+                 * handler. So it does not interact with other operations of this API impacting the
+                 * calling UI.
+                 */
+                Scheduler scheduler = mCmsManager.getSyncScheduler();
+                if (scheduler != null && !scheduler.scheduleSyncForOneToOneConversation(contact)) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Can not schedule a syncOneToOneConversation operation : "
-                                + contact);
+                        sLogger.debug("Cannot schedule a syncOneToOneConversation operation: "
+                                .concat(msisdn));
                     }
                 }
             }
@@ -184,16 +190,18 @@ public class CmsService extends ImsService {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS for chatId " + chatId);
+                    sLogger.debug("Synchronize CMS for chatId ".concat(chatId));
                 }
-                // Operations of sync with the message store are executed in a dedicated background
-                // handler.
-                // So it does not interact with other operations of this API impacting the calling
-                // UI
-                if (!mCmsManager.getSyncScheduler().scheduleSyncForGroupConversation(chatId)) {
+                /*
+                 * Operations of sync with the message store are executed in a dedicated background
+                 * handler. So it does not interact with other operations of this API impacting the
+                 * calling UI.
+                 */
+                Scheduler scheduler = mCmsManager.getSyncScheduler();
+                if (scheduler != null && !scheduler.scheduleSyncForGroupConversation(chatId)) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Can not schedule a syncGroupConversation operation : "
-                                + chatId);
+                        sLogger.debug("Cannot schedule a syncGroupConversation operation: "
+                                .concat(chatId));
                     }
                 }
             }
@@ -211,13 +219,15 @@ public class CmsService extends ImsService {
                     }
                     if (!ServerApiUtils.isMmsConnectionAvailable(mContext)) {
                         if (logActivated) {
-                            sLogger.debug("MMS mobile connection not available, exiting dequeue task to dequeue MMS");
+                            sLogger.debug(
+                                    "MMS mobile connection not available, exiting dequeue task to dequeue MMS");
                         }
                         return;
                     }
                     if (isShuttingDownOrStopped()) {
                         if (logActivated) {
-                            sLogger.debug("Core service is shutting down/stopped, exiting MMS dequeue task");
+                            sLogger.debug(
+                                    "Core service is shutting down/stopped, exiting MMS dequeue task");
                         }
                         return;
                     }

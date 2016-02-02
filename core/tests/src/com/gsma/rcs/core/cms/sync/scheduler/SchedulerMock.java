@@ -20,8 +20,8 @@ package com.gsma.rcs.core.cms.sync.scheduler;
 
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
-import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
@@ -36,7 +36,7 @@ public class SchedulerMock extends Scheduler {
     private long mExecutionDuration = 100; // in ms
 
     public SchedulerMock(Context context, RcsSettings rcsSettings, LocalStorage localStorage,
-                         CmsLog cmsLog, XmsLog xmsLog) {
+            CmsLog cmsLog, XmsLog xmsLog) {
         super(context, rcsSettings, localStorage, cmsLog, xmsLog);
     }
 
@@ -76,7 +76,7 @@ public class SchedulerMock extends Scheduler {
         }
     }
 
-    void setExecutionDuration(int executionDuration) {
+    void setExecutionDuration(long executionDuration) {
         mExecutionDuration = executionDuration;
     }
 

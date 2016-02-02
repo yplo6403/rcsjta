@@ -56,11 +56,13 @@ public class RcsSettingsProvider extends ContentProvider {
     public static final String DATABASE_NAME = "rcs_settings.db";
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
     static {
-        sUriMatcher.addURI(RcsSettingsData.CONTENT_URI.getAuthority(), RcsSettingsData.CONTENT_URI
-                .getPath().substring(1), UriType.SETTINGS);
-        sUriMatcher.addURI(RcsSettingsData.CONTENT_URI.getAuthority(), RcsSettingsData.CONTENT_URI
-                .getPath().substring(1).concat("/*"), UriType.SETTINGS_WITH_KEY);
+        sUriMatcher.addURI(RcsSettingsData.CONTENT_URI.getAuthority(),
+                RcsSettingsData.CONTENT_URI.getPath().substring(1), UriType.SETTINGS);
+        sUriMatcher.addURI(RcsSettingsData.CONTENT_URI.getAuthority(),
+                RcsSettingsData.CONTENT_URI.getPath().substring(1).concat("/*"),
+                UriType.SETTINGS_WITH_KEY);
     }
 
     private static final class UriType {
@@ -200,7 +202,8 @@ public class RcsSettingsProvider extends ContentProvider {
             addParameter(db, RcsSettingsData.XDM_SERVER, RcsSettingsData.DEFAULT_XDM_SERVER);
             addParameter(db, RcsSettingsData.XDM_LOGIN, RcsSettingsData.DEFAULT_XDM_LOGIN);
             addParameter(db, RcsSettingsData.XDM_PASSWORD, RcsSettingsData.DEFAULT_XDM_PASSWORD);
-            addParameter(db, RcsSettingsData.FT_HTTP_SERVER, RcsSettingsData.DEFAULT_FT_HTTP_SERVER);
+            addParameter(db, RcsSettingsData.FT_HTTP_SERVER,
+                    RcsSettingsData.DEFAULT_FT_HTTP_SERVER);
             addParameter(db, RcsSettingsData.FT_HTTP_LOGIN, RcsSettingsData.DEFAULT_FT_HTTP_LOGIN);
             addParameter(db, RcsSettingsData.FT_HTTP_PASSWORD,
                     RcsSettingsData.DEFAULT_FT_HTTP_PASSWORD);
@@ -269,12 +272,14 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_REGISTER_RETRY_MAX_TIME);
             addParameter(db, RcsSettingsData.PUBLISH_EXPIRE_PERIOD,
                     RcsSettingsData.DEFAULT_PUBLISH_EXPIRE_PERIOD);
-            addParameter(db, RcsSettingsData.REVOKE_TIMEOUT, RcsSettingsData.DEFAULT_REVOKE_TIMEOUT);
+            addParameter(db, RcsSettingsData.REVOKE_TIMEOUT,
+                    RcsSettingsData.DEFAULT_REVOKE_TIMEOUT);
             addParameter(db, RcsSettingsData.IMS_AUTHENT_PROCEDURE_MOBILE,
                     RcsSettingsData.DEFAULT_IMS_AUTHENT_PROCEDURE_MOBILE);
             addParameter(db, RcsSettingsData.IMS_AUTHENT_PROCEDURE_WIFI,
                     RcsSettingsData.DEFAULT_IMS_AUTHENT_PROCEDURE_WIFI);
-            addParameter(db, RcsSettingsData.TEL_URI_FORMAT, RcsSettingsData.DEFAULT_TEL_URI_FORMAT);
+            addParameter(db, RcsSettingsData.TEL_URI_FORMAT,
+                    RcsSettingsData.DEFAULT_TEL_URI_FORMAT);
             addParameter(db, RcsSettingsData.RINGING_SESSION_PERIOD,
                     RcsSettingsData.DEFAULT_RINGING_SESSION_PERIOD);
             addParameter(db, RcsSettingsData.SUBSCRIBE_EXPIRE_PERIOD,
@@ -290,7 +295,8 @@ public class RcsSettingsProvider extends ContentProvider {
             addParameter(db, RcsSettingsData.TRACE_LEVEL, RcsSettingsData.DEFAULT_TRACE_LEVEL);
             addParameter(db, RcsSettingsData.SIP_TRACE_ACTIVATED,
                     RcsSettingsData.DEFAULT_SIP_TRACE_ACTIVATED);
-            addParameter(db, RcsSettingsData.SIP_TRACE_FILE, RcsSettingsData.DEFAULT_SIP_TRACE_FILE);
+            addParameter(db, RcsSettingsData.SIP_TRACE_FILE,
+                    RcsSettingsData.DEFAULT_SIP_TRACE_FILE);
             addParameter(db, RcsSettingsData.MEDIA_TRACE_ACTIVATED,
                     RcsSettingsData.DEFAULT_MEDIA_TRACE_ACTIVATED);
             addParameter(db, RcsSettingsData.CAPABILITY_REFRESH_TIMEOUT,
@@ -311,12 +317,15 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_MSG_DELIVERY_TIMEOUT);
             addParameter(db, RcsSettingsData.MSG_CAP_VALIDITY_PERIOD,
                     RcsSettingsData.DEFAULT_MSG_CAP_VALIDITY_PERIOD);
-            addParameter(db, RcsSettingsData.IM_USE_REPORTS, RcsSettingsData.DEFAULT_IM_USE_REPORTS);
-            addParameter(db, RcsSettingsData.NETWORK_ACCESS, RcsSettingsData.DEFAULT_NETWORK_ACCESS);
+            addParameter(db, RcsSettingsData.IM_USE_REPORTS,
+                    RcsSettingsData.DEFAULT_IM_USE_REPORTS);
+            addParameter(db, RcsSettingsData.NETWORK_ACCESS,
+                    RcsSettingsData.DEFAULT_NETWORK_ACCESS);
             addParameter(db, RcsSettingsData.SIP_TIMER_T1, RcsSettingsData.DEFAULT_SIP_TIMER_T1);
             addParameter(db, RcsSettingsData.SIP_TIMER_T2, RcsSettingsData.DEFAULT_SIP_TIMER_T2);
             addParameter(db, RcsSettingsData.SIP_TIMER_T4, RcsSettingsData.DEFAULT_SIP_TIMER_T4);
-            addParameter(db, RcsSettingsData.SIP_KEEP_ALIVE, RcsSettingsData.DEFAULT_SIP_KEEP_ALIVE);
+            addParameter(db, RcsSettingsData.SIP_KEEP_ALIVE,
+                    RcsSettingsData.DEFAULT_SIP_KEEP_ALIVE);
             addParameter(db, RcsSettingsData.SIP_KEEP_ALIVE_PERIOD,
                     RcsSettingsData.DEFAULT_SIP_KEEP_ALIVE_PERIOD);
             addParameter(db, RcsSettingsData.RCS_APN, RcsSettingsData.DEFAULT_RCS_APN);
@@ -411,9 +420,9 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_PROV_REJECT_BUTTON);
             addParameter(db, RcsSettingsData.LOCAL_DISPLAY_LANGUAGE,
                     RcsSettingsData.DEFAULT_LOCAL_DISPLAY_LANGUAGE);
-            //message store
-            addParameter(db, RcsSettingsData.MESSAGE_STORE_URL,
-                    RcsSettingsData.DEFAULT_MESSAGE_STORE_URL);
+            // message store
+            addParameter(db, RcsSettingsData.MESSAGE_STORE_URI,
+                    RcsSettingsData.DEFAULT_MESSAGE_STORE_URI);
             addParameter(db, RcsSettingsData.MESSAGE_STORE_AUTH,
                     RcsSettingsData.DEFAULT_MESSAGE_STORE_AUTH);
             addParameter(db, RcsSettingsData.MESSAGE_STORE_USER,
@@ -476,7 +485,7 @@ public class RcsSettingsProvider extends ContentProvider {
             /* Put the old values back when possible */
             for (ContentValues values : valuesList) {
                 String[] selectionArgs = new String[] {
-                    values.getAsString(RcsSettingsData.KEY_KEY)
+                        values.getAsString(RcsSettingsData.KEY_KEY)
                 };
                 db.update(TABLE, values, SELECTION_WITH_KEY_ONLY, selectionArgs);
             }
@@ -495,7 +504,7 @@ public class RcsSettingsProvider extends ContentProvider {
 
     private String[] getSelectionArgsWithKey(String[] selectionArgs, String key) {
         String[] keySelectionArg = new String[] {
-            key
+                key
         };
         if (selectionArgs == null) {
             return keySelectionArg;
@@ -519,8 +528,8 @@ public class RcsSettingsProvider extends ContentProvider {
                 return CursorType.TYPE_ITEM;
 
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException(
+                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
         }
     }
 
@@ -538,8 +547,8 @@ public class RcsSettingsProvider extends ContentProvider {
                     //$FALL-THROUGH$
                 case UriType.SETTINGS:
                     SQLiteDatabase database = mOpenHelper.getReadableDatabase();
-                    cursor = database.query(TABLE, projection, selection, selectionArgs, null,
-                            null, sort);
+                    cursor = database.query(TABLE, projection, selection, selectionArgs, null, null,
+                            sort);
                     CursorUtil.assertCursorIsNotNull(cursor, uri);
                     cursor.setNotificationUri(getContext().getContentResolver(), uri);
                     return cursor;
@@ -579,20 +588,20 @@ public class RcsSettingsProvider extends ContentProvider {
                 return count;
 
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException(
+                        new StringBuilder("Unsupported URI ").append(uri).append("!").toString());
         }
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues initialValues) {
-        throw new UnsupportedOperationException(new StringBuilder("Cannot insert URI ").append(uri)
-                .append("!").toString());
+        throw new UnsupportedOperationException(
+                new StringBuilder("Cannot insert URI ").append(uri).append("!").toString());
     }
 
     @Override
     public int delete(Uri uri, String where, String[] whereArgs) {
-        throw new UnsupportedOperationException(new StringBuilder("Cannot delete URI ").append(uri)
-                .append("!").toString());
+        throw new UnsupportedOperationException(
+                new StringBuilder("Cannot delete URI ").append(uri).append("!").toString());
     }
 }

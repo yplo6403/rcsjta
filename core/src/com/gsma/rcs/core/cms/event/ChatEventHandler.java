@@ -49,7 +49,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     /**
      * Default constructor
      *
-     * @param eventFrameworkHandler
+     * @param eventFrameworkHandler the event framework handler
      * @param cmsLog the IMAP log accessor
      * @param messagingLog the messaging log accessor
      * @param settings the RCS settings accessor
@@ -68,9 +68,10 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                msg.getRemoteContact()), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
+        mCmsLog.addMessage(
+                new CmsObject(CmsUtils.contactToCmsFolder(mSettings, msg.getRemoteContact()),
+                        ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                        MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
     }
 
     @Override
@@ -95,7 +96,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     }
 
     @Override
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId) {
+    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn,
+            String imdnId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnId));
         }
@@ -160,13 +162,17 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     public void onReadChatMessage(String messageId) {
         mCmsLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
                 ReadStatus.READ_REPORT_REQUESTED);
-        mEventFrameworkHandler.onReadChatMessage(messageId);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onReadChatMessage(messageId);
+        }
     }
 
     @Override
     public void onDeleteChatMessage(String messageId) {
         mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId,
                 DeleteStatus.DELETED_REPORT_REQUESTED);
-        mEventFrameworkHandler.onDeleteChatMessage(messageId);
+        if (mEventFrameworkHandler != null) {
+            mEventFrameworkHandler.onDeleteChatMessage(messageId);
+        }
     }
 }

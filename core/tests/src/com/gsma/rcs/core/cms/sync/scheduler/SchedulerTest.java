@@ -20,13 +20,12 @@ package com.gsma.rcs.core.cms.sync.scheduler;
 
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
-import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.content.Context;
@@ -35,8 +34,6 @@ import android.test.AndroidTestCase;
 import junit.framework.Assert;
 
 public class SchedulerTest extends AndroidTestCase {
-
-    private static final Logger sLogger = Logger.getLogger(SchedulerTest.class.getSimpleName());
 
     private Context mContext;
     private LocalStorage mLocalStorage;
@@ -47,7 +44,7 @@ public class SchedulerTest extends AndroidTestCase {
     private SchedulerMock mScheduler;
     private SchedulerListenerMock mOperationListener;
 
-    private int executionDuration = 100; // in ms
+    private long executionDuration = 100; // in ms
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -76,7 +73,7 @@ public class SchedulerTest extends AndroidTestCase {
         mSettings.setDataConnectionSyncTimer(200); // data connection timer 200ms
 
         mScheduler = new SchedulerMock(mContext, mSettings, mLocalStorage, mCmsLog, mXmsLog);
-        mScheduler.sEndOfLastSync = 0;
+        Scheduler.sEndOfLastSync = 0;
         mScheduler.setImapServiceHandler(new ImapServiceHandlerMock(mSettings));
         mScheduler.setExecutionDuration(executionDuration);
         mScheduler.registerListener(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION, mOperationListener);
@@ -87,7 +84,7 @@ public class SchedulerTest extends AndroidTestCase {
 
         int lastPeriodicExecution = 0;
 
-        int syncTimerInterval = mSettings.getMessageStoreSyncTimer();
+        long syncTimerInterval = mSettings.getMessageStoreSyncTimer();
 
         assertEquals(0,
                 mOperationListener.getExecutions(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
@@ -98,33 +95,34 @@ public class SchedulerTest extends AndroidTestCase {
                 mOperationListener.getExecutions(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
         Assert.assertFalse(mScheduler.mSyncRequestHandler
                 .hasMessages(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION.toInt()));
-        Assert.assertTrue(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertTrue(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         Thread.sleep(executionDuration + syncTimerInterval + 100, 0);
-        Assert.assertTrue(mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
+        Assert.assertTrue(mOperationListener
+                .getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
         lastPeriodicExecution = mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC);
-        Assert.assertTrue(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertTrue(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         Thread.sleep(executionDuration + syncTimerInterval + 100, 0);
-        Assert.assertTrue(mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
-        lastPeriodicExecution = mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC);
-        Assert.assertTrue(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertTrue(mOperationListener
+                .getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
+        mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC);
+        Assert.assertTrue(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         mScheduler.scheduleSync();
-        Assert.assertFalse(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertFalse(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
         Thread.sleep(executionDuration + 200, 0);
-        assertEquals(1,
-                mOperationListener.getExecutions(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY));
-        Assert.assertTrue(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        assertEquals(1, mOperationListener.getExecutions(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY));
+        Assert.assertTrue(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         mScheduler.stop();
-        Assert.assertFalse(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertFalse(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
     }
 
@@ -134,7 +132,7 @@ public class SchedulerTest extends AndroidTestCase {
         mSettings.setDataConnectionSyncTimer(1000); // data connection timer 1000ms
 
         mScheduler = new SchedulerMock(mContext, mSettings, mLocalStorage, mCmsLog, mXmsLog);
-        mScheduler.sEndOfLastSync = 0;
+        Scheduler.sEndOfLastSync = 0;
         mScheduler.setImapServiceHandler(new ImapServiceHandlerMock(mSettings));
         mScheduler.setExecutionDuration(executionDuration);
         mScheduler.registerListener(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION, mOperationListener);
@@ -149,8 +147,8 @@ public class SchedulerTest extends AndroidTestCase {
                 mOperationListener.getExecutions(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
         Assert.assertFalse(mScheduler.mSyncRequestHandler
                 .hasMessages(SchedulerTaskType.SYNC_FOR_DATA_CONNECTION.toInt()));
-        Assert.assertTrue(mScheduler.mSyncRequestHandler.hasMessages(SchedulerTaskType.SYNC_PERIODIC
-                .toInt()));
+        Assert.assertTrue(mScheduler.mSyncRequestHandler
+                .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         // we simulate a data connection event by stopping and re-starting the scheduler
         mScheduler.stop();

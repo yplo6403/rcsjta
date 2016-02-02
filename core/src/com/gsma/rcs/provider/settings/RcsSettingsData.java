@@ -108,6 +108,7 @@ public class RcsSettingsData {
         private final int mValue;
 
         private static SparseArray<ImSessionStartMode> mValueToEnum = new SparseArray<ImSessionStartMode>();
+
         static {
             for (ImSessionStartMode entry : ImSessionStartMode.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -148,6 +149,7 @@ public class RcsSettingsData {
         private final int mValue;
 
         private static SparseArray<TermsAndConditionsResponse> mValueToEnum = new SparseArray<TermsAndConditionsResponse>();
+
         static {
             for (TermsAndConditionsResponse entry : TermsAndConditionsResponse.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -190,6 +192,7 @@ public class RcsSettingsData {
         private final int mValue;
 
         private static SparseArray<ImMsgTech> mValueToEnum = new SparseArray<ImMsgTech>();
+
         static {
             for (ImMsgTech entry : ImMsgTech.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -242,6 +245,7 @@ public class RcsSettingsData {
         private int mValue;
 
         private static SparseArray<NetworkAccessType> mValueToEnum = new SparseArray<NetworkAccessType>();
+
         static {
             for (NetworkAccessType entry : NetworkAccessType.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -269,7 +273,8 @@ public class RcsSettingsData {
                 return entry;
             }
             throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(NetworkAccessType.class.getName()).append(".").append(value).toString());
+                    .append(NetworkAccessType.class.getName()).append(".").append(value)
+                    .toString());
         }
 
     }
@@ -294,6 +299,7 @@ public class RcsSettingsData {
         private int mValue;
 
         private static SparseArray<EnableRcseSwitch> mValueToEnum = new SparseArray<EnableRcseSwitch>();
+
         static {
             for (EnableRcseSwitch entry : EnableRcseSwitch.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -342,6 +348,7 @@ public class RcsSettingsData {
         private int mValue;
 
         private static SparseArray<ConfigurationMode> mValueToEnum = new SparseArray<ConfigurationMode>();
+
         static {
             for (ConfigurationMode entry : ConfigurationMode.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -369,7 +376,8 @@ public class RcsSettingsData {
                 return entry;
             }
             throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ConfigurationMode.class.getName()).append(".").append(value).toString());
+                    .append(ConfigurationMode.class.getName()).append(".").append(value)
+                    .toString());
         }
     }
 
@@ -407,6 +415,7 @@ public class RcsSettingsData {
         private int mValue;
 
         private static SparseArray<GsmaRelease> mValueToEnum = new SparseArray<GsmaRelease>();
+
         static {
             for (GsmaRelease entry : GsmaRelease.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -460,6 +469,7 @@ public class RcsSettingsData {
         private final int mValue;
 
         private static SparseArray<EventFrameworkMode> mValueToEnum = new SparseArray<>();
+
         static {
             for (EventFrameworkMode entry : EventFrameworkMode.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
@@ -1457,14 +1467,14 @@ public class RcsSettingsData {
     /**
      * Message store url
      */
-    public static final String MESSAGE_STORE_URL = "messageStoreUrl";
-    public static final Uri DEFAULT_MESSAGE_STORE_URL = null;
+    public static final String MESSAGE_STORE_URI = "messageStoreUrl";
+    public static final Uri DEFAULT_MESSAGE_STORE_URI = null;
 
     /**
      * Message store user
      */
     public static final String MESSAGE_STORE_USER = "messageStoreUser";
-    public  static final String DEFAULT_MESSAGE_STORE_USER = "";
+    public static final String DEFAULT_MESSAGE_STORE_USER = "";
 
     /**
      * Message store pwd
@@ -1473,27 +1483,23 @@ public class RcsSettingsData {
     public static final String DEFAULT_MESSAGE_STORE_PWD = "";
 
     /**
-     * Message store auth
-     * 0 : plain user and pwd
-     * 1 : SASL
+     * Message store auth 0 : plain user and pwd 1 : SASL
      */
     public static final String MESSAGE_STORE_AUTH = "messageStoreAuth";
     public static final int DEFAULT_MESSAGE_STORE_AUTH = 0;
 
     /**
-     * Data connection sync timer in ms
-     * 0 : timer not activated, all synchronization requests due to data
-     *     connection state change shall be sent
+     * Data connection sync timer in ms 0 : timer not activated, all synchronization requests due to
+     * data connection state change shall be sent
      */
     public static final String DATA_CONNECTION_SYNC_TIMER = "dataConnectionSyncTimer";
-    public static final int DEFAULT_DATA_CONNECTION_SYNC_TIMER = 120000;
+    public static final long DEFAULT_DATA_CONNECTION_SYNC_TIMER = 120000L;
 
     /**
-     * Message store sync timer in ms
-     * 0 : no automatic client request for synchronization.
+     * Message store sync timer in ms 0 : no automatic client request for synchronization.
      */
     public static final String MESSAGE_STORE_SYNC_TIMER = "messageStoreSyncTimer";
-    public static final int DEFAULT_MESSAGE_STORE_SYNC_TIMER = 120000;
+    public static final long DEFAULT_MESSAGE_STORE_SYNC_TIMER = 120000L;
 
     /* Push SMS */
     public static final String MESSAGE_STORE_PUSH_SMS = "messageStorePushSms";
@@ -1503,14 +1509,13 @@ public class RcsSettingsData {
     public static final String MESSAGE_STORE_PUSH_MMS = "messageStorePushMms";
     /* package private */static final Boolean DEFAULT_MESSAGE_STORE_PUSH_MMS = true;
 
-    /* Flag events for XMS messages*/
+    /* Flag events for XMS messages */
     public static final String EVENT_FRAMEWORK_XMS = "eventFrameworkXms";
     public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_XMS = EventFrameworkMode.IMAP;
 
-    /* Flag events for Chat messages*/
+    /* Flag events for Chat messages */
     public static final String EVENT_FRAMEWORK_CHAT = "eventFrameworkChat";
     public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_CHAT = EventFrameworkMode.IMAP;
-
 
     public static final String MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "messageStoreDefaultDirectory";
     /* package private */static final String DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "Default";

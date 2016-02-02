@@ -61,12 +61,16 @@ public class MmsSessionHandler implements MmsSessionListener {
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                        .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS, mmsId, null));
+        mCmsLog.addMessage(
+                new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact), ReadStatus.READ,
+                        CmsObject.DeleteStatus.NOT_DELETED, mSettings.getMessageStorePushSms()
+                                ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                        MessageType.MMS, mmsId, null));
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
+        if (mImapEventFrameworkHandler == null) {
+            return;
+        }
         if (Direction.INCOMING == mms.getDirection()) {
             mImapEventFrameworkHandler.onIncomingMms(mms);
         } else {
