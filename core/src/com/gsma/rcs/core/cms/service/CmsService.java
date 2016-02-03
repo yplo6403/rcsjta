@@ -55,6 +55,7 @@ public class CmsService extends ImsService {
     private final static Logger sLogger = Logger.getLogger(CmsService.class.getSimpleName());
     private final Handler mOperationHandler;
     private final XmsLog mXmsLog;
+    private final CmsLog mCmsLog;
     private CmsServiceImpl mCmsServiceImpl;
     private ChatServiceImpl mChatServiceImpl;
     private final Core mCore;
@@ -77,9 +78,10 @@ public class CmsService extends ImsService {
         super(parent, true);
         mContext = context;
         mXmsLog = xmsLog;
+        mCmsLog = cmsLog;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager = new CmsManager(context, cmsLog, xmsLog, messagingLog, rcsSettings);
+        mCmsManager = new CmsManager(context, mCmsLog, xmsLog, messagingLog, rcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -284,6 +286,10 @@ public class CmsService extends ImsService {
 
     public void deleteXmsMessages() {
         mCmsManager.onDeleteAllXmsMessage();
+    }
+
+    public void deleteCmsData() {
+        mCmsLog.removeFolders(true);
     }
 
     public void deleteXmsMessages2(final ContactId contact) {

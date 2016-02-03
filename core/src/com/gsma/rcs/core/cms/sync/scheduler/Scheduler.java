@@ -316,14 +316,14 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
                     executeUpdate(basicImapService, xmsMode, chatMode);
                     result = true;
                 }
-            } catch (NetworkException | PayloadException | RuntimeException e) {
+            } catch (NetworkException | PayloadException | FileAccessException | RuntimeException e) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Failed to sync : " + e);
                 }
             } finally {
                 try {
                     mImapServiceHandler.closeService();
-                } catch (NetworkException | PayloadException | RuntimeException e) {
+            } catch (NetworkException | PayloadException | RuntimeException e) {
                     if (sLogger.isActivated()) {
                         sLogger.debug("Failed to sync : " + e);
                     }
@@ -359,7 +359,7 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
         }
     }
 
-    void executeSync(BasicImapService basicImapService, SyncParams syncParams) {
+    void executeSync(BasicImapService basicImapService, SyncParams syncParams) throws PayloadException, NetworkException, FileAccessException {
 
         String remoteFolder = null;
         if (syncParams.mSyncType == SyncType.ONE_TO_ONE) {
@@ -370,20 +370,16 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
             remoteFolder = CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId, chatId);
         }
 
-        try {
-            Synchronizer synchronizer = new Synchronizer(mContext, mRcsSettings, mLocalStorage,
-                    basicImapService);
-            switch (syncParams.mSyncType) {
-                case ONE_TO_ONE:
-                case GROUP:
-                    synchronizer.syncFolder(remoteFolder);
-                    break;
-                case ALL:
-                    synchronizer.syncAll();
-                    break;
-            }
-        } catch (PayloadException | NetworkException | FileAccessException | RuntimeException e) {
-            sLogger.error("Failed to sync with message store", e);
+        Synchronizer synchronizer = new Synchronizer(mContext, mRcsSettings, mLocalStorage,
+                basicImapService);
+        switch (syncParams.mSyncType) {
+            case ONE_TO_ONE:
+            case GROUP:
+                synchronizer.syncFolder(remoteFolder);
+                break;
+            case ALL:
+                synchronizer.syncAll();
+                break;
         }
     }
 
@@ -491,6 +487,6 @@ public class Scheduler implements PushMessageTaskListener, UpdateFlagTaskListene
         if (mSyncRequestHandler.hasMessages(SchedulerTaskType.UPDATE_FLAGS.toInt())) {
             sLogger.debug("     --> has messages of type " + SchedulerTaskType.UPDATE_FLAGS);
         }
-        sLogger.debug(" <<< Scheduler state : ");
+        sLogger.debug(" <<< Scheduler state");
     }
 }

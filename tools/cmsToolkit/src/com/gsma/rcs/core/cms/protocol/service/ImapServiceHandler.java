@@ -62,7 +62,6 @@ public class ImapServiceHandler {
             return mBasicImapService;
         } catch (Exception e) {
             e.printStackTrace();
-            sLogger.severe(e.getMessage());
             return null;
         }
     }
@@ -78,7 +77,6 @@ public class ImapServiceHandler {
                 mBasicImapService.close();
             } catch (Exception e) {
                 e.printStackTrace();
-                sLogger.severe(e.getMessage());
             }
         }
     }

@@ -301,10 +301,9 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             checkUris(files);
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = System.currentTimeMillis();
-            long maxFileIconSize = mRcsSettings.getMaxFileIconSize();
-            MmsDataObject mmsDataObject = new MmsDataObject(mContext, null, mMessageId, contact,
+            MmsDataObject mmsDataObject = new MmsDataObject(mContext, mMessageId, mMessageId, contact,
                     subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
-                    maxFileIconSize);
+                    mRcsSettings.getMaxFileIconSize());
             mmsDataObject.setReadStatus(ReadStatus.READ);
             mXmsLog.addOutgoingMms(mmsDataObject);
             XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
@@ -498,10 +497,25 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void deleteImapData() throws RemoteException {
-        //TODO
-        if (sLogger.isActivated()) {
-            sLogger.info("Delete IMAP data");
-        }
+        mCmsService.scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                if (sLogger.isActivated()) {
+                    sLogger.info("Delete IMAP data");
+                }
+                try {
+                    if (mCmsService.isServiceStarted()) {
+                        mCmsService.deleteCmsData();
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error("Failed to delete cms data", e);
+                }
+            }
+        });
     }
 
     public void broadcastNewMessage(String mimeType, String msgId) {
