@@ -137,8 +137,8 @@ public class CmsService extends ImsService {
 
     public void onCoreLayerStarted() {
         /* Update interrupted MMS transfer status */
-        scheduleImOperation(
-                new UpdateMmsStateAfterUngracefulTerminationTask(mXmsLog, mCmsServiceImpl));
+        scheduleImOperation(new UpdateMmsStateAfterUngracefulTerminationTask(mXmsLog,
+                mCmsServiceImpl));
     }
 
     public void syncAll() {
@@ -221,15 +221,13 @@ public class CmsService extends ImsService {
                     }
                     if (!ServerApiUtils.isMmsConnectionAvailable(mContext)) {
                         if (logActivated) {
-                            sLogger.debug(
-                                    "MMS mobile connection not available, exiting dequeue task to dequeue MMS");
+                            sLogger.debug("MMS mobile connection not available, exiting dequeue task to dequeue MMS");
                         }
                         return;
                     }
                     if (isShuttingDownOrStopped()) {
                         if (logActivated) {
-                            sLogger.debug(
-                                    "Core service is shutting down/stopped, exiting MMS dequeue task");
+                            sLogger.debug("Core service is shutting down/stopped, exiting MMS dequeue task");
                         }
                         return;
                     }
@@ -284,20 +282,17 @@ public class CmsService extends ImsService {
         mCmsManager.onReadXmsMessage(messageId);
     }
 
-    public void deleteXmsMessages() {
-        mCmsManager.onDeleteAllXmsMessage();
+    /**
+     * Updates deleted flag in CMS provider and synchronizes
+     * 
+     * @param messageId the message ID
+     */
+    public void updateDeletedFlag(String messageId) {
+        mCmsManager.onDeleteXmsMessage(messageId);
     }
 
     public void deleteCmsData() {
         mCmsLog.removeFolders(true);
-    }
-
-    public void deleteXmsMessages2(final ContactId contact) {
-        mCmsManager.onDeleteXmsConversation(contact);
-    }
-
-    public void deleteXmsMessage(final String messageId) {
-        mCmsManager.onDeleteXmsMessage(messageId);
     }
 
     public CmsManager getCmsManager() {

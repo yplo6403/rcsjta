@@ -24,29 +24,32 @@ import com.gsma.rcs.core.cms.protocol.message.ImapChatMessageTest;
 import com.gsma.rcs.core.cms.protocol.message.ImapImdnMessageTest;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
+import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
+import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.Operation;
-import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsLogTestIntegration;
-import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.utils.DateUtils;
+import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsLogTestIntegration;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
+import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.content.Context;
 import android.test.AndroidTestCase;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,41 +57,39 @@ import java.util.UUID;
 
 public class GroupStateTest extends AndroidTestCase {
 
-    private XmsLogEnvIntegration mXmsLogEnvIntegration;
-    private RcsSettings mSettings;
-    private LocalStorage mLocalStorage;
     private ImapServiceHandler mImapServiceHandler;
     private BasicImapService mBasicImapService;
     private BasicSyncStrategy mSyncStrategy;
-    private CmsLog mCmsLog;
     private MessagingLog mMessagingLog;
     private CmsLogTestIntegration mCmsLogTestIntegration;
-    private XmsLog mXmsLog;
 
     protected void setUp() throws Exception {
         super.setUp();
         Context context = getContext();
         ContactUtil.getInstance(getContext());
-        mSettings = RcsSettingsMock.getMockSettings(context);
-        AndroidFactory.setApplicationContext(context, mSettings);
-        mCmsLog = CmsLog.createInstance(context);
+        RcsSettings settings = RcsSettingsMock.getMockSettings(context);
+        AndroidFactory.setApplicationContext(context, settings);
+        CmsLog cmsLog = CmsLog.getInstance(context);
         mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
         LocalContentResolver localContentResolver = new LocalContentResolver(context);
-        mXmsLog = XmsLog.createInstance(context, localContentResolver);
-        mMessagingLog = MessagingLog.getInstance(localContentResolver, mSettings);
-        mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
+        XmsLog xmsLog = XmsLog.getInstance(context, settings, localContentResolver);
+        mMessagingLog = MessagingLog.getInstance(localContentResolver, settings);
 
         InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                mSettings, null, mMessagingLog, null, localContentResolver, context, null);
+                settings, null, mMessagingLog, null, localContentResolver, context, null);
         ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
-                null, mSettings, null);
-
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mCmsLog, mXmsLog,
-                mMessagingLog, chatService, mSettings, null);
-        mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
-        mImapServiceHandler = new ImapServiceHandler(mSettings);
+                null, settings, null);
+        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
+        CmsService cmsService = new CmsService(null, null, context, settings, xmsLog,
+                mMessagingLog, cmsLog);
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+                xmsLog, settings, xmsManager, localContentResolver);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(context, cmsLog, xmsLog,
+                mMessagingLog, chatService, cmsServiceImpl, settings);
+        LocalStorage localStorage = new LocalStorage(cmsLog, cmsEventHandler);
+        mImapServiceHandler = new ImapServiceHandler(settings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, mLocalStorage);
+        mSyncStrategy = new BasicSyncStrategy(context, settings, mBasicImapService, localStorage);
         mBasicImapService.init();
     }
 
@@ -195,7 +196,7 @@ public class GroupStateTest extends AndroidTestCase {
         deleteTask.delete(mailbox);
         try {
             mBasicImapService.close();
-        } catch (Exception e) {
+        } catch (IOException ignore) {
         }
         mBasicImapService.init();
     }
@@ -222,9 +223,7 @@ public class GroupStateTest extends AndroidTestCase {
         String imdnId = UUID.randomUUID().toString();
 
         StringBuilder participantsXml = new StringBuilder();
-        Iterator<Entry<String, String>> iter = participants.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<String, String> entry = iter.next();
+        for (Entry<String, String> entry : participants.entrySet()) {
             participantsXml.append(
                     "<participant name=\"" + entry.getKey() + "\" comm-addr=\"" + entry.getValue()
                             + "\"/>").append(Constants.CRLF);
@@ -233,19 +232,16 @@ public class GroupStateTest extends AndroidTestCase {
         String rejoindId = "sip:pfcf-imas-orange@RCS14lb-2.sip.imsnsn.fr:5060;transport=udp;oaid="
                 + from + ";ocid=" + contributionId;
 
-        String payload = new StringBuilder().append("From: +33642575779").append(Constants.CRLF)
-                .append("To: +33640332859").append(Constants.CRLF).append("Date: ")
-                .append(dateImap).append(Constants.CRLF).append("Subject: mySubject")
-                .append(Constants.CRLF).append("Conversation-ID: " + conversationId)
-                .append(Constants.CRLF).append("Contribution-ID: " + contributionId)
-                .append(Constants.CRLF).append("IMDN-Message-ID: " + imdnId).append(Constants.CRLF)
-                .append("Content-Type: Application/group-state-object+xml").append(Constants.CRLF)
-                .append(Constants.CRLF).append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-                .append(Constants.CRLF).append("<groupstate").append(Constants.CRLF)
-                .append("timestamp=\"" + dateCpim + "\"").append(Constants.CRLF)
-                .append("lastfocussessionid=\"").append(rejoindId).append("\"")
-                .append(Constants.CRLF).append("group-type=\"Closed\">").append(Constants.CRLF)
-                .append(participantsXml).append("</groupstate>").append(Constants.CRLF).toString();
+        String payload = "From: +33642575779" + Constants.CRLF + "To: +33640332859"
+                + Constants.CRLF + "Date: " + dateImap + Constants.CRLF + "Subject: mySubject"
+                + Constants.CRLF + "Conversation-ID: " + conversationId + Constants.CRLF
+                + "Contribution-ID: " + contributionId + Constants.CRLF + "IMDN-Message-ID: "
+                + imdnId + Constants.CRLF + "Content-Type: Application/group-state-object+xml"
+                + Constants.CRLF + Constants.CRLF + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + Constants.CRLF + "<groupstate" + Constants.CRLF + "timestamp=\"" + dateCpim
+                + "\"" + Constants.CRLF + "lastfocussessionid=\"" + rejoindId + "\""
+                + Constants.CRLF + "group-type=\"Closed\">" + Constants.CRLF + participantsXml
+                + "</groupstate>" + Constants.CRLF;
 
         return payload;
     }

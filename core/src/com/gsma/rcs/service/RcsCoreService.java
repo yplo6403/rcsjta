@@ -169,8 +169,8 @@ public class RcsCoreService extends Service implements CoreListener {
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mRcsSettings);
         mContactManager = ContactManager.getInstance(mCtx, mContentResolver, mLocalContentResolver,
                 mRcsSettings);
-        mXmsLog = XmsLog.createInstance(mCtx, mLocalContentResolver);
-        mCmsLog = CmsLog.createInstance(mCtx);
+        mXmsLog = XmsLog.getInstance(mCtx, mRcsSettings, mLocalContentResolver);
+        mCmsLog = CmsLog.getInstance(mCtx);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -281,8 +281,7 @@ public class RcsCoreService extends Service implements CoreListener {
                 .getInstance(this);
         if (!contactUtil.isMyCountryCodeDefined()) {
             if (logActivated) {
-                sLogger.debug(
-                        "Can't instantiate RCS core service, Reason : Country code not defined!");
+                sLogger.debug("Can't instantiate RCS core service, Reason : Country code not defined!");
             }
             stopSelf();
             return;
@@ -311,7 +310,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
             mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mXmsLog,
-                    mRcsSettings, core.getXmsManager());
+                    mRcsSettings, core.getXmsManager(), mLocalContentResolver);
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 
@@ -358,8 +357,8 @@ public class RcsCoreService extends Service implements CoreListener {
                 Handler handler = new Handler();
                 handler.postDelayed(new Runnable() {
                     public void run() {
-                        registerReceiver(mAccountChangedReceiver,
-                                new IntentFilter("android.accounts.LOGIN_ACCOUNTS_CHANGED"));
+                        registerReceiver(mAccountChangedReceiver, new IntentFilter(
+                                "android.accounts.LOGIN_ACCOUNTS_CHANGED"));
                     }
                 }, 2000);
             }
@@ -384,8 +383,8 @@ public class RcsCoreService extends Service implements CoreListener {
      * @throws NetworkException
      * @throws ContactManagerException
      */
-    private synchronized void stopCore()
-            throws PayloadException, NetworkException, ContactManagerException {
+    private synchronized void stopCore() throws PayloadException, NetworkException,
+            ContactManagerException {
         if (Core.getInstance() == null) {
             // Already stopped
             return;

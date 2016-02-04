@@ -16,9 +16,13 @@ import com.gsma.services.rcs.contact.ContactId;
 import android.content.Context;
 
 /**
- * This class is the entry point for the event framework. It allows: - to push XMS messages on the
- * message store with IMAP commands - to update flags of messages on the message store with SIP or
- * IMAP commands The protocol used for updating flags depends on provisioning parameters.
+ * This class is the entry point for the event framework.<br>
+ * It allows:
+ * <ul>
+ * <li>- to push XMS messages on the message store with IMAP commands</li>
+ * <li>- to update flags of messages on the message store with SIP or IMAP commands The protocol
+ * used for updating flags depends on provisioning parameters.</li>
+ * </ul>
  */
 public class EventFrameworkHandler implements XmsObserverListener, XmsMessageListener,
         ChatMessageListener {
@@ -26,13 +30,18 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
     private static final Logger sLogger = Logger.getLogger(EventFrameworkHandler.class
             .getSimpleName());
 
-    private final Context mContext;
     private final RcsSettings mSettings;
     private final ImapEventFrameworkHandler mImapEventFrameworkHandler;
     private final SipEventFrameworkHandler mSipEventFrameworkHandler;
 
+    /**
+     * Constructor
+     * 
+     * @param context the context
+     * @param scheduler the scheduler
+     * @param settings the RCS settings accessor
+     */
     public EventFrameworkHandler(Context context, Scheduler scheduler, RcsSettings settings) {
-        mContext = context;
         mImapEventFrameworkHandler = new ImapEventFrameworkHandler(context, scheduler, settings);
         mSipEventFrameworkHandler = new SipEventFrameworkHandler(context, settings);
         mSettings = settings;
@@ -163,25 +172,9 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
     }
 
     @Override
-    public void onDeleteXmsConversation(ContactId contactId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteXmsConversation:".concat(contactId.toString()));
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onDeleteAllXmsMessage() {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteAllXmsMessage");
-        }
-        updateXmsFlags();
-    }
-
-    @Override
     public void onReadChatMessage(String messageId) {
         if (sLogger.isActivated()) {
-            sLogger.info("onReadChatMessage " + messageId);
+            sLogger.info("onReadChatMessage ".concat(messageId));
         }
         updateChatFlags();
     }
@@ -189,14 +182,13 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
     @Override
     public void onDeleteChatMessage(String messageId) {
         if (sLogger.isActivated()) {
-            sLogger.info("onDeleteChatMessage " + messageId);
+            sLogger.info("onDeleteChatMessage ".concat(messageId));
         }
         updateChatFlags();
     }
 
     @SuppressWarnings("unchecked")
     private void updateXmsFlags() {
-
         EventFrameworkMode xmsMode = mSettings.getEventFrameworkForXms();
         if (EventFrameworkMode.DISABLED == xmsMode) {
             if (sLogger.isActivated()) {
@@ -204,7 +196,6 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             }
             return;
         }
-
         if (EventFrameworkMode.IMAP == xmsMode) {
             mImapEventFrameworkHandler.updateFlags(xmsMode, mSettings.getEventFrameworkForChat());
         } else if (EventFrameworkMode.SIP == xmsMode) {
@@ -214,7 +205,6 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
 
     @SuppressWarnings("unchecked")
     private void updateChatFlags() {
-
         EventFrameworkMode chatMode = mSettings.getEventFrameworkForChat();
         if (EventFrameworkMode.DISABLED == chatMode) {
             if (sLogger.isActivated()) {
@@ -222,7 +212,6 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             }
             return;
         }
-
         if (EventFrameworkMode.IMAP == chatMode) {
             mImapEventFrameworkHandler.updateFlags(mSettings.getEventFrameworkForXms(), chatMode);
         } else if (EventFrameworkMode.SIP == chatMode) {

@@ -485,7 +485,7 @@ public class XmsProvider extends ContentProvider {
     }
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 2;
+        private static final int DATABASE_VERSION = 3;
 
         public DatabaseHelper(Context ctx) {
             super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
@@ -546,8 +546,7 @@ public class XmsProvider extends ContentProvider {
                     + PartData.KEY_FILENAME + " TEXT,"
                     + PartData.KEY_FILESIZE + " INTEGER,"
                     + PartData.KEY_CONTENT + " TEXT NOT NULL,"
-                    + PartData.KEY_FILEICON + " BYTES BLOB,"
-                    + PartData.KEY_PDU + " BYTES BLOB)");
+                    + PartData.KEY_FILEICON + " BYTES BLOB)");
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +
                     " ON " + TABLE_PART + '(' + PartData.KEY_MESSAGE_ID + ')');

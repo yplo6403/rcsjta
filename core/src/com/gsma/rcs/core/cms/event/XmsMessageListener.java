@@ -28,9 +28,4 @@ public interface XmsMessageListener {
     void onDeleteXmsMessage(String messageId);
 
     void onReadXmsConversation(ContactId contact);
-
-    void onDeleteXmsConversation(ContactId contact);
-
-    void onDeleteAllXmsMessage();
-
 }

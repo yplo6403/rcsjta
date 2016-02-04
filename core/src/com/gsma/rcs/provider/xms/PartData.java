@@ -71,8 +71,4 @@ public class PartData {
      */
     public static final String KEY_CONTACT = MmsPartLog.CONTACT;
 
-    /**
-     * Byte array of the compressed file image.
-     */
-    public static final String KEY_PDU = "pdu";
 }

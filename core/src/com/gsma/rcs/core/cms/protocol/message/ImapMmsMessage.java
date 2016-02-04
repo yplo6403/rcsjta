@@ -32,9 +32,10 @@ import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.Header;
-
+import android.content.ContentResolver;
 import android.content.Context;
+
+import com.sonymobile.rcs.imap.Header;
 
 import java.util.List;
 
@@ -46,21 +47,27 @@ public class ImapMmsMessage extends ImapCpimMessage {
     private String mMmsId;
     private long mDate;
 
+    /**
+     * Constructor
+     * @param rawMessage the raw IMAP message
+     * @throws CmsSyncMissingHeaderException
+     * @throws CmsSyncHeaderFormatException
+     */
     public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
         mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
         if (mMmsId == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_ID
-                    + " IMAP header is missing");
+            throw new CmsSyncMissingHeaderException(
+                    Constants.HEADER_MESSAGE_ID.concat(" IMAP header is missing"));
         }
         mSubject = getHeader(Constants.HEADER_SUBJECT);
 
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
-                    + " IMAP header is missing");
+            throw new CmsSyncMissingHeaderException(
+                    Constants.HEADER_DATE.concat(" IMAP header is missing"));
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
@@ -95,6 +102,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
         cpimHeaders.addHeader("imdn.Message-ID", imdnMessageId);
 
         MultipartCpimBody multipartCpimBody = new MultipartCpimBody();
+        ContentResolver resolver = context.getContentResolver();
         for (MmsPart mmsPart : mmsParts) {
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getContentText();
@@ -103,11 +111,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
             // If not text or SMIL ?
             if (MimeManager.isImageType(mimeType)) { // base 64
                 try {
-                    byte[] bytes = mmsPart.getPdu();
-                    if (bytes == null) {
-                        bytes = MmsUtils
-                                .getContent(context.getContentResolver(), mmsPart.getFile());
-                    }
+                    byte[] bytes = MmsUtils.getContent(resolver, mmsPart.getFile());
                     transferEncoding = Constants.HEADER_BASE64;
                     content = Base64.encodeBase64ToString(bytes);
 

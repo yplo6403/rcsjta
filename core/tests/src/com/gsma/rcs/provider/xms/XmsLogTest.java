@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010 France Telecom S.A.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,18 +18,11 @@
 
 package com.gsma.rcs.provider.xms;
 
-import android.content.Context;
-import android.content.OperationApplicationException;
-import android.content.res.AssetManager;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Environment;
-import android.os.RemoteException;
-import android.test.InstrumentationTestCase;
-
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
 import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -40,6 +33,15 @@ import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
+
+import android.content.Context;
+import android.content.OperationApplicationException;
+import android.content.res.AssetManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Environment;
+import android.os.RemoteException;
+import android.test.InstrumentationTestCase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -64,12 +66,16 @@ public class XmsLogTest extends InstrumentationTestCase {
     private String mFileName2;
     private Long mFileSize1;
     private Long mFileSize2;
- 
+
+    private static final String SELECTION_XMS_MESSAGE_ID = XmsData.KEY_MESSAGE_ID + "=?";
+    private LocalContentResolver mLocalContentResolver;
+
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getInstrumentation().getContext();
-        LocalContentResolver mLocalContentResolver = new LocalContentResolver(mContext.getContentResolver());
-        mXmsLog = XmsLog.createInstance(mContext, mLocalContentResolver);
+        RcsSettings settings = RcsSettingsMock.getMockSettings(mContext);
+        mLocalContentResolver = new LocalContentResolver(mContext.getContentResolver());
+        mXmsLog = XmsLog.getInstance(mContext, settings, mLocalContentResolver);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact = contactUtils.formatContact("+33786589041");
         mMessageId = "1234567890";
@@ -103,9 +109,20 @@ public class XmsLogTest extends InstrumentationTestCase {
         fos.close();
     }
 
+    private void deleteXmsMessage(String messageId) {
+        String mimeType = mXmsLog.getMimeType(messageId);
+        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
+            RcsService.Direction dir = mXmsLog.getDirection(messageId);
+            mXmsLog.deleteMmsParts(messageId, dir);
+        }
+        mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[]{
+                messageId
+        });
+    }
+
     protected void tearDown() throws Exception {
         super.tearDown();
-        mXmsLog.deleteXmsMessage(mMessageId);
+        deleteXmsMessage(mMessageId);
     }
 
     public void testSmsMessage() {
@@ -147,15 +164,15 @@ public class XmsLogTest extends InstrumentationTestCase {
         cursor.close();
     }
 
-    public void testMmsMessage() throws IOException, RemoteException, OperationApplicationException,
-                                            MmsFileSizeException, FileAccessException {
+    public void testMmsMessage() throws IOException, RemoteException,
+            OperationApplicationException, MmsFileSizeException, FileAccessException {
         long timestamp = System.currentTimeMillis();
         List<Uri> files = new ArrayList<>();
         files.add(mUriCat1);
         files.add(mUriCat2);
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
-                "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
-                timestamp, files, null, 50000L);
+                "MMS test subject", "MMS test message", RcsService.Direction.INCOMING, timestamp,
+                files, null, 50000L);
         mXmsLog.addIncomingMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
@@ -224,15 +241,15 @@ public class XmsLogTest extends InstrumentationTestCase {
             IOException, MmsFileSizeException, FileAccessException {
         long timestamp = System.currentTimeMillis();
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
-                "MMS test subject", "MMS test message", RcsService.Direction.INCOMING,
-                timestamp, new ArrayList<Uri>(), null,50000L);
+                "MMS test subject", "MMS test message", RcsService.Direction.INCOMING, timestamp,
+                new ArrayList<Uri>(), null, 50000L);
         mXmsLog.addIncomingMms(mms);
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(1, cursor.getCount());
         cursor.close();
         List<MmsDataObject.MmsPart> parts = mXmsLog.getParts(mMessageId);
         assertTrue(parts.size() > 0);
-        mXmsLog.deleteXmsMessage(mMessageId);
+        deleteXmsMessage(mMessageId);
         cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(0, cursor.getCount());
         cursor.close();
@@ -248,7 +265,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         Cursor cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 1);
         cursor.close();
-        mXmsLog.deleteXmsMessage(mMessageId);
+        deleteXmsMessage(mMessageId);
         cursor = mXmsLog.getXmsMessage(mMessageId);
         assertEquals(cursor.getCount(), 0);
         cursor.close();

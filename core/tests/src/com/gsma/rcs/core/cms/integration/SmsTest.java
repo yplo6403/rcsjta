@@ -15,40 +15,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  ******************************************************************************/
+
 package com.gsma.rcs.core.cms.integration;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
-import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test1;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test2;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test7;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test8;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test9;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.TestLoad;
+import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
+import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
+import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
+import com.gsma.rcs.core.cms.sync.process.FlagChange;
+import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.Operation;
 import com.gsma.rcs.core.cms.sync.scheduler.task.PushMessageTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.UpdateFlagTask;
+import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.core.cms.xms.XmsManager;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
+import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsLogTestIntegration;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
-import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.ims.network.NetworkException;
-import com.gsma.rcs.core.ims.protocol.PayloadException;
-import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.PartData;
+import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.service.api.ChatServiceImpl;
+import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
@@ -57,8 +65,11 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
+import com.sonymobile.rcs.imap.ImapException;
+
 import junit.framework.Assert;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -73,20 +84,31 @@ public class SmsTest extends AndroidTestCase {
     private CmsLog mCmsLog;
     private CmsLogTestIntegration mCmsLogTestIntegration;
     private XmsLog mXmsLog;
+    private LocalContentResolver mLocalContentResolver;
 
     protected void setUp() throws Exception {
         super.setUp();
         Context context = getContext();
         ContactUtil.getInstance(getContext());
         mSettings = RcsSettingsMock.getMockSettings(context);
-        mCmsLog = CmsLog.createInstance(context);
+        mCmsLog = CmsLog.getInstance(context);
         mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
-        mXmsLog = XmsLog.createInstance(context, new LocalContentResolver(context));
+        mLocalContentResolver = new LocalContentResolver(context);
+        mXmsLog = XmsLog.getInstance(context, mSettings, mLocalContentResolver);
         MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(context),
                 mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
+        InstantMessagingService instantMessagingService = new InstantMessagingService(null,
+                mSettings, null, messagingLog, null, mLocalContentResolver, context, null);
+        ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, messagingLog,
+                null, mSettings, null);
+        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
+        CmsService cmsService = new CmsService(null, null, context, mSettings, mXmsLog,
+                messagingLog, mCmsLog);
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+                mXmsLog, mSettings, xmsManager, mLocalContentResolver);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mCmsLog, mXmsLog,
-                messagingLog, null, mSettings, null);
+                messagingLog, chatService, cmsServiceImpl, mSettings);
         LocalStorage localStorage = new LocalStorage(mCmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
@@ -216,8 +238,7 @@ public class SmsTest extends AndroidTestCase {
 
         String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
-            Assert.assertEquals(CmsObject.ReadStatus.READ,
-                    cmsObject.getReadStatus());
+            Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
 
         messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
@@ -263,8 +284,7 @@ public class SmsTest extends AndroidTestCase {
 
         String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
-            Assert.assertEquals(
-                    CmsObject.ReadStatus.READ_REPORT_REQUESTED,
+            Assert.assertEquals(CmsObject.ReadStatus.READ_REPORT_REQUESTED,
                     cmsObject.getReadStatus());
         }
 
@@ -275,8 +295,7 @@ public class SmsTest extends AndroidTestCase {
 
         startSynchro();
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
-            Assert.assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED,
-                    cmsObject.getDeleteStatus());
+            Assert.assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObject.getDeleteStatus());
         }
     }
 
@@ -311,8 +330,7 @@ public class SmsTest extends AndroidTestCase {
 
         String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
-            Assert.assertEquals(CmsObject.ReadStatus.READ,
-                    cmsObject.getReadStatus());
+            Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
 
         for (SmsDataObject sms : messages) {
@@ -508,12 +526,12 @@ public class SmsTest extends AndroidTestCase {
         assertEquals(SmsIntegrationUtils.Test10.conversation_3.length, mXmsLogEnvIntegration
                 .getMessages(MimeType.TEXT_MESSAGE, SmsIntegrationUtils.Test10.contact3).size());
 
-        assertEquals(SmsIntegrationUtils.Test10.conversation_1.length,
-                mCmsLogTestIntegration.getMessages(SmsIntegrationUtils.Test10.folder1).size());
-        assertEquals(SmsIntegrationUtils.Test10.conversation_2.length,
-                mCmsLogTestIntegration.getMessages(SmsIntegrationUtils.Test10.folder2).size());
-        assertEquals(SmsIntegrationUtils.Test10.conversation_3.length,
-                mCmsLogTestIntegration.getMessages(SmsIntegrationUtils.Test10.folder3).size());
+        assertEquals(SmsIntegrationUtils.Test10.conversation_1.length, mCmsLogTestIntegration
+                .getMessages(SmsIntegrationUtils.Test10.folder1).size());
+        assertEquals(SmsIntegrationUtils.Test10.conversation_2.length, mCmsLogTestIntegration
+                .getMessages(SmsIntegrationUtils.Test10.folder2).size());
+        assertEquals(SmsIntegrationUtils.Test10.conversation_3.length, mCmsLogTestIntegration
+                .getMessages(SmsIntegrationUtils.Test10.folder3).size());
     }
 
     public void testLoad() throws FileAccessException, NetworkException, PayloadException {
@@ -553,6 +571,11 @@ public class SmsTest extends AndroidTestCase {
                         SmsIntegrationUtils.TestLoad.contact3).size());
     }
 
+    private void deleteAllEntries() {
+        mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
+        mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
+    }
+
     private void deleteLocalStorage(boolean deleteImapData, boolean deleteMessages) {
         if (deleteImapData) {
             mCmsLog.removeFolders(true);
@@ -560,7 +583,7 @@ public class SmsTest extends AndroidTestCase {
             assertTrue(mCmsLogTestIntegration.getMessages().isEmpty());
         }
         if (deleteMessages) {
-            mXmsLog.deleteAllEntries();
+            deleteAllEntries();
         }
     }
 
@@ -576,13 +599,14 @@ public class SmsTest extends AndroidTestCase {
         deleteTask.delete(null);
     }
 
-    private void deleteRemoteMailbox(String mailbox) throws Exception {
+    private void deleteRemoteMailbox(String mailbox) throws NetworkException, PayloadException,
+            IOException, ImapException {
         DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
             mBasicImapService.close();
-        } catch (Exception e) {
+        } catch (IOException ignore) {
         }
         mBasicImapService.init();
     }

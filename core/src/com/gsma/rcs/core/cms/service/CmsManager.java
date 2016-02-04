@@ -1,20 +1,19 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010-2016 Orange.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.core.cms.service;
@@ -44,7 +43,7 @@ import android.content.Context;
 
 public class CmsManager implements XmsMessageListener {
 
-    private final Context mContext;
+    private final Context mCtx;
     private final CmsLog mCmsLog;
     private final XmsLog mXmsLog;
     private final MessagingLog mMessagingLog;
@@ -61,15 +60,15 @@ public class CmsManager implements XmsMessageListener {
     /**
      * Constructor of CmsManager
      *
-     * @param context The context
+     * @param ctx The context
      * @param cmsLog The IMAP log accessor
      * @param xmsLog The XMS log accessor
      * @param messagingLog The Messaging log accessor
-     * @param rcsSettings THE RCS settings accessor
+     * @param rcsSettings The RCS settings accessor
      */
-    public CmsManager(Context context, CmsLog cmsLog, XmsLog xmsLog, MessagingLog messagingLog,
+    public CmsManager(Context ctx, CmsLog cmsLog, XmsLog xmsLog, MessagingLog messagingLog,
             RcsSettings rcsSettings) {
-        mContext = context;
+        mCtx = ctx;
         mRcsSettings = rcsSettings;
         mCmsLog = cmsLog;
         mXmsLog = xmsLog;
@@ -77,35 +76,33 @@ public class CmsManager implements XmsMessageListener {
     }
 
     /**
-     * Start the CmsManager
+     * Starts the CmsManager
      *
      * @param cmsService the Cms service
      * @param chatService the RCS chat service
      */
     public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService) {
         // execute sync between providers in a dedicated thread
-        new Thread(
-                new XmsSynchronizer(mContext.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
-                        .start();
+        new Thread(new XmsSynchronizer(mCtx.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
+                .start();
 
         // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(mContext);
+        mXmsObserver = new XmsObserver(mCtx);
 
         // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
-        mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings,
-                cmsService.getXmsMessageBroadcaster());
+        mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings, cmsService);
         mXmsObserver.registerListener(mXmsEventHandler);
 
         // instantiate CmsEventHandler in charge of handling events from Cms
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
-                mMessagingLog, chatService, mRcsSettings, cmsService.getXmsMessageBroadcaster());
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mCmsLog, mXmsLog,
+                mMessagingLog, chatService, cmsService, mRcsSettings);
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
         mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
 
         // start scheduler for sync
         if (mRcsSettings.getMessageStoreUri() != null) {
-            mSyncScheduler = new Scheduler(mContext, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
+            mSyncScheduler = new Scheduler(mCtx, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
             mSyncScheduler.registerListener(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY, cmsService);
             mSyncScheduler.start();
 
@@ -113,8 +110,7 @@ public class CmsManager implements XmsMessageListener {
              * instantiate EventFrameworkHandler in charge of Pushing messages and updating flags on
              * the message store.
              */
-            mEventFrameworkHandler = new EventFrameworkHandler(mContext, mSyncScheduler,
-                    mRcsSettings);
+            mEventFrameworkHandler = new EventFrameworkHandler(mCtx, mSyncScheduler, mRcsSettings);
             mXmsObserver.registerListener(mEventFrameworkHandler);
         }
         /*
@@ -138,7 +134,7 @@ public class CmsManager implements XmsMessageListener {
     }
 
     /**
-     * Stop the CmsManager
+     * Stops the CmsManager
      */
     public void stop() throws PayloadException {
         if (mXmsObserver != null) {
@@ -183,26 +179,6 @@ public class CmsManager implements XmsMessageListener {
         }
         if (mEventFrameworkHandler != null) {
             mEventFrameworkHandler.onReadXmsConversation(contact);
-        }
-    }
-
-    @Override
-    public void onDeleteXmsConversation(ContactId contact) {
-        if (mXmsEventHandler != null) {
-            mXmsEventHandler.onDeleteXmsConversation(contact);
-        }
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onDeleteXmsConversation(contact);
-        }
-    }
-
-    @Override
-    public void onDeleteAllXmsMessage() {
-        if (mXmsEventHandler != null) {
-            mXmsEventHandler.onDeleteAllXmsMessage();
-        }
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onDeleteAllXmsMessage();
         }
     }
 

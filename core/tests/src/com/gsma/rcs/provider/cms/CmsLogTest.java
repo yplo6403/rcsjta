@@ -40,7 +40,7 @@ public class CmsLogTest extends AndroidTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mContext = getContext();
-        mCmsLog = CmsLog.createInstance(mContext);
+        mCmsLog = CmsLog.getInstance(mContext);
         mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(mContext);
 
         mFolders = new CmsFolder[] {

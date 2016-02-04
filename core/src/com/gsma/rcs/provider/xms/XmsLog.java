@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010-2016 Orange.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,15 +18,19 @@
 
 package com.gsma.rcs.provider.xms;
 
-import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
+import com.gsma.rcs.utils.CloseableUtils;
 import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.FileUtils;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
@@ -43,11 +47,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,7 +67,6 @@ public class XmsLog {
     private static final String SORT_BY_DATE_DESC = XmsData.KEY_TIMESTAMP + " DESC";
 
     private static final String SELECTION_XMS_CONTACT = XmsData.KEY_CONTACT + "=?";
-    private static final String SELECTION_PART_CONTACT = PartData.KEY_CONTACT + "=?";
     private static final String SELECTION_XMS_MESSAGE_ID = XmsData.KEY_MESSAGE_ID + "=?";
     private static final String SELECTION_PART_MESSAGE_ID = PartData.KEY_MESSAGE_ID + "=?";
 
@@ -102,35 +106,37 @@ public class XmsLog {
         XmsData.KEY_MESSAGE_ID
     };
 
-    private static final String[] PROJECTION_MESSAGE_ID_CONTACT = new String[] {
-            XmsData.KEY_MESSAGE_ID, XmsData.KEY_CONTACT
-    };
-
+    private static final String EXT_IMAGE_JPEG = "jpg";
+    private static final String EXT_IMAGE_PNG = "png";
     /**
      * Current instance
      */
     private static volatile XmsLog sInstance;
     private final LocalContentResolver mLocalContentResolver;
     private final Context mCtx;
+    private final RcsSettings mRcsSettings;
 
-    private XmsLog(Context ctx, LocalContentResolver localContentResolver) {
+    private XmsLog(Context ctx, RcsSettings settings, LocalContentResolver localContentResolver) {
         mCtx = ctx;
+        mRcsSettings = settings;
         mLocalContentResolver = localContentResolver;
     }
 
     /**
-     * Creates the instance of XmsLog singleton
+     * Gets the instance of XmsLog singleton
      *
+     * @param ctx The context
      * @param localContentResolver Local content resolver
      * @return the instance of XmsLog singleton
      */
-    public static XmsLog createInstance(Context ctx, LocalContentResolver localContentResolver) {
+    public static XmsLog getInstance(Context ctx, RcsSettings settings,
+            LocalContentResolver localContentResolver) {
         if (sInstance != null) {
             return sInstance;
         }
         synchronized (XmsLog.class) {
             if (sInstance == null) {
-                sInstance = new XmsLog(ctx, localContentResolver);
+                sInstance = new XmsLog(ctx, settings, localContentResolver);
             }
         }
         return sInstance;
@@ -148,9 +154,6 @@ public class XmsLog {
     }
 
     public String getContact(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS contact for ".concat(xmsId));
-        }
         Cursor cursor = getXmsData(XmsData.KEY_CONTACT, xmsId);
         if (cursor == null) {
             return null;
@@ -159,9 +162,6 @@ public class XmsLog {
     }
 
     public String getMimeType(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS mime type for ".concat(xmsId));
-        }
         Cursor cursor = getXmsData(XmsData.KEY_MIME_TYPE, xmsId);
         if (cursor == null) {
             return null;
@@ -169,10 +169,15 @@ public class XmsLog {
         return getDataAsString(cursor);
     }
 
-    public Long getTimestamp(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS timestamp for ".concat(xmsId));
+    public Direction getDirection(String xmsId) {
+        Cursor cursor = getXmsData(XmsData.KEY_DIRECTION, xmsId);
+        if (cursor == null) {
+            return null;
         }
+        return Direction.valueOf(getDataAsInteger(cursor));
+    }
+
+    public Long getTimestamp(String xmsId) {
         Cursor cursor = getXmsData(XmsData.KEY_TIMESTAMP, xmsId);
         if (cursor == null) {
             return null;
@@ -215,21 +220,7 @@ public class XmsLog {
         }
     }
 
-    public Long getSentTimestamp(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS sent timestamp for ".concat(xmsId));
-        }
-        Cursor cursor = getXmsData(XmsData.KEY_TIMESTAMP_SENT, xmsId);
-        if (cursor == null) {
-            return null;
-        }
-        return getDataAsLong(cursor);
-    }
-
     public XmsMessage.State getState(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS state for ".concat(xmsId));
-        }
         Cursor cursor = getXmsData(XmsData.KEY_STATE, xmsId);
         if (cursor == null) {
             return null;
@@ -242,9 +233,6 @@ public class XmsLog {
     }
 
     public RcsService.ReadStatus getReadStatus(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS read status for ".concat(xmsId));
-        }
         Cursor cursor = getXmsData(XmsData.KEY_READ_STATUS, xmsId);
         if (cursor == null) {
             return null;
@@ -269,9 +257,6 @@ public class XmsLog {
     }
 
     public XmsMessage.ReasonCode getReasonCode(String xmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get XMS reason code for ".concat(xmsId));
-        }
         Cursor cursor = getXmsData(XmsData.KEY_REASON_CODE, xmsId);
         if (cursor == null) {
             return null;
@@ -394,6 +379,16 @@ public class XmsLog {
         }
     }
 
+    private void persistPdu(Uri file, byte[] pdu) throws IOException {
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file.getPath());
+            fos.write(pdu);
+        } finally {
+            CloseableUtils.tryToClose(fos);
+        }
+    }
+
     public void addOutgoingMms(MmsDataObject mms) throws FileAccessException {
         String contact = mms.getContact().toString();
         ContentValues values = new ContentValues();
@@ -417,10 +412,7 @@ public class XmsLog {
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getContentText();
-            Uri fileUri = mmsPart.getFile();
-            if (content == null) {
-                content = fileUri.toString();
-            }
+
             values.clear();
             if (sLogger.isActivated()) {
                 sLogger.debug("Insert part: " + mmsPart);
@@ -428,63 +420,105 @@ public class XmsLog {
             values.put(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId());
             values.put(PartData.KEY_CONTACT, contact);
             values.put(PartData.KEY_MIME_TYPE, mimeType);
-            values.put(PartData.KEY_FILENAME, mmsPart.getFileName());
-            values.put(PartData.KEY_FILESIZE, mmsPart.getFileSize());
-            values.put(PartData.KEY_CONTENT, content);
-            values.put(PartData.KEY_FILEICON, mmsPart.getFileIcon());
-            if (Direction.OUTGOING == mms.getDirection() && fileUri != null) {
-                byte[] pdu = mmsPart.getPdu();
-                if (pdu == null) {
-                    /*
-                     * Persist MMS part in order to also persist permissions. If file URI comes from
-                     * RI, permissions are temporary granted to the stack. These permissions are for
-                     * a specific content URI, and will last until the process that receives them is
-                     * finished.
-                     */
-                    pdu = MmsUtils.getContent(mCtx.getContentResolver(), mmsPart.getFile());
+            if (content == null) {
+                /* It is a MMS file */
+                Uri fileUri = mmsPart.getFile();
+                values.put(PartData.KEY_FILEICON, mmsPart.getFileIcon());
+                if (Direction.OUTGOING == mms.getDirection()) {
+                    byte[] pdu = mmsPart.getPdu();
+                    try {
+                        if (pdu == null) {
+                            Uri localFile = FileUtils.createCopyOfSentFile(fileUri,
+                                    mmsPart.getFileName(), mimeType, mRcsSettings);
+                            values.put(PartData.KEY_FILENAME,
+                                    FileUtils.getFileName(mCtx, localFile));
+                            values.put(PartData.KEY_FILESIZE,
+                                    FileUtils.getFileSize(mCtx, localFile));
+                            values.put(PartData.KEY_CONTENT, localFile.toString());
+
+                        } else {
+                            /* Image is compressed into JPEG format */
+                            String fileName = mmsPart.getFileName();
+                            /* Change file extension to JPEG if PNG originally */
+                            String fileExt = MimeManager.getFileExtension(fileName);
+                            if (fileExt != null && EXT_IMAGE_PNG.equals(fileExt.toLowerCase())) {
+                                fileName = fileName.substring(0, fileName.lastIndexOf('.') + 1)
+                                        .concat(EXT_IMAGE_JPEG);
+                            }
+                            Uri localUri = ContentManager.generateUriForSentContent(fileName,
+                                    mimeType, mRcsSettings);
+                            persistPdu(localUri, pdu);
+                            values.put(PartData.KEY_CONTENT, localUri.toString());
+                            values.put(PartData.KEY_FILENAME, fileName);
+                            values.put(PartData.KEY_FILESIZE, pdu.length);
+                        }
+                    } catch (IOException e) {
+                        deleteXmsMessage(mms.getMessageId());
+                        throw new FileAccessException("Failed to copy Uri=" + fileUri, e);
+                    }
+                } else {
+                    values.put(PartData.KEY_CONTENT, fileUri.toString());
+                    values.put(PartData.KEY_FILENAME, mmsPart.getFileName());
+                    values.put(PartData.KEY_FILESIZE, mmsPart.getFileSize());
                 }
-                values.put(PartData.KEY_PDU, pdu);
+            } else {
+                /* it is the body */
+                values.put(PartData.KEY_CONTENT, content);
             }
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
     }
 
+    private Set<Uri> getPartUris(String mmsId) {
+        Cursor cursor = null;
+        Set<Uri> uris = new HashSet<>();
+        try {
+            cursor = getMmsPart(mmsId);
+            if (!cursor.moveToNext()) {
+                return uris;
+            }
+            int contentIdx = cursor.getColumnIndexOrThrow(PartData.KEY_CONTENT);
+            int mimeTypeIdx = cursor.getColumnIndexOrThrow(PartData.KEY_MIME_TYPE);
+            do {
+                String mimeType = cursor.getString(mimeTypeIdx);
+                if (!MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)
+                        && !MmsPartLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
+                    uris.add(Uri.parse(cursor.getString(contentIdx)));
+                }
+            } while (cursor.moveToNext());
+            return uris;
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
     /**
-     * Delete all entries
+     * Deletes MMS parts
+     * 
+     * @param messageId the The message ID
+     * @param dir the direction
      */
-    public void deleteAllEntries() {
-        mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
-        mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
+    public void deleteMmsParts(String messageId, Direction dir) {
+        /* First delete the local file for outgoing MMS */
+        if (Direction.OUTGOING == dir) {
+            for (Uri file : getPartUris(messageId)) {
+                new File(file.getPath()).delete();
+            }
+        }
+        mLocalContentResolver.delete(PartData.CONTENT_URI, SELECTION_PART_MESSAGE_ID, new String[] {
+            messageId
+        });
     }
 
-    public void deleteXmsMessages(ContactId contact) {
-        int count = mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_CONTACT,
-                new String[] {
-                    contact.toString()
-                });
-        if (count > 0) {
-            mLocalContentResolver.delete(PartData.CONTENT_URI, SELECTION_PART_CONTACT,
-                    new String[] {
-                        contact.toString()
-                    });
+    private void deleteXmsMessage(String messageId) {
+        String mimeType = getMimeType(messageId);
+        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
+            deleteMmsParts(messageId, getDirection(messageId));
         }
-    }
-
-    public void deleteXmsMessage(String messageId) {
-        Cursor cursor = getXmsData(XmsData.KEY_MIME_TYPE, messageId);
-        if (cursor == null) {
-            return;
-        }
-        String mimeType = getDataAsString(cursor);
         mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[] {
             messageId
         });
-        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-            mLocalContentResolver.delete(PartData.CONTENT_URI, SELECTION_PART_MESSAGE_ID,
-                    new String[] {
-                        messageId
-                    });
-        }
     }
 
     public Cursor getXmsMessage(long nativeId, String mimeType) {
@@ -527,15 +561,6 @@ public class XmsLog {
         Cursor cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
                 SELECTION_XMS_CONTACT, new String[] {
                     contactId.toString()
-                }, null);
-        CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-        return cursor;
-    }
-
-    public Cursor getXmsMessages(String mimeType) {
-        Cursor cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
-                SELECTION_XMS_MIME_TYPE, new String[] {
-                    mimeType
                 }, null);
         CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
         return cursor;
@@ -631,7 +656,6 @@ public class XmsLog {
             int filenameIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILENAME);
             int fileSizeIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILESIZE);
             int fileiconIdx = cursor.getColumnIndexOrThrow(PartData.KEY_FILEICON);
-            int pduIdx = cursor.getColumnIndexOrThrow(PartData.KEY_PDU);
             do {
                 String number = cursor.getString(contactIdx);
                 ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
@@ -648,8 +672,6 @@ public class XmsLog {
                     Uri file = Uri.parse(cursor.getString(contentIdx));
                     partData = new MmsDataObject.MmsPart(cursor.getString(messageIdIdx), contact,
                             cursor.getString(filenameIdx), fileSize, mimeType, file, fileIcon);
-                    byte[] pdu = cursor.isNull(pduIdx) ? null : cursor.getBlob(pduIdx);
-                    partData.setPdu(pdu);
                 }
                 parts.add(partData);
 
@@ -703,44 +725,6 @@ public class XmsLog {
                     null);
             CursorUtil.assertCursorIsNotNull(cursor, contentUri);
             return cursor.moveToNext();
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Gets the map of XMS contacts with their associated message IDs
-     * 
-     * @return the map of XMS contacts with their associated message IDs (may be empty)
-     */
-    public Map<ContactId, Set<String>> getMessagesIdsPerContact() {
-        Cursor cursor = null;
-        Map<ContactId, Set<String>> result = new HashMap<>();
-        try {
-            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI,
-                    PROJECTION_MESSAGE_ID_CONTACT, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-            if (!cursor.moveToNext()) {
-                return result;
-            }
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
-            int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-            do {
-                String msgId = cursor.getString(messageIdIdx);
-                String number = cursor.getString(contactIdx);
-                ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
-                if (result.containsKey(contact)) {
-                    Set<String> msgIds = result.get(contact);
-                    msgIds.add(msgId);
-                    result.put(contact, msgIds);
-                } else {
-                    Set<String> msgIds = new HashSet<>();
-                    msgIds.add(msgId);
-                    result.put(contact, msgIds);
-                }
-            } while (cursor.moveToNext());
-            return result;
-
         } finally {
             CursorUtil.close(cursor);
         }

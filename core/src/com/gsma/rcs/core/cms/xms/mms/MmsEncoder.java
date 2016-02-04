@@ -217,10 +217,7 @@ import java.util.Map;
                 if (body != null) {
                     content = body.getBytes();
                 } else {
-                    content = part.getPdu();
-                    if (content == null) {
-                        content = MmsUtils.getContent(mCtx.getContentResolver(), part.getFile());
-                    }
+                    content = MmsUtils.getContent(mCtx.getContentResolver(), part.getFile());
                 }
                 outBuffer.write(encodePart(content, mimeType));
             }

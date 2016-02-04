@@ -37,6 +37,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A class to access the CMS provider which is a local copy of the CMS database
+ */
 public class CmsLog {
 
     /**
@@ -55,130 +58,106 @@ public class CmsLog {
 
     // Folder table
     static final class Folder {
-
-        static final String SELECTION_NAME = new StringBuilder(CmsFolder.KEY_NAME).append("=?")
-                .toString();
+        static final String SELECTION_NAME = CmsFolder.KEY_NAME + "=?";
     }
 
     // Message table
     static final class Message {
 
-        private static final String PROJECTION_MAX_UID = new StringBuilder().append("MAX(")
-                .append(CmsObject.KEY_UID).append(")").toString();
+        private static final String PROJECTION_MAX_UID = "MAX(" + CmsObject.KEY_UID + ")";
 
         private static final String[] PROJECTION_NATIVE_PROVIDERID_READ_DELETE = new String[] {
                 CmsObject.KEY_NATIVE_PROVIDER_ID, CmsObject.KEY_READ_STATUS,
                 CmsObject.KEY_DELETE_STATUS
         };
 
-        static final String SELECTION_FOLDER_NAME = new StringBuilder(CmsObject.KEY_FOLDER_NAME)
-                .append("=?").toString();
-        private static final String SELECTION_UID = new StringBuilder(CmsObject.KEY_UID).append(
-                "=?").toString();
-        static final String SELECTION_FOLDER_NAME_UID = new StringBuilder(SELECTION_FOLDER_NAME)
-                .append(" AND ").append(SELECTION_UID).toString();
-        private static final String SELECTION_UID_NOT_NULL = new StringBuilder(CmsObject.KEY_UID)
-                .append(" IS NOT NULL").toString();
-        private static final String SELECTION_MESSAGE_TYPE = new StringBuilder(
-                CmsObject.KEY_MESSAGE_TYPE).append("=?").toString();
-        private static final String SELECTION_MESSAGE_ID = new StringBuilder(
-                CmsObject.KEY_MESSAGE_ID).append("=?").toString();
-        static final String SELECTION_FOLDER_NAME_MESSAGEID = new StringBuilder(
-                SELECTION_FOLDER_NAME).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_PROVIDER_ID = new StringBuilder(
-                CmsObject.KEY_NATIVE_PROVIDER_ID).append("=?").toString();
-        private static final String SELECTION_PROVIDER_ID_NULL = new StringBuilder(
-                CmsObject.KEY_NATIVE_PROVIDER_ID).append(" is null").toString();
-        private static final String SELECTION_PROVIDER_ID_NOT_NULL = new StringBuilder(
-                CmsObject.KEY_NATIVE_PROVIDER_ID).append(" is not null").toString();
-        private static final String SELECTION_READ_STATUS = new StringBuilder(
-                CmsObject.KEY_READ_STATUS).append("=?").toString();
-        private static final String SELECTION_DELETE_STATUS = new StringBuilder(
-                CmsObject.KEY_DELETE_STATUS).append("=?").toString();
-        private static final String SELECTION_READ_STATUS_OR_DELETE_STATUS = new StringBuilder("(")
-                .append(SELECTION_READ_STATUS).append(" OR ").append(SELECTION_DELETE_STATUS)
-                .append(")").toString();
-        private static final String SELECTION_PUSH_STATUS = new StringBuilder(
-                CmsObject.KEY_PUSH_STATUS).append("=?").toString();
-        private static final String SELECTION_CHAT = new StringBuilder(CmsObject.KEY_MESSAGE_TYPE)
-                .append("='").append(MessageType.CHAT_MESSAGE).append("'").toString();
-        private static final String SELECTION_IMDN = new StringBuilder(CmsObject.KEY_MESSAGE_TYPE)
-                .append("='").append(MessageType.IMDN).append("'").toString();
-        private static final String SELECTION_GROUP_STATE = new StringBuilder(
-                CmsObject.KEY_MESSAGE_TYPE).append("='").append(MessageType.GROUP_STATE)
-                .append("'").toString();
-        private static final String SELECTION_SMS = new StringBuilder(CmsObject.KEY_MESSAGE_TYPE)
-                .append("='").append(MessageType.SMS).append("'").toString();
-        private static final String SELECTION_MMS = new StringBuilder(CmsObject.KEY_MESSAGE_TYPE)
-                .append("='").append(MessageType.MMS).append("'").toString();
-        private static final String SELECTION_XMS = new StringBuilder("(").append(SELECTION_SMS)
-                .append(" OR ").append(SELECTION_MMS).append(")").toString();
-        private static final String SELECTION_CHAT_IMDN = new StringBuilder("(")
-                .append(SELECTION_CHAT).append(" OR ").append(SELECTION_IMDN).append(")")
-                .toString();
-        private static final String SELECTION_XMS_MESSAGEID = new StringBuilder(SELECTION_XMS)
-                .append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_CHAT_IMDN_MESSAGEID = new StringBuilder(
-                SELECTION_CHAT_IMDN).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_GROUP_STATE_MESSAGEID = new StringBuilder(
-                SELECTION_GROUP_STATE).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_SMS_MESSAGEID = new StringBuilder(SELECTION_SMS)
-                .append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_MMS_MESSAGEID = new StringBuilder(SELECTION_MMS)
-                .append(" AND ").append(SELECTION_MESSAGE_ID).toString();
+        static final String SELECTION_FOLDER_NAME = CmsObject.KEY_FOLDER_NAME + "=?";
+        private static final String SELECTION_UID = CmsObject.KEY_UID + "=?";
+        static final String SELECTION_FOLDER_NAME_UID = SELECTION_FOLDER_NAME + " AND "
+                + SELECTION_UID;
+        private static final String SELECTION_UID_NOT_NULL = CmsObject.KEY_UID + " IS NOT NULL";
+        private static final String SELECTION_MESSAGE_TYPE = CmsObject.KEY_MESSAGE_TYPE + "=?";
+        private static final String SELECTION_MESSAGE_ID = CmsObject.KEY_MESSAGE_ID + "=?";
+        static final String SELECTION_FOLDER_NAME_MESSAGEID = SELECTION_FOLDER_NAME + " AND "
+                + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_PROVIDER_ID = CmsObject.KEY_NATIVE_PROVIDER_ID + "=?";
+        private static final String SELECTION_PROVIDER_ID_NULL = CmsObject.KEY_NATIVE_PROVIDER_ID
+                + " is null";
+        private static final String SELECTION_PROVIDER_ID_NOT_NULL = CmsObject.KEY_NATIVE_PROVIDER_ID
+                + " is not null";
+        private static final String SELECTION_READ_STATUS = CmsObject.KEY_READ_STATUS + "=?";
+        private static final String SELECTION_DELETE_STATUS = CmsObject.KEY_DELETE_STATUS + "=?";
+        private static final String SELECTION_READ_STATUS_OR_DELETE_STATUS = "("
+                + SELECTION_READ_STATUS + " OR " + SELECTION_DELETE_STATUS + ")";
+        private static final String SELECTION_PUSH_STATUS = CmsObject.KEY_PUSH_STATUS + "=?";
+        private static final String SELECTION_CHAT = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.CHAT_MESSAGE + "'";
+        private static final String SELECTION_IMDN = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.IMDN + "'";
+        private static final String SELECTION_GROUP_STATE = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.GROUP_STATE + "'";
+        private static final String SELECTION_SMS = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.SMS + "'";
+        private static final String SELECTION_MMS = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.MMS + "'";
+        private static final String SELECTION_XMS = "(" + SELECTION_SMS + " OR " + SELECTION_MMS
+                + ")";
+        private static final String SELECTION_CHAT_IMDN = "(" + SELECTION_CHAT + " OR "
+                + SELECTION_IMDN + ")";
+        private static final String SELECTION_XMS_MESSAGEID = SELECTION_XMS + " AND "
+                + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_CHAT_IMDN_MESSAGEID = SELECTION_CHAT_IMDN + " AND "
+                + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_GROUP_STATE_MESSAGEID = SELECTION_GROUP_STATE
+                + " AND " + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_SMS_MESSAGEID = SELECTION_SMS + " AND "
+                + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_MMS_MESSAGEID = SELECTION_MMS + " AND "
+                + SELECTION_MESSAGE_ID;
 
-        private static final String SELECTION_XMS_READ_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_XMS).append(" AND ").append(SELECTION_READ_STATUS).append(" AND ")
-                .append(SELECTION_UID_NOT_NULL).toString();
-        private static final String SELECTION_CHAT_READ_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_CHAT).append(" AND ").append(SELECTION_READ_STATUS).append(" AND ")
-                .append(SELECTION_UID_NOT_NULL).toString();
-        private static final String SELECTION_READ_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_READ_STATUS).append(" AND ").append(SELECTION_UID_NOT_NULL).toString();
+        private static final String SELECTION_XMS_READ_STATUS_UID_NOT_NULL = SELECTION_XMS
+                + " AND " + SELECTION_READ_STATUS + " AND " + SELECTION_UID_NOT_NULL;
+        private static final String SELECTION_CHAT_READ_STATUS_UID_NOT_NULL = SELECTION_CHAT
+                + " AND " + SELECTION_READ_STATUS + " AND " + SELECTION_UID_NOT_NULL;
+        private static final String SELECTION_READ_STATUS_UID_NOT_NULL = SELECTION_READ_STATUS
+                + " AND " + SELECTION_UID_NOT_NULL;
 
-        private static final String SELECTION_XMS_DELETE_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_XMS).append(" AND ").append(SELECTION_DELETE_STATUS).append(" AND ")
-                .append(SELECTION_UID_NOT_NULL).toString();
-        private static final String SELECTION_CHAT_DELETE_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_CHAT).append(" AND ").append(SELECTION_DELETE_STATUS).append(" AND ")
-                .append(SELECTION_UID_NOT_NULL).toString();
-        private static final String SELECTION_DELETE_STATUS_UID_NOT_NULL = new StringBuilder(
-                SELECTION_DELETE_STATUS).append(" AND ").append(SELECTION_UID_NOT_NULL).toString();
+        private static final String SELECTION_XMS_DELETE_STATUS_UID_NOT_NULL = SELECTION_XMS
+                + " AND " + SELECTION_DELETE_STATUS + " AND " + SELECTION_UID_NOT_NULL;
+        private static final String SELECTION_CHAT_DELETE_STATUS_UID_NOT_NULL = SELECTION_CHAT
+                + " AND " + SELECTION_DELETE_STATUS + " AND " + SELECTION_UID_NOT_NULL;
+        private static final String SELECTION_DELETE_STATUS_UID_NOT_NULL = SELECTION_DELETE_STATUS
+                + " AND " + SELECTION_UID_NOT_NULL;
 
-        private static final String SELECTION_XMS_PUSH_STATUS_DELETE_STATUS = new StringBuilder(
-                SELECTION_XMS).append(" AND ").append(SELECTION_PUSH_STATUS).append(" AND ")
-                .append(SELECTION_DELETE_STATUS).toString();
-        private static final String SELECTION_FOLDER_XMS_PUSH_STATUS_DELETE_STATUS = new StringBuilder(
-                SELECTION_FOLDER_NAME).append(" AND ")
-                .append(SELECTION_XMS_PUSH_STATUS_DELETE_STATUS).toString();
+        private static final String SELECTION_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_XMS
+                + " AND " + SELECTION_PUSH_STATUS + " AND " + SELECTION_DELETE_STATUS;
+        private static final String SELECTION_FOLDER_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_FOLDER_NAME
+                + " AND " + SELECTION_XMS_PUSH_STATUS_DELETE_STATUS;
 
-        private static final String SELECTION_MESSAGE_TYPE_MESSAGE_ID = new StringBuilder(
-                SELECTION_MESSAGE_TYPE).append(" AND ").append(SELECTION_MESSAGE_ID).toString();
-        private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID = new StringBuilder(
-                SELECTION_MESSAGE_TYPE).append(" AND ").append(SELECTION_PROVIDER_ID).toString();
-        private static final String SELECTION_FOLDER_NAME_READ_STATUS_DELETE_STATUS = new StringBuilder(
-                SELECTION_FOLDER_NAME).append(" AND ")
-                .append(SELECTION_READ_STATUS_OR_DELETE_STATUS).toString();
+        private static final String SELECTION_MESSAGE_TYPE_MESSAGE_ID = SELECTION_MESSAGE_TYPE
+                + " AND " + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID = SELECTION_MESSAGE_TYPE
+                + " AND " + SELECTION_PROVIDER_ID;
+        private static final String SELECTION_FOLDER_NAME_READ_STATUS_DELETE_STATUS = SELECTION_FOLDER_NAME
+                + " AND " + SELECTION_READ_STATUS_OR_DELETE_STATUS;
 
-        private static final String SELECTION_DELETE_STATUS_PROVIDER_ID_NULL = new StringBuilder(
-                SELECTION_DELETE_STATUS).append(" AND ").append(SELECTION_PROVIDER_ID_NULL)
-                .toString();
-        private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID_NOT_NULL = new StringBuilder(
-                SELECTION_MESSAGE_TYPE).append(" AND ").append(SELECTION_PROVIDER_ID_NOT_NULL)
-                .toString();
+        private static final String SELECTION_DELETE_STATUS_PROVIDER_ID_NULL = SELECTION_DELETE_STATUS
+                + " AND " + SELECTION_PROVIDER_ID_NULL;
+        private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID_NOT_NULL = SELECTION_MESSAGE_TYPE
+                + " AND " + SELECTION_PROVIDER_ID_NOT_NULL;
     }
 
     static final int INVALID_ID = -1;
 
-    private static final Logger logger = Logger.getLogger(CmsLog.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsLog.class.getSimpleName());
 
     /**
      * Gets the instance of SecurityLog singleton
      *
-     * @param context
+     * @param context The context
      * @return the instance of SecurityLog singleton
      */
-    public static CmsLog createInstance(Context context) {
+    public static CmsLog getInstance(Context context) {
         if (sInstance != null) {
             return sInstance;
         }
@@ -197,19 +176,19 @@ public class CmsLog {
     /**
      * Constructor
      *
-     * @param context
+     * @param ctx The context
      */
-    private CmsLog(Context context) {
-        mLocalContentResolver = new LocalContentResolver(context.getContentResolver());
+    private CmsLog(Context ctx) {
+        mLocalContentResolver = new LocalContentResolver(ctx.getContentResolver());
     }
 
     /**
-     * Add mailboxData
+     * Adds mailboxData
      *
-     * @param folder
+     * @param folder The folder
      */
     public void addFolder(CmsFolder folder) {
-        boolean logActivated = logger.isActivated();
+        boolean logActivated = sLogger.isActivated();
 
         ContentValues values = new ContentValues();
         String name = folder.getName();
@@ -221,26 +200,26 @@ public class CmsLog {
         Integer id = getFolderId(name);
         if (INVALID_ID == id) {
             if (logActivated) {
-                logger.debug(new StringBuilder("Add mailboxData : ").append(folder).toString());
+                sLogger.debug("Add mailboxData : ".concat(folder.toString()));
             }
             mLocalContentResolver.insert(CmsFolder.CONTENT_URI, values);
             return;
         }
         if (logActivated) {
-            logger.debug(new StringBuilder("Update  mailboxData :").append(folder).toString());
+            sLogger.debug("Update  mailboxData :".concat(folder.toString()));
         }
         Uri uri = Uri.withAppendedPath(CmsFolder.CONTENT_URI, id.toString());
         mLocalContentResolver.update(uri, values, null, null);
     }
 
     /**
-     * Get folders data
+     * Gets folders data
      *
      * @return CmsFolder
      */
     public Map<String, CmsFolder> getFolders() {
         Cursor cursor = null;
-        Map<String, CmsFolder> folders = new HashMap<String, CmsFolder>();
+        Map<String, CmsFolder> folders = new HashMap<>();
         try {
             cursor = mLocalContentResolver.query(CmsFolder.CONTENT_URI, null, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsFolder.CONTENT_URI);
@@ -266,8 +245,8 @@ public class CmsLog {
     /**
      * Get folderId for a folderName
      *
-     * @param name
-     * @return id
+     * @param name the folder name
+     * @return id the folder ID
      */
     public Integer getFolderId(String name) {
         Cursor cursor = null;
@@ -289,10 +268,10 @@ public class CmsLog {
     }
 
     /**
-     * Delete a folder
+     * Deletes a folder
      *
-     * @param name
-     * @param deleteMessages
+     * @param name the folder name
+     * @param deleteMessages True if messages must be deleted
      * @return id
      */
     public int removeFolder(String name, boolean deleteMessages) {
@@ -306,9 +285,9 @@ public class CmsLog {
     }
 
     /**
-     * Remove all folders
+     * Removes all folders
      *
-     * @param deleteMessages
+     * @param deleteMessages True if messages must be deleted
      * @return int
      */
     public int removeFolders(boolean deleteMessages) {
@@ -319,12 +298,12 @@ public class CmsLog {
     }
 
     /**
-     * Add mailboxData
+     * Adds mailboxData
      *
-     * @param message
+     * @param message The message to add
      */
     public void addMessage(CmsObject message) {
-        boolean logActivated = logger.isActivated();
+        boolean logActivated = sLogger.isActivated();
 
         ContentValues values = new ContentValues();
         Integer uid = message.getUid();
@@ -343,21 +322,31 @@ public class CmsLog {
         }
         if (INVALID_ID == id) {
             if (logActivated) {
-                logger.debug(new StringBuilder("Add messageData : ").append(message).toString());
+                sLogger.debug("Add messageData : ".concat(message.toString()));
             }
             mLocalContentResolver.insert(CmsObject.CONTENT_URI, values);
             return;
         }
         if (logActivated) {
-            logger.debug(new StringBuilder("Update  messageData :").append(message).toString());
+            sLogger.debug("Update  messageData :".concat(message.toString()));
         }
         Uri uri = Uri.withAppendedPath(CmsObject.CONTENT_URI, id.toString());
         mLocalContentResolver.update(uri, values, null, null);
     }
 
+    /**
+     * Updates message
+     * 
+     * @param messageType the type
+     * @param messageId the ID
+     * @param folderName the folder name
+     * @param uid the UID
+     * @param seen the seen flag
+     * @param deleted the deleted flag
+     */
     public void updateMessage(MessageType messageType, String messageId, String folderName,
             Integer uid, Boolean seen, Boolean deleted) {
-        boolean logActivated = logger.isActivated();
+        boolean logActivated = sLogger.isActivated();
 
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_UID, uid);
@@ -368,11 +357,9 @@ public class CmsLog {
         if (deleted) {
             values.put(CmsObject.KEY_DELETE_STATUS, DeleteStatus.DELETED.toInt());
         }
-
         if (logActivated) {
-            logger.debug(new StringBuilder("Update messageData : ").append(messageType).append(",")
-                    .append(messageId).append(",").append(folderName).append(",").append(uid)
-                    .toString());
+            sLogger.debug("Update messageData : " + messageType + "," + messageId + ","
+                    + folderName + "," + uid);
         }
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
@@ -383,8 +370,8 @@ public class CmsLog {
     /**
      * Get message by folderName and uid
      *
-     * @param folderName
-     * @param uid
+     * @param folderName the folder name
+     * @param uid the UID
      * @return CmsObject
      */
     public CmsObject getMessage(String folderName, Integer uid) {
@@ -421,7 +408,7 @@ public class CmsLog {
     /**
      * Get sms data by messageId
      *
-     * @param messageId
+     * @param messageId the message ID
      * @return CmsObject
      */
     public CmsObject getSmsData(String messageId) {
@@ -431,7 +418,7 @@ public class CmsLog {
     /**
      * Get mms data by messageId
      *
-     * @param messageId
+     * @param messageId the message ID
      * @return CmsObject
      */
     public CmsObject getMmsData(String messageId) {
@@ -441,7 +428,7 @@ public class CmsLog {
     /**
      * Get chat or imdn data by messageId
      *
-     * @param messageId
+     * @param messageId the ID
      * @return CmsObject
      */
     public CmsObject getChatOrImdnData(String messageId) {
@@ -451,7 +438,7 @@ public class CmsLog {
     /**
      * Get groupChatObject data by messageId
      *
-     * @param messageId
+     * @param messageId the message ID
      * @return CmsObject
      */
     public CmsObject getGroupChatObjectData(String messageId) {
@@ -493,7 +480,7 @@ public class CmsLog {
     /**
      * Return the max uid for messages of a folder
      *
-     * @param folderName
+     * @param folderName the folder name
      * @return maxUid or null
      */
     public Integer getMaxUidForMessages(String folderName) {
@@ -517,7 +504,7 @@ public class CmsLog {
     /**
      * Get messages by folderName
      *
-     * @param folderName
+     * @param folderName the folder name
      * @return CmsObject
      */
     public List<CmsObject> getMessages(String folderName, ReadStatus readStatus,
@@ -560,9 +547,9 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by readStatus
+     * Gets messages by readStatus
      *
-     * @param readStatus
+     * @param readStatus the read status
      * @return CmsObject
      */
     public List<CmsObject> getMessages(ReadStatus readStatus) {
@@ -572,9 +559,9 @@ public class CmsLog {
     }
 
     /**
-     * Get xms messages by readStatus
+     * Gets xms messages by readStatus
      *
-     * @param readStatus
+     * @param readStatus the read status
      * @return CmsObject
      */
     public List<CmsObject> getXmsMessages(ReadStatus readStatus) {
@@ -584,9 +571,9 @@ public class CmsLog {
     }
 
     /**
-     * Get chat messages by readStatus
+     * Gets chat messages by readStatus
      *
-     * @param readStatus
+     * @param readStatus the read status
      * @return CmsObject
      */
     public List<CmsObject> getChatMessages(ReadStatus readStatus) {
@@ -596,9 +583,9 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by readStatus
+     * Gets messages by readStatus
      *
-     * @param selection
+     * @param selection the selection
      * @return CmsObject
      */
     List<CmsObject> getMessages(String selection, String[] params) {
@@ -634,9 +621,9 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by deleteStatus
+     * Gets messages by deleteStatus
      *
-     * @param deleteStatus
+     * @param deleteStatus the deleted status
      * @return CmsObject
      */
     public List<CmsObject> getMessages(DeleteStatus deleteStatus) {
@@ -646,9 +633,9 @@ public class CmsLog {
     }
 
     /**
-     * Get xms messages by deleteStatus
+     * Gets xms messages by deleteStatus
      *
-     * @param deleteStatus
+     * @param deleteStatus the deleted status
      * @return CmsObject
      */
     public List<CmsObject> getXmsMessages(DeleteStatus deleteStatus) {
@@ -658,9 +645,9 @@ public class CmsLog {
     }
 
     /**
-     * Get xms messages by deleteStatus
+     * Gets xms messages by deleteStatus
      *
-     * @param deleteStatus
+     * @param deleteStatus the deleted status
      * @return CmsObject
      */
     public List<CmsObject> getChatMessages(DeleteStatus deleteStatus) {
@@ -670,10 +657,10 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by foldername and pushStatus Filter out messages marked as deleted
+     * Gets messages by folder name and pushStatus Filter out messages marked as deleted
      *
-     * @param folderName
-     * @param pushStatus
+     * @param folderName the folder name
+     * @param pushStatus the push status
      * @return CmsObject
      */
     public List<CmsObject> getXmsMessages(String folderName, PushStatus pushStatus) {
@@ -715,9 +702,9 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by pushStatus Filter out messages marked as deleted
+     * Gets messages by pushStatus Filter out messages marked as deleted
      * 
-     * @param pushStatus
+     * @param pushStatus the push status
      * @return CmsObject
      */
     public List<CmsObject> getXmsMessages(PushStatus pushStatus) {
@@ -759,11 +746,11 @@ public class CmsLog {
     }
 
     /**
-     * Get messageId for a folder name and uid message
+     * Gets messageId for a folder name and uid message
      *
-     * @param folderName
-     * @param uid
-     * @return id
+     * @param folderName the folder name
+     * @param uid the UID
+     * @return id the message ID
      */
     public Integer getMessageId(String folderName, Integer uid) {
         Cursor cursor = null;
@@ -785,10 +772,10 @@ public class CmsLog {
     }
 
     /**
-     * Get uid by messageId
+     * Gets uid by messageId
      * 
-     * @param baseId
-     * @return
+     * @param baseId the base ID
+     * @return uid
      */
     public Integer getUidForXmsMessage(String baseId) {
         Cursor cursor = null;
@@ -810,9 +797,9 @@ public class CmsLog {
     }
 
     /**
-     * Update delete status of all messages
+     * Updates delete status of all messages
      * 
-     * @param deleteStatus
+     * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
@@ -821,11 +808,11 @@ public class CmsLog {
     }
 
     /**
-     * Update delete status by folder and uid
+     * Updates delete status by folder and uid
      * 
-     * @param folder
-     * @param uid
-     * @param deleteStatus
+     * @param folder the folder name
+     * @param uid the UID
+     * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(String folder, Integer uid, DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
@@ -837,11 +824,11 @@ public class CmsLog {
     }
 
     /**
-     * Update delete status by messageType and messageId
+     * Updates delete status by messageType and messageId
      * 
-     * @param messageType
-     * @param messageId
-     * @param deleteStatus
+     * @param messageType the type
+     * @param messageId the message ID
+     * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(MessageType messageType, String messageId,
             DeleteStatus deleteStatus) {
@@ -854,11 +841,11 @@ public class CmsLog {
     }
 
     /**
-     * Update read status by folder and uid
+     * Updates read status by folder and uid
      * 
-     * @param folder
-     * @param uid
-     * @param readStatus
+     * @param folder the folder name
+     * @param uid the UID
+     * @param readStatus the read status
      */
     public void updateReadStatus(String folder, Integer uid, ReadStatus readStatus) {
         ContentValues values = new ContentValues();
@@ -870,11 +857,11 @@ public class CmsLog {
     }
 
     /**
-     * update read status by messageType and messageId
+     * Updates read status by messageType and messageId
      * 
-     * @param messageType
-     * @param messageId
-     * @param readStatus
+     * @param messageType the type
+     * @param messageId the message ID
+     * @param readStatus the read status
      */
     public void updateReadStatus(MessageType messageType, String messageId, ReadStatus readStatus) {
         ContentValues values = new ContentValues();
@@ -886,11 +873,11 @@ public class CmsLog {
     }
 
     /**
-     * Update push status and uid by messageId
+     * Updates push status and uid by messageId
      * 
-     * @param uid
-     * @param messageId
-     * @param pushStatus
+     * @param uid the UID
+     * @param messageId the message ID
+     * @param pushStatus the push status
      */
     public void updateXmsPushStatus(Integer uid, String messageId, PushStatus pushStatus) {
         ContentValues values = new ContentValues();
@@ -903,10 +890,10 @@ public class CmsLog {
     }
 
     /**
-     * Update push status by messageType
+     * Updates push status by messageType
      * 
-     * @param messageType
-     * @param pushStatus
+     * @param messageType the type
+     * @param pushStatus the push status
      */
     public void updatePushStatus(MessageType messageType, PushStatus pushStatus) {
         ContentValues values = new ContentValues();
@@ -918,10 +905,10 @@ public class CmsLog {
     }
 
     /**
-     * Remove messages from a folder
+     * Removes messages from a folder
      *
-     * @param folderName
-     * @return int
+     * @param folderName the folder name
+     * @return The number of rows affected.
      */
     public int removeMessages(String folderName) {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI, Message.SELECTION_FOLDER_NAME,
@@ -931,11 +918,11 @@ public class CmsLog {
     }
 
     /**
-     * Update delete status by messageType and nativeProviderId
+     * Updates delete status by messageType and nativeProviderId
      * 
-     * @param messageType
-     * @param nativeProviderId
-     * @param deleteStatus
+     * @param messageType the type
+     * @param nativeProviderId the native provider ID
+     * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(MessageType messageType, Long nativeProviderId,
             DeleteStatus deleteStatus) {
@@ -949,11 +936,11 @@ public class CmsLog {
     }
 
     /**
-     * Update read status by messageType and nativeProviderId
+     * Updates read status by messageType and nativeProviderId
      * 
-     * @param messageType
-     * @param nativeProviderId
-     * @param readStatus
+     * @param messageType the type
+     * @param nativeProviderId the native provider ID
+     * @param readStatus the read status
      */
     public void updateReadStatus(MessageType messageType, Long nativeProviderId,
             ReadStatus readStatus) {
@@ -966,9 +953,9 @@ public class CmsLog {
     }
 
     /**
-     * Purge messages
+     * Purges messages
      * 
-     * @return int
+     * @return The number of rows affected.
      */
     public int purgeMessages() {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI,
@@ -978,9 +965,9 @@ public class CmsLog {
     }
 
     /**
-     * Remove all messages
+     * Removes all messages
      *
-     * @return int
+     * @return The number of rows affected.
      */
     public int removeMessages() {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI, null, null);

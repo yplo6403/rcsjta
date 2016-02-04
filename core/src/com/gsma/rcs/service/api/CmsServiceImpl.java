@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010-2016 Orange.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,13 +18,16 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTaskType;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerListener;
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler.SyncType;
 import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.sync.scheduler.Scheduler.SyncType;
+import com.gsma.rcs.core.cms.sync.scheduler.SchedulerListener;
+import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTaskType;
+import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
 import com.gsma.rcs.core.cms.xms.mms.OriginatingMmsSession;
+import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsDeleteTask;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.XmsPersistedStorageAccessor;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -33,7 +36,6 @@ import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.ICmsService;
@@ -64,7 +66,8 @@ import java.util.Set;
  *
  * @author Philippe LEMORDANT
  */
-public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener, SchedulerListener {
+public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener,
+        SchedulerListener {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
     private final XmsMessageEventBroadcaster mXmsMessageBroadcaster = new XmsMessageEventBroadcaster();
@@ -77,31 +80,35 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     private final Map<String, XmsMessageImpl> mXmsMessageCache = new HashMap<>();
     private final XmsLog mXmsLog;
-    private final Context mContext;
+    private final Context mCtx;
     private final XmsManager mXmsManager;
     private final RcsSettings mRcsSettings;
 
     public static final String[] BLACK_LISTED_MODELS = new String[] {
-            "LG-H955"
+        "LG-H955"
     };
     public static final Set<String> sBlackListedModel = new HashSet<>(
             Arrays.asList(BLACK_LISTED_MODELS));
 
+    private final LocalContentResolver mLocalContentResolver;
+
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context context, CmsService cmsService, ChatServiceImpl chatService,
-            XmsLog xmsLog, RcsSettings rcsSettings, XmsManager xmsManager) {
+    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService,
+            XmsLog xmsLog, RcsSettings rcsSettings, XmsManager xmsManager,
+            LocalContentResolver localContentResolver) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
-        mContext = context;
+        mCtx = ctx;
         mCmsService = cmsService;
         mCmsService.register(this);
         mCmsService.register(chatService);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;
+        mLocalContentResolver = localContentResolver;
     }
 
     /**
@@ -131,8 +138,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
-                    sLogger.info(
-                            "Sync One-to-One conversation for contact ".concat(contact.toString()));
+                    sLogger.info("Sync One-to-One conversation for contact ".concat(contact
+                            .toString()));
                 }
                 try {
                     mCmsService.syncOneToOneConversation(contact);
@@ -284,8 +291,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public IXmsMessage sendMultimediaMessage(final ContactId contact, List<Uri> files,
             final String subject, final String body) throws RemoteException {
         if (sLogger.isActivated()) {
-            sLogger.debug(
-                    "send MMS to " + contact + " subject='" + subject + "' body='" + body + "'");
+            sLogger.debug("send MMS to " + contact + " subject='" + subject + "' body='" + body
+                    + "'");
         }
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
@@ -301,7 +308,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             checkUris(files);
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = System.currentTimeMillis();
-            MmsDataObject mmsDataObject = new MmsDataObject(mContext, mMessageId, mMessageId, contact,
+            MmsDataObject mmsDataObject = new MmsDataObject(mCtx, null, mMessageId, contact,
                     subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
                     mRcsSettings.getMaxFileIconSize());
             mmsDataObject.setReadStatus(ReadStatus.READ);
@@ -324,19 +331,19 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     private void checkUris(List<Uri> files) {
         for (Uri file : files) {
-            if (!FileUtils.isReadFromUriPossible(mContext, file)) {
+            if (!FileUtils.isReadFromUriPossible(mCtx, file)) {
                 throw new ServerApiIllegalArgumentException("file '" + file.toString()
                         + "' must refer to a file that exists and that is readable by stack!");
             }
-            String fileName = FileUtils.getFileName(mContext, file);
+            String fileName = FileUtils.getFileName(mCtx, file);
             if (fileName == null) {
                 throw new ServerApiIllegalArgumentException("Invalid Uri '" + file + "'!");
             }
             String extension = MimeManager.getFileExtension(fileName);
             String mimeType = MimeManager.getInstance().getMimeType(extension);
             if (mimeType == null) {
-                throw new ServerApiIllegalArgumentException(
-                        "Invalid mime type for Uri '" + file + "'!");
+                throw new ServerApiIllegalArgumentException("Invalid mime type for Uri '" + file
+                        + "'!");
             }
             if (!MimeManager.isImageType(mimeType)) {
                 if (!MimeManager.isVideoType(mimeType)) {
@@ -366,8 +373,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                             }
                         }
                     } else {
-                        sLogger.warn(
-                                "Cannot mark as read: message ID'" + messageId + "' not found!");
+                        sLogger.warn("Cannot mark as read: message ID'" + messageId
+                                + "' not found!");
                     }
 
                 } catch (RuntimeException e) {
@@ -431,22 +438,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void deleteXmsMessages() throws RemoteException {
-        mCmsService.scheduleImOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (mCmsService.isServiceStarted()) {
-                        mCmsService.deleteXmsMessages();
-                    }
-                } catch (RuntimeException e) {
-                    /*
-                     * Intentionally catch runtime exceptions as else it will abruptly end the
-                     * thread and eventually bring the whole system down, which is not intended.
-                     */
-                    sLogger.error("Failed to delete messages", e);
-                }
-            }
-        });
+        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver));
     }
 
     @Override
@@ -454,22 +446,11 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("Contact must not be null!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (mCmsService.isServiceStarted()) {
-                        mCmsService.deleteXmsMessages2(contact);
-                    }
-                } catch (RuntimeException e) {
-                    /*
-                     * Intentionally catch runtime exceptions as else it will abruptly end the
-                     * thread and eventually bring the whole system down, which is not intended.
-                     */
-                    sLogger.error("Failed to delete messages for contact " + contact, e);
-                }
-            }
-        });
+        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, contact));
+    }
+
+    public void deleteXmsMessageById(String messageId) {
+        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, messageId));
     }
 
     @Override
@@ -477,24 +458,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (mCmsService.isServiceStarted()) {
-                        mCmsService.deleteXmsMessage(messageId);
-                    }
-                } catch (RuntimeException e) {
-                    /*
-                     * Intentionally catch runtime exceptions as else it will abruptly end the
-                     * thread and eventually bring the whole system down, which is not intended.
-                     */
-                    sLogger.error("Failed to delete message ID " + messageId, e);
-                }
-            }
-        });
+        deleteXmsMessageById(messageId);
     }
 
+    /*
+     * This method is only for debug purpose.
+     */
     @Override
     public void deleteImapData() throws RemoteException {
         mCmsService.scheduleImOperation(new Runnable() {
@@ -504,9 +473,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                     sLogger.info("Delete IMAP data");
                 }
                 try {
-                    if (mCmsService.isServiceStarted()) {
-                        mCmsService.deleteCmsData();
-                    }
+                    mCmsService.deleteCmsData();
                 } catch (RuntimeException e) {
                     /*
                      * Intentionally catch runtime exceptions as else it will abruptly end the
@@ -540,7 +507,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             sLogger.debug("Dequeue MMS ID=".concat(mmsId));
         }
         /* For outgoing MMS transfer, timestampSent = timestamp */
-        OriginatingMmsSession session = new OriginatingMmsSession(mContext, mmsId, contact, subject,
+        OriginatingMmsSession session = new OriginatingMmsSession(mCtx, mmsId, contact, subject,
                 parts, mRcsSettings, mXmsManager);
         session.addListener(this);
         session.addListener(mCmsService.getCmsManager().getMmsSessionHandler());
@@ -550,15 +517,15 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void setXmsStateAndReasonCode(String messageId, String mimeType, ContactId contact,
             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
         if (mXmsLog.setStateAndReasonCode(messageId, state, reasonCode)) {
-            mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId, state,
-                    reasonCode);
+            mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
+                    state, reasonCode);
         }
     }
 
     public void setXmsStateAndTimestamp(String mmsId, ContactId contact, XmsMessage.State state,
             long timestamp, long timestampSent) {
-        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED, timestamp,
-                timestampSent)) {
+        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED,
+                timestamp, timestampSent)) {
             broadcastMessageStateChanged(contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, mmsId,
                     state, XmsMessage.ReasonCode.UNSPECIFIED);
         }
@@ -587,12 +554,9 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
     }
 
-    public XmsMessageEventBroadcaster getXmsMessageBroadcaster() {
-        return mXmsMessageBroadcaster;
-    }
-
     @Override
-    public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType, boolean result, Object param) {
+    public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType,
+            boolean result, Object param) {
         switch (syncType) {
             case ALL:
                 if (sLogger.isActivated()) {
@@ -601,8 +565,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                 break;
             case GROUP:
                 if (sLogger.isActivated()) {
-                    sLogger.debug(
-                            "CMS sync finished for group=" + param + " (result=" + result + ")");
+                    sLogger.debug("CMS sync finished for group=" + param + " (result=" + result
+                            + ")");
                 }
                 break;
             case ONE_TO_ONE:
@@ -613,5 +577,38 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                 }
                 break;
         }
+    }
+
+    /**
+     * Deletes MMS parts
+     *
+     * @param messageId the message ID
+     */
+    public void deleteMmsParts(String messageId) {
+        String mimeType = mXmsLog.getMimeType(messageId);
+        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
+            mXmsLog.deleteMmsParts(messageId, mXmsLog.getDirection(messageId));
+        }
+    }
+
+    /**
+     * Removes a XMS message from cache
+     *
+     * @param messageId the message ID
+     */
+    public void removeXmsMessage(String messageId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Remove a XMS message from cache (size=" + mXmsMessageCache.size() + ")");
+        }
+        mXmsMessageCache.remove(messageId);
+    }
+
+    /**
+     * Updates the deleted flags
+     *
+     * @param messageId the message ID
+     */
+    public void updateDeletedFlags(String messageId) {
+        mCmsService.updateDeletedFlag(messageId);
     }
 }

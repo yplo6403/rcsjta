@@ -63,7 +63,7 @@ import java.io.InputStream;
 public class FileUtils {
 
     private static final String[] PROJECTION_DATA = {
-            MediaStore.MediaColumns.DATA
+        MediaStore.MediaColumns.DATA
     };
 
     private static final String SELECTION_ID = BaseColumns._ID + "=?";
@@ -100,8 +100,8 @@ public class FileUtils {
             }
         } else {
             if (!destDir.isDirectory()) {
-                throw new IllegalArgumentException(
-                        "Destination '" + destDir + "' is not a directory");
+                throw new IllegalArgumentException("Destination '" + destDir
+                        + "' is not a directory");
             }
         }
         File destFile = new File(destDir, srcFile.getName());
@@ -197,11 +197,10 @@ public class FileUtils {
             switch (scheme) {
                 case ContentResolver.SCHEME_CONTENT:
                     if (cursor != null && cursor.moveToFirst()) {
-                        return cursor.getString(
-                                cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
+                        return cursor.getString(cursor
+                                .getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
                     }
-                    throw new IllegalArgumentException(
-                            "Error in retrieving file name from the URI");
+                    throw new IllegalArgumentException("Error in retrieving file name from the URI");
 
                 case ContentResolver.SCHEME_FILE:
                     return file.getLastPathSegment();
@@ -229,11 +228,10 @@ public class FileUtils {
             switch (scheme) {
                 case ContentResolver.SCHEME_CONTENT:
                     if (cursor != null && cursor.moveToFirst()) {
-                        return Long.valueOf(cursor
-                                .getString(cursor.getColumnIndexOrThrow(OpenableColumns.SIZE)));
+                        return Long.valueOf(cursor.getString(cursor
+                                .getColumnIndexOrThrow(OpenableColumns.SIZE)));
                     }
-                    throw new IllegalArgumentException(
-                            "Error in retrieving file size form the URI");
+                    throw new IllegalArgumentException("Error in retrieving file size form the URI");
 
                 case ContentResolver.SCHEME_FILE:
                     return (new File(file.getPath())).length();
@@ -259,9 +257,9 @@ public class FileUtils {
             case ContentResolver.SCHEME_CONTENT:
                 InputStream stream = null;
                 try {
-                    if (PackageManager.PERMISSION_GRANTED == ctx.checkUriPermission(file,
-                            Process.myPid(), Process.myUid(),
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION)) {
+                    if (PackageManager.PERMISSION_GRANTED == ctx
+                            .checkUriPermission(file, Process.myPid(), Process.myUid(),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION)) {
                         return true;
                     }
                     stream = ctx.getContentResolver().openInputStream(file);
@@ -274,8 +272,8 @@ public class FileUtils {
 
                 } catch (IOException e) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug(
-                                "Failed to read from uri :" + file + ", Message=" + e.getMessage());
+                        sLogger.debug("Failed to read from uri :" + file + ", Message="
+                                + e.getMessage());
                     }
                     return false;
 
@@ -340,8 +338,20 @@ public class FileUtils {
         FileDescription fileDescription = FileFactory.getFactory().getFileDescription(file);
         MmContent content = ContentManager.createMmContent(file, fileDescription.getSize(),
                 fileDescription.getName());
-        Uri destination = ContentManager.generateUriForSentContent(content.getName(),
-                content.getEncoding(), rcsSettings);
+        return createCopyOfSentFile(file,content.getName(),content.getEncoding(), rcsSettings);
+    }
+
+    /**
+     * Create copy of sent file in respective sent directory.
+     *
+     * @param file The file Uri to copy
+     * @param rcsSettings The RcsSettings accessor
+     * @return Uri of copy or created file
+     * @throws IOException
+     */
+    public static Uri createCopyOfSentFile(Uri file, String fileName, String mimeType,
+            RcsSettings rcsSettings) throws IOException {
+        Uri destination = ContentManager.generateUriForSentContent(fileName, mimeType, rcsSettings);
         copyFile(file, destination);
         return destination;
     }
@@ -390,7 +400,7 @@ public class FileUtils {
                     }
 
                     String[] selectionArgs = new String[] {
-                            split[1]
+                        split[1]
                     };
                     return getDataColumn(context, contentUri, SELECTION_ID, selectionArgs);
                 }

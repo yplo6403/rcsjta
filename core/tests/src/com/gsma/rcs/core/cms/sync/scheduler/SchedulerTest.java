@@ -51,12 +51,12 @@ public class SchedulerTest extends AndroidTestCase {
         mContext = getContext();
         ContactUtil.getInstance(mContext);
         mSettings = RcsSettingsMock.getMockSettings(mContext);
-        mCmsLog = CmsLog.createInstance(mContext);
-        mXmsLog = XmsLog.createInstance(mContext, new LocalContentResolver(mContext));
+        mCmsLog = CmsLog.getInstance(mContext);
+        mXmsLog = XmsLog.getInstance(mContext, mSettings, new LocalContentResolver(mContext));
         MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
-                messagingLog, null, mSettings, null);
+                messagingLog, null, null, mSettings);
         mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
 
         mOperationListener = new SchedulerListenerMock();
@@ -99,15 +99,13 @@ public class SchedulerTest extends AndroidTestCase {
                 .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         Thread.sleep(executionDuration + syncTimerInterval + 100, 0);
-        Assert.assertTrue(mOperationListener
-                .getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
+        Assert.assertTrue(mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
         lastPeriodicExecution = mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC);
         Assert.assertTrue(mScheduler.mSyncRequestHandler
                 .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
 
         Thread.sleep(executionDuration + syncTimerInterval + 100, 0);
-        Assert.assertTrue(mOperationListener
-                .getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
+        Assert.assertTrue(mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
         mOperationListener.getExecutions(SchedulerTaskType.SYNC_PERIODIC);
         Assert.assertTrue(mScheduler.mSyncRequestHandler
                 .hasMessages(SchedulerTaskType.SYNC_PERIODIC.toInt()));
