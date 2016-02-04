@@ -31,6 +31,7 @@ import com.gsma.rcs.core.ims.network.sip.FeatureTags;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.core.ims.protocol.sip.SipDialogPath;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimParser;
@@ -63,6 +64,8 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -380,6 +383,49 @@ public class ChatUtils {
     }
 
     /**
+     * Format to a SIP-URI for CPIM message with Accept-Contact information
+     *
+     * @param dialogPath sip dialog path
+     * @return SIP-URI
+     */
+    private static String formatCpimSipUriWithAcceptContact(SipDialogPath dialogPath) {
+
+        String localParty = PhoneUtils.extractUriFromSipHeader(dialogPath.getLocalParty());
+
+        if (sLogger.isActivated()) {
+            sLogger.debug("formatCpimSipUriWithAcceptContact - Local Party = " + localParty);
+        }
+        // There might be something after the number, (";no-term-im" for example)
+        final int indexPtVirgule = localParty.indexOf(";");
+        if (indexPtVirgule != -1) {
+            localParty = localParty.substring(0, indexPtVirgule);
+            if (sLogger.isActivated()) {
+                sLogger.debug("formatCpimSipUriWithAcceptContact - Formatted Local Party = " + localParty);
+            }
+        }
+
+        String instanceId = dialogPath.getSipStack().getInstanceId();
+        if (sLogger.isActivated()) {
+            sLogger.debug("formatCpimSipUriWithAcceptContact - Instance ID = " + instanceId);
+        }
+
+        String formatFrom = "<%s?Accept-Contact=%s>";
+        String acceptContactFrom = "+sip.instance="+instanceId;
+
+        try {
+            // Encode the Accept-Contact tag and build the From tag
+            String from = String.format(formatFrom, localParty, URLEncoder.encode(acceptContactFrom, "UTF-8"));
+            if (sLogger.isActivated()) {
+                sLogger.debug("formatCpimSipUriWithAcceptContact - Final From = " + from);
+            }
+            return from;
+        } catch (UnsupportedEncodingException e) {
+            // Should never happen
+            return localParty;
+        }
+    }
+
+    /**
      * Format to a SIP-URI for CPIM message
      * 
      * @param input Input
@@ -419,6 +465,23 @@ public class ChatUtils {
     /**
      * Build a CPIM message
      * 
+     * @param dialogPath SipDialogPath
+     * @param to To
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTimes
+     * @return String
+     */
+    public static String buildCpimMessage(SipDialogPath dialogPath, String to, String content,
+            String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
+                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
+                .append(buildCpimMessage(to, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message
+     *
      * @param from From
      * @param to To
      * @param content Content
@@ -427,9 +490,23 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessage(String from, String to, String content,
-            String contentType, long timestampSent) {
+                                          String contentType, long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF).append(CpimMessage.HEADER_TO)
+                .append(formatCpimSipUri(from)).append(CRLF)
+                .append(buildCpimMessage(to, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message
+     *
+     * @param to To
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTimes
+     * @return String
+     */
+    private static String buildCpimMessage(String to, String content, String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_TO)
                 .append(": ").append(formatCpimSipUri(to)).append(CRLF)
                 .append(CpimMessage.HEADER_DATETIME).append(": ")
                 .append(DateUtils.encodeDate(timestampSent)).append(CRLF).append(CRLF)
@@ -441,7 +518,25 @@ public class ChatUtils {
     /**
      * Build a CPIM message with full IMDN headers
      * 
-     * @param from From URI
+     * @param dialogPath SipDialogPath
+     * @param to To URI
+     * @param messageId Message ID
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    public static String buildCpimMessageWithImdn(SipDialogPath dialogPath, String to, String messageId,
+            String content, String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
+                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
+                .append(buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message with full IMDN headers
+     *
+     * @param from From
      * @param to To URI
      * @param messageId Message ID
      * @param content Content
@@ -450,9 +545,25 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessageWithImdn(String from, String to, String messageId,
-            String content, String contentType, long timestampSent) {
+                                                  String content, String contentType, long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF).append(CpimMessage.HEADER_TO)
+                .append(formatCpimSipUri(from)).append(CRLF)
+                .append(buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message with full IMDN headers
+     *
+     * @param to To URI
+     * @param messageId Message ID
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    private static String buildCpimMessageWithImdn(String to, String messageId,
+                                                  String content, String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_TO)
                 .append(": ").append(formatCpimSipUri(to)).append(CRLF)
                 .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
                 .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ").append(messageId)
@@ -470,7 +581,25 @@ public class ChatUtils {
     /**
      * Build a CPIM message with IMDN delivered header
      * 
-     * @param from From URI
+     * @param dialogPath SipDialogPath
+     * @param to To URI
+     * @param messageId Message ID
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    public static String buildCpimMessageWithoutDisplayedImdn(SipDialogPath dialogPath, String to,
+            String messageId, String content, String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
+                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
+                .append(buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message with IMDN delivered header
+     *
+     * @param from From
      * @param to To URI
      * @param messageId Message ID
      * @param content Content
@@ -479,9 +608,25 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessageWithoutDisplayedImdn(String from, String to,
-            String messageId, String content, String contentType, long timestampSent) {
+                                                              String messageId, String content, String contentType, long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF).append(CpimMessage.HEADER_TO)
+                .append(formatCpimSipUri(from)).append(CRLF)
+                .append(buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM message with IMDN delivered header
+     *
+     * @param to To URI
+     * @param messageId Message ID
+     * @param content Content
+     * @param contentType Content type
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    public static String buildCpimMessageWithoutDisplayedImdn(String to,
+                                                              String messageId, String content, String contentType, long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_TO)
                 .append(": ").append(formatCpimSipUri(to)).append(CRLF)
                 .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
                 .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ").append(messageId)
@@ -499,6 +644,22 @@ public class ChatUtils {
     /**
      * Build a CPIM delivery report
      * 
+     * @param dialogPath SipDialogPath
+     * @param to To
+     * @param imdn IMDN report
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to, String imdn,
+            long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
+                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
+                .append(buildCpimDeliveryReport(to, imdn, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM delivery report
+     *
      * @param from From
      * @param to To
      * @param imdn IMDN report
@@ -506,9 +667,23 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimDeliveryReport(String from, String to, String imdn,
-            long timestampSent) {
+                                                 long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF).append(CpimMessage.HEADER_TO)
+                .append(formatCpimSipUri(from)).append(CRLF)
+                .append(buildCpimDeliveryReport(to, imdn, timestampSent)).toString();
+    }
+
+    /**
+     * Build a CPIM delivery report
+     *
+     * @param to To
+     * @param imdn IMDN report
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    private static String buildCpimDeliveryReport(String to, String imdn,
+                                                 long timestampSent) {
+        return new StringBuilder(CpimMessage.HEADER_TO)
                 .append(": ").append(formatCpimSipUri(to)).append(CRLF)
                 .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
                 .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ")

@@ -138,18 +138,17 @@ public abstract class GroupChatSession extends ChatSession {
 
         setAcceptContactTags(ChatUtils.getAcceptContactTagsForGroupChat());
 
-        String acceptTypes = CpimMessage.MIME_TYPE;
-        setAcceptTypes(acceptTypes);
+        addAcceptTypes(CpimMessage.MIME_TYPE);
 
-        StringBuilder wrappedTypes = new StringBuilder(MimeType.TEXT_MESSAGE).append(" ").append(
-                IsComposingInfo.MIME_TYPE);
+        addWrappedTypes(MimeType.TEXT_MESSAGE);
+        addWrappedTypes(IsComposingInfo.MIME_TYPE);
+        addWrappedTypes(ImdnDocument.MIME_TYPE);
         if (rcsSettings.isGeoLocationPushSupported()) {
-            wrappedTypes.append(" ").append(GeolocInfoDocument.MIME_TYPE);
+            addWrappedTypes(GeolocInfoDocument.MIME_TYPE);
         }
         if (rcsSettings.isFileTransferHttpSupported()) {
-            wrappedTypes.append(" ").append(FileTransferHttpInfoDocument.MIME_TYPE);
+            addWrappedTypes(FileTransferHttpInfoDocument.MIME_TYPE);
         }
-        setWrappedTypes(wrappedTypes.toString());
     }
 
     @Override
@@ -371,7 +370,6 @@ public abstract class GroupChatSession extends ChatSession {
      */
     @Override
     public void sendChatMessage(ChatMessage msg) throws NetworkException {
-        String from = ImsModule.getImsUserProfile().getPublicAddress();
         String to = ChatUtils.ANONYMOUS_URI;
         String msgId = msg.getMessageId();
         String mimeType = msg.getMimeType();
@@ -384,13 +382,13 @@ public abstract class GroupChatSession extends ChatSession {
                     msgId, timestampSent);
         }
         if (mImdnManager.isRequestGroupDeliveryDisplayedReportsEnabled()) {
-            data = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, networkContent,
+            data = ChatUtils.buildCpimMessageWithImdn(getDialogPath(), to, msgId, networkContent,
                     networkMimeType, timestampSent);
         } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-            data = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId, networkContent,
+            data = ChatUtils.buildCpimMessageWithoutDisplayedImdn(getDialogPath(), to, msgId, networkContent,
                     networkMimeType, timestampSent);
         } else {
-            data = ChatUtils.buildCpimMessage(from, to, networkContent, networkMimeType,
+            data = ChatUtils.buildCpimMessage(getDialogPath(), to, networkContent, networkMimeType,
                     timestampSent);
         }
 
@@ -408,10 +406,9 @@ public abstract class GroupChatSession extends ChatSession {
 
     @Override
     public void sendIsComposingStatus(boolean status) throws NetworkException {
-        String from = ImsModule.getImsUserProfile().getPublicUri();
         String to = ChatUtils.ANONYMOUS_URI;
         String msgId = IdGenerator.generateMessageID();
-        String content = ChatUtils.buildCpimMessage(from, to,
+        String content = ChatUtils.buildCpimMessage(getDialogPath(), to,
                 IsComposingInfo.buildIsComposingInfo(status), IsComposingInfo.MIME_TYPE,
                 System.currentTimeMillis());
         sendDataChunks(msgId, content, CpimMessage.MIME_TYPE, TypeMsrpChunk.IsComposing);
@@ -435,7 +432,7 @@ public abstract class GroupChatSession extends ChatSession {
         /* Timestamp for IMDN datetime */
         String imdn = ChatUtils.buildImdnDeliveryReport(msgId, status, timestamp);
         /* Timestamp for CPIM DateTime */
-        String content = ChatUtils.buildCpimDeliveryReport(fromUri, toUri, imdn,
+        String content = ChatUtils.buildCpimDeliveryReport(getDialogPath(), toUri, imdn,
                 System.currentTimeMillis());
 
         // Send data
@@ -469,7 +466,6 @@ public abstract class GroupChatSession extends ChatSession {
     public void sendFileInfo(GroupFileTransferImpl fileTransfer, String fileTransferId,
             String fileInfo, boolean displayedReportEnabled, boolean deliveredReportEnabled)
             throws NetworkException {
-        String from = ImsModule.getImsUserProfile().getPublicAddress();
         String networkContent;
         long timestamp = System.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
@@ -477,14 +473,14 @@ public abstract class GroupChatSession extends ChatSession {
         mMessagingLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);
         if (displayedReportEnabled) {
             networkContent = ChatUtils
-                    .buildCpimMessageWithImdn(from, ChatUtils.ANONYMOUS_URI, fileTransferId,
+                    .buildCpimMessageWithImdn(getDialogPath(), ChatUtils.ANONYMOUS_URI, fileTransferId,
                             fileInfo, FileTransferHttpInfoDocument.MIME_TYPE, timestampSent);
         } else if (deliveredReportEnabled) {
-            networkContent = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from,
+            networkContent = ChatUtils.buildCpimMessageWithoutDisplayedImdn(getDialogPath(),
                     ChatUtils.ANONYMOUS_URI, fileTransferId, fileInfo,
                     FileTransferHttpInfoDocument.MIME_TYPE, timestampSent);
         } else {
-            networkContent = ChatUtils.buildCpimMessage(from, ChatUtils.ANONYMOUS_URI, fileInfo,
+            networkContent = ChatUtils.buildCpimMessage(getDialogPath(), ChatUtils.ANONYMOUS_URI, fileInfo,
                     FileTransferHttpInfoDocument.MIME_TYPE, timestampSent);
         }
         sendDataChunks(IdGenerator.generateMessageID(), networkContent, CpimMessage.MIME_TYPE,

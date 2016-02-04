@@ -91,19 +91,16 @@ public abstract class OneToOneChatSession extends ChatSession {
 
         setAcceptContactTags(featureTags);
 
-        String acceptTypes = new StringBuilder(CpimMessage.MIME_TYPE).append(" ")
-                .append(IsComposingInfo.MIME_TYPE).toString();
-        setAcceptTypes(acceptTypes);
+        addAcceptTypes(CpimMessage.MIME_TYPE);
+        addAcceptTypes(IsComposingInfo.MIME_TYPE);
 
-        StringBuilder wrappedTypes = new StringBuilder(MimeType.TEXT_MESSAGE).append(" ").append(
-                ImdnDocument.MIME_TYPE);
+        addWrappedTypes(MimeType.TEXT_MESSAGE);
         if (mRcsSettings.isGeoLocationPushSupported()) {
-            wrappedTypes.append(" ").append(GeolocInfoDocument.MIME_TYPE);
+            addWrappedTypes(GeolocInfoDocument.MIME_TYPE);
         }
         if (mRcsSettings.isFileTransferHttpSupported()) {
-            wrappedTypes.append(" ").append(FileTransferHttpInfoDocument.MIME_TYPE);
+            addWrappedTypes(FileTransferHttpInfoDocument.MIME_TYPE);
         }
-        setWrappedTypes(wrappedTypes.toString());
     }
 
     /**

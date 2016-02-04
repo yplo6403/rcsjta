@@ -115,12 +115,12 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     /**
      * Accept types
      */
-    private String mAcceptTypes;
+    private String mAcceptTypes = "";
 
     /**
      * Wrapped types
      */
-    private String mWrappedTypes;
+    private String mWrappedTypes = "";
 
     /**
      * Geolocation push supported by remote
@@ -261,12 +261,15 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     }
 
     /**
-     * Set accept types
-     * 
-     * @param types Accept types
+     * Add types to accept types
+     * @param types
      */
-    public void setAcceptTypes(String types) {
-        mAcceptTypes = types;
+    public void addAcceptTypes(String types){
+        if(mAcceptTypes.isEmpty()) {
+            mAcceptTypes += types;
+        }else{
+            mAcceptTypes+=" "+types;
+        }
     }
 
     /**
@@ -278,13 +281,17 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         return mWrappedTypes;
     }
 
+
     /**
-     * Set wrapped types
-     * 
-     * @param types Wrapped types
+     * Add types to wrapped types
+     * @param types
      */
-    public void setWrappedTypes(String types) {
-        mWrappedTypes = types;
+    public void addWrappedTypes(String types){
+        if(mWrappedTypes.isEmpty()) {
+            mWrappedTypes += types;
+        }else{
+            mWrappedTypes+=" "+types;
+        }
     }
 
     /**
