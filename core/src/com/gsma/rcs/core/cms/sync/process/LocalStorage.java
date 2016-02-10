@@ -35,8 +35,8 @@ import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.HashSet;

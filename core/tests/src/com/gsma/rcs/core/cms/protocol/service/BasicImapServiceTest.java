@@ -26,9 +26,9 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.IoService;
-import com.sonymobile.rcs.imap.SocketIoService;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.IoService;
+import com.gsma.rcs.imaplib.imap.SocketIoService;
 
 import junit.framework.Assert;
 
@@ -51,7 +51,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithoutSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUri());
+        final IoService io = new SocketIoService(mSettings.getMessageStoreUri().getPath());
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);
@@ -80,7 +80,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUri(), 3000);
+        final IoService io = new SocketIoService(mSettings.getMessageStoreUri().getPath(), 3000);
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);

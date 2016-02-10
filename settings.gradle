@@ -1,4 +1,5 @@
 include ':bouncycastle'
+include ':imaplib'
 include ':api_cnx'
 include ':nist_sip'
 include ':api'
@@ -13,13 +14,14 @@ include ':tts'
 include ':cmsToolkit'
 
 // Project location (if not directly below root)
-project(':bouncycastle').projectDir=new File('libs/bouncycastle')
-project(':nist_sip').projectDir=new File('libs/nist_sip')
-project(':settings').projectDir=new File('tools/settings')
-project(':notification').projectDir=new File('tools/notification')
-project(':provisioning').projectDir=new File('tools/provisioning')
-project(':extension').projectDir=new File('samples/api/extension')
-project(':tts').projectDir=new File('samples/api/tts')
-project(':api').projectDir=new File('libs/api')
-project(':api_cnx').projectDir=new File('libs/api_cnx')
-project(':cmsToolkit').projectDir=new File('tools/cmsToolkit')
+project(':bouncycastle').projectDir = new File('libs/bouncycastle')
+project(':nist_sip').projectDir = new File('libs/nist_sip')
+project(':settings').projectDir = new File('tools/settings')
+project(':notification').projectDir = new File('tools/notification')
+project(':provisioning').projectDir = new File('tools/provisioning')
+project(':extension').projectDir = new File('samples/api/extension')
+project(':tts').projectDir = new File('samples/api/tts')
+project(':api').projectDir = new File('libs/api')
+project(':api_cnx').projectDir = new File('libs/api_cnx')
+project(':imaplib').projectDir = new File('libs/imaplib')
+project(':cmsToolkit').projectDir = new File('tools/cmsToolkit')

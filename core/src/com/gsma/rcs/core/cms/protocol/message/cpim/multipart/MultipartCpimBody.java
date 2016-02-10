@@ -24,7 +24,7 @@ import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 import java.util.ArrayList;
 import java.util.List;

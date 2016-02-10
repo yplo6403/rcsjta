@@ -21,10 +21,10 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.cms.Constants;
 
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapMessage;
-import com.sonymobile.rcs.imap.ImapMessageMetadata;
-import com.sonymobile.rcs.imap.Part;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
+import com.gsma.rcs.imaplib.imap.Part;
 
 import android.test.AndroidTestCase;
 

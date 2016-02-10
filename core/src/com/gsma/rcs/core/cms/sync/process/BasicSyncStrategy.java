@@ -35,9 +35,9 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.cpm.ms.impl.sync.AbstractSyncStrategy;
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.cpm.ms.impl.sync.AbstractSyncStrategy;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import android.content.Context;
 

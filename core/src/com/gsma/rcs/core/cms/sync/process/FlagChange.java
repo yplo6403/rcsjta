@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.sync.process;
 
-import com.sonymobile.rcs.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Flag;
 
 import android.text.TextUtils;
 

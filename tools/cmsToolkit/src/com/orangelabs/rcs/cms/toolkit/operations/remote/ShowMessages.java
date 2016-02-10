@@ -10,7 +10,7 @@ import com.gsma.rcs.core.cms.sync.scheduler.task.ShowMessagesTask.ShowMessagesTa
 import com.orangelabs.rcs.cms.toolkit.AlertDialogUtils;
 import com.orangelabs.rcs.cms.toolkit.R;
 import com.orangelabs.rcs.cms.toolkit.ToolkitHandler;
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;

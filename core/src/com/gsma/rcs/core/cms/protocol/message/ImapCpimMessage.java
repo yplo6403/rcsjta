@@ -28,7 +28,7 @@ import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 public class ImapCpimMessage extends ImapMessage {
 
@@ -39,7 +39,7 @@ public class ImapCpimMessage extends ImapMessage {
         super();
     }
 
-    public ImapCpimMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+    public ImapCpimMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 

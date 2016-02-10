@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    compile project(':imaplib')
     compile project(':api')
     compile project(':api_cnx')
 }

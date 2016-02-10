@@ -39,7 +39,7 @@ public class ImapMessageResolver {
     public ImapMessageResolver() {
     }
 
-    public MessageType resolveType(com.sonymobile.rcs.imap.ImapMessage imapMessage)
+    public MessageType resolveType(com.gsma.rcs.imaplib.imap.ImapMessage imapMessage)
             throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
 
         String messageContext = imapMessage.getBody().getHeader(Constants.HEADER_MESSAGE_CONTEXT);
@@ -99,7 +99,7 @@ public class ImapMessageResolver {
     }
 
     public IImapMessage resolveMessage(MessageType messageType,
-            com.sonymobile.rcs.imap.ImapMessage imapMessage) throws CmsSyncException {
+            com.gsma.rcs.imaplib.imap.ImapMessage imapMessage) throws CmsSyncException {
 
         switch (messageType) {
             case SMS:

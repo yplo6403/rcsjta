@@ -24,8 +24,8 @@ import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.io.IOException;
 import java.util.ArrayList;

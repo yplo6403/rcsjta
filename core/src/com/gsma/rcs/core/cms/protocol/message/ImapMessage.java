@@ -21,11 +21,11 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 
-import com.sonymobile.rcs.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Flag;
 
 public abstract class ImapMessage implements IImapMessage {
 
-    protected com.sonymobile.rcs.imap.ImapMessage mRawMessage;
+    protected com.gsma.rcs.imaplib.imap.ImapMessage mRawMessage;
     private HeaderPart mHeaderPart;
     private BodyPart mBodyPart;
 
@@ -33,7 +33,7 @@ public abstract class ImapMessage implements IImapMessage {
         mHeaderPart = new HeaderPart();
     }
 
-    protected ImapMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage) {
+    protected ImapMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) {
         this();
         mRawMessage = rawMessage;
         parsePayload(mRawMessage.getPayload());

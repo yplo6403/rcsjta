@@ -22,7 +22,7 @@ package com.gsma.rcs.core.cms.protocol.message.cpim.text;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 public class TextCpimBody extends CpimBody {
 

@@ -21,9 +21,9 @@ package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
 
-import com.sonymobile.rcs.imap.ImapMessage;
-import com.sonymobile.rcs.imap.ImapMessageMetadata;
-import com.sonymobile.rcs.imap.Part;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
+import com.gsma.rcs.imaplib.imap.Part;
 
 import java.util.ArrayList;
 import java.util.Collections;

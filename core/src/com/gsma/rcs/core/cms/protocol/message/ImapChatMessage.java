@@ -31,7 +31,7 @@ public class ImapChatMessage extends ImapCpimMessage {
     private final boolean isOneToOne;
     private final String mChatId;
 
-    public ImapChatMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+    public ImapChatMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 

@@ -1,0 +1,77 @@
+/*
+ * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.gsma.rcs.imaplib.cpm.ms.impl.sync;
+
+import com.gsma.rcs.imaplib.cpm.ms.CpmMessageStoreException;
+import com.gsma.rcs.imaplib.cpm.ms.MessageStore;
+import com.gsma.rcs.imaplib.cpm.ms.sync.MutableReport;
+import com.gsma.rcs.imaplib.cpm.ms.sync.SyncOperationNotAllowed;
+import com.gsma.rcs.imaplib.cpm.ms.sync.SyncStrategy;
+
+public abstract class AbstractSyncStrategy implements SyncStrategy {
+
+    /**
+	 * 
+	 */
+    private static final long serialVersionUID = 1L;
+
+    protected MessageStore mLocalStore;
+
+    protected MessageStore mRemoteStore;
+
+    protected MutableReport mReport;
+
+    @Override
+    public void execute(MessageStore localStore, MessageStore remoteStore, MutableReport report)
+            throws Exception {
+        mLocalStore = localStore;
+        mRemoteStore = remoteStore;
+        mReport = report;
+
+        execute();
+
+        // TODO clear exception handling
+        // mLocalStore.applyChanges();
+        remoteStore.applyChanges();
+
+        report.setProgress(report.getProgressMax());
+    }
+
+    @Override
+    public String getName() {
+        return getClass().getSimpleName();
+    }
+
+    @Override
+    public void cancel() throws CpmMessageStoreException {
+        throw new SyncOperationNotAllowed("Not implemented for this strategy :" + getName());
+    }
+
+    @Override
+    public void pause() throws CpmMessageStoreException {
+        throw new SyncOperationNotAllowed("Not implemented for this strategy :" + getName());
+    }
+
+    @Override
+    public void resume() throws CpmMessageStoreException {
+        throw new SyncOperationNotAllowed("Not implemented for this strategy :" + getName());
+    }
+
+    public abstract void execute() throws Exception;
+
+}

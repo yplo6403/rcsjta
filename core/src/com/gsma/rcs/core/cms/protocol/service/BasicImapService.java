@@ -28,12 +28,12 @@ import com.gsma.rcs.core.cms.protocol.cmd.ListCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.ListStatusCmdHandler;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
 
-import com.sonymobile.rcs.imap.DefaultImapService;
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.ImapMessage;
-import com.sonymobile.rcs.imap.ImapUtil;
-import com.sonymobile.rcs.imap.IoService;
+import com.gsma.rcs.imaplib.imap.DefaultImapService;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapUtil;
+import com.gsma.rcs.imaplib.imap.IoService;
 
 import java.io.IOException;
 import java.util.ArrayList;

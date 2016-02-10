@@ -65,7 +65,7 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
-import com.sonymobile.rcs.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapException;
 
 import junit.framework.Assert;
 

@@ -22,8 +22,8 @@ package com.gsma.rcs.core.cms.protocol.cmd;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
 
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.Part;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Part;
 
 import java.util.ArrayList;
 import java.util.HashMap;

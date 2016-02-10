@@ -29,7 +29,7 @@ import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -48,7 +48,7 @@ public class ImapGroupStateMessage extends ImapMessage {
     private String mRejoinId;
     private List<ContactId> mParticipants;
 
-    public ImapGroupStateMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+    public ImapGroupStateMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncException {
         super(rawMessage);
 
