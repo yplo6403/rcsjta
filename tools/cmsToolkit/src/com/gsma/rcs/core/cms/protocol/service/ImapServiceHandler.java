@@ -20,8 +20,8 @@
 package com.gsma.rcs.core.cms.protocol.service;
 
 import com.orangelabs.rcs.cms.toolkit.Preferences;
-import com.sonymobile.rcs.imap.IoService;
-import com.sonymobile.rcs.imap.SocketIoService;
+import com.gsma.rcs.imaplib.imap.IoService;
+import com.gsma.rcs.imaplib.imap.SocketIoService;
 
 import android.content.Context;
 

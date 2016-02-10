@@ -22,7 +22,7 @@ package com.gsma.rcs.core.cms.sync.process;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.cms.CmsFolder;
 
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.util.List;
 import java.util.Set;

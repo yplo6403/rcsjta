@@ -29,7 +29,7 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.sonymobile.rcs.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Flag;
 
 public class SmsIntegrationUtils {
 

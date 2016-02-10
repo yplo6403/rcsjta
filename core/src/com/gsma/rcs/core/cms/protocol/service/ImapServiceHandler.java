@@ -24,9 +24,9 @@ import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.ImapException;
-import com.sonymobile.rcs.imap.IoService;
-import com.sonymobile.rcs.imap.SocketIoService;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.IoService;
+import com.gsma.rcs.imaplib.imap.SocketIoService;
 
 import java.io.IOException;
 
@@ -49,7 +49,7 @@ public class ImapServiceHandler {
      * @param rcsSettings the RCS settings accessor
      */
     public ImapServiceHandler(RcsSettings rcsSettings) {
-        IoService io = new SocketIoService(rcsSettings.getMessageStoreUri(), SOCKET_TIMEOUT_IN_MS);
+        IoService io = new SocketIoService(rcsSettings.getMessageStoreUri().getPath(), SOCKET_TIMEOUT_IN_MS);
         mBasicImapService = new BasicImapService(io);
         // TODO FGI : Handle SSL authentication with message store
         // TODO FGI : See MESSAGE_STORE_AUTH parameter in provisioning

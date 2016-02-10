@@ -32,7 +32,7 @@ public class ImapSmsMessage extends ImapCpimMessage {
     private String mCorrelator;
     private long mDate;
 
-    public ImapSmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+    public ImapSmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 

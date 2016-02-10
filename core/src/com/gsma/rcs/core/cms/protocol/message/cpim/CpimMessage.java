@@ -23,7 +23,7 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.protocol.message.BodyPart;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 public class CpimMessage extends BodyPart {
 

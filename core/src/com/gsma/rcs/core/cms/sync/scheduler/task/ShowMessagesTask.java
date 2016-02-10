@@ -24,7 +24,7 @@ import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -21,7 +21,7 @@ package com.gsma.rcs.core.cms.sync.scheduler.task;
 
 import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
 
-import com.sonymobile.rcs.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapException;
 
 import java.io.IOException;
 import java.util.logging.Logger;

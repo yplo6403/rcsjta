@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.protocol.cmd;
 
-import com.sonymobile.rcs.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Flag;
 
 import java.util.HashSet;
 import java.util.Set;

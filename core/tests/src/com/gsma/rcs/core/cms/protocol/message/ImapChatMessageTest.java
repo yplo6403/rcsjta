@@ -25,10 +25,10 @@ import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapMessage;
-import com.sonymobile.rcs.imap.ImapMessageMetadata;
-import com.sonymobile.rcs.imap.Part;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
+import com.gsma.rcs.imaplib.imap.Part;
 
 import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;

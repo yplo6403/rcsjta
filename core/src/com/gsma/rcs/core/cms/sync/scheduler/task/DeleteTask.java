@@ -24,7 +24,7 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.logger.Logger;
 
-import com.sonymobile.rcs.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapException;
 
 import java.io.IOException;
 

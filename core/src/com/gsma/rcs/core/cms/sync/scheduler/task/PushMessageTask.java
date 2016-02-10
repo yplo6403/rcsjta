@@ -38,8 +38,8 @@ import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.sonymobile.rcs.imap.Flag;
-import com.sonymobile.rcs.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapException;
 
 import android.content.Context;
 

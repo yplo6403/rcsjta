@@ -1,7 +1,7 @@
 
 package com.orangelabs.rcs.cms.toolkit.operations;
 
-import com.sonymobile.rcs.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Flag;
 
 import java.util.HashMap;
 import java.util.HashSet;

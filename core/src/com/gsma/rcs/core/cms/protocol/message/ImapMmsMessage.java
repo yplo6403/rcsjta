@@ -35,7 +35,7 @@ import com.gsma.rcs.utils.logger.Logger;
 import android.content.ContentResolver;
 import android.content.Context;
 
-import com.sonymobile.rcs.imap.Header;
+import com.gsma.rcs.imaplib.imap.Header;
 
 import java.util.List;
 
@@ -53,7 +53,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
      * @throws CmsSyncMissingHeaderException
      * @throws CmsSyncHeaderFormatException
      */
-    public ImapMmsMessage(com.sonymobile.rcs.imap.ImapMessage rawMessage)
+    public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
 
