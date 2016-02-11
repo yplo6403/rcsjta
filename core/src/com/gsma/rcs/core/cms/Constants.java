@@ -68,7 +68,7 @@ public class Constants {
     public static final String BOUDARY_SEP = "--";
 
     public static final String MESSAGE_CPIM = "Message/CPIM";
-    public static final String APPLICATION_SESSION = "Application/X-CPM-Session";
+    public static final String APPLICATION_CPM_SESSION = "Application/X-CPM-Session";
     public static final String APPLICATION_GROUP_STATE = "Application/group-state-object+xml";
     public static final String APPLICATION_FILE_TRANSFER = "Application/X-CPM-File-Transfer";
     public static final String PAGER_MESSAGE = "pager-message";

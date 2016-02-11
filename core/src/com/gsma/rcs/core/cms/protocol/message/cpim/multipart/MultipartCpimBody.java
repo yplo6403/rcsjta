@@ -51,7 +51,7 @@ public class MultipartCpimBody extends CpimBody {
         String[] parts = body.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
-                mHeaders.addHeader(header.getKey(), header.getValue());
+                mHeaders.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
 
             if (!checkMultipart(getContentType())) {
@@ -168,7 +168,7 @@ public class MultipartCpimBody extends CpimBody {
         private void parseHeaders(String headerContent) {
             for (String header : headerContent.split(Constants.CRLF)) {
                 String[] val = header.split(Constants.HEADER_SEP);
-                mHeaderPart.addHeader(val[0].trim(), val[1].trim());
+                mHeaderPart.addHeader(val[0].trim().toLowerCase(), val[1].trim());
             }
         }
 

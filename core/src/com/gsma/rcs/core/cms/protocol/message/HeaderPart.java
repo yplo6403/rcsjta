@@ -61,7 +61,7 @@ public class HeaderPart {
     }
 
     public String getHeaderValue(String headerName) {
-        Header header = mHeadersMap.get(headerName);
+        Header header = mHeadersMap.get(headerName.toLowerCase());
         return (header == null ? null : header.mValue);
     }
 

@@ -45,6 +45,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     protected final CmsLog mCmsLog;
     protected final RcsSettings mSettings;
     protected final EventFrameworkHandler mEventFrameworkHandler;
+    protected final ImdnDeliveryReportListener mImdnDeliveryReportListener;
 
     /**
      * Default constructor
@@ -53,13 +54,16 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
      * @param cmsLog the IMAP log accessor
      * @param messagingLog the messaging log accessor
      * @param settings the RCS settings accessor
+     * @param imdnDeliveryReportListener the listener for delivery report event
      */
     public ChatEventHandler(EventFrameworkHandler eventFrameworkHandler, CmsLog cmsLog,
-            MessagingLog messagingLog, RcsSettings settings) {
+            MessagingLog messagingLog, RcsSettings settings,
+            ImdnDeliveryReportListener imdnDeliveryReportListener) {
         mEventFrameworkHandler = eventFrameworkHandler;
         mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
         mSettings = settings;
+        mImdnDeliveryReportListener = imdnDeliveryReportListener;
     }
 
     @Override
@@ -68,10 +72,9 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
-        mCmsLog.addMessage(
-                new CmsObject(CmsUtils.contactToCmsFolder(mSettings, msg.getRemoteContact()),
-                        ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                        MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
+                msg.getRemoteContact()), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
+                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
     }
 
     @Override
@@ -97,24 +100,22 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn,
-            String imdnId) {
+            String imdnMessageId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnId));
+            sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.IMDN, imdnId, null));
+        mImdnDeliveryReportListener.onDeliveryReport(contact, imdnMessageId);
     }
 
     @Override
     public void onDeliveryStatusReceived(String contributionId, ContactId contact,
-            ImdnDocument imdn, String imdnId) {
-        onMessageDeliveryStatusReceived(contact, imdn, imdnId);
+            ImdnDocument imdn, String imdnMessageId) {
+        onMessageDeliveryStatusReceived(contact, imdn, imdnMessageId);
     }
 
     @Override
     public void onChatMessageDisplayReportSent(String msgId) {
-
+        // nothing to do, done in ImdnDeliveryReportListener
     }
 
     @Override
@@ -130,7 +131,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact,
             TypeMsrpChunk chunktype) {
-
+        mImdnDeliveryReportListener.onDeliveryReport(contact, msgId);
     }
 
     @Override
@@ -163,7 +164,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         mCmsLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
                 ReadStatus.READ_REPORT_REQUESTED);
         if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onReadChatMessage(messageId);
+            mEventFrameworkHandler.updateFlagsForChat();
         }
     }
 
@@ -172,7 +173,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId,
                 DeleteStatus.DELETED_REPORT_REQUESTED);
         if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onDeleteChatMessage(messageId);
+            mEventFrameworkHandler.updateFlagsForChat();
         }
     }
 }

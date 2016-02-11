@@ -1352,9 +1352,9 @@ public class InstantMessagingService extends ImsService {
 
                     String chatId = mMessagingLog.getMessageChatId(msgId);
                     if (chatId != null) {
-                        String imdnId = ChatUtils.getMessageId(message);
+                        String imdnMessageId = ChatUtils.getMessageId(message);
                         getImsModule().getCmsService().getCmsManager().getChatEventHandler()
-                                .onMessageDeliveryStatusReceived(contact, imdn, imdnId);
+                                .onMessageDeliveryStatusReceived(contact, imdn, imdnMessageId);
                         if (chatId.equals(contact.toString())) {
                             if (sLogger.isActivated()) {
                                 sLogger.debug("Handle one to one message delivery status");
@@ -1363,7 +1363,7 @@ public class InstantMessagingService extends ImsService {
                             return;
                         }
                         mChatService.getOrCreateGroupChat(chatId).onMessageDeliveryStatusReceived(
-                                contact, imdn, imdnId);
+                                contact, imdn, imdnMessageId);
                         return;
                     }
                     chatId = mMessagingLog.getFileTransferChatId(msgId);
@@ -1889,7 +1889,7 @@ public class InstantMessagingService extends ImsService {
                         } catch (FileAccessException e) {
                             sLogger.error("Failed to download file icon", e);
                             oneToOneChatSession.sendErrorResponse(invite, oneToOneChatSession
-                                    .getDialogPath().getLocalTag(),
+                                            .getDialogPath().getLocalTag(),
                                     InvitationStatus.INVITATION_REJECTED_DECLINE);
 
                             /* Close session */
@@ -2405,7 +2405,7 @@ public class InstantMessagingService extends ImsService {
 
     /**
      * Handle imdn DISPLAY report sent for message
-     * 
+     *
      * @param chatId the chat ID
      * @param remote the remote contact
      * @param msgId the message ID

@@ -40,7 +40,7 @@ public class CpimMessage extends BodyPart {
         String[] parts = payload.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
-                mHeaders.addHeader(header.getKey(), header.getValue());
+                mHeaders.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
             mBody.parseBody(parts[1]);
         }
@@ -66,4 +66,10 @@ public class CpimMessage extends BodyPart {
     public String getContentType() {
         return mBody.getContentType();
     }
+
+    /*
+     * public ContactId getContact(String headerName){ String raw =
+     * mHeaders.getHeaderValue(headerName); if(raw.startsWith("<") && raw.endsWith(">")){ } }
+     */
+
 }

@@ -38,6 +38,7 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.FifoBuffer;
+import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -65,7 +66,7 @@ public class ImdnManager extends Thread {
     /**
      * Constructor
      * 
-     * @param imsService IMS service
+     * @param imService IMS service
      * @param rcsSettings
      */
     public ImdnManager(InstantMessagingService imService, RcsSettings rcsSettings) {
@@ -168,7 +169,8 @@ public class ImdnManager extends Thread {
     public void sendMessageDeliveryStatus(String chatId, ContactId remote, String msgId,
             String status, long timestamp) {
         // Add request in the buffer for background processing
-        DeliveryStatus delivery = new DeliveryStatus(chatId, remote, msgId, status, timestamp);
+        DeliveryStatus delivery = new DeliveryStatus(chatId, remote, msgId, status, timestamp,
+                IdGenerator.generateMessageID());
         mBuffer.addObject(delivery);
     }
 
@@ -188,7 +190,8 @@ public class ImdnManager extends Thread {
             String status, final String remoteInstanceId, long timestamp) throws PayloadException,
             NetworkException {
         // Execute request in background
-        final DeliveryStatus delivery = new DeliveryStatus(chatId, remote, msgId, status, timestamp);
+        final DeliveryStatus delivery = new DeliveryStatus(chatId, remote, msgId, status,
+                timestamp, IdGenerator.generateMessageID());
         sendSipMessageDeliveryStatus(delivery, remoteInstanceId);
     }
 
@@ -258,7 +261,7 @@ public class ImdnManager extends Thread {
             String imdn = ChatUtils.buildImdnDeliveryReport(deliveryStatus.getMsgId(),
                     deliveryStatus.getStatus(), deliveryStatus.getTimestamp());
             /* Timestamp for CPIM DateTime */
-            String cpim = ChatUtils.buildCpimDeliveryReport(from, to, imdn,
+            String cpim = ChatUtils.buildCpimDeliveryReport(from, to, deliveryStatus.getImdnMessageId(), imdn,
                     System.currentTimeMillis());
 
             // Create authentication agent
@@ -288,6 +291,14 @@ public class ImdnManager extends Thread {
             // Analyze received message
             analyzeSipResponse(ctx, authenticationAgent, dialogPath, cpim);
 
+            mImService
+                    .getImsModule()
+                    .getCmsService()
+                    .getCmsManager()
+                    .getImdnDeliveryReportListener()
+                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),
+                            deliveryStatus.getImdnMessageId());
+
         } catch (InvalidArgumentException e) {
             throw new PayloadException(new StringBuilder(
                     "Unable to set authorization header for remoteInstanceId : ").append(
@@ -309,14 +320,16 @@ public class ImdnManager extends Thread {
         private String mMsgId;
         private String mStatus;
         private long mTimestamp;
+        private String mImdnMessageId;
 
         public DeliveryStatus(String chatId, ContactId remote, String msgId, String status,
-                long timestamp) {
+                long timestamp, String imdnMessageId) {
             mChatId = chatId;
             mRemote = remote;
             mMsgId = msgId;
             mStatus = status;
             mTimestamp = timestamp;
+            mImdnMessageId = imdnMessageId;
         }
 
         public String getChatId() {
@@ -337,6 +350,10 @@ public class ImdnManager extends Thread {
 
         public long getTimestamp() {
             return mTimestamp;
+        }
+
+        public String getImdnMessageId() {
+            return mImdnMessageId;
         }
     }
 

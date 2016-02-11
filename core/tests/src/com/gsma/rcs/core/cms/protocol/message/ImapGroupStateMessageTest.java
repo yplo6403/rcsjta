@@ -89,7 +89,6 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
             Assert.assertEquals(Constants.APPLICATION_GROUP_STATE,
                     imapGroupStateMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-            Assert.assertEquals("mySubject", imapGroupStateMessage.getSubject());
             Assert.assertEquals("1443517760826", imapGroupStateMessage.getChatId());
             Assert.assertEquals("sip:da9274453@company.com", imapGroupStateMessage.getRejoinId());
             List<ContactId> contacts = imapGroupStateMessage.getParticipants();

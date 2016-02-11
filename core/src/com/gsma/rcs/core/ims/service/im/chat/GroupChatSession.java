@@ -432,7 +432,8 @@ public abstract class GroupChatSession extends ChatSession {
         /* Timestamp for IMDN datetime */
         String imdn = ChatUtils.buildImdnDeliveryReport(msgId, status, timestamp);
         /* Timestamp for CPIM DateTime */
-        String content = ChatUtils.buildCpimDeliveryReport(getDialogPath(), toUri, imdn,
+        String imdnMessageId = IdGenerator.generateMessageID();
+        String content = ChatUtils.buildCpimDeliveryReport(getDialogPath(), toUri, imdnMessageId, imdn,
                 System.currentTimeMillis());
 
         // Send data
@@ -451,6 +452,10 @@ public abstract class GroupChatSession extends ChatSession {
                 }
             }
         }
+        getImsService().getImsModule().getCmsService().getCmsManager()
+                .getImdnDeliveryReportListener()
+                .onDeliveryReport(getContributionID(), imdnMessageId);
+
     }
 
     /**

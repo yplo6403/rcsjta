@@ -71,9 +71,9 @@ public interface ChatSessionListener extends ImsSessionListener {
      * 
      * @param contact the remote contact identifier
      * @param ImdnDocument imdn Imdn document
-     * @param imdnId  imdnId
+     * @param imdnMessageId the IMDN-Message-ID
      */
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId);
+    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnMessageId);
 
     /**
      * New message or file transfer delivery status that are received as part of imdn notification
@@ -81,9 +81,9 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param contributionId Contribution ID
      * @param contact the remote contact identifier
      * @param imdn Imdn Document
-     * @param imdnId  imdnId
+     * @param imdnMessageId the IMDN-Message-ID
      */
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnId);
+    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnMessageId);
 
     /**
      * Handle imdn DISPLAY report sent for message
@@ -91,4 +91,5 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param msgId
      */
     public void onChatMessageDisplayReportSent(String msgId);
+
 }

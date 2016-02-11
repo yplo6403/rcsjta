@@ -52,8 +52,9 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
      * @param messagingLog the messaging accessor
      * @param settings the RCS settings accessor
      */
-    public GroupChatEventHandler(CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings) {
-        super(null, cmsLog, messagingLog, settings);
+    public GroupChatEventHandler(CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings,
+            ImdnDeliveryReportListener imdnDeliveryReportListener) {
+        super(null, cmsLog, messagingLog, settings, imdnDeliveryReportListener);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         }
         mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, conversationId,
                 contributionId), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.GROUP_STATE, contributionId, null));
+                PushStatus.PUSHED, MessageType.CPM_SESSION, contributionId, null));
     }
 
     @Override
@@ -71,7 +72,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteGroupChat: " + chatId);
         }
-        mCmsLog.updateDeleteStatus(MessageType.GROUP_STATE, chatId,
+        mCmsLog.updateDeleteStatus(CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId),
                 DeleteStatus.DELETED_REPORT_REQUESTED);
     }
 
@@ -104,13 +105,11 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
 
     @Override
     public void onDeliveryStatusReceived(String contributionId, ContactId contact,
-            ImdnDocument imdn, String imdnId) {
+            ImdnDocument imdn, String imdnMessageId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnId));
+            sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, contributionId,
-                contributionId), ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.IMDN, imdnId, null));
+        mImdnDeliveryReportListener.onDeliveryReport(contributionId, imdnMessageId);
     }
 
     @Override
@@ -140,7 +139,10 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, String chatId,
             TypeMsrpChunk chunktype) {
-
+        if (sLogger.isActivated()) {
+            sLogger.debug("onDeliveryReportSendViaMsrpFailure: ".concat(msgId));
+        }
+        mImdnDeliveryReportListener.onDeliveryReport(chatId, msgId);
     }
 
     @Override

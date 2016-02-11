@@ -42,7 +42,7 @@ public class TextCpimBody extends CpimBody {
         String[] parts = body.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
-                mHeaders.addHeader(header.getKey(), header.getValue());
+                mHeaders.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
             mContent = parts[1];
         }

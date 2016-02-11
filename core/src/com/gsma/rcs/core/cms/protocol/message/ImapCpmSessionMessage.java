@@ -22,14 +22,16 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
-import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
-import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
+import com.gsma.rcs.core.cms.protocol.message.cpmsession.CpmSessionDocument;
+import com.gsma.rcs.core.cms.protocol.message.cpmsession.CpmSessionParser;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
-import com.gsma.services.rcs.contact.ContactId;
-
+import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -39,13 +41,17 @@ import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-public class ImapGroupStateMessage extends ImapMessage {
+public class ImapCpmSessionMessage extends ImapMessage {
+
+    private static final String SESSION_TYPE_GROUP = "Group";
 
     private final String mChatId;
-    private String mRejoinId;
+    private final Direction mDirection;
+    private final long mTimestamp;
+    private final String mSubject;
     private List<ContactId> mParticipants;
 
-    public ImapGroupStateMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
+    public ImapCpmSessionMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncException {
         super(rawMessage);
 
@@ -69,10 +75,19 @@ public class ImapGroupStateMessage extends ImapMessage {
         // remove my number from participants list
         ContactId myNumber;
         if (Constants.DIRECTION_SENT.equals(direction)) {
+            mDirection = Direction.OUTGOING;
             myNumber = CmsUtils.headerToContact(from);
         } else {
+            mDirection = Direction.INCOMING;
             myNumber = CmsUtils.headerToContact(to);
         }
+
+        String date = getHeader(Constants.HEADER_DATE);
+        if (date == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
+                    + " IMAP header is missing");
+        }
+        mTimestamp = DateUtils.parseDate(date, DateUtils.CMS_IMAP_DATE_FORMAT);
 
         try {
             mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
@@ -81,12 +96,18 @@ public class ImapGroupStateMessage extends ImapMessage {
                         + " IMAP header is missing");
             }
 
+            mSubject = getHeader(Constants.HEADER_SUBJECT);
+
             String xml = getBodyPart().getPayload();
             if (!xml.isEmpty()) {
-                GroupStateParser parser = new GroupStateParser(new InputSource(
+                CpmSessionParser parser = new CpmSessionParser(new InputSource(
                         new ByteArrayInputStream(xml.toString().getBytes())));
-                GroupStateDocument document = parser.parse().getGroupStateDocument();
-                mRejoinId = document.getLastfocussessionid();
+                CpmSessionDocument document = parser.parse().getCpmSessionDocument();
+                String sessionType = document.getSessionType();
+                if (!SESSION_TYPE_GROUP.equals(sessionType)) {
+                    throw new CmsSyncMessageNotSupportedException(
+                            "This type of cpm session is not supported : " + sessionType);
+                }
                 mParticipants = document.getParticipants();
                 mParticipants.remove(myNumber);
             }
@@ -108,16 +129,23 @@ public class ImapGroupStateMessage extends ImapMessage {
         }
     }
 
-    public String getRejoinId() {
-        return mRejoinId;
+    public String getSubject() {
+        return mSubject;
     }
 
     public List<ContactId> getParticipants() {
         return mParticipants;
     }
 
+    public long getTimestamp() {
+        return mTimestamp;
+    }
+
     public String getChatId() {
         return mChatId;
     }
 
+    public Direction getDirection() {
+        return mDirection;
+    }
 }

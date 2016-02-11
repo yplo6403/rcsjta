@@ -982,16 +982,16 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
     }
 
     @Override
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnId) {
+    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnMessageId) {
         mChatService.onOneToOneMessageDeliveryStatusReceived(contact, imdn);
     }
 
     @Override
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnId) {
+    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnMessageId) {
         String msgId = imdn.getMsgId();
 
         if (mMessagingLog.isMessagePersisted(msgId)) {
-            onMessageDeliveryStatusReceived(contact, imdn, imdnId);
+            onMessageDeliveryStatusReceived(contact, imdn, imdnMessageId);
             return;
         }
 

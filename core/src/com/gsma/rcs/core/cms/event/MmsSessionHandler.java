@@ -30,7 +30,6 @@ import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -61,21 +60,16 @@ public class MmsSessionHandler implements MmsSessionListener {
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        mCmsLog.addMessage(
-                new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact), ReadStatus.READ,
-                        CmsObject.DeleteStatus.NOT_DELETED, mSettings.getMessageStorePushSms()
-                                ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                        MessageType.MMS, mmsId, null));
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
+                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
+                        .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
+                MessageType.MMS, mmsId, null));
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
         if (mImapEventFrameworkHandler == null) {
             return;
         }
-        if (Direction.INCOMING == mms.getDirection()) {
-            mImapEventFrameworkHandler.onIncomingMms(mms);
-        } else {
-            mImapEventFrameworkHandler.onOutgoingMms(mms);
-        }
+        mImapEventFrameworkHandler.pushMmsMessage(mms.getContact());
     }
 
     @Override

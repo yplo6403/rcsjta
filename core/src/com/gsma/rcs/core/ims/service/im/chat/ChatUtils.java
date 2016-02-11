@@ -646,15 +646,16 @@ public class ChatUtils {
      * 
      * @param dialogPath SipDialogPath
      * @param to To
+     * @param messageId Message ID
      * @param imdn IMDN report
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to, String imdn,
+    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to, String messageId, String imdn,
             long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
                 .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
-                .append(buildCpimDeliveryReport(to, imdn, timestampSent)).toString();
+                .append(buildCpimDeliveryReport(to, messageId, imdn, timestampSent)).toString();
     }
 
     /**
@@ -662,32 +663,34 @@ public class ChatUtils {
      *
      * @param from From
      * @param to To
+     * @param messageId Message ID
      * @param imdn IMDN report
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(String from, String to, String imdn,
+    public static String buildCpimDeliveryReport(String from, String to, String messageId, String imdn,
                                                  long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
                 .append(formatCpimSipUri(from)).append(CRLF)
-                .append(buildCpimDeliveryReport(to, imdn, timestampSent)).toString();
+                .append(buildCpimDeliveryReport(to, messageId, imdn, timestampSent)).toString();
     }
 
     /**
      * Build a CPIM delivery report
      *
      * @param to To
+     * @param messageId Message ID
      * @param imdn IMDN report
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    private static String buildCpimDeliveryReport(String to, String imdn,
+    private static String buildCpimDeliveryReport(String to, String messageId, String imdn,
                                                  long timestampSent) {
         return new StringBuilder(CpimMessage.HEADER_TO)
                 .append(": ").append(formatCpimSipUri(to)).append(CRLF)
                 .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
                 .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ")
-                .append(IdGenerator.generateMessageID()).append(CRLF)
+                .append(messageId).append(CRLF)
                 .append(CpimMessage.HEADER_DATETIME).append(": ")
                 .append(DateUtils.encodeDate(timestampSent)).append(CRLF).append(CRLF)
                 .append(CpimMessage.HEADER_CONTENT_TYPE).append(": ")

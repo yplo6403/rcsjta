@@ -96,6 +96,8 @@ public class CmsLog {
                 + MessageType.IMDN + "'";
         private static final String SELECTION_GROUP_STATE = CmsObject.KEY_MESSAGE_TYPE + "='"
                 + MessageType.GROUP_STATE + "'";
+        private static final String SELECTION_CPM_SESSION = CmsObject.KEY_MESSAGE_TYPE + "='"
+                + MessageType.CPM_SESSION + "'";
         private static final String SELECTION_SMS = CmsObject.KEY_MESSAGE_TYPE + "='"
                 + MessageType.SMS + "'";
         private static final String SELECTION_MMS = CmsObject.KEY_MESSAGE_TYPE + "='"
@@ -109,6 +111,8 @@ public class CmsLog {
         private static final String SELECTION_CHAT_IMDN_MESSAGEID = SELECTION_CHAT_IMDN + " AND "
                 + SELECTION_MESSAGE_ID;
         private static final String SELECTION_GROUP_STATE_MESSAGEID = SELECTION_GROUP_STATE
+                + " AND " + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_CPM_SESSION_MESSAGEID = SELECTION_CPM_SESSION
                 + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_SMS_MESSAGEID = SELECTION_SMS + " AND "
                 + SELECTION_MESSAGE_ID;
@@ -443,6 +447,16 @@ public class CmsLog {
      */
     public CmsObject getGroupChatObjectData(String messageId) {
         return getData(messageId, Message.SELECTION_GROUP_STATE_MESSAGEID);
+    }
+
+    /**
+     * Get cpmsession data by messageId
+     *
+     * @param messageId the message ID
+     * @return CmsObject
+     */
+    public CmsObject getCpmSessionData(String messageId) {
+        return getData(messageId, Message.SELECTION_CPM_SESSION_MESSAGEID);
     }
 
     private CmsObject getData(String messageId, String selection) {
@@ -802,12 +816,15 @@ public class CmsLog {
      * 
      * @param deleteStatus the deleted status
      */
-    public void updateDeleteStatus(DeleteStatus deleteStatus) {
+    public void updateDeleteStatus(String folder, DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values, null, null);
+        mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SELECTION_FOLDER_NAME,
+                new String[] {
+                    folder
+                });
     }
-
+    
     /**
      * Updates delete status by folder and uid
      * 

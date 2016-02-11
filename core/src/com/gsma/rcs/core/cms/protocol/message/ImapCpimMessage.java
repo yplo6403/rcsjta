@@ -32,7 +32,7 @@ import com.gsma.rcs.imaplib.imap.Header;
 
 public class ImapCpimMessage extends ImapMessage {
 
-    private ContactId mContact;
+    /* package private */String mRemote;
     private Direction mDirection;
 
     public ImapCpimMessage() {
@@ -49,18 +49,18 @@ public class ImapCpimMessage extends ImapMessage {
                     + " IMAP header is missing");
         }
 
-        String headerContact;
         if (Constants.DIRECTION_SENT.equals(direction)) {
             mDirection = Direction.OUTGOING;
-            headerContact = getHeader(Constants.HEADER_TO);
+            mRemote = getHeader(Constants.HEADER_TO);
         } else {
             mDirection = Direction.INCOMING;
-            headerContact = getHeader(Constants.HEADER_FROM);
+            mRemote = getHeader(Constants.HEADER_FROM);
         }
 
-        mContact = CmsUtils.headerToContact(headerContact);
-        if (mContact == null) {
-            throw new CmsSyncHeaderFormatException("Bad format for header : " + headerContact);
+        if (mRemote == null) {
+            throw new CmsSyncMissingHeaderException(
+                    mDirection == Direction.OUTGOING ? Constants.HEADER_TO : Constants.HEADER_FROM
+                            + " IMAP header is missing");
         }
     }
 
@@ -69,7 +69,7 @@ public class ImapCpimMessage extends ImapMessage {
         String[] parts = payload.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
-                addHeader(header.getKey(), header.getValue());
+                addHeader(header.getKey().toLowerCase(), header.getValue());
             }
             CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
             cpimMessage.parsePayload(parts[1]);
@@ -81,11 +81,15 @@ public class ImapCpimMessage extends ImapMessage {
         return (CpimMessage) super.getBodyPart();
     }
 
-    public ContactId getContact() {
-        return mContact;
+    public String getRemote() {
+        return mRemote;
     }
 
     public Direction getDirection() {
         return mDirection;
+    }
+
+    public ContactId getContact() {
+        return CmsUtils.headerToContact(mRemote);
     }
 }

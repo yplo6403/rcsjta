@@ -27,6 +27,7 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
+import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
@@ -34,8 +35,6 @@ import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.ContentResolver;
 import android.content.Context;
-
-import com.gsma.rcs.imaplib.imap.Header;
 
 import java.util.List;
 
@@ -49,6 +48,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
 
     /**
      * Constructor
+     * 
      * @param rawMessage the raw IMAP message
      * @throws CmsSyncMissingHeaderException
      * @throws CmsSyncHeaderFormatException
@@ -143,7 +143,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
         String[] parts = payload.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
-                addHeader(header.getKey(), header.getValue());
+                addHeader(header.getKey().toLowerCase(), header.getValue());
             }
             CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
             cpimMessage.parsePayload(parts[1]);

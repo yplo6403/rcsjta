@@ -85,8 +85,8 @@ public class ImapMessageResolver {
             }
             throw new CmsSyncMessageNotSupportedException(
                     "unsupported cpim message type : ".concat(contentType));
-        } else if (imapContentType.contains(Constants.APPLICATION_SESSION.toLowerCase())) {
-            return MessageType.SESSION_INFO;
+        } else if (imapContentType.contains(Constants.APPLICATION_CPM_SESSION.toLowerCase())) {
+            return MessageType.CPM_SESSION;
         } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
             return MessageType.GROUP_STATE;
         } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
@@ -112,8 +112,11 @@ public class ImapMessageResolver {
                 return new ImapChatMessage(imapMessage);
             case IMDN:
                 return new ImapImdnMessage(imapMessage);
+            case CPM_SESSION:
+                return new ImapCpmSessionMessage(imapMessage);
             case GROUP_STATE:
                 return new ImapGroupStateMessage(imapMessage);
+
         }
         throw new CmsSyncMessageNotSupportedException(
                 "unsupported message type : ".concat(messageType.toString()));

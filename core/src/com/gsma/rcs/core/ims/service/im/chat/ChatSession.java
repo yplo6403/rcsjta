@@ -22,7 +22,8 @@
 
 package com.gsma.rcs.core.ims.service.im.chat;
 
-import android.net.Uri;
+import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
+import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
@@ -68,6 +69,8 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 
+import android.net.Uri;
+
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -75,9 +78,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
-
-import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
-import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 /**
  * Chat session
@@ -906,7 +906,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         /* Timestamp fo IMDN datetime */
         String imdn = ChatUtils.buildImdnDeliveryReport(msgId, status, timestamp);
         /* Timestamp for CPIM DateTime */
-        String content = ChatUtils.buildCpimDeliveryReport(fromUri, toUri, imdn,
+        String imdnMessageId = IdGenerator.generateMessageID();
+        String content = ChatUtils.buildCpimDeliveryReport(fromUri, toUri, imdnMessageId, imdn,
                 System.currentTimeMillis());
 
         TypeMsrpChunk typeMsrpChunk = TypeMsrpChunk.OtherMessageDeliveredReportStatus;
@@ -928,6 +929,9 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                 }
             }
         }
+        getImsService().getImsModule().getCmsService().getCmsManager()
+                .getImdnDeliveryReportListener()
+                .onDeliveryReport(mRcsSettings.getUserProfileImsUserName(), imdnMessageId);
     }
 
     /**

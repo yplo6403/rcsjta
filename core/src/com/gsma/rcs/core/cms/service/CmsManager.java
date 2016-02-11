@@ -21,6 +21,8 @@ package com.gsma.rcs.core.cms.service;
 import com.gsma.rcs.core.cms.event.ChatEventHandler;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.event.GroupChatEventHandler;
+import com.gsma.rcs.core.cms.event.ImdnDeliveryReportHandler;
+import com.gsma.rcs.core.cms.event.ImdnDeliveryReportListener;
 import com.gsma.rcs.core.cms.event.MmsSessionHandler;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.event.XmsMessageListener;
@@ -56,6 +58,7 @@ public class CmsManager implements XmsMessageListener {
     private EventFrameworkHandler mEventFrameworkHandler;
     private MmsSessionHandler mMmsSessionHandler;
     private CmsSyncScheduler mSyncScheduler;
+    private ImdnDeliveryReportHandler mImdnDeliveryReportHandler;
 
     /**
      * Constructor of CmsManager
@@ -111,20 +114,27 @@ public class CmsManager implements XmsMessageListener {
              * the message store.
              */
             mEventFrameworkHandler = new EventFrameworkHandler(mCtx, mSyncScheduler, mRcsSettings);
-            mXmsObserver.registerListener(mEventFrameworkHandler);
+            mXmsEventHandler.setEventFramework(mEventFrameworkHandler);
         }
+
+        /*
+         * Instantiate ImdnDeliveryReportHanlder
+         */
+        mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog, mRcsSettings);
+
         /*
          * instantiate ChatEventHandler in charge of handling events from ChatSession,read or
          * deletion of messages.
          */
         mChatEventHandler = new ChatEventHandler(mEventFrameworkHandler, mCmsLog, mMessagingLog,
-                mRcsSettings);
+                mRcsSettings, mImdnDeliveryReportHandler);
 
         /*
          * instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
          * deletion of messages.
          */
-        mGroupChatEventHandler = new GroupChatEventHandler(mCmsLog, mMessagingLog, mRcsSettings);
+        mGroupChatEventHandler = new GroupChatEventHandler(mCmsLog, mMessagingLog, mRcsSettings,
+                mImdnDeliveryReportHandler);
 
         mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings,
                 mEventFrameworkHandler);
@@ -157,18 +167,12 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onReadXmsMessage(messageId);
         }
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onReadXmsMessage(messageId);
-        }
     }
 
     @Override
     public void onDeleteXmsMessage(String messageId) {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onDeleteXmsMessage(messageId);
-        }
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onDeleteXmsMessage(messageId);
         }
     }
 
@@ -177,13 +181,14 @@ public class CmsManager implements XmsMessageListener {
         if (mXmsEventHandler != null) {
             mXmsEventHandler.onReadXmsConversation(contact);
         }
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.onReadXmsConversation(contact);
-        }
     }
 
     public ChatEventHandler getChatEventHandler() {
         return mChatEventHandler;
+    }
+
+    public ImdnDeliveryReportListener getImdnDeliveryReportListener() {
+        return mImdnDeliveryReportHandler;
     }
 
     public GroupChatEventHandler getGroupChatEventHandler() {

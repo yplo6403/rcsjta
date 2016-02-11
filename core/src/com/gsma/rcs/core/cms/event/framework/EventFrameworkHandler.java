@@ -1,16 +1,28 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010-2016 Orange.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ ******************************************************************************/
 
 package com.gsma.rcs.core.cms.event.framework;
 
-import com.gsma.rcs.core.cms.event.ChatMessageListener;
-import com.gsma.rcs.core.cms.event.XmsMessageListener;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
@@ -24,8 +36,7 @@ import android.content.Context;
  * used for updating flags depends on provisioning parameters.</li>
  * </ul>
  */
-public class EventFrameworkHandler implements XmsObserverListener, XmsMessageListener,
-        ChatMessageListener {
+public class EventFrameworkHandler implements EventFramework {
 
     private static final Logger sLogger = Logger.getLogger(EventFrameworkHandler.class
             .getSimpleName());
@@ -47,31 +58,14 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
         mSettings = settings;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void onIncomingSms(SmsDataObject message) {
+    public void pushSmsMessage(ContactId contact) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.info("onIncomingSms");
+            sLogger.info("pushSmsMessage");
         }
         if (mSettings.getMessageStorePushSms()) {
-            mImapEventFrameworkHandler.pushMessages(message.getContact());
-        } else {
-            if (logActivated) {
-                sLogger.info("Sms push is not allowed from settings");
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void onOutgoingSms(SmsDataObject message) {
-        boolean logActivated = sLogger.isActivated();
-        if (logActivated) {
-            sLogger.info("onOutgoingSms");
-        }
-        if (mSettings.getMessageStorePushSms()) {
-            mImapEventFrameworkHandler.pushMessages(message.getContact());
+            mImapEventFrameworkHandler.pushXmsMessage(contact);
         } else {
             if (logActivated) {
                 sLogger.info("Sms push is not allowed from settings");
@@ -80,13 +74,13 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
     }
 
     @Override
-    public void onIncomingMms(MmsDataObject message) {
+    public void pushMmsMessage(ContactId contact) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.info("onIncomingMms");
+            sLogger.info("pushMmsMessage");
         }
         if (mSettings.getMessageStorePushMms()) {
-            mImapEventFrameworkHandler.pushMessages(message.getContact());
+            mImapEventFrameworkHandler.pushXmsMessage(contact);
         } else {
             if (logActivated) {
                 sLogger.info("Mms push is not allowed from settings");
@@ -95,100 +89,7 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
     }
 
     @Override
-    public void onOutgoingMms(MmsDataObject message) {
-        boolean logActivated = sLogger.isActivated();
-        if (logActivated) {
-            sLogger.info("onOutgoingMms");
-        }
-        if (mSettings.getMessageStorePushMms()) {
-            mImapEventFrameworkHandler.pushMessages(message.getContact());
-        } else {
-            if (logActivated) {
-                sLogger.info("Mms push is not allowed from settings");
-            }
-        }
-    }
-
-    @Override
-    public void onDeleteSmsFromNativeApp(long nativeProviderId) {
-        boolean isLogActivated = sLogger.isActivated();
-        if (isLogActivated) {
-            sLogger.info("onDeleteNativeSms");
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onDeleteMmsFromNativeApp(String mmsId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteNativeMms");
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
-    }
-
-    @Override
-    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onReadNativeConversation");
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteNativeConversation: " + nativeThreadId);
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onReadXmsMessage(String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onReadXmsMessage: ".concat(messageId));
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onReadXmsConversation(ContactId contactId) {
-        boolean isLogActivated = sLogger.isActivated();
-        if (isLogActivated) {
-            sLogger.info("onReadXmsConversation: ".concat(contactId.toString()));
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onDeleteXmsMessage(String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteXmsMessage: ".concat(messageId));
-        }
-        updateXmsFlags();
-    }
-
-    @Override
-    public void onReadChatMessage(String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onReadChatMessage ".concat(messageId));
-        }
-        updateChatFlags();
-    }
-
-    @Override
-    public void onDeleteChatMessage(String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onDeleteChatMessage ".concat(messageId));
-        }
-        updateChatFlags();
-    }
-
-    @SuppressWarnings("unchecked")
-    private void updateXmsFlags() {
+    public void updateFlagsForXms() {
         EventFrameworkMode xmsMode = mSettings.getEventFrameworkForXms();
         if (EventFrameworkMode.DISABLED == xmsMode) {
             if (sLogger.isActivated()) {
@@ -203,8 +104,8 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void updateChatFlags() {
+    @Override
+    public void updateFlagsForChat() {
         EventFrameworkMode chatMode = mSettings.getEventFrameworkForChat();
         if (EventFrameworkMode.DISABLED == chatMode) {
             if (sLogger.isActivated()) {
@@ -218,4 +119,5 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             mSipEventFrameworkHandler.updateFlags(mSettings.getEventFrameworkForXms(), chatMode);
         }
     }
+
 }

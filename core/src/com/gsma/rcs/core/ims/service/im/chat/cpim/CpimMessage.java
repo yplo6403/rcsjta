@@ -37,7 +37,6 @@ public class CpimMessage {
      * Header "Content-type"
      */
     public static final String HEADER_CONTENT_TYPE = "Content-type";
-    public static final String HEADER_CONTENT_TYPE2 = "Content-Type";
 
     /**
      * Header "From"
@@ -119,10 +118,7 @@ public class CpimMessage {
      * @return Content type
      */
     public String getContentType() {
-        String type = contentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE);
-        if (type == null) {
-            return contentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE2);
-        }
+        String type = contentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE.toLowerCase());
         return type;
     }
 
@@ -133,7 +129,7 @@ public class CpimMessage {
      * @return Header value
      */
     public String getHeader(String name) {
-        return headers.get(name);
+        return headers.get(name.toLowerCase());
     }
 
     /**
@@ -143,7 +139,7 @@ public class CpimMessage {
      * @return Header value
      */
     public String getContentHeader(String name) {
-        return contentHeaders.get(name);
+        return contentHeaders.get(name.toLowerCase());
     }
 
     /**

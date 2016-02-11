@@ -19,6 +19,7 @@
 package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.event.framework.EventFramework;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.provider.CursorUtil;
@@ -49,6 +50,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     private final CmsLog mCmsLog;
     private final RcsSettings mSettings;
     private final CmsServiceImpl mCmsService;
+    private EventFramework mEventFramework;
 
     /**
      * Default constructor
@@ -66,6 +68,10 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mCmsService = cmsService;
     }
 
+    public void setEventFramework(EventFramework eventFramework) {
+        mEventFramework = eventFramework;
+    }
+
     @Override
     public void onIncomingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
@@ -79,6 +85,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                 mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, messageId, message.getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), messageId);
+        if (mEventFramework != null) {
+            mEventFramework.pushSmsMessage(message.getContact());
+        }
     }
 
     @Override
@@ -92,6 +101,10 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                 CmsObject.DeleteStatus.NOT_DELETED,
                 mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, message.getMessageId(), message.getNativeProviderId()));
+        if (mEventFramework != null) {
+            mEventFramework.pushSmsMessage(message.getContact());
+        }
+
     }
 
     @Override
@@ -121,6 +134,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                 mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, msgId, message.getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), msgId);
+        if (mEventFramework != null) {
+            mEventFramework.pushMmsMessage(message.getContact());
+        }
     }
 
     @Override
@@ -139,6 +155,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                     mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED, MessageType.MMS, message.getMessageId(), message
                             .getNativeProviderId()));
+            if (mEventFramework != null) {
+                mEventFramework.pushMmsMessage(message.getContact());
+            }
         }
     }
 
@@ -214,6 +233,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         } finally {
             CursorUtil.close(cursor);
         }
+        if (mEventFramework != null) {
+            mEventFramework.updateFlagsForXms();
+        }
     }
 
     @Override
@@ -246,6 +268,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
         mCmsLog.updateReadStatus(messageType, messageId, CmsObject.ReadStatus.READ_REPORT_REQUESTED);
         mXmsLog.markMessageAsRead(messageId);
+        if (mEventFramework != null) {
+            mEventFramework.updateFlagsForXms();
+        }
     }
 
     @Override
@@ -271,6 +296,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             CursorUtil.close(cursor);
         }
         mXmsLog.markConversationAsRead(contactId);
+        if (mEventFramework != null) {
+            mEventFramework.updateFlagsForXms();
+        }
     }
 
     @Override
@@ -285,6 +313,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
         mCmsLog.updateDeleteStatus(messageType, messageId,
                 CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED);
+        if (mEventFramework != null) {
+            mEventFramework.updateFlagsForXms();
+        }
     }
 
 }

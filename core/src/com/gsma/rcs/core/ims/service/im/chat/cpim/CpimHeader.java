@@ -41,7 +41,7 @@ public class CpimHeader {
      * @param value Header value
      */
     public CpimHeader(String name, String value) {
-        this.name = name;
+        this.name = name.toLowerCase();
         this.value = value;
     }
 
@@ -73,6 +73,6 @@ public class CpimHeader {
         int index = data.indexOf(":");
         String key = data.substring(0, index);
         String value = data.substring(index + 1);
-        return new CpimHeader(key.trim(), value.trim());
+        return new CpimHeader(key.trim().toLowerCase(), value.trim());
     }
 }
