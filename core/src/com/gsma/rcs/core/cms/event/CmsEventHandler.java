@@ -342,7 +342,8 @@ public class CmsEventHandler implements CmsEventListener {
             if (!cursor.moveToNext()) {
                 return null;
             }
-            String messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+            String messageId = cursor.getString(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
             if (messageId != null) {
                 return mCmsLog.getMmsData(messageId);
             }

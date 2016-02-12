@@ -107,9 +107,9 @@ public class SmsIntegrationUtils {
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Hello!",
                         Direction.INCOMING, readStatus, System.currentTimeMillis() - 4000, 1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 3000, 2l, 1l),
-                new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
                         Direction.OUTGOING, readStatus, System.currentTimeMillis() - 2000, 3l, 1l),
+                new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
+                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 3000, 2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
                         Direction.INCOMING, readStatus, System.currentTimeMillis(), 4l, 1l),
         };

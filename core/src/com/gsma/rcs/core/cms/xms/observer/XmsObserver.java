@@ -191,20 +191,21 @@ public class XmsObserver implements XmsObserverListener {
                 if (!cursor.moveToNext()) {
                     return;
                 }
-                Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                Long threadId = cursor
-                        .getLong(cursor.getColumnIndex(TextBasedSmsColumns.THREAD_ID));
+                Long _id = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+                Long threadId = cursor.getLong(cursor
+                        .getColumnIndexOrThrow(TextBasedSmsColumns.THREAD_ID));
                 String address = cursor.getString(cursor
-                        .getColumnIndex(TextBasedSmsColumns.ADDRESS));
+                        .getColumnIndexOrThrow(TextBasedSmsColumns.ADDRESS));
                 PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
                 if (phoneNumber == null) {
                     return;
                 }
                 ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-                String body = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
-                long date = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE));
+                String body = cursor.getString(cursor
+                        .getColumnIndexOrThrow(TextBasedSmsColumns.BODY));
+                long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE));
                 String protocol = cursor.getString(cursor
-                        .getColumnIndex(TextBasedSmsColumns.PROTOCOL));
+                        .getColumnIndexOrThrow(TextBasedSmsColumns.PROTOCOL));
                 Direction direction = Direction.INCOMING;
                 if (protocol == null) {
                     direction = Direction.OUTGOING;
@@ -237,9 +238,10 @@ public class XmsObserver implements XmsObserverListener {
                 if (!cursor.moveToNext()) {
                     return;
                 }
-                Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
-                int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
+                Long _id = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+                int status = cursor
+                        .getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.STATUS));
+                int type = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.TYPE));
                 onXmsMessageStateChanged(_id, MimeType.TEXT_MESSAGE,
                         XmsObserverUtils.getSmsState(type, status));
             } finally {
@@ -284,17 +286,18 @@ public class XmsObserver implements XmsObserverListener {
                 if (!cursor.moveToLast()) {
                     return false;
                 }
-                id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-                threadId = cursor.getLong(cursor.getColumnIndex(BaseMmsColumns.THREAD_ID));
-                mmsId = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID));
-                subject = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
+                id = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+                threadId = cursor.getLong(cursor.getColumnIndexOrThrow(BaseMmsColumns.THREAD_ID));
+                mmsId = cursor.getString(cursor.getColumnIndexOrThrow(BaseMmsColumns.MESSAGE_ID));
+                subject = cursor.getString(cursor.getColumnIndexOrThrow(BaseMmsColumns.SUBJECT));
                 transactionId = cursor.getString(cursor
-                        .getColumnIndex(BaseMmsColumns.TRANSACTION_ID));
-                int messageType = cursor.getInt(cursor.getColumnIndex(BaseMmsColumns.MESSAGE_TYPE));
+                        .getColumnIndexOrThrow(BaseMmsColumns.TRANSACTION_ID));
+                int messageType = cursor.getInt(cursor
+                        .getColumnIndexOrThrow(BaseMmsColumns.MESSAGE_TYPE));
                 if (128 == messageType) {
                     direction = Direction.OUTGOING;
                 }
-                date = cursor.getLong(cursor.getColumnIndex(BaseMmsColumns.DATE));
+                date = cursor.getLong(cursor.getColumnIndexOrThrow(BaseMmsColumns.DATE));
             } finally {
                 close(cursor);
             }
@@ -310,7 +313,7 @@ public class XmsObserver implements XmsObserverListener {
                             String.valueOf(type)
                         }, null);
                 assertCursorIsNotNull(cursor, Mms.Addr.URI);
-                int adressIdx = cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS);
+                int adressIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Addr.ADDRESS);
                 while (cursor.moveToNext()) {
                     String address = cursor.getString(adressIdx);
                     PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
@@ -482,8 +485,8 @@ public class XmsObserver implements XmsObserverListener {
                 cursor = mContentResolver.query(Conversation.URI, Conversation.PROJECTION, null,
                         null, BaseColumns._ID);
                 assertCursorIsNotNull(cursor, Conversation.URI);
-                int _idIdx = cursor.getColumnIndex(BaseColumns._ID);
-                int readIdx = cursor.getColumnIndex(Telephony.Mms.READ);
+                int _idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
+                int readIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.READ);
                 while (cursor.moveToNext()) {
                     conversations.put(cursor.getLong(_idIdx), cursor.getInt(readIdx) == 1);
                 }
@@ -500,7 +503,7 @@ public class XmsObserver implements XmsObserverListener {
                 cursor = mContentResolver.query(Sms.URI, Sms.PROJECTION_ID,
                         Sms.WHERE_CONTACT_NOT_NULL, null, BaseMmsColumns._ID);
                 assertCursorIsNotNull(cursor, Sms.URI);
-                int idx = cursor.getColumnIndex(BaseColumns._ID);
+                int idx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
                 while (cursor.moveToNext()) {
                     ids.add(cursor.getLong(idx));
                 }
@@ -517,7 +520,7 @@ public class XmsObserver implements XmsObserverListener {
                 cursor = mContentResolver.query(Mms.URI, Mms.PROJECTION_MMS_ID,
                         Mms.WHERE_INBOX_OR_SENT, null, BaseMmsColumns._ID);
                 assertCursorIsNotNull(cursor, Mms.URI);
-                int idx = cursor.getColumnIndex(BaseMmsColumns.MESSAGE_ID);
+                int idx = cursor.getColumnIndexOrThrow(BaseMmsColumns.MESSAGE_ID);
                 while (cursor.moveToNext()) {
                     ids.add(cursor.getString(idx));
                 }

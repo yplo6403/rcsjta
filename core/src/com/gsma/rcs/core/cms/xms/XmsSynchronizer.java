@@ -134,8 +134,8 @@ public class XmsSynchronizer implements Runnable {
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_ID_READ, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
-            int idIdx = cursor.getColumnIndex(BaseColumns._ID);
-            int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
+            int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
+            int readIdx = cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ);
             while (cursor.moveToNext()) {
                 Long id = cursor.getLong(idIdx);
                 mNativeIds.add(id);
@@ -155,8 +155,8 @@ public class XmsSynchronizer implements Runnable {
         try {
             cursor = mContentResolver.query(sMmsUri, PROJECTION_ID_READ, null, null, null);
             CursorUtil.assertCursorIsNotNull(cursor, sMmsUri);
-            int idIdx = cursor.getColumnIndex(BaseColumns._ID);
-            int readIdx = cursor.getColumnIndex(TextBasedSmsColumns.READ);
+            int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
+            int readIdx = cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ);
             while (cursor.moveToNext()) {
                 Long id = cursor.getLong(idIdx);
                 mNativeIds.add(id);
@@ -274,21 +274,25 @@ public class XmsSynchronizer implements Runnable {
             if (!cursor.moveToFirst()) {
                 return null;
             }
-            Long _id = cursor.getLong(cursor.getColumnIndex(BaseColumns._ID));
-            Long threadId = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.THREAD_ID));
-            String address = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.ADDRESS));
+            Long _id = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
+            Long threadId = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(TextBasedSmsColumns.THREAD_ID));
+            String address = cursor.getString(cursor
+                    .getColumnIndexOrThrow(TextBasedSmsColumns.ADDRESS));
             PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
             if (phoneNumber == null) {
                 return null;
             }
             ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-            long date = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE));
-            long date_sent = cursor.getLong(cursor.getColumnIndex(TextBasedSmsColumns.DATE_SENT));
-            String protocol = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.PROTOCOL));
-            String body = cursor.getString(cursor.getColumnIndex(TextBasedSmsColumns.BODY));
-            int read = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.READ));
-            int type = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.TYPE));
-            int status = cursor.getInt(cursor.getColumnIndex(TextBasedSmsColumns.STATUS));
+            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE));
+            long date_sent = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(TextBasedSmsColumns.DATE_SENT));
+            String protocol = cursor.getString(cursor
+                    .getColumnIndexOrThrow(TextBasedSmsColumns.PROTOCOL));
+            String body = cursor.getString(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.BODY));
+            int read = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ));
+            int type = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.TYPE));
+            int status = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.STATUS));
             Direction direction = Direction.OUTGOING;
             if (protocol != null) {
                 direction = Direction.INCOMING;
@@ -335,18 +339,20 @@ public class XmsSynchronizer implements Runnable {
             if (!cursor.moveToNext()) {
                 return mmsDataObject;
             }
-            threadId = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.THREAD_ID));
-            mmsId = cursor.getString(cursor.getColumnIndex(Telephony.BaseMmsColumns.MESSAGE_ID));
+            threadId = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.THREAD_ID));
+            mmsId = cursor.getString(cursor
+                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.MESSAGE_ID));
 
-            readStatus = cursor.getInt(cursor.getColumnIndex(Telephony.BaseMmsColumns.READ)) == 0 ? ReadStatus.UNREAD
+            readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.READ)) == 0 ? ReadStatus.UNREAD
                     : ReadStatus.READ;
             int messageType = cursor.getInt(cursor
-                    .getColumnIndex(Telephony.BaseMmsColumns.MESSAGE_TYPE));
-            subject = cursor.getString(cursor.getColumnIndex(BaseMmsColumns.SUBJECT));
+                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.MESSAGE_TYPE));
+            subject = cursor.getString(cursor.getColumnIndexOrThrow(BaseMmsColumns.SUBJECT));
             if (MMS_TYPE_SEND_REQUEST == messageType) {
                 direction = Direction.OUTGOING;
             }
-            date = cursor.getLong(cursor.getColumnIndex(Telephony.BaseMmsColumns.DATE)) * 1000;
+            date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.DATE)) * 1000;
         } finally {
             CursorUtil.close(cursor);
         }
@@ -365,7 +371,7 @@ public class XmsSynchronizer implements Runnable {
                         String.valueOf(type)
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, XmsObserverUtils.Mms.Addr.URI);
-            int adressIdx = cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS);
+            int adressIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Addr.ADDRESS);
             while (cursor.moveToNext()) {
                 String address = cursor.getString(adressIdx);
                 PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);

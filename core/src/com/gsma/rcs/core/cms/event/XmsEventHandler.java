@@ -102,7 +102,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             if (!cursor.moveToNext()) {
                 return;
             }
-            String messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+            String messageId = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
             mCmsService.deleteXmsMessageById(messageId);
         } finally {
             CursorUtil.close(cursor);
@@ -153,7 +153,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             if (!cursor.moveToNext()) {
                 return;
             }
-            String messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+            String messageId = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
             mCmsService.deleteXmsMessageById(messageId);
 
         } finally {
@@ -173,12 +173,13 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             if (!cursor.moveToNext()) {
                 return;
             }
-            String messageId = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
-            String number = cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTACT));
+            String messageId = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
+            String number = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT));
             mXmsLog.updateState(messageId, state);
             ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
             mCmsService.broadcastMessageStateChanged(contact, mimeType, messageId, state,
                     ReasonCode.UNSPECIFIED);
+
         } finally {
             CursorUtil.close(cursor);
         }
@@ -192,9 +193,9 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         Cursor cursor = null;
         try {
             cursor = mXmsLog.getUnreadXmsMessages(nativeThreadId);
-            int messageIdIdx = cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID);
-            int mimeTypeIdx = cursor.getColumnIndex(XmsMessageLog.MIME_TYPE);
-            int contactIdIx = cursor.getColumnIndex(XmsMessageLog.CONTACT);
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
+            int mimeTypeIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
+            int contactIdIx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
             while (cursor.moveToNext()) {
                 String number = cursor.getString(contactIdIx);
                 String messageId = cursor.getString(messageIdIdx);
@@ -223,7 +224,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         Cursor cursor = null;
         try {
             cursor = mXmsLog.getXmsMessages(nativeThreadId);
-            int messageIdIdx = cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID);
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
             while (cursor.moveToNext()) {
                 String messageId = cursor.getString(messageIdIdx);
                 mCmsService.deleteXmsMessageById(messageId);
@@ -255,8 +256,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         Cursor cursor = null;
         try {
             cursor = mXmsLog.getXmsMessages(contactId);
-            int messageIdIdx = cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID);
-            int mimeTypeIdx = cursor.getColumnIndex(XmsMessageLog.MIME_TYPE);
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
+            int mimeTypeIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
             while (cursor.moveToNext()) {
                 String messageId = cursor.getString(messageIdIdx);
                 String mimeType = cursor.getString(mimeTypeIdx);

@@ -115,8 +115,8 @@ public class XmsLogTest extends InstrumentationTestCase {
             RcsService.Direction dir = mXmsLog.getDirection(messageId);
             mXmsLog.deleteMmsParts(messageId, dir);
         }
-        mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[]{
-                messageId
+        mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[] {
+            messageId
         });
     }
 
@@ -134,32 +134,32 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertEquals(cursor.getCount(), 1);
         assertTrue(cursor.moveToNext());
 
-        String id = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+        String id = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
         assertEquals(mMessageId, id);
 
-        String contact = cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTACT));
+        String contact = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT));
         assertEquals(mContact.toString(), contact);
 
         RcsService.Direction direction = RcsService.Direction.valueOf(cursor.getInt(cursor
-                .getColumnIndex(XmsMessageLog.DIRECTION)));
+                .getColumnIndexOrThrow(XmsMessageLog.DIRECTION)));
         assertEquals(sms.getDirection(), direction);
 
-        String body = cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTENT));
+        String body = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT));
         assertNotNull(body);
 
-        String mimeType = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MIME_TYPE));
+        String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE));
         assertEquals(XmsMessageLog.MimeType.TEXT_MESSAGE, mimeType);
 
-        long readTimestamp = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.TIMESTAMP));
+        long readTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP));
         assertEquals(timestamp, readTimestamp);
 
-        long state = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.STATE));
+        long state = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.STATE));
         assertEquals(XmsMessage.State.QUEUED.toInt(), state);
 
-        long reason = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.REASON_CODE));
+        long reason = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.REASON_CODE));
         assertEquals(XmsMessage.ReasonCode.UNSPECIFIED.toInt(), reason);
 
-        long readStatus = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.READ_STATUS));
+        long readStatus = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.READ_STATUS));
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
         cursor.close();
     }
@@ -178,32 +178,32 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertEquals(cursor.getCount(), 1);
         assertTrue(cursor.moveToNext());
 
-        String id = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MESSAGE_ID));
+        String id = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
         assertEquals(mMessageId, id);
 
-        String contact = cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTACT));
+        String contact = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT));
         assertEquals(mContact.toString(), contact);
 
         RcsService.Direction direction = RcsService.Direction.valueOf(cursor.getInt(cursor
-                .getColumnIndex(XmsMessageLog.DIRECTION)));
+                .getColumnIndexOrThrow(XmsMessageLog.DIRECTION)));
         assertEquals(mms.getDirection(), direction);
 
-        String body = cursor.getString(cursor.getColumnIndex(XmsMessageLog.CONTENT));
+        String body = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTENT));
         assertNotNull(body);
 
-        String mimeType = cursor.getString(cursor.getColumnIndex(XmsMessageLog.MIME_TYPE));
+        String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE));
         assertEquals(XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, mimeType);
 
-        long readTimestamp = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.TIMESTAMP));
+        long readTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP));
         assertEquals(timestamp, readTimestamp);
 
-        long state = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.STATE));
+        long state = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.STATE));
         assertEquals(XmsMessage.State.QUEUED.toInt(), state);
 
-        long reason = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.REASON_CODE));
+        long reason = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.REASON_CODE));
         assertEquals(XmsMessage.ReasonCode.UNSPECIFIED.toInt(), reason);
 
-        long readStatus = cursor.getLong(cursor.getColumnIndex(XmsMessageLog.READ_STATUS));
+        long readStatus = cursor.getLong(cursor.getColumnIndexOrThrow(XmsMessageLog.READ_STATUS));
         assertEquals(RcsService.ReadStatus.UNREAD.toInt(), readStatus);
         cursor.close();
         /* test parts */

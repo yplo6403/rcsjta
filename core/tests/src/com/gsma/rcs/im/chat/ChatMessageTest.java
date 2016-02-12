@@ -111,13 +111,14 @@ public class ChatMessageTest extends AndroidTestCase {
         assertTrue(cursor.moveToNext());
         Direction direction = Direction.valueOf(cursor.getInt(cursor
                 .getColumnIndex(Message.DIRECTION)));
-        String contact = cursor.getString(cursor.getColumnIndex(Message.CONTACT));
-        String content = cursor.getString(cursor.getColumnIndex(Message.CONTENT));
+        String contact = cursor.getString(cursor.getColumnIndexOrThrow(Message.CONTACT));
+        String content = cursor.getString(cursor.getColumnIndexOrThrow(Message.CONTENT));
         assertNotNull(content);
-        String mimeType = cursor.getString(cursor.getColumnIndex(Message.MIME_TYPE));
-        String id = cursor.getString(cursor.getColumnIndex(Message.MESSAGE_ID));
-        long readTimestamp = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP));
-        long readTimestampSent = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP_SENT));
+        String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Message.MIME_TYPE));
+        String id = cursor.getString(cursor.getColumnIndexOrThrow(Message.MESSAGE_ID));
+        long readTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(Message.TIMESTAMP));
+        long readTimestampSent = cursor.getLong(cursor
+                .getColumnIndexOrThrow(Message.TIMESTAMP_SENT));
 
         assertEquals(Direction.OUTGOING, direction);
         assertEquals(mContact.toString(), contact);
