@@ -34,6 +34,7 @@ import junit.framework.Assert;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 
 public class BasicImapServiceTest extends AndroidTestCase {
 
@@ -51,7 +52,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithoutSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUri().getPath());
+        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri().toString()));
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);
@@ -80,7 +81,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(mSettings.getMessageStoreUri().getPath(), 3000);
+        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri().toString()), 3000);
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);

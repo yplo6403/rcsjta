@@ -138,7 +138,12 @@ public class CmsEventHandler implements CmsEventListener {
     }
 
     private void onReadChatMessage(CmsObject imapData) {
-        mMessagingLog.markMessageAsRead(imapData.getMessageId());
+        String msgId = imapData.getMessageId();
+        if (mMessagingLog.isMessagePersisted(msgId)) {
+            mMessagingLog.setChatMessageStatusAndReasonCode(msgId, Status.RECEIVED,
+                    Content.ReasonCode.UNSPECIFIED);
+            mMessagingLog.markMessageAsRead(msgId);
+        }
     }
 
     @Override
@@ -151,7 +156,7 @@ public class CmsEventHandler implements CmsEventListener {
             onDeleteXmsMessage(imapData);
         } else if (MessageType.CHAT_MESSAGE == imapData.getMessageType()) {
             onDeleteChatMessage(imapData);
-        } else if (MessageType.GROUP_STATE == imapData.getMessageType()) {
+        } else if (MessageType.CPM_SESSION == imapData.getMessageType()) {
             onDeleteGroupChat(imapData);
         }
     }
@@ -238,13 +243,16 @@ public class CmsEventHandler implements CmsEventListener {
                         .getParticipants().keySet(), Status.SENT, Content.ReasonCode.UNSPECIFIED);
             }
         } else {
+            boolean isSeen = imapChatMessage.isSeen();
             if (imapChatMessage.isOneToOne()) {
-                mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, false);
+                mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, !isSeen);
             } else {
                 mMessagingLog.addIncomingGroupChatMessage(imapChatMessage.getChatId(), chatMessage,
-                        false);
+                        !isSeen);
+                mMessagingLog.addIncomingGroupChatMessage(imapChatMessage.getChatId(), chatMessage,
+                        !isSeen);
             }
-            if (!imapChatMessage.isSeen()) {
+            if (!isSeen) {
                 mChatService.broadcastNewChatMessage(chatMessage);
             }
         }

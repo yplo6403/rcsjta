@@ -27,7 +27,6 @@ import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.cmd.ListCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.ListStatusCmdHandler;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
-
 import com.gsma.rcs.imaplib.imap.DefaultImapService;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapException;

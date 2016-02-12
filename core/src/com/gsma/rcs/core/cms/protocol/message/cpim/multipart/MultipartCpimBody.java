@@ -22,9 +22,8 @@ package com.gsma.rcs.core.cms.protocol.message.cpim.multipart;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
-import com.gsma.rcs.utils.logger.Logger;
-
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.rcs.utils.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.List;

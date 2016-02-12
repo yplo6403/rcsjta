@@ -326,8 +326,7 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
 
                 } catch (NetworkException | PayloadException | RuntimeException e) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Failed to sync : ");
-                        e.printStackTrace();
+                        sLogger.debug("Failed to sync : " + e);
                     }
                 }
             }

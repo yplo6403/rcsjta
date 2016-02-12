@@ -25,6 +25,7 @@ import com.gsma.rcs.imaplib.imap.SocketIoService;
 
 import android.content.Context;
 
+import java.net.URI;
 import java.util.logging.Logger;
 
 /**
@@ -46,7 +47,7 @@ public class ImapServiceHandler {
      * @param context application context
      */
     public ImapServiceHandler(Context context) {
-        IoService io = new SocketIoService(Preferences.getMessageStoreUrl(context),
+        IoService io = new SocketIoService(URI.create(Preferences.getMessageStoreUrl(context)),
                 SOCKET_TIMEOUT_IN_MS);
         mBasicImapService = new BasicImapService(io);
         // TODO FGI : Handle SSL authentication with message store

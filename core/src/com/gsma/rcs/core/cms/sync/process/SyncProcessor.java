@@ -20,10 +20,9 @@
 package com.gsma.rcs.core.cms.sync.process;
 
 import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
-import com.gsma.rcs.provider.cms.CmsFolder;
-
 import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.provider.cms.CmsFolder;
 
 import java.io.IOException;
 import java.util.List;

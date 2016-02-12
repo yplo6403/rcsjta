@@ -414,16 +414,6 @@ public class RcsSettings {
         if (contact == null) {
             return;
         }
-        String messageStoreUser = contact.toString();
-        if (messageStoreUser.startsWith("+")) {
-            messageStoreUser = messageStoreUser.substring(1);
-        }
-        if (getMessageStoreUser().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_USER)) {
-            setMessageStoreUser(messageStoreUser);
-        }
-        if (getMessageStorePwd().equals(RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD)) {
-            setMessageStorePwd(messageStoreUser);
-        }
     }
 
     /**

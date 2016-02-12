@@ -27,9 +27,8 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
-import com.gsma.services.rcs.contact.ContactId;
-
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;

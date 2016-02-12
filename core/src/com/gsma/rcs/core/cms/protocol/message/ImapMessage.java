@@ -20,7 +20,6 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
-
 import com.gsma.rcs.imaplib.imap.Flag;
 
 public abstract class ImapMessage implements IImapMessage {

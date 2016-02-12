@@ -26,6 +26,8 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapMessageResolver;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
@@ -34,9 +36,6 @@ import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.utils.logger.Logger;
-
-import com.gsma.rcs.imaplib.imap.Flag;
-import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.util.ArrayList;
 import java.util.HashSet;

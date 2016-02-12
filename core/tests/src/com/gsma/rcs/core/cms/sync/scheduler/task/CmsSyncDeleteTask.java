@@ -97,6 +97,7 @@ public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
                     deleteMessages(mailbox);
                     break;
             }
+
         } catch (IOException e) {
             throw new NetworkException("Failed to delete mailbox " + mailbox, e);
 

@@ -25,10 +25,9 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
-
-import com.gsma.rcs.imaplib.imap.Header;
 
 public class ImapCpimMessage extends ImapMessage {
 

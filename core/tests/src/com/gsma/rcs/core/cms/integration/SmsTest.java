@@ -42,6 +42,7 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsLogTestIntegration;
@@ -90,6 +91,7 @@ public class SmsTest extends AndroidTestCase {
         Context context = getContext();
         ContactUtil.getInstance(getContext());
         mSettings = RcsSettingsMock.getMockSettings(context);
+        AndroidFactory.setApplicationContext(context, mSettings);
         mCmsLog = CmsLog.getInstance(context);
         mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
         mLocalContentResolver = new LocalContentResolver(context);

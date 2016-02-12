@@ -20,20 +20,19 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.utils.DateUtils;
-import com.gsma.services.rcs.contact.ContactId;
-import com.gsma.services.rcs.contact.ContactUtil;
-
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
 import com.gsma.rcs.imaplib.imap.Part;
+import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
-import junit.framework.Assert;
-
 import java.util.List;
+
+import junit.framework.Assert;
 
 public class ImapGroupStateMessageTest extends AndroidTestCase {
 
@@ -55,6 +54,7 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
         mCpimDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_CPIM_DATE_FORMAT);
     }
 
+    // @formatter:off
     @SmallTest
     public void testGroupStateMessage() {
 
@@ -75,59 +75,51 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
             Assert.assertTrue(imapGroupStateMessage.isSeen());
             Assert.assertFalse(imapGroupStateMessage.isDeleted());
 
-            Assert.assertEquals("+33642575779",
-                    imapGroupStateMessage.getHeader(Constants.HEADER_FROM));
-            Assert.assertEquals("+33640332859",
-                    imapGroupStateMessage.getHeader(Constants.HEADER_TO));
+            Assert.assertEquals("+33642575779", imapGroupStateMessage.getHeader(Constants.HEADER_FROM));
+            Assert.assertEquals("+33640332859", imapGroupStateMessage.getHeader(Constants.HEADER_TO));
             Assert.assertEquals(mImapDate, imapGroupStateMessage.getHeader(Constants.HEADER_DATE));
-            Assert.assertEquals("1443517760826",
-                    imapGroupStateMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
-            Assert.assertEquals("1443517760826",
-                    imapGroupStateMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
-            Assert.assertEquals("1443517760826",
-                    imapGroupStateMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
-            Assert.assertEquals(Constants.APPLICATION_GROUP_STATE,
-                    imapGroupStateMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
+            Assert.assertEquals("1443517760826", imapGroupStateMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
+            Assert.assertEquals("1443517760826", imapGroupStateMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
+            Assert.assertEquals("1443517760826", imapGroupStateMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
+            Assert.assertEquals("sent", imapGroupStateMessage.getHeader(Constants.HEADER_DIRECTION));
+            Assert.assertEquals(Constants.APPLICATION_GROUP_STATE, imapGroupStateMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
             Assert.assertEquals("1443517760826", imapGroupStateMessage.getChatId());
             Assert.assertEquals("sip:da9274453@company.com", imapGroupStateMessage.getRejoinId());
             List<ContactId> contacts = imapGroupStateMessage.getParticipants();
             Assert.assertEquals(3, contacts.size());
-            Assert.assertEquals(
-                    ContactUtil.getInstance(getContext()).formatContact("+16135551210"),
-                    contacts.get(0));
-            Assert.assertEquals(
-                    ContactUtil.getInstance(getContext()).formatContact("+16135551211"),
-                    contacts.get(1));
-            Assert.assertEquals(
-                    ContactUtil.getInstance(getContext()).formatContact("+16135551212"),
-                    contacts.get(2));
+            Assert.assertEquals(ContactUtil.getInstance(getContext()).formatContact("+16135551210"), contacts.get(0));
+            Assert.assertEquals(ContactUtil.getInstance(getContext()).formatContact("+16135551211"), contacts.get(1));
+            Assert.assertEquals(ContactUtil.getInstance(getContext()).formatContact("+16135551212"), contacts.get(2));
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
         }
     }
 
+
     public String getPayload() {
 
-        return new StringBuilder().append("From: +33642575779").append(Constants.CRLF)
-                .append("To: +33640332859").append(Constants.CRLF).append("Date: ")
-                .append(mImapDate).append(Constants.CRLF).append("Subject: mySubject")
-                .append(Constants.CRLF).append("Conversation-ID: 1443517760826")
-                .append(Constants.CRLF).append("Contribution-ID: 1443517760826")
-                .append(Constants.CRLF).append("IMDN-Message-ID: 1443517760826")
-                .append(Constants.CRLF).append("Content-Type: Application/group-state-object+xml")
-                .append(Constants.CRLF).append(Constants.CRLF)
+        return new StringBuilder()
+                .append("From: +33642575779").append(Constants.CRLF)
+                .append("To: +33640332859").append(Constants.CRLF)
+                .append("Date: ").append(mImapDate).append(Constants.CRLF)
+                .append("Subject: mySubject").append(Constants.CRLF)
+                .append("Conversation-ID: 1443517760826").append(Constants.CRLF)
+                .append("Contribution-ID: 1443517760826").append(Constants.CRLF)
+                .append("IMDN-Message-ID: 1443517760826").append(Constants.CRLF)
+                .append("Message-Direction: sent").append(Constants.CRLF)
+                .append("Content-Type: Application/group-state-object+xml").append(Constants.CRLF)
+                .append(Constants.CRLF)
                 .append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append(Constants.CRLF)
                 .append("<groupstate").append(Constants.CRLF)
                 .append("timestamp=\"2012-06-13T16:39:57-05:00\"").append(Constants.CRLF)
                 .append("lastfocussessionid=\"sip:da9274453@company.com\"").append(Constants.CRLF)
                 .append("group-type=\"Closed\">").append(Constants.CRLF)
-                .append("<participant name=\"bob\" comm-addr=\"tel:+16135551210\"/>")
-                .append(Constants.CRLF)
-                .append("<participant name=\"alice\" comm-addr=\"tel:+16135551211\"/>")
-                .append(Constants.CRLF)
-                .append("<participant name=\"donald\" comm-addr=\"tel:+16135551212\"/>")
-                .append(Constants.CRLF).append("</groupstate>").append(Constants.CRLF).toString();
+                .append("<participant name=\"bob\" comm-addr=\"tel:+16135551210\"/>").append(Constants.CRLF)
+                .append("<participant name=\"alice\" comm-addr=\"tel:+16135551211\"/>").append(Constants.CRLF)
+                .append("<participant name=\"donald\" comm-addr=\"tel:+16135551212\"/>").append(Constants.CRLF)
+                .append("</groupstate>").append(Constants.CRLF).toString();
     }
+    // @formatter:on
 }

@@ -20,8 +20,6 @@ package com.gsma.rcs.core.cms.integration;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
-import com.gsma.rcs.core.cms.protocol.message.ImapChatMessageTest;
-import com.gsma.rcs.core.cms.protocol.message.ImapImdnMessageTest;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.service.CmsService;
@@ -29,10 +27,8 @@ import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask.Operation;
-import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
-import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -49,13 +45,9 @@ import android.test.AndroidTestCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 
-public class GroupStateTest extends AndroidTestCase {
+public class CpmSessionTest extends AndroidTestCase {
 
     private ImapServiceHandler mImapServiceHandler;
     private BasicImapService mBasicImapService;
@@ -99,78 +91,17 @@ public class GroupStateTest extends AndroidTestCase {
         RcsSettingsMock.restoreSettings();
     }
 
-    public void testOutgoingGroupChatConversation() throws Exception {
-
-        String from = "+33643209850";
-        String to = "+33681639059";
-        String direction = Constants.DIRECTION_SENT;
-
-        Map<String, String> participants = new HashMap<>();
-        participants.put("bob", to);
-
-        String chatId = UUID.randomUUID().toString();
-        String remoteFolder = "Default/" + chatId + "/" + chatId;
-
-        List<String> payloads = new ArrayList<>();
-        payloads.add(buildGroupStatePayload(from, chatId, chatId, participants));
-
-        ImapChatMessageTest imapChatMessageTest = new ImapChatMessageTest();
-        imapChatMessageTest.init();
-        payloads.add(imapChatMessageTest.getPayload(false, from, to, chatId, direction));
-
-        ImapImdnMessageTest imapImdnMessageTest = new ImapImdnMessageTest();
-        imapImdnMessageTest.init();
-        payloads.add(imapImdnMessageTest.getPayload(false, from, to, direction, chatId,
-                ImdnDocument.DELIVERY_STATUS_DELIVERED));
-
-        imapImdnMessageTest = new ImapImdnMessageTest();
-        imapImdnMessageTest.init();
-        payloads.add(imapImdnMessageTest.getPayload(false, from, to, direction, chatId,
-                ImdnDocument.DELIVERY_STATUS_DISPLAYED));
-
-        createRemoteMessages(remoteFolder, payloads.toArray(new String[payloads.size()]));
-
-    }
-
-    public void testIncomingGroupChatConversation() throws Exception {
-
-        String from = "+33642575779";
-        String to = "+33643209850";
-        String direction = Constants.DIRECTION_RECEIVED;
-
-        Map<String, String> participants = new HashMap<>();
-        participants.put("bob", to);
-
-        String chatId = UUID.randomUUID().toString();
-        String remoteFolder = "Default/" + chatId + "/" + chatId;
-
-        List<String> payloads = new ArrayList<>();
-        payloads.add(buildGroupStatePayload(from, chatId, chatId, participants));
-
-        ImapChatMessageTest imapChatMessageTest = new ImapChatMessageTest();
-        imapChatMessageTest.init();
-        payloads.add(imapChatMessageTest.getPayload(false, from, to, chatId, direction));
-        createRemoteMessages(remoteFolder, payloads.toArray(new String[payloads.size()]));
-
-    }
-
     /**
-     * Test1 step 0 : purge local storage and CMS server folders step 1 : create a conversation on
-     * CMS server step 2 : start a sync
+     * Test1 step 0 : purge local storage and CMS server folders
+     * step 1 : create a conversation on CMS server
+     * step 2 : start a sync
      */
-    public void testSyncGroupStateObject() throws Exception {
-
-        String from = "+33643209850";
-        Map<String, String> participants = new HashMap<>();
-        participants.put("bob", "+33600000001");
-        participants.put("alice", "+33600000002");
-        participants.put("donald", "+33600000003");
+    public void testSyncCpmSession() throws Exception {
 
         // create messages on CMS
         String chatId = UUID.randomUUID().toString();
         String remoteFolder = "Default/" + chatId + "/" + chatId;
-        createRemoteMessage(remoteFolder,
-                buildGroupStatePayload(from, chatId, chatId, participants));
+        createRemoteMessage(remoteFolder,getCpmSessionPayload(chatId));
 
         int initialNbMessages = mCmsLogTestIntegration.getMessages(remoteFolder).size();
         assertFalse(mMessagingLog.isGroupChatPersisted(chatId));
@@ -213,36 +144,28 @@ public class GroupStateTest extends AndroidTestCase {
         mSyncStrategy.execute();
     }
 
-    private String buildGroupStatePayload(String from, String conversationId,
-            String contributionId, Map<String, String> participants) {
+    public String getCpmSessionPayload(String chatId) {
 
-        String dateImap = DateUtils.getDateAsString(System.currentTimeMillis(),
-                DateUtils.CMS_IMAP_DATE_FORMAT);
-        String dateCpim = DateUtils.getDateAsString(System.currentTimeMillis(),
-                DateUtils.CMS_CPIM_DATE_FORMAT);
-        String imdnId = UUID.randomUUID().toString();
-
-        StringBuilder participantsXml = new StringBuilder();
-        for (Entry<String, String> entry : participants.entrySet()) {
-            participantsXml.append(
-                    "<participant name=\"" + entry.getKey() + "\" comm-addr=\"" + entry.getValue()
-                            + "\"/>").append(Constants.CRLF);
-        }
-
-        String rejoindId = "sip:pfcf-imas-orange@RCS14lb-2.sip.imsnsn.fr:5060;transport=udp;oaid="
-                + from + ";ocid=" + contributionId;
-
-        String payload = "From: +33642575779" + Constants.CRLF + "To: +33640332859"
-                + Constants.CRLF + "Date: " + dateImap + Constants.CRLF + "Subject: mySubject"
-                + Constants.CRLF + "Conversation-ID: " + conversationId + Constants.CRLF
-                + "Contribution-ID: " + contributionId + Constants.CRLF + "IMDN-Message-ID: "
-                + imdnId + Constants.CRLF + "Content-Type: Application/group-state-object+xml"
-                + Constants.CRLF + Constants.CRLF + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                + Constants.CRLF + "<groupstate" + Constants.CRLF + "timestamp=\"" + dateCpim
-                + "\"" + Constants.CRLF + "lastfocussessionid=\"" + rejoindId + "\""
-                + Constants.CRLF + "group-type=\"Closed\">" + Constants.CRLF + participantsXml
-                + "</groupstate>" + Constants.CRLF;
-
-        return payload;
+        return new StringBuilder()
+                .append("Date: Thu, 11 Feb 2016 14:00:49 +0100").append(Constants.CRLF)
+                .append("From: tel:+33643209850").append(Constants.CRLF)
+                .append("To: sip:Conference-Factory@volteofr.com").append(Constants.CRLF)
+                .append("Message-ID: <881999583.1171.1455195649122@RCS5frontox1>").append(Constants.CRLF)
+                .append("Subject: cfff").append(Constants.CRLF)
+                .append("MIME-Version: 1.0").append(Constants.CRLF)
+                .append("Content-Type: Application/X-CPM-Session").append(Constants.CRLF)
+                .append("Content-Transfer-Encoding: 8bit").append(Constants.CRLF)
+                .append("Conversation-ID: ").append(chatId).append(Constants.CRLF)
+                .append("Contribution-ID: ").append(chatId).append(Constants.CRLF)
+                .append("IMDN-Message-ID: UFoF32nXQSy5l3d4cVGwZXn4f8YQ8rq6").append(Constants.CRLF)
+                .append("Message-Direction: sent").append(Constants.CRLF)
+                .append(Constants.CRLF)
+                .append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append(Constants.CRLF)
+                .append("<session>")
+                .append("<session-type>Group</session-type>")
+                .append("<sdp>o=- 3664184448 3664184448 IN IP4 sip.imsnsn.fr</sdp>")
+                .append("<invited-participants>tel:+33642639381;tel:+33643209850</invited-participants>")
+                .append("</session>").toString();
     }
+
 }

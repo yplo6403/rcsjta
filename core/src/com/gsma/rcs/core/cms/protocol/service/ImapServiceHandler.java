@@ -28,6 +28,7 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Class used to open and close an IMAP service. The synchronization process relies on this service
@@ -48,7 +49,7 @@ public class ImapServiceHandler {
      * @param rcsSettings the RCS settings accessor
      */
     public ImapServiceHandler(RcsSettings rcsSettings) {
-        IoService io = new SocketIoService(rcsSettings.getMessageStoreUri().toString(),
+        IoService io = new SocketIoService(URI.create(rcsSettings.getMessageStoreUri().toString()),
                 SOCKET_TIMEOUT_IN_MS);
         mBasicImapService = new BasicImapService(io);
         // TODO FGI : Handle SSL authentication with message store
