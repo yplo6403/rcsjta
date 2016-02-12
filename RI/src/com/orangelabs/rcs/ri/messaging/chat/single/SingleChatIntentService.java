@@ -29,6 +29,7 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
 import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatMessageDAO;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
@@ -204,6 +205,7 @@ public class SingleChatIntentService extends IntentService {
             }
             Notification notif = buildNotification(contentIntent, title, msg);
             mChatPendingIntentManager.postNotification(uniqueId, notif);
+                OneToOneTalkList.notifyNewConversationEvent(this);
         }
     }
 
