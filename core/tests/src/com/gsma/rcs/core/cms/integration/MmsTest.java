@@ -32,15 +32,16 @@ import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.Operation;
-import com.gsma.rcs.core.cms.sync.scheduler.task.PushMessageTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.UpdateFlagTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask.Operation;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
+import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -65,8 +66,6 @@ import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.content.Context;
 import android.test.AndroidTestCase;
-
-import com.gsma.rcs.imaplib.imap.ImapException;
 
 import junit.framework.Assert;
 
@@ -152,10 +151,10 @@ public class MmsTest extends AndroidTestCase {
         imapData = mCmsLogTestIntegration.getMessages(Test1.folderName);
         assertEquals(Test1.conversation.length, imapData.size());
 
-        List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
+        List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
                 MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
         assertEquals(Test1.conversation.length, messages.size());
-        for (MmsDataObject message : messages) {
+        for (XmsDataObject message : messages) {
             Assert.assertEquals(Test1.readStatus, message.getReadStatus());
         }
 
@@ -193,10 +192,10 @@ public class MmsTest extends AndroidTestCase {
         assertTrue(nbFolders > 0);
         assertEquals(Test1.conversation.length, mCmsLogTestIntegration
                 .getMessages(Test1.folderName).size());
-        List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
+        List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
                 MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
         assertEquals(Test1.conversation.length, messages.size());
-        for (MmsDataObject message : messages) {
+        for (XmsDataObject message : messages) {
             Assert.assertEquals(ReadStatus.READ, message.getReadStatus());
         }
 
@@ -228,9 +227,9 @@ public class MmsTest extends AndroidTestCase {
     public void test3() throws FileAccessException, NetworkException, PayloadException {
         test1();
 
-        List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
+        List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
                 MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
-        for (MmsDataObject msg : messages) {
+        for (XmsDataObject msg : messages) {
             mCmsLog.updateReadStatus(MessageType.MMS, msg.getMessageId(),
                     CmsObject.ReadStatus.READ_REPORT_REQUESTED);
         }
@@ -244,7 +243,7 @@ public class MmsTest extends AndroidTestCase {
         }
 
         messages = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
-        for (MmsDataObject msg : messages) {
+        for (XmsDataObject msg : messages) {
             mCmsLog.updateDeleteStatus(MessageType.MMS, msg.getMessageId(),
                     DeleteStatus.DELETED_REPORT_REQUESTED);
         }
@@ -274,9 +273,9 @@ public class MmsTest extends AndroidTestCase {
         } catch (Exception e) {
         }
 
-        List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
+        List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
                 MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
-        for (MmsDataObject sms : messages) {
+        for (XmsDataObject sms : messages) {
             mCmsLog.updateReadStatus(MessageType.MMS, sms.getMessageId(),
                     CmsObject.ReadStatus.READ_REPORT_REQUESTED);
         }
@@ -289,7 +288,7 @@ public class MmsTest extends AndroidTestCase {
                     cmsObject.getReadStatus());
         }
 
-        for (MmsDataObject sms : messages) {
+        for (XmsDataObject sms : messages) {
             mCmsLog.updateDeleteStatus(MessageType.MMS, sms.getMessageId(),
                     DeleteStatus.DELETED_REPORT_REQUESTED);
         }
@@ -315,9 +314,9 @@ public class MmsTest extends AndroidTestCase {
         updateRemoteFlags(Arrays.asList(MmsIntegrationUtils.Test5.flagChangesDeleted));
         deleteRemoteMessages(CmsUtils.contactToCmsFolder(mSettings, Test1.contact));
 
-        List<MmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
+        List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(
                 MimeType.MULTIMEDIA_MESSAGE, Test1.contact);
-        for (MmsDataObject sms : messages) {
+        for (XmsDataObject sms : messages) {
             mCmsLog.updateReadStatus(MessageType.MMS, sms.getMessageId(),
                     CmsObject.ReadStatus.READ_REPORT_REQUESTED);
         }
@@ -329,7 +328,7 @@ public class MmsTest extends AndroidTestCase {
             Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
 
-        for (MmsDataObject sms : messages) {
+        for (XmsDataObject sms : messages) {
             mCmsLog.updateDeleteStatus(MessageType.MMS, sms.getMessageId(),
                     DeleteStatus.DELETED_REPORT_REQUESTED);
         }
@@ -398,7 +397,7 @@ public class MmsTest extends AndroidTestCase {
 
         startSynchro();
 
-        List<MmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
+        List<XmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
                 Test1.contact);
         Assert.assertEquals(Test7.conversation.length, mms.size());
         Map<Integer, CmsObject> imapData = mCmsLogTestIntegration.getMessages(Test1.folderName);
@@ -438,7 +437,7 @@ public class MmsTest extends AndroidTestCase {
 
         startSynchro();
 
-        List<MmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
+        List<XmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
                 Test1.contact);
         Map<Integer, CmsObject> imapData = mCmsLogTestIntegration.getMessages(Test1.folderName);
 
@@ -478,7 +477,7 @@ public class MmsTest extends AndroidTestCase {
 
         startSynchro();
 
-        List<MmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
+        List<XmsDataObject> mms = mXmsLogEnvIntegration.getMessages(MimeType.MULTIMEDIA_MESSAGE,
                 Test1.contact);
         Map<Integer, CmsObject> imapData = mCmsLogTestIntegration.getMessages(Test1.folderName);
 
@@ -577,21 +576,24 @@ public class MmsTest extends AndroidTestCase {
         }
     }
 
-    private void createRemoteMessages(XmsDataObject[] messages) {
-        PushMessageTask task = new PushMessageTask(mContext, mSettings, mXmsLog, mCmsLog);
+    private void createRemoteMessages(XmsDataObject[] messages) throws NetworkException,
+            PayloadException {
+        CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mSettings, mXmsLog,
+                mCmsLog);
         task.setBasicImapService(mBasicImapService);
         task.pushMessages(Arrays.asList(messages));
     }
 
     private void deleteRemoteStorage() throws PayloadException, NetworkException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_ALL, null, null);
+        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_ALL, null, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(null);
     }
 
     private void deleteRemoteMailbox(String mailbox) throws NetworkException, PayloadException,
             IOException, ImapException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
+        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MAILBOX, mailbox,
+                null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {
@@ -602,14 +604,15 @@ public class MmsTest extends AndroidTestCase {
     }
 
     private void deleteRemoteMessages(String mailbox) throws NetworkException, PayloadException {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MESSAGES, mailbox, null);
+        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MESSAGES, mailbox,
+                null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
     }
 
     private void updateRemoteFlags(List<FlagChange> changes) throws NetworkException,
             PayloadException {
-        UpdateFlagTask task = new UpdateFlagTask(changes, null);
+        CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(changes, null);
         task.setBasicImapService(mBasicImapService);
         task.updateFlags();
     }

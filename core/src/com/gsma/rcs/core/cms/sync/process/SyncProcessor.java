@@ -72,11 +72,11 @@ public interface SyncProcessor {
      * 
      * @param folderName the folder
      * @param uids the set of UIDs to synchronize
-     * @return List<ImapMessage>
+     * @return Set<ImapMessage>
      * @throws IOException
      * @throws ImapException
      */
-    List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids) throws IOException,
+    Set<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids) throws IOException,
             ImapException;
 
     /**

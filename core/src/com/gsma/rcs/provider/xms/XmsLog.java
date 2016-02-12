@@ -147,6 +147,7 @@ public class XmsLog {
     }
 
     public Cursor getXmsMessage(String messageId) {
+        // TODO check if order should not be specified
         Uri contentUri = Uri.withAppendedPath(XmsData.CONTENT_URI, messageId);
         Cursor cursor = mLocalContentResolver.query(contentUri, null, null, null, null);
         CursorUtil.assertCursorIsNotNull(cursor, contentUri);
@@ -575,7 +576,7 @@ public class XmsLog {
                             contact, String.valueOf(direction.toInt()), correlator
                     }, SORT_BY_DATE_DESC);
             CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-            int messageIdIdx = cursor.getColumnIndex(XmsData.KEY_MESSAGE_ID);
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
             while (cursor.moveToNext()) {
                 messageIds.add(cursor.getString(messageIdIdx));
             }
@@ -619,19 +620,19 @@ public class XmsLog {
             if (!cursor.moveToNext()) {
                 return null;
             }
-            String mimeType = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MIME_TYPE));
-            String number = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTACT));
+            String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_MIME_TYPE));
+            String number = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT));
             ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
-            String content = cursor.getString(cursor.getColumnIndex(XmsData.KEY_CONTENT));
+            String content = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT));
             Direction dir = Direction.valueOf(cursor.getInt(cursor
-                    .getColumnIndex(XmsData.KEY_DIRECTION)));
+                    .getColumnIndexOrThrow(XmsData.KEY_DIRECTION)));
             ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(cursor
-                    .getColumnIndex(XmsData.KEY_READ_STATUS)));
-            long date = cursor.getLong(cursor.getColumnIndex(XmsData.KEY_TIMESTAMP));
+                    .getColumnIndexOrThrow(XmsData.KEY_READ_STATUS)));
+            long date = cursor.getLong(cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP));
             if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
                 return new SmsDataObject(messageId, contact, content, dir, date, readStatus);
             } else {
-                String mmsId = cursor.getString(cursor.getColumnIndex(XmsData.KEY_MMS_ID));
+                String mmsId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_MMS_ID));
                 List<MmsDataObject.MmsPart> mmsParts = new ArrayList<>(getParts(messageId));
                 return new MmsDataObject(mmsId, messageId, contact, content, dir, readStatus, date,
                         null, null, mmsParts);

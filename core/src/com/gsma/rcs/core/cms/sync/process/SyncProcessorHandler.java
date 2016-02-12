@@ -43,7 +43,7 @@ public interface SyncProcessorHandler {
     /**
      * Apply flag changes from a remote folder
      * 
-     * @param flagchanges
+     * @param flagchanges the list of flags
      */
     void applyFlagChange(List<FlagChange> flagchanges);
 
@@ -59,7 +59,7 @@ public interface SyncProcessorHandler {
      * Return messages that are not already present in local storage. The content of these messages
      * should be downloaded from CMS server
      * 
-     * @param messages
+     * @param messages the list of messages
      * @return uids of new messages
      */
     Set<Integer> filterNewMessages(List<ImapMessage> messages);
@@ -67,9 +67,9 @@ public interface SyncProcessorHandler {
     /**
      * Create new messages in local storage.
      * 
-     * @param messages
+     * @param messages the set of messages
      */
-    void createMessages(List<ImapMessage> messages) throws FileAccessException;
+    void createMessages(Set<ImapMessage> messages) throws FileAccessException;
 
     /**
      * Get flag changes from local storage for a folder

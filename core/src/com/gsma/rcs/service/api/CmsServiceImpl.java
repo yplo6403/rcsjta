@@ -19,9 +19,9 @@
 package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.cms.service.CmsService;
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler.SyncType;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerListener;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTaskType;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerListener;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTaskType;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
 import com.gsma.rcs.core.cms.xms.mms.OriginatingMmsSession;
@@ -67,7 +67,7 @@ import java.util.Set;
  * @author Philippe LEMORDANT
  */
 public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListener,
-        SchedulerListener {
+        CmsSyncSchedulerListener {
 
     private static final Logger sLogger = Logger.getLogger(CmsServiceImpl.class.getSimpleName());
     private final XmsMessageEventBroadcaster mXmsMessageBroadcaster = new XmsMessageEventBroadcaster();
@@ -555,8 +555,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     }
 
     @Override
-    public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType,
-            boolean result, Object param) {
+    public void onCmsOperationExecuted(CmsSyncSchedulerTaskType operation, SyncType syncType,
+                                       boolean result, Object param) {
         switch (syncType) {
             case ALL:
                 if (sLogger.isActivated()) {

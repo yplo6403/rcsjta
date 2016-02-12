@@ -20,7 +20,7 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.ImsService;
@@ -145,19 +145,31 @@ public class CmsService extends ImsService {
         mOperationHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS All");
-                }
-                /*
-                 * Operations of sync with the message store are executed in a dedicated background
-                 * handler. So it does not interact with other operations of this API impacting the
-                 * calling UI.
-                 */
-                Scheduler scheduler = mCmsManager.getSyncScheduler();
-                if (scheduler != null && !scheduler.scheduleSync()) {
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Cannot schedule a syncAll operation");
+                try {
+                    boolean logActivated = sLogger.isActivated();
+                    if (logActivated) {
+                        sLogger.debug("Synchronize CMS All");
                     }
+                    /*
+                     * Operations of sync with the message store are executed in a dedicated
+                     * background handler. So it does not interact with other operations of this API
+                     * impacting the calling UI.
+                     */
+                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
+                    if (scheduler != null && !scheduler.scheduleSync()) {
+                        if (logActivated) {
+                            sLogger.debug("Cannot schedule a syncAll operation");
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to sync all!", e);
                 }
             }
         });
@@ -167,21 +179,34 @@ public class CmsService extends ImsService {
         mOperationHandler.post(new Runnable() {
             @Override
             public void run() {
-                String msisdn = contact.toString();
-                if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS for contact ".concat(msisdn));
-                }
-                /*
-                 * Operations of sync with the message store are executed in a dedicated background
-                 * handler. So it does not interact with other operations of this API impacting the
-                 * calling UI.
-                 */
-                Scheduler scheduler = mCmsManager.getSyncScheduler();
-                if (scheduler != null && !scheduler.scheduleSyncForOneToOneConversation(contact)) {
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Cannot schedule a syncOneToOneConversation operation: "
-                                .concat(msisdn));
+                try {
+                    boolean logActivated = sLogger.isActivated();
+                    String msisdn = contact.toString();
+                    if (logActivated) {
+                        sLogger.debug("Synchronize CMS for contact ".concat(msisdn));
                     }
+                    /*
+                     * Operations of sync with the message store are executed in a dedicated
+                     * background handler. So it does not interact with other operations of this API
+                     * impacting the calling UI.
+                     */
+                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
+                    if (scheduler != null
+                            && !scheduler.scheduleSyncForOneToOneConversation(contact)) {
+                        if (logActivated) {
+                            sLogger.debug("Cannot schedule a syncOneToOneConversation operation: "
+                                    .concat(msisdn));
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to sync 1-to-1 Conversation!", e);
                 }
             }
         });
@@ -191,20 +216,32 @@ public class CmsService extends ImsService {
         mOperationHandler.post(new Runnable() {
             @Override
             public void run() {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("Synchronize CMS for chatId ".concat(chatId));
-                }
-                /*
-                 * Operations of sync with the message store are executed in a dedicated background
-                 * handler. So it does not interact with other operations of this API impacting the
-                 * calling UI.
-                 */
-                Scheduler scheduler = mCmsManager.getSyncScheduler();
-                if (scheduler != null && !scheduler.scheduleSyncForGroupConversation(chatId)) {
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Cannot schedule a syncGroupConversation operation: "
-                                .concat(chatId));
+                try {
+                    boolean logActivated = sLogger.isActivated();
+                    if (logActivated) {
+                        sLogger.debug("Synchronize CMS for chatId ".concat(chatId));
                     }
+                    /*
+                     * Operations of sync with the message store are executed in a dedicated
+                     * background handler. So it does not interact with other operations of this API
+                     * impacting the calling UI.
+                     */
+                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
+                    if (scheduler != null && !scheduler.scheduleSyncForGroupConversation(chatId)) {
+                        if (logActivated) {
+                            sLogger.debug("Cannot schedule a syncGroupConversation operation: "
+                                    .concat(chatId));
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to sync Group Conversation!", e);
                 }
             }
         });

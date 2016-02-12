@@ -3,7 +3,7 @@ package com.gsma.rcs.core.cms.event.framework;
 
 import com.gsma.rcs.core.cms.event.ChatMessageListener;
 import com.gsma.rcs.core.cms.event.XmsMessageListener;
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
@@ -41,8 +41,8 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
      * @param scheduler the scheduler
      * @param settings the RCS settings accessor
      */
-    public EventFrameworkHandler(Context context, Scheduler scheduler, RcsSettings settings) {
-        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(context, scheduler, settings);
+    public EventFrameworkHandler(Context context, CmsSyncScheduler scheduler, RcsSettings settings) {
+        mImapEventFrameworkHandler = new ImapEventFrameworkHandler(scheduler);
         mSipEventFrameworkHandler = new SipEventFrameworkHandler(context, settings);
         mSettings = settings;
     }
@@ -55,7 +55,7 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             sLogger.info("onIncomingSms");
         }
         if (mSettings.getMessageStorePushSms()) {
-            mImapEventFrameworkHandler.onNewXmsMessage(message.getContact());
+            mImapEventFrameworkHandler.pushMessages(message.getContact());
         } else {
             if (logActivated) {
                 sLogger.info("Sms push is not allowed from settings");
@@ -71,7 +71,7 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             sLogger.info("onOutgoingSms");
         }
         if (mSettings.getMessageStorePushSms()) {
-            mImapEventFrameworkHandler.onNewXmsMessage(message.getContact());
+            mImapEventFrameworkHandler.pushMessages(message.getContact());
         } else {
             if (logActivated) {
                 sLogger.info("Sms push is not allowed from settings");
@@ -86,7 +86,7 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             sLogger.info("onIncomingMms");
         }
         if (mSettings.getMessageStorePushMms()) {
-            mImapEventFrameworkHandler.onNewXmsMessage(message.getContact());
+            mImapEventFrameworkHandler.pushMessages(message.getContact());
         } else {
             if (logActivated) {
                 sLogger.info("Mms push is not allowed from settings");
@@ -101,7 +101,7 @@ public class EventFrameworkHandler implements XmsObserverListener, XmsMessageLis
             sLogger.info("onOutgoingMms");
         }
         if (mSettings.getMessageStorePushMms()) {
-            mImapEventFrameworkHandler.onNewXmsMessage(message.getContact());
+            mImapEventFrameworkHandler.pushMessages(message.getContact());
         } else {
             if (logActivated) {
                 sLogger.info("Mms push is not allowed from settings");

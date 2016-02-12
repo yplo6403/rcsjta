@@ -19,17 +19,10 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler;
 
-import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
 
-public abstract class SchedulerTask implements Runnable {
+public interface CmsSyncSchedulerListener {
 
-    private BasicImapService mBasicImapService;
-
-    public void setBasicImapService(BasicImapService basicImapService) {
-        mBasicImapService = basicImapService;
-    }
-
-    public BasicImapService getBasicImapService() {
-        return mBasicImapService;
-    }
+    void onCmsOperationExecuted(CmsSyncSchedulerTaskType operation, SyncType syncType, boolean result,
+                                Object param);
 }

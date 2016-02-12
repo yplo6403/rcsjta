@@ -96,7 +96,7 @@ public final class CmsObject {
 
         private final int mValue;
 
-        private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<ReadStatus>();
+        private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<>();
 
         static {
             for (ReadStatus entry : ReadStatus.values()) {
@@ -120,17 +120,16 @@ public final class CmsObject {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value
+         * @param value the valure representing the read status
          * @return instance
          */
-        public final static ReadStatus valueOf(int value) {
+        public static ReadStatus valueOf(int value) {
             ReadStatus entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ReadStatus.class.getName()).append(".").append(value).append("!")
-                    .toString());
+            throw new IllegalArgumentException("No enum const class " + ReadStatus.class.getName()
+                    + "." + value + "!");
         }
     }
 
@@ -153,7 +152,7 @@ public final class CmsObject {
 
         private final int mValue;
 
-        private static SparseArray<DeleteStatus> mValueToEnum = new SparseArray<DeleteStatus>();
+        private static SparseArray<DeleteStatus> mValueToEnum = new SparseArray<>();
 
         static {
             for (DeleteStatus entry : DeleteStatus.values()) {
@@ -177,17 +176,16 @@ public final class CmsObject {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value
+         * @param value the valure representing the delete status
          * @return instance
          */
-        public final static DeleteStatus valueOf(int value) {
+        public static DeleteStatus valueOf(int value) {
             DeleteStatus entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(DeleteStatus.class.getName()).append(".").append(value).append("!")
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + DeleteStatus.class.getName() + "." + value + "!");
         }
     }
 
@@ -205,7 +203,7 @@ public final class CmsObject {
 
         private final int mValue;
 
-        private static SparseArray<PushStatus> mValueToEnum = new SparseArray<PushStatus>();
+        private static SparseArray<PushStatus> mValueToEnum = new SparseArray<>();
 
         static {
             for (PushStatus entry : PushStatus.values()) {
@@ -213,7 +211,7 @@ public final class CmsObject {
             }
         }
 
-        private PushStatus(int value) {
+        PushStatus(int value) {
             mValue = value;
         }
 
@@ -229,17 +227,16 @@ public final class CmsObject {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value
+         * @param value the valure representing the push status
          * @return instance
          */
-        public final static PushStatus valueOf(int value) {
+        public static PushStatus valueOf(int value) {
             PushStatus entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(PushStatus.class.getName()).append(".").append(value).append("!")
-                    .toString());
+            throw new IllegalArgumentException("No enum const class " + PushStatus.class.getName()
+                    + "." + value + "!");
         }
     }
 
@@ -250,17 +247,21 @@ public final class CmsObject {
     private PushStatus mPushStatus = PushStatus.PUSHED;
     private MessageType mMessageType;
     private String mMessageId;
-    private Long mNativeProviderId;
+    private final Long mNativeProviderId;
 
     /**
-     * @param readStatus
-     * @param deleteStatus
-     * @param messageType
-     * @param messageId
+     * Constructor
+     * 
+     * @param folder the folder
+     * @param readStatus the read status
+     * @param deleteStatus the delete status
+     * @param pushStatus the push status
+     * @param messageType the message type
+     * @param messageId the message ID
+     * @param nativeProviderId the native provider ID
      */
     public CmsObject(String folder, ReadStatus readStatus, DeleteStatus deleteStatus,
             PushStatus pushStatus, MessageType messageType, String messageId, Long nativeProviderId) {
-        super();
         mFolder = folder;
         mReadStatus = readStatus;
         mDeleteStatus = deleteStatus;
@@ -271,16 +272,17 @@ public final class CmsObject {
     }
 
     /**
-     * @param folder
-     * @param uid
-     * @param readStatus
-     * @param deleteStatus
-     * @param messageType
-     * @param messageId
+     * Constructor
+     * 
+     * @param folder the folder
+     * @param uid the cms UID
+     * @param readStatus the read status
+     * @param deleteStatus the delete status
+     * @param messageType the message type
+     * @param messageId the message ID
      */
     public CmsObject(String folder, Integer uid, ReadStatus readStatus, DeleteStatus deleteStatus,
             PushStatus pushStatus, MessageType messageType, String messageId, Long nativeProviderId) {
-        super();
         mFolder = folder;
         mUid = uid;
         mReadStatus = readStatus;
@@ -292,7 +294,6 @@ public final class CmsObject {
     }
 
     public CmsObject(Long nativeProviderId, ReadStatus readStatus, DeleteStatus deleteStatus) {
-        super();
         mNativeProviderId = nativeProviderId;
         mReadStatus = readStatus;
         mDeleteStatus = deleteStatus;

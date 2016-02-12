@@ -63,9 +63,7 @@ public class DefaultImapService implements ImapService {
     private static Logger sLogger = Logger.getLogger(DefaultImapService.class.getName());
 
     public DefaultImapService(IoService ioService) {
-        this.mIoService = ioService;
-        if (this.mIoService == null)
-            throw new NullPointerException();
+        mIoService = ioService;
     }
 
     protected String getPathSeparator(String path) {
@@ -123,8 +121,7 @@ public class DefaultImapService implements ImapService {
             int i = response.indexOf('[');
             int j = response.indexOf(']');
             String[] arr = response.substring(i + 1, j).split(" ");
-            int id = Integer.parseInt(arr[2]);
-            return id;
+            return Integer.parseInt(arr[2]);
         } else {
             return -1;
         }
@@ -200,7 +197,7 @@ public class DefaultImapService implements ImapService {
         List<String> response = null;
         while (!l.startsWith(ok)) {
             if (response == null) {
-                response = new ArrayList<String>();
+                response = new ArrayList<>();
             }
             response.add(l);
             l = ioReadLine();
@@ -250,8 +247,8 @@ public class DefaultImapService implements ImapService {
     /**
      * Generic request with ok/nok response. Returns true if success. To be used internally.
      * 
-     * @param command
-     * @return
+     * @param command the list of command
+     * @return true if success
      * @throws IOException
      * @throws ImapException
      */
@@ -318,7 +315,7 @@ public class DefaultImapService implements ImapService {
 
         writeCommand("LIST", "\"\"", "\"" + p + "\"");
         List<String> li = readToEndOfResponse();
-        List<ImapFolder> folders = new ArrayList<ImapFolder>();
+        List<ImapFolder> folders = new ArrayList<>();
         for (String spec : li) {
             spec = spec.substring(6).trim();
             String s = spec.substring(0, spec.length() - 1);// remove * LIST, last "
@@ -366,7 +363,7 @@ public class DefaultImapService implements ImapService {
     }
 
     public void clearCapabilities() {
-        this.mCapabilities = null;
+        mCapabilities = null;
     }
 
     @Override
@@ -376,16 +373,15 @@ public class DefaultImapService implements ImapService {
 
         writeCommand("CAPABILITY");
 
-        mCapabilities = new ArrayList<String>();
+        mCapabilities = new ArrayList<>();
 
-        String resp = null;
+        String resp;
 
         while (true) {
             resp = ioReadLine();
             if (resp.startsWith("* CAPABILITY")) {
                 break;
             } else if (isUntagged(resp)) {
-                continue;
             } else {
                 throw new ImapException("CAPABILITY error : " + resp);
             }
@@ -402,7 +398,7 @@ public class DefaultImapService implements ImapService {
 
         checkResponseOk(ioReadLine());
 
-        return new ArrayList<String>(mCapabilities);
+        return new ArrayList<>(mCapabilities);
     }
 
     @Override
@@ -420,7 +416,7 @@ public class DefaultImapService implements ImapService {
             return mSelectedFolderStatus;
         }
         if (!folderName.startsWith("\"")) {
-            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+            folderName = "\"" + folderName + "\"";
         }
         writeCommand("SELECT " + folderName);
         List<String> li = readToEndOfResponse();
@@ -642,7 +638,7 @@ public class DefaultImapService implements ImapService {
         int length = payload.getBytes().length;
 
         if (!folderName.startsWith("\"")) {
-            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+            folderName = "\"" + folderName + "\"";
         }
         writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length + "}");
         String ok = ioReadLine();
@@ -677,10 +673,10 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public List<ImapMessage> fetchMessages(String spec) throws IOException, ImapException {
-        List<ImapMessage> messages = null;
+        List<ImapMessage> messages;
         synchronized (mIoService) {
             writeCommand(uidTag() + "FETCH", "" + spec, "BODY.PEEK[]");
-            messages = new ArrayList<ImapMessage>();
+            messages = new ArrayList<>();
 
             while (true) {
                 String a = ioReadLine();
@@ -740,7 +736,7 @@ public class DefaultImapService implements ImapService {
     @Override
     public synchronized List<ImapMessageMetadata> fetchMessageMetadataList(String spec)
             throws IOException, ImapException {
-        List<ImapMessageMetadata> li = null;
+        List<ImapMessageMetadata> li;
         synchronized (mIoService) {
             String macro = "FAST";
             if (mMetadataEnvelope & !mMetadataBody)
@@ -752,8 +748,8 @@ public class DefaultImapService implements ImapService {
 
             writeCommand(uidTag() + "FETCH", spec, macro);
 
-            li = new ArrayList<ImapMessageMetadata>();
-            String a = null;
+            li = new ArrayList<>();
+            String a;
             while (true) {
                 a = ioReadLine();
                 checkResponseNotBad(a);

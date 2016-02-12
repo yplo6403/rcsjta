@@ -21,7 +21,7 @@ package com.gsma.rcs.core.cms.sync.process;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.sync.scheduler.task.BasicSynchronizationTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncBasicTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -56,13 +56,13 @@ public class Synchronizer {
 
     public void syncFolder(String folder) throws FileAccessException, PayloadException,
             NetworkException {
-        BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings,
+        CmsSyncBasicTask syncTask = new CmsSyncBasicTask(mContext, mRcsSettings,
                 mBasicImapService, mLocalStorage, null);
         syncTask.syncFolder(folder);
     }
 
     public void syncAll() throws FileAccessException, NetworkException, PayloadException {
-        BasicSynchronizationTask syncTask = new BasicSynchronizationTask(mContext, mRcsSettings,
+        CmsSyncBasicTask syncTask = new CmsSyncBasicTask(mContext, mRcsSettings,
                 mBasicImapService, mLocalStorage, null);
         syncTask.syncAll();
     }

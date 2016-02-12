@@ -24,8 +24,12 @@ import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapMmsMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapSmsMessage;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
@@ -38,13 +42,12 @@ import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.gsma.rcs.imaplib.imap.Flag;
-import com.gsma.rcs.imaplib.imap.ImapException;
-
 import android.content.Context;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,9 +56,10 @@ import java.util.UUID;
 /**
  * Task executed to push messages on the CMS server
  */
-public class PushMessageTask extends SchedulerTask {
+public class CmsSyncPushMessageTask extends CmsSyncSchedulerTask {
 
-    private static final Logger sLogger = Logger.getLogger(PushMessageTask.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncPushMessageTask.class
+            .getSimpleName());
 
     /* package private */final PushMessageTaskListener mListener;
     /* package private */final RcsSettings mRcsSettings;
@@ -69,27 +73,28 @@ public class PushMessageTask extends SchedulerTask {
     /**
      * Call this constructor when executing this task in a synchronous way
      *
-     * @param context
-     * @param rcsSettings
-     * @param xmsLog
-     * @param cmsLog
+     * @param context the context
+     * @param rcsSettings the RCS settings accessor
+     * @param xmsLog the XMS log accessor
+     * @param cmsLog the CMS log accessor
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog, CmsLog cmsLog) {
+    public CmsSyncPushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog,
+            CmsLog cmsLog) {
         this(context, rcsSettings, xmsLog, cmsLog, null, null);
     }
 
     /**
      * Call this constructor when executing this task as a runnable (run method executed)
      *
-     * @param context
-     * @param rcsSettings
-     * @param xmsLog
-     * @param cmsLog
-     * @param contact
-     * @param listener
+     * @param context the context
+     * @param rcsSettings the RCS settings accessor
+     * @param xmsLog the XMS log accessor
+     * @param cmsLog the CMS log accessor
+     * @param contact the contact
+     * @param listener callback listener
      */
-    public PushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog, CmsLog cmsLog,
-            ContactId contact, PushMessageTaskListener listener) {
+    public CmsSyncPushMessageTask(Context context, RcsSettings rcsSettings, XmsLog xmsLog,
+            CmsLog cmsLog, ContactId contact, PushMessageTaskListener listener) {
         mRcsSettings = rcsSettings;
         mContext = context;
         mXmsLog = xmsLog;
@@ -101,37 +106,58 @@ public class PushMessageTask extends SchedulerTask {
 
     @Override
     public void run() {
-        List<XmsDataObject> messagesToPush = new ArrayList<>();
-        String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
-        for (CmsObject cmsObject : mCmsLog.getXmsMessages(folder, PushStatus.PUSH_REQUESTED)) {
-            XmsDataObject xms = mXmsLog.getXmsDataObject(cmsObject.getMessageId());
-            if (xms != null) {
-                messagesToPush.add(xms);
+        try {
+            List<XmsDataObject> messagesToPush = new ArrayList<>();
+            String folder = CmsUtils.contactToCmsFolder(mRcsSettings, mContact);
+            for (CmsObject cmsObject : mCmsLog.getXmsMessages(folder, PushStatus.PUSH_REQUESTED)) {
+                XmsDataObject xms = mXmsLog.getXmsDataObject(cmsObject.getMessageId());
+                if (xms != null) {
+                    messagesToPush.add(xms);
+                }
             }
-        }
-        if (messagesToPush.isEmpty()) {
-            if (sLogger.isActivated()) {
-                sLogger.debug("no message to push");
+            if (messagesToPush.isEmpty()) {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("no message to push");
+                }
+                return;
             }
-        }
-        pushMessages(messagesToPush);
+            pushMessages(messagesToPush);
 
-        if (mListener != null) {
-            mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
+        } catch (NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.info(e.getMessage());
+            }
+
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to push message", e);
+
+        } finally {
+            if (mListener != null) {
+                mListener.onPushMessageTaskCallbackExecuted(mCreatedUidsMap);
+            }
         }
     }
 
     /**
-     * Push messages
-     * 
-     * @param messages
-     * @return
+     * Push messages.
+     *
+     * @param messages the list of messages to push
      */
-    public Boolean pushMessages(List<XmsDataObject> messages) {
+    public void pushMessages(List<XmsDataObject> messages) throws NetworkException,
+            PayloadException {
         String from, to, direction;
         from = to = direction = null;
-
         try {
+            /*
+             * Sort list of XMS objects by timestamp so that UIDs generated by CMS will be aligned
+             * with the chronological order. This allows correlation for SMS messages.
+             */
+            Collections.sort(messages, new Comparator<XmsDataObject>() {
+                @Override
+                public int compare(XmsDataObject obj1, XmsDataObject obj2) {
+                    return Long.valueOf(obj1.getTimestamp()).compareTo(obj2.getTimestamp());
+                }
+            });
             List<String> existingFolders = new ArrayList<>();
             for (ImapFolder imapFolder : getBasicImapService().listStatus()) {
                 existingFolders.add(imapFolder.getName());
@@ -185,13 +211,12 @@ public class PushMessageTask extends SchedulerTask {
                         .append(remoteFolder, flags, imapMessage.toPayload());
                 mCreatedUidsMap.put(message.getMessageId(), uid);
             }
-        } catch (IOException | ImapException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-                e.printStackTrace(); // FIX ME : debug purpose
-            }
+        } catch (IOException e) {
+            throw new NetworkException("Failed to push messages", e);
+
+        } catch (ImapException e) {
+            throw new PayloadException("Failed to push messages", e);
         }
-        return true;
     }
 
     public Map<String, Integer> getCreatedUids() {
@@ -205,7 +230,7 @@ public class PushMessageTask extends SchedulerTask {
     public interface PushMessageTaskListener {
         /**
          * Callback method
-         * 
+         *
          * @param uids created for the pushed messages
          */
         void onPushMessageTaskCallbackExecuted(Map<String, Integer> uids);

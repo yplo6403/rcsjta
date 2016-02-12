@@ -28,7 +28,6 @@ import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,10 +69,9 @@ public class SyncProcessorImpl implements SyncProcessor {
     }
 
     @Override
-    public List<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
+    public Set<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
             throws IOException, ImapException {
-
-        List<ImapMessage> messages = new ArrayList<>();
+        Set<ImapMessage> messages = new HashSet<>();
         for (Integer uid : uids) {
             ImapMessage msg = mImapService.fetchMessage(uid);
             msg.setFolderPath(folderName);

@@ -29,14 +29,14 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 
-public class SchedulerMock extends Scheduler {
+public class CmsSyncSchedulerMock extends CmsSyncScheduler {
 
-    private static final Logger sLogger = Logger.getLogger(SchedulerMock.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncSchedulerMock.class.getSimpleName());
 
     private long mExecutionDuration = 100; // in ms
 
-    public SchedulerMock(Context context, RcsSettings rcsSettings, LocalStorage localStorage,
-            CmsLog cmsLog, XmsLog xmsLog) {
+    public CmsSyncSchedulerMock(Context context, RcsSettings rcsSettings, LocalStorage localStorage,
+                                CmsLog cmsLog, XmsLog xmsLog) {
         super(context, rcsSettings, localStorage, cmsLog, xmsLog);
     }
 
@@ -67,7 +67,7 @@ public class SchedulerMock extends Scheduler {
         }
     }
 
-    void executeCmsTask(BasicImapService basicImapService, SchedulerTask schedulerTask) {
+    void executeCmsTask(BasicImapService basicImapService, CmsSyncSchedulerTask schedulerTask) {
         sLogger.info("executeCmsTask");
         try {
             Thread.sleep(mExecutionDuration, 0);

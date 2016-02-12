@@ -32,10 +32,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A class to access the CMS provider which is a local copy of the CMS database
@@ -507,10 +507,10 @@ public class CmsLog {
      * @param folderName the folder name
      * @return CmsObject
      */
-    public List<CmsObject> getMessages(String folderName, ReadStatus readStatus,
+    public Set<CmsObject> getMessages(String folderName, ReadStatus readStatus,
             DeleteStatus deleteStatus) {
         Cursor cursor = null;
-        List<CmsObject> messages = new ArrayList<>();
+        Set<CmsObject> messages = new HashSet<>();
         try {
             cursor = mLocalContentResolver.query(
                     CmsObject.CONTENT_URI,
@@ -538,9 +538,9 @@ public class CmsLog {
                         MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
                                 .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
                                 : cursor.getLong(nativeProviderIdIdx)));
-
             }
             return messages;
+
         } finally {
             CursorUtil.close(cursor);
         }
@@ -552,7 +552,7 @@ public class CmsLog {
      * @param readStatus the read status
      * @return CmsObject
      */
-    public List<CmsObject> getMessages(ReadStatus readStatus) {
+    public Set<CmsObject> getMessages(ReadStatus readStatus) {
         return getMessages(Message.SELECTION_READ_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(readStatus.toInt())
         });
@@ -562,9 +562,9 @@ public class CmsLog {
      * Gets xms messages by readStatus
      *
      * @param readStatus the read status
-     * @return CmsObject
+     * @return the set of CmsObjects
      */
-    public List<CmsObject> getXmsMessages(ReadStatus readStatus) {
+    public Set<CmsObject> getXmsMessages(ReadStatus readStatus) {
         return getMessages(Message.SELECTION_XMS_READ_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(readStatus.toInt())
         });
@@ -576,7 +576,7 @@ public class CmsLog {
      * @param readStatus the read status
      * @return CmsObject
      */
-    public List<CmsObject> getChatMessages(ReadStatus readStatus) {
+    public Set<CmsObject> getChatMessages(ReadStatus readStatus) {
         return getMessages(Message.SELECTION_CHAT_READ_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(readStatus.toInt())
         });
@@ -588,9 +588,9 @@ public class CmsLog {
      * @param selection the selection
      * @return CmsObject
      */
-    List<CmsObject> getMessages(String selection, String[] params) {
+    Set<CmsObject> getMessages(String selection, String[] params) {
         Cursor cursor = null;
-        List<CmsObject> messages = new ArrayList<>();
+        Set<CmsObject> messages = new HashSet<>();
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null, selection, params,
                     null);
@@ -615,6 +615,7 @@ public class CmsLog {
 
             }
             return messages;
+
         } finally {
             CursorUtil.close(cursor);
         }
@@ -624,9 +625,9 @@ public class CmsLog {
      * Gets messages by deleteStatus
      *
      * @param deleteStatus the deleted status
-     * @return CmsObject
+     * @return the set of CmsObject instances
      */
-    public List<CmsObject> getMessages(DeleteStatus deleteStatus) {
+    public Set<CmsObject> getMessages(DeleteStatus deleteStatus) {
         return getMessages(Message.SELECTION_DELETE_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(deleteStatus.toInt())
         });
@@ -636,9 +637,9 @@ public class CmsLog {
      * Gets xms messages by deleteStatus
      *
      * @param deleteStatus the deleted status
-     * @return CmsObject
+     * @return the set of CmsObjects
      */
-    public List<CmsObject> getXmsMessages(DeleteStatus deleteStatus) {
+    public Set<CmsObject> getXmsMessages(DeleteStatus deleteStatus) {
         return getMessages(Message.SELECTION_XMS_DELETE_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(deleteStatus.toInt())
         });
@@ -648,9 +649,9 @@ public class CmsLog {
      * Gets xms messages by deleteStatus
      *
      * @param deleteStatus the deleted status
-     * @return CmsObject
+     * @return the set of CmsObjects
      */
-    public List<CmsObject> getChatMessages(DeleteStatus deleteStatus) {
+    public Set<CmsObject> getChatMessages(DeleteStatus deleteStatus) {
         return getMessages(Message.SELECTION_CHAT_DELETE_STATUS_UID_NOT_NULL, new String[] {
             String.valueOf(deleteStatus.toInt())
         });
@@ -661,11 +662,11 @@ public class CmsLog {
      *
      * @param folderName the folder name
      * @param pushStatus the push status
-     * @return CmsObject
+     * @return the set of CmsObjects
      */
-    public List<CmsObject> getXmsMessages(String folderName, PushStatus pushStatus) {
+    public Set<CmsObject> getXmsMessages(String folderName, PushStatus pushStatus) {
         Cursor cursor = null;
-        List<CmsObject> messages = new ArrayList<>();
+        Set<CmsObject> messages = new HashSet<>();
         try {
             cursor = mLocalContentResolver.query(
                     CmsObject.CONTENT_URI,
@@ -705,11 +706,11 @@ public class CmsLog {
      * Gets messages by pushStatus Filter out messages marked as deleted
      * 
      * @param pushStatus the push status
-     * @return CmsObject
+     * @return the set CmsObjects
      */
-    public List<CmsObject> getXmsMessages(PushStatus pushStatus) {
+    public Set<CmsObject> getXmsMessages(PushStatus pushStatus) {
         Cursor cursor = null;
-        List<CmsObject> messages = new ArrayList<>();
+        Set<CmsObject> messages = new HashSet<>();
         try {
             cursor = mLocalContentResolver.query(
                     CmsObject.CONTENT_URI,

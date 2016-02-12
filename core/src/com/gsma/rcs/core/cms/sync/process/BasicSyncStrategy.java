@@ -22,9 +22,12 @@ package com.gsma.rcs.core.cms.sync.process;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.sync.scheduler.task.PushMessageTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.imaplib.cpm.ms.impl.sync.AbstractSyncStrategy;
+import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
@@ -34,10 +37,6 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
-
-import com.gsma.rcs.imaplib.cpm.ms.impl.sync.AbstractSyncStrategy;
-import com.gsma.rcs.imaplib.imap.ImapException;
-import com.gsma.rcs.imaplib.imap.ImapMessage;
 
 import android.content.Context;
 
@@ -135,6 +134,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
         } catch (IOException e) {
             throw new NetworkException("Sync failed", e);
+
         } catch (ImapException e) {
             throw new PayloadException("Sync failed", e);
         }
@@ -153,7 +153,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);
         Set<Integer> uids = mLocalStorageHandler.filterNewMessages(messages);
 
-        List<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(),
+        Set<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(),
                 uids);
         mLocalStorageHandler.createMessages(newMessages);
     }
@@ -179,31 +179,29 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         return sync;
     }
 
-    private void pushLocalMessages(String localFolderName) {
-
+    private void pushLocalMessages(String localFolderName) throws NetworkException,
+            PayloadException {
         XmsLog xmsLog = XmsLog.getInstance();
         CmsLog cmsLog = CmsLog.getInstance();
         if (xmsLog == null || cmsLog == null) {
             return;
         }
-
-        List<CmsObject> cmsObjectList;
+        Set<CmsObject> cmsObjects;
         if (localFolderName == null) { // get all messages
-            cmsObjectList = cmsLog.getXmsMessages(PushStatus.PUSH_REQUESTED);
+            cmsObjects = cmsLog.getXmsMessages(PushStatus.PUSH_REQUESTED);
         } else {
-            cmsObjectList = cmsLog.getXmsMessages(localFolderName, PushStatus.PUSH_REQUESTED);
+            cmsObjects = cmsLog.getXmsMessages(localFolderName, PushStatus.PUSH_REQUESTED);
         }
-
         List<XmsDataObject> messagesToPush = new ArrayList<>();
-        for (CmsObject cmsObject : cmsObjectList) {
+        for (CmsObject cmsObject : cmsObjects) {
             XmsDataObject xms = xmsLog.getXmsDataObject(cmsObject.getMessageId());
             if (xms != null) {
                 messagesToPush.add(xms);
             }
         }
         if (!messagesToPush.isEmpty()) {
-            PushMessageTask pushMessageTask = new PushMessageTask(mContext, mRcsSettings, xmsLog,
-                    cmsLog);
+            CmsSyncPushMessageTask pushMessageTask = new CmsSyncPushMessageTask(mContext,
+                    mRcsSettings, xmsLog, cmsLog);
             pushMessageTask.setBasicImapService(mBasicImapService);
             pushMessageTask.pushMessages(messagesToPush);
             for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {

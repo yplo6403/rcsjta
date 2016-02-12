@@ -26,8 +26,8 @@ import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.event.XmsMessageListener;
 import com.gsma.rcs.core.cms.event.framework.EventFrameworkHandler;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTaskType;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTaskType;
 import com.gsma.rcs.core.cms.xms.XmsSynchronizer;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -55,7 +55,7 @@ public class CmsManager implements XmsMessageListener {
     private LocalStorage mLocalStorage;
     private EventFrameworkHandler mEventFrameworkHandler;
     private MmsSessionHandler mMmsSessionHandler;
-    private Scheduler mSyncScheduler;
+    private CmsSyncScheduler mSyncScheduler;
 
     /**
      * Constructor of CmsManager
@@ -102,8 +102,8 @@ public class CmsManager implements XmsMessageListener {
 
         // start scheduler for sync
         if (mRcsSettings.getMessageStoreUri() != null) {
-            mSyncScheduler = new Scheduler(mCtx, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
-            mSyncScheduler.registerListener(SchedulerTaskType.SYNC_FOR_USER_ACTIVITY, cmsService);
+            mSyncScheduler = new CmsSyncScheduler(mCtx, mRcsSettings, mLocalStorage, mCmsLog, mXmsLog);
+            mSyncScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY, cmsService);
             mSyncScheduler.start();
 
             /*
@@ -194,7 +194,7 @@ public class CmsManager implements XmsMessageListener {
         return mMmsSessionHandler;
     }
 
-    public Scheduler getSyncScheduler() {
+    public CmsSyncScheduler getSyncScheduler() {
         return mSyncScheduler;
     }
 

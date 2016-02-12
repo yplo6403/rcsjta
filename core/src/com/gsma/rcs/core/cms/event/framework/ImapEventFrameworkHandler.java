@@ -1,13 +1,10 @@
 
 package com.gsma.rcs.core.cms.event.framework;
 
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler;
-import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
-
-import android.content.Context;
 
 /**
  * This class is in charge of updating flags on the message store using IMAP commands
@@ -17,18 +14,13 @@ public class ImapEventFrameworkHandler {
     private static final Logger sLogger = Logger.getLogger(ImapEventFrameworkHandler.class
             .getSimpleName());
 
-    private final Context mContext;
-    private final RcsSettings mSettings;
-    private final Scheduler mScheduler;
+    private final CmsSyncScheduler mScheduler;
 
-    /* package private */ImapEventFrameworkHandler(Context context, Scheduler scheduler,
-            RcsSettings settings) {
-        mContext = context;
+    /* package private */ImapEventFrameworkHandler(CmsSyncScheduler scheduler) {
         mScheduler = scheduler;
-        mSettings = settings;
     }
 
-    /* package private */void onNewXmsMessage(ContactId contact) {
+    /* package private */void pushMessages(ContactId contact) {
         if (!mScheduler.schedulePushMessages(contact)) {
             if (sLogger.isActivated()) {
                 sLogger.info("--> can not schedule push message operation");

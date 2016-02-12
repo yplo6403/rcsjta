@@ -19,12 +19,11 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler.task;
 
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
-import com.gsma.rcs.utils.logger.Logger;
-
 import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.utils.logger.Logger;
 
 import java.io.IOException;
 
@@ -32,7 +31,7 @@ import java.io.IOException;
  * Task used to delete mailboxes or messages on the CMS server. Used by the 'CMS Toolkit' or
  * integration test
  */
-public class DeleteTask extends SchedulerTask {
+public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
 
     public enum Operation {
         DELETE_ALL, // delete all content for a user
@@ -43,7 +42,7 @@ public class DeleteTask extends SchedulerTask {
     private final Operation mOperation;
     private final DeleteTaskListener mListener;
     private final String mMailbox;
-    private static final Logger sLogger = Logger.getLogger(DeleteTask.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncDeleteTask.class.getSimpleName());
 
     /**
      * Constructor
@@ -52,7 +51,7 @@ public class DeleteTask extends SchedulerTask {
      * @param mailbox the mailbox
      * @param listener the listener
      */
-    public DeleteTask(Operation operation, String mailbox, DeleteTaskListener listener) {
+    public CmsSyncDeleteTask(Operation operation, String mailbox, DeleteTaskListener listener) {
         mOperation = operation;
         mMailbox = mailbox;
         mListener = listener;
@@ -98,7 +97,6 @@ public class DeleteTask extends SchedulerTask {
                     deleteMessages(mailbox);
                     break;
             }
-
         } catch (IOException e) {
             throw new NetworkException("Failed to delete mailbox " + mailbox, e);
 

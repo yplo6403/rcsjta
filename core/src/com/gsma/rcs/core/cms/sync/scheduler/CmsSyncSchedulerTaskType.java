@@ -21,22 +21,25 @@ package com.gsma.rcs.core.cms.sync.scheduler;
 
 import android.util.SparseArray;
 
-public enum SchedulerTaskType {
+/**
+ * enum type to define synchronization scheduler task type
+ */
+public enum CmsSyncSchedulerTaskType {
 
     SYNC_FOR_USER_ACTIVITY(0), SYNC_PERIODIC(1), SYNC_FOR_DATA_CONNECTION(2), PUSH_MESSAGES(3), UPDATE_FLAGS(
             4);
 
     private int mValue;
 
-    private static SparseArray<SchedulerTaskType> mValueToEnum = new SparseArray<>();
+    private static SparseArray<CmsSyncSchedulerTaskType> mValueToEnum = new SparseArray<>();
 
     static {
-        for (SchedulerTaskType entry : SchedulerTaskType.values()) {
+        for (CmsSyncSchedulerTaskType entry : CmsSyncSchedulerTaskType.values()) {
             mValueToEnum.put(entry.toInt(), entry);
         }
     }
 
-    SchedulerTaskType(int value) {
+    CmsSyncSchedulerTaskType(int value) {
         mValue = value;
     }
 
@@ -52,15 +55,15 @@ public enum SchedulerTaskType {
     /**
      * Returns a SyncTrigger instance for the specified integer value.
      *
-     * @param value
+     * @param value the value representing hte scheduler type
      * @return instance
      */
-    public static SchedulerTaskType valueOf(int value) {
-        SchedulerTaskType entry = mValueToEnum.get(value);
+    public static CmsSyncSchedulerTaskType valueOf(int value) {
+        CmsSyncSchedulerTaskType entry = mValueToEnum.get(value);
         if (entry != null) {
             return entry;
         }
-        throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                .append(SchedulerTaskType.class.getName()).append("").append(value).toString());
+        throw new IllegalArgumentException("No enum const class " +
+                CmsSyncSchedulerTaskType.class.getName() + "" + value);
     }
 }

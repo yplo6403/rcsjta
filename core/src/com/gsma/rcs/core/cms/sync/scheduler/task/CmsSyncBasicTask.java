@@ -35,9 +35,9 @@ import android.content.Context;
  * are applied in local storage. In a second step, change from local storage are applied on the CMS
  * server
  */
-public class BasicSynchronizationTask implements Runnable {
+public class CmsSyncBasicTask implements Runnable {
 
-    private static final Logger sLogger = Logger.getLogger(BasicSynchronizationTask.class
+    private static final Logger sLogger = Logger.getLogger(CmsSyncBasicTask.class
             .getSimpleName());
 
     private final Context mContext;
@@ -57,9 +57,9 @@ public class BasicSynchronizationTask implements Runnable {
      * @param folderName the folder name
      * @param listener the sync listener
      */
-    public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            BasicImapService basicImapService, LocalStorage localStorageHandler, String folderName,
-            BasicSynchronizationTaskListener listener) {
+    public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
+                            BasicImapService basicImapService, LocalStorage localStorageHandler, String folderName,
+                            BasicSynchronizationTaskListener listener) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mBasicImapService = basicImapService;
@@ -77,9 +77,9 @@ public class BasicSynchronizationTask implements Runnable {
      * @param localStorageHandler the local storage accessor
      * @param listener the sync listener
      */
-    public BasicSynchronizationTask(Context context, RcsSettings rcsSettings,
-            BasicImapService basicImapService, LocalStorage localStorageHandler,
-            BasicSynchronizationTaskListener listener) {
+    public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
+                            BasicImapService basicImapService, LocalStorage localStorageHandler,
+                            BasicSynchronizationTaskListener listener) {
         this(context, rcsSettings, basicImapService, localStorageHandler, null, listener);
     }
 

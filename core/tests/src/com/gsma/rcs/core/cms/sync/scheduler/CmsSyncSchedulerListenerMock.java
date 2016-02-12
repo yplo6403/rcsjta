@@ -18,27 +18,27 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler;
 
-import com.gsma.rcs.core.cms.sync.scheduler.Scheduler.SyncType;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
 import com.gsma.rcs.utils.logger.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class SchedulerListenerMock implements SchedulerListener {
+public class CmsSyncSchedulerListenerMock implements CmsSyncSchedulerListener {
 
-    private static final Logger sLogger = Logger.getLogger(SchedulerListenerMock.class
+    private static final Logger sLogger = Logger.getLogger(CmsSyncSchedulerListenerMock.class
             .getSimpleName());
 
-    private Map<SchedulerTaskType, AtomicInteger> executions;
+    private Map<CmsSyncSchedulerTaskType, AtomicInteger> executions;
 
-    SchedulerListenerMock() {
+    CmsSyncSchedulerListenerMock() {
         executions = new HashMap<>();
     }
 
     @Override
-    public void onCmsOperationExecuted(SchedulerTaskType operation, SyncType syncType, boolean result,
-            Object param) {
+    public void onCmsOperationExecuted(CmsSyncSchedulerTaskType operation, SyncType syncType, boolean result,
+                                       Object param) {
         sLogger.info("onCmsOperationExecuted " + operation);
         AtomicInteger nb = executions.get(operation);
         if (nb == null) {
@@ -48,7 +48,7 @@ public class SchedulerListenerMock implements SchedulerListener {
         executions.put(operation, nb);
     }
 
-    public int getExecutions(SchedulerTaskType schedulerTaskType) {
+    public int getExecutions(CmsSyncSchedulerTaskType schedulerTaskType) {
         return executions.get(schedulerTaskType) == null ? 0 : executions.get(schedulerTaskType).intValue();
     }
 }

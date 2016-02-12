@@ -27,8 +27,8 @@ import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.Operation;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask.Operation;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -191,7 +191,7 @@ public class GroupStateTest extends AndroidTestCase {
     }
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
-        DeleteTask deleteTask = new DeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
+        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
         deleteTask.setBasicImapService(mBasicImapService);
         deleteTask.delete(mailbox);
         try {

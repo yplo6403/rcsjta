@@ -39,8 +39,7 @@ import java.util.List;
 
 public class XmsLogEnvIntegration {
 
-    private static final String SORT_BY_DATE_DESC = new StringBuilder(XmsData.KEY_TIMESTAMP)
-            .append(" DESC").toString();
+    private static final String SORT_BY_DATE_DESC = XmsData.KEY_TIMESTAMP + " DESC";
 
     private static final String SELECTION_XMS_CONTACT = XmsData.KEY_CONTACT + "=?" + " AND "
             + XmsData.KEY_MIME_TYPE + "=?";
@@ -69,11 +68,10 @@ public class XmsLogEnvIntegration {
     }
 
     /**
-     * @param contact
-     * @return SmsData
+     * @param contact the contact ID
+     * @return the list of XmsDataObject ordered by timestamp
      */
-    public List getMessages(String mimeType, ContactId contact) {
-
+    public List<XmsDataObject> getMessages(String mimeType, ContactId contact) {
         List<XmsDataObject> messages = new ArrayList<>();
         Cursor cursor = null;
         try {

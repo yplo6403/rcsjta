@@ -187,7 +187,7 @@ public class LocalStorage implements SyncProcessorHandler {
     }
 
     @Override
-    public void createMessages(List<ImapMessage> messages) throws FileAccessException {
+    public void createMessages(Set<ImapMessage> messages) throws FileAccessException {
         Map<MessageType, List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
         for (Entry<MessageType, List<IImapMessage>> entry : mapOfMessages.entrySet()) {
             MessageType messageType = entry.getKey();
@@ -219,9 +219,8 @@ public class LocalStorage implements SyncProcessorHandler {
         }
     }
 
-    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(List<ImapMessage> rawMessages) {
-
-        Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap();
+    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(Set<ImapMessage> rawMessages) {
+        Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap<>();
         mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.SESSION_INFO, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.CHAT_MESSAGE, new ArrayList<IImapMessage>());

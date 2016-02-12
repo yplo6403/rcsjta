@@ -20,18 +20,17 @@
 package com.gsma.rcs.core.cms.sync.scheduler.task;
 
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.utils.logger.Logger;
-
-import com.gsma.rcs.imaplib.imap.Flag;
-import com.gsma.rcs.imaplib.imap.ImapException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,16 +43,16 @@ import java.util.Set;
 /**
  * Task used to update flag status on the CMS server.
  */
-public class UpdateFlagTask extends SchedulerTask {
+public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
 
-    private static final Logger sLogger = Logger.getLogger(UpdateFlagTask.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncUpdateFlagTask.class
+            .getSimpleName());
 
     private final UpdateFlagTaskListener mListener;
     private final CmsLog mCmsLog;
     private final EventFrameworkMode mXmsMode;
     private final EventFrameworkMode mChatMode;
     private final List<FlagChange> mSuccessFullFlagChanges;
-
     private List<FlagChange> mFlagChanges;
 
     /**
@@ -62,7 +61,7 @@ public class UpdateFlagTask extends SchedulerTask {
      * @param flagChanges the list of changed flags
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
+    public CmsSyncUpdateFlagTask(List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
         mListener = listener;
         mCmsLog = null;
         mXmsMode = mChatMode = EventFrameworkMode.DISABLED;
@@ -73,11 +72,13 @@ public class UpdateFlagTask extends SchedulerTask {
     /**
      * Constructor
      *
-     * @param cmsLog the IMAP log accessor
+     * @param cmsLog the CMS log accessor
+     * @param xmsMode the XMS mode
+     * @param chatMode the chat mode
      * @param listener the update flag listener
      */
-    public UpdateFlagTask(CmsLog cmsLog, EventFrameworkMode xmsMode, EventFrameworkMode chatMode,
-            UpdateFlagTaskListener listener) {
+    public CmsSyncUpdateFlagTask(CmsLog cmsLog, EventFrameworkMode xmsMode,
+            EventFrameworkMode chatMode, UpdateFlagTaskListener listener) {
         mCmsLog = cmsLog;
         mXmsMode = xmsMode;
         mChatMode = chatMode;
@@ -97,10 +98,11 @@ public class UpdateFlagTask extends SchedulerTask {
 
         } catch (NetworkException e) {
             if (sLogger.isActivated()) {
-                sLogger.info(e.getMessage());
+                sLogger.info("Cannot update flag on CMS server: " + e.getMessage());
             }
+
         } catch (PayloadException | RuntimeException e) {
-            sLogger.error("Runtime error while updating flag status on CMS server!", e);
+            sLogger.error("Cannot update flag status on CMS server!", e);
 
         } finally {
             if (mListener != null) {
@@ -116,7 +118,7 @@ public class UpdateFlagTask extends SchedulerTask {
             return flagChanges;
         }
 
-        List<CmsObject> cmsObjectList;
+        Set<CmsObject> cmsObjectList;
         if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
             cmsObjectList = mCmsLog.getMessages(ReadStatus.READ_REPORT_REQUESTED);
         } else if (EventFrameworkMode.IMAP == mXmsMode) {
@@ -131,12 +133,10 @@ public class UpdateFlagTask extends SchedulerTask {
                 continue;
             }
             String folderName = cmsObject.getFolder();
-            Set<Integer> uids = folderUidsMap.get(folderName);
-            if (uids == null) {
-                uids = new HashSet<>();
-                folderUidsMap.put(folderName, uids);
+            if (!folderUidsMap.containsKey(folderName)) {
+                folderUidsMap.put(folderName, new HashSet<Integer>());
             }
-            uids.add(uid);
+            folderUidsMap.get(folderName).add(uid);
         }
 
         for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
@@ -153,8 +153,7 @@ public class UpdateFlagTask extends SchedulerTask {
         if (EventFrameworkMode.DISABLED == mXmsMode && EventFrameworkMode.DISABLED == mChatMode) {
             return flagChanges;
         }
-
-        List<CmsObject> cmsObjectList;
+        Set<CmsObject> cmsObjectList;
         if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
             cmsObjectList = mCmsLog.getMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
         } else if (EventFrameworkMode.IMAP == mXmsMode) {
@@ -162,21 +161,17 @@ public class UpdateFlagTask extends SchedulerTask {
         } else {
             cmsObjectList = mCmsLog.getChatMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
         }
-
         for (CmsObject cmsObject : cmsObjectList) {
-            String folderName = cmsObject.getFolder();
             Integer uid = cmsObject.getUid();
             if (uid == null) {
                 continue;
             }
-            Set<Integer> uids = folderUidsMap.get(folderName);
-            if (uids == null) {
-                uids = new HashSet<>();
-                folderUidsMap.put(folderName, uids);
+            String folderName = cmsObject.getFolder();
+            if (!folderUidsMap.containsKey(folderName)) {
+                folderUidsMap.put(folderName, new HashSet<Integer>());
             }
-            uids.add(uid);
+            folderUidsMap.get(folderName).add(uid);
         }
-
         for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
             String folderName = entry.getKey();
             Set<Integer> uids = entry.getValue();
@@ -214,7 +209,6 @@ public class UpdateFlagTask extends SchedulerTask {
 
         } catch (ImapException e) {
             throw new PayloadException("Failed to update flags!", e);
-
         }
     }
 
