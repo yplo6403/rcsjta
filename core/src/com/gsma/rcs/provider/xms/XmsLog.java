@@ -439,8 +439,7 @@ public class XmsLog {
                             values.put(PartData.KEY_FILESIZE, pdu.length);
                         }
                     } catch (IOException e) {
-                        deleteXmsMessage(mms.getMessageId());
-                        throw new FileAccessException("Failed to copy Uri=" + fileUri, e);
+                        //Nothing to do
                     }
                 } else {
                     values.put(PartData.KEY_CONTENT, fileUri.toString());
