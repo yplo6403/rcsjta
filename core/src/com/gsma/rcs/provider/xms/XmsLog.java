@@ -342,22 +342,6 @@ public class XmsLog {
     public void addIncomingMms(MmsDataObject mms) {
         String contact = mms.getContact().toString();
         ContentValues values = new ContentValues();
-        values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
-        values.put(XmsData.KEY_CONTACT, contact);
-        values.put(XmsData.KEY_CHAT_ID, contact);
-        values.put(XmsData.KEY_CONTENT, mms.getSubject());
-        values.put(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE);
-        values.put(XmsData.KEY_DIRECTION, Direction.INCOMING.toInt());
-        values.put(XmsData.KEY_TIMESTAMP, mms.getTimestamp());
-        values.put(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent());
-        values.put(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered());
-        values.put(XmsData.KEY_STATE, mms.getState().toInt());
-        values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
-        values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == mms.getReadStatus() ? 1
-                : 0);
-        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
-        values.put(XmsData.KEY_MMS_ID, mms.getMmsId());
-        mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
 
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
@@ -378,6 +362,24 @@ public class XmsLog {
             values.put(PartData.KEY_FILEICON, mmsPart.getFileIcon());
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
+
+        values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
+        values.put(XmsData.KEY_CONTACT, contact);
+        values.put(XmsData.KEY_CHAT_ID, contact);
+        values.put(XmsData.KEY_CONTENT, mms.getSubject());
+        values.put(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE);
+        values.put(XmsData.KEY_DIRECTION, Direction.INCOMING.toInt());
+        values.put(XmsData.KEY_TIMESTAMP, mms.getTimestamp());
+        values.put(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent());
+        values.put(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered());
+        values.put(XmsData.KEY_STATE, mms.getState().toInt());
+        values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
+        values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == mms.getReadStatus() ? 1
+                : 0);
+        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
+        values.put(XmsData.KEY_MMS_ID, mms.getMmsId());
+        mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
+
     }
 
     private void persistPdu(Uri file, byte[] pdu) throws IOException {
@@ -393,22 +395,6 @@ public class XmsLog {
     public void addOutgoingMms(MmsDataObject mms) throws FileAccessException {
         String contact = mms.getContact().toString();
         ContentValues values = new ContentValues();
-        values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
-        values.put(XmsData.KEY_CONTACT, contact);
-        values.put(XmsData.KEY_CHAT_ID, contact);
-        values.put(XmsData.KEY_CONTENT, mms.getSubject());
-        values.put(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE);
-        values.put(XmsData.KEY_DIRECTION, Direction.OUTGOING.toInt());
-        values.put(XmsData.KEY_TIMESTAMP, mms.getTimestamp());
-        values.put(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent());
-        values.put(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered());
-        values.put(XmsData.KEY_STATE, mms.getState().toInt());
-        values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
-        values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == mms.getReadStatus() ? 1
-                : 0);
-        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
-        values.put(XmsData.KEY_MMS_ID, mms.getMmsId());
-        mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
 
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
@@ -454,8 +440,7 @@ public class XmsLog {
                             values.put(PartData.KEY_FILESIZE, pdu.length);
                         }
                     } catch (IOException e) {
-                        deleteXmsMessage(mms.getMessageId());
-                        throw new FileAccessException("Failed to copy Uri=" + fileUri, e);
+                        //Nothing to do
                     }
                 } else {
                     values.put(PartData.KEY_CONTENT, fileUri.toString());
@@ -468,6 +453,23 @@ public class XmsLog {
             }
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
+
+        values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
+        values.put(XmsData.KEY_CONTACT, contact);
+        values.put(XmsData.KEY_CHAT_ID, contact);
+        values.put(XmsData.KEY_CONTENT, mms.getSubject());
+        values.put(XmsData.KEY_MIME_TYPE, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE);
+        values.put(XmsData.KEY_DIRECTION, Direction.OUTGOING.toInt());
+        values.put(XmsData.KEY_TIMESTAMP, mms.getTimestamp());
+        values.put(XmsData.KEY_TIMESTAMP_SENT, mms.getTimestampSent());
+        values.put(XmsData.KEY_TIMESTAMP_DELIVERED, mms.getTimestampDelivered());
+        values.put(XmsData.KEY_STATE, mms.getState().toInt());
+        values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
+        values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ == mms.getReadStatus() ? 1
+                : 0);
+        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
+        values.put(XmsData.KEY_MMS_ID, mms.getMmsId());
+        mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
     }
 
     private Set<Uri> getPartUris(String mmsId) {

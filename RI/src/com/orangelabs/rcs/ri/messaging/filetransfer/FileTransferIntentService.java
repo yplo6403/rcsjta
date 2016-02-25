@@ -35,6 +35,7 @@ import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
 import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.settings.RiSettings;
@@ -180,6 +181,7 @@ public class FileTransferIntentService extends IntentService {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notif = buildNotification(pi, title, message);
         notificationManager.notify(uniqueId, notif);
+        OneToOneTalkList.notifyNewConversationEvent(this);
     }
 
     private void handleUndeliveredFileTransfer(Intent intent, String transferId,

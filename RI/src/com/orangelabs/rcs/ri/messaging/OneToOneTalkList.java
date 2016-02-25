@@ -27,10 +27,8 @@ import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageListener;
-import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
-import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
 
@@ -44,11 +42,9 @@ import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
 
-import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.ContentObserver;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -90,9 +86,8 @@ public class OneToOneTalkList extends RcsActivity {
     private Context mCtx;
     private boolean mFileTransferListenerSet;
     private OneToOneFileTransferListener mOneToOneFileTransferListener;
-    private MessagingObserver mObserver;
     private OneToOneTalkListUpdate.TaskCompleted mUpdateTalkListListener;
-    private boolean mActivityVisible;
+    private static boolean sActivityVisible;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,6 +107,17 @@ public class OneToOneTalkList extends RcsActivity {
                 showExceptionThenExit(e);
             }
         }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        /* Replace the value of intent */
+        setIntent(intent);
+        // TODO test action
+        OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
+                mUpdateTalkListListener);
+        updateTalkList.execute();
     }
 
     @Override
@@ -138,22 +144,16 @@ public class OneToOneTalkList extends RcsActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        mActivityVisible = true;
-        if (mObserver == null) {
-            OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
-                    mUpdateTalkListListener);
-            updateTalkList.execute();
-        }
+        sActivityVisible = true;
+        OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
+                mUpdateTalkListListener);
+        updateTalkList.execute();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mActivityVisible = false;
-        if (mObserver != null) {
-            getContentResolver().unregisterContentObserver(mObserver);
-            mObserver = null;
-        }
+        sActivityVisible = false;
     }
 
     @Override
@@ -382,7 +382,7 @@ public class OneToOneTalkList extends RcsActivity {
         mUpdateTalkListListener = new OneToOneTalkListUpdate.TaskCompleted() {
             @Override
             public void onTaskComplete(Collection<OneToOneTalkArrayItem> result) {
-                if (!mActivityVisible) {
+                if (!sActivityVisible) {
                     return;
                 }
                 mMessageLogs.clear();
@@ -390,39 +390,19 @@ public class OneToOneTalkList extends RcsActivity {
                 /* Sort by descending timestamp */
                 Collections.sort(mMessageLogs);
                 mAdapter.notifyDataSetChanged();
-                if (mObserver == null) {
-                    mObserver = new MessagingObserver(mHandler, mCtx);
-                    ContentResolver resolver = getContentResolver();
-                    resolver.registerContentObserver(XmsMessageLog.CONTENT_URI, true, mObserver);
-                    resolver.registerContentObserver(ChatLog.Message.CONTENT_URI, true, mObserver);
-                    resolver.registerContentObserver(FileTransferLog.CONTENT_URI, true, mObserver);
-                }
             }
         };
     }
 
-    private class MessagingObserver extends ContentObserver {
-        private final Context mCtx;
-
-        public MessagingObserver(Handler handler, Context ctx) {
-            super(handler);
-            mCtx = ctx;
+    /**
+     * Notify new conversation event
+     */
+    public static void notifyNewConversationEvent(Context ctx) {
+        if (sActivityVisible) {
+            Intent intent = new Intent(ctx, OneToOneTalkList.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(intent);
         }
 
-        @Override
-        public void onChange(boolean selfChange) {
-            this.onChange(selfChange, null);
-        }
-
-        @Override
-        public void onChange(boolean selfChange, Uri uri) {
-            if (mObserver != null) {
-                getContentResolver().unregisterContentObserver(mObserver);
-                mObserver = null;
-                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
-                        mUpdateTalkListListener);
-                updateTalkList.execute();
-            }
-        }
     }
 }

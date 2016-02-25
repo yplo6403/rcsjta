@@ -23,6 +23,7 @@ import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
 import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.utils.LogUtils;
@@ -128,6 +129,7 @@ public class XmsIntentService extends IntentService {
         }
         Notification notif = buildNotification(contentIntent, title, message.getContent());
         mChatPendingIntentManager.postNotification(uniqueId, notif);
+        OneToOneTalkList.notifyNewConversationEvent(this);
     }
 
     private Notification buildNotification(PendingIntent invitation, String title, String message) {
