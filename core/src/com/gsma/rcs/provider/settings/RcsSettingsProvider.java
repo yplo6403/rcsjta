@@ -80,7 +80,7 @@ public class RcsSettingsProvider extends ContentProvider {
     }
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 115;
+        private static final int DATABASE_VERSION = 116;
 
         /**
          * Add a parameter in the db
@@ -356,8 +356,6 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_DIRECTORY_PATH_VIDEOS);
             addParameter(db, RcsSettingsData.DIRECTORY_PATH_FILES,
                     RcsSettingsData.DEFAULT_DIRECTORY_PATH_FILES);
-            addParameter(db, RcsSettingsData.DIRECTORY_PATH_MMS,
-                    RcsSettingsData.DEFAULT_DIRECTORY_PATH_MMS);
             addParameter(db, RcsSettingsData.DIRECTORY_PATH_FILEICONS,
                     RcsSettingsData.DEFAULT_DIRECTORY_PATH_FILEICONS);
             addParameter(db, RcsSettingsData.SECURE_MSRP_OVER_WIFI,

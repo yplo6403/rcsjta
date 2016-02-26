@@ -1294,13 +1294,6 @@ public class RcsSettingsData {
             .getExternalStorageDirectory() + "/rcs/files/";
 
     /**
-     * Directory path for files
-     */
-    public static final String DIRECTORY_PATH_MMS = "DirectoryPathMms";
-    /* package private */static final String DEFAULT_DIRECTORY_PATH_MMS = Environment
-            .getExternalStorageDirectory() + "/rcs/mms/";
-
-    /**
      * Directory path for file icons
      */
     public static final String DIRECTORY_PATH_FILEICONS = "DirectoryPathFileIcons";

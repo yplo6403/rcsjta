@@ -389,20 +389,6 @@
                 android:layout_marginRight="5dip"
                 android:inputType="textUri" />
 
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/Directory_path_to_store_mms" />
-
-            <EditText
-                android:id="@+id/DirectoryPathMms"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip"
-                android:inputType="textUri" />
-
             <CheckBox
                 android:id="@+id/SmsFallbackService"
                 android:layout_width="fill_parent"

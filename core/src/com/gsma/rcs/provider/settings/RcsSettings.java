@@ -1880,15 +1880,6 @@ public class RcsSettings {
     }
 
     /**
-     * Get the root directory for mms
-     *
-     * @return Directory path
-     */
-    public String getMmsRootDirectory() {
-        return readString(RcsSettingsData.DIRECTORY_PATH_MMS);
-    }
-
-    /**
      * Set the root directory for files
      *
      * @param path Directory path

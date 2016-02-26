@@ -20,9 +20,9 @@
 package com.gsma.rcs.core.cms.utils;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.CloseableUtils;
-import com.gsma.rcs.utils.MimeManager;
 
 import android.content.ContentResolver;
 import android.net.Uri;
@@ -69,27 +69,25 @@ public class MmsUtils {
      * 
      * @param rcsSettings the RCS settings accessor
      * @param mimeType the mime type
-     * @param mmsId the MMS Id
+     * @param mmsFileName the MMS file name
      * @param data the MMS data
      * @return the file URI
      * @throws FileAccessException
      */
-    public static Uri saveContent(RcsSettings rcsSettings, String mimeType, String mmsId,
+    public static Uri saveContent(RcsSettings rcsSettings, String mimeType, String mmsFileName,
             byte[] data) throws FileAccessException {
-        String fileName = rcsSettings.getMmsRootDirectory() + File.separator + mmsId + "_"
-                + DateUtils.getMmsFileDate(System.currentTimeMillis()) + "."
-                + MimeManager.getInstance().getExtensionFromMimeType(mimeType);
+        Uri uri = ContentManager.generateUriForReceivedContent(mmsFileName, mimeType, rcsSettings);
         FileOutputStream fos = null;
         BufferedOutputStream bos = null;
         try {
-            File file = new File(fileName);
+            File file = new File(uri.getPath());
             fos = new FileOutputStream(file);
             bos = new BufferedOutputStream(fos, 8 * 1024);
             bos.write(data);
             return Uri.fromFile(file);
 
         } catch (IOException e) {
-            throw new FileAccessException("Failed to save MMS file=" + fileName, e);
+            throw new FileAccessException("Failed to save MMS file=" + mmsFileName, e);
 
         } finally {
             CloseableUtils.tryToClose(bos);
