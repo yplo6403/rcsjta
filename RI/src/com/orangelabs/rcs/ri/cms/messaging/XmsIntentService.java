@@ -22,13 +22,6 @@ import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
-import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -36,6 +29,13 @@ import android.content.Intent;
 import android.media.RingtoneManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
 /**
  * XMS intent service
@@ -129,7 +129,7 @@ public class XmsIntentService extends IntentService {
         }
         Notification notif = buildNotification(contentIntent, title, message.getContent());
         mChatPendingIntentManager.postNotification(uniqueId, notif);
-        OneToOneTalkList.notifyNewConversationEvent(this);
+        OneToOneTalkList.notifyNewConversationEvent(this, XmsMessageIntent.ACTION_NEW_XMS_MESSAGE);
     }
 
     private Notification buildNotification(PendingIntent invitation, String title, String message) {

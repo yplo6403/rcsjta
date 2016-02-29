@@ -29,18 +29,6 @@ import com.gsma.services.rcs.filetransfer.GroupFileTransferListener;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatDAO;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -64,6 +52,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatDAO;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.io.IOException;
 import java.util.Set;
@@ -96,10 +96,6 @@ public class ReceiveFileTransfer extends RcsActivity {
 
     private OnClickListener mAcceptBtnListener;
 
-    private android.view.View.OnClickListener mBtnPauseListener;
-
-    private android.view.View.OnClickListener mBtnResumeListener;
-
     private OneToOneFileTransferListener mFileTransferListener;
 
     private GroupFileTransferListener mGroupFtListener;
@@ -113,6 +109,7 @@ public class ReceiveFileTransfer extends RcsActivity {
     private static final String VCARD_MIME_TYPE = "text/x-vcard";
 
     private static final String BUNDLE_FTDAO_ID = "ftdao";
+    private ReceiveFileTransfer mActivity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -120,14 +117,6 @@ public class ReceiveFileTransfer extends RcsActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.filetransfer_receive);
         initialize();
-        /* Set pause and resume button */
-        mPauseBtn = (Button) findViewById(R.id.pause_btn);
-        mPauseBtn.setOnClickListener(mBtnPauseListener);
-        mPauseBtn.setEnabled(false);
-        mResumeBtn = (Button) findViewById(R.id.resume_btn);
-        mResumeBtn.setOnClickListener(mBtnResumeListener);
-        mResumeBtn.setEnabled(false);
-        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         /* Register to API connection manager */
         if (!isServiceConnected(RcsServiceName.FILE_TRANSFER, RcsServiceName.CONTACT)) {
@@ -197,7 +186,8 @@ public class ReceiveFileTransfer extends RcsActivity {
         TextView fromTextView = (TextView) findViewById(R.id.from);
         fromTextView.setText(getString(R.string.label_from_args, from));
 
-        String size = getString(R.string.label_file_size, mFtDao.getSize() / 1024);
+        String size = getString(R.string.label_file_size,
+                FileUtils.humanReadableByteCount(mFtDao.getSize(), true));
         TextView sizeTxt = (TextView) findViewById(R.id.image_size);
         sizeTxt.setText(size);
         TextView filenameTxt = (TextView) findViewById(R.id.image_filename);
@@ -278,7 +268,7 @@ public class ReceiveFileTransfer extends RcsActivity {
                         null);
                 builder.setCustomTitle(titleView);
                 builder.setMessage(getString(R.string.label_ft_from_size, from,
-                        mFtDao.getSize() / 1024));
+                        FileUtils.humanReadableByteCount(mFtDao.getSize(), true)));
                 builder.setCancelable(false);
                 /* Make sure progress bar is at the beginning */
                 mProgressBar.setProgress(0);
@@ -414,7 +404,7 @@ public class ReceiveFileTransfer extends RcsActivity {
      */
     private boolean isFileSizeExceeded(long size) {
         try {
-            long maxSize = mFileTransferService.getConfiguration().getMaxSize() * 1024;
+            long maxSize = mFileTransferService.getConfiguration().getMaxSize();
             return (maxSize > 0 && size > maxSize);
 
         } catch (RcsServiceException e) {
@@ -553,20 +543,16 @@ public class ReceiveFileTransfer extends RcsActivity {
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
         }
-
-        if (VCARD_MIME_TYPE.equals(mFtDao.getMimeType())) {
+        String mimeType = mFtDao.getMimeType();
+        if (VCARD_MIME_TYPE.equals(mimeType)) {
             // Show the transferred vCard
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(mFtDao.getFile(), VCARD_MIME_TYPE);
             startActivity(intent);
 
-        } else {
-            if (FileUtils.isImageType(mFtDao.getMimeType())) {
-                /* Show the transferred image */
-                String toast = getString(R.string.label_receive_image,
-                        mFtDao.getFilename(), mFtDao.getContact().toString());
-                Utils.showPictureAndExit(this, mFtDao.getFile(), toast);
-            }
+        } else if (Utils.isImageType(mimeType)) {
+            /* Show the transferred image */
+            Utils.showPicture(this, mFtDao.getFile());
         }
     }
 
@@ -579,6 +565,7 @@ public class ReceiveFileTransfer extends RcsActivity {
     }
 
     private void initialize() {
+        mActivity = this;
         mGroupFtListener = new GroupFileTransferListener() {
 
             @Override
@@ -634,7 +621,7 @@ public class ReceiveFileTransfer extends RcsActivity {
             }
         };
 
-        mBtnPauseListener = new android.view.View.OnClickListener() {
+        View.OnClickListener btnPauseListener = new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
                 try {
@@ -645,16 +632,16 @@ public class ReceiveFileTransfer extends RcsActivity {
                         showMessage(R.string.label_pause_ft_not_allowed);
                     }
                 } catch (RcsPermissionDeniedException e) {
-                    Utils.displayToast(ReceiveFileTransfer.this,
-                            getString(R.string.label_pause_failed));
+                    Utils.displayToast(mActivity, getString(R.string.label_pause_failed));
 
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
                 }
+
             }
         };
 
-        mBtnResumeListener = new android.view.View.OnClickListener() {
+        View.OnClickListener btnResumeListener = new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
                 try {
@@ -665,8 +652,7 @@ public class ReceiveFileTransfer extends RcsActivity {
                         showMessage(R.string.label_resume_ft_not_allowed);
                     }
                 } catch (RcsPermissionDeniedException e) {
-                    Utils.displayToast(ReceiveFileTransfer.this,
-                            getString(R.string.label_resume_failed));
+                    Utils.displayToast(mActivity, getString(R.string.label_resume_failed));
 
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
@@ -705,6 +691,14 @@ public class ReceiveFileTransfer extends RcsActivity {
                 }
             }
         };
+        /* Set pause and resume button */
+        mPauseBtn = (Button) findViewById(R.id.pause_btn);
+        mPauseBtn.setOnClickListener(btnPauseListener);
+        mPauseBtn.setEnabled(false);
+        mResumeBtn = (Button) findViewById(R.id.resume_btn);
+        mResumeBtn.setOnClickListener(btnResumeListener);
+        mResumeBtn.setEnabled(false);
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
     }
 
     /**

@@ -23,13 +23,6 @@ import static com.orangelabs.rcs.ri.utils.FileUtils.takePersistableContentUriPer
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.annotation.TargetApi;
 import android.content.ClipData;
 import android.content.Context;
@@ -45,6 +38,13 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.adapter.XmsArrayAdapter;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -173,8 +173,8 @@ public class InitiateMmsTransfer extends RcsActivity {
     private void addImagePart(List<MmsPartDataObject> mmsParts, ContactId contact, Uri uri) {
         String filename = FileUtils.getFileName(this, uri);
         Long fileSize = FileUtils.getFileSize(this, uri);
-        String mimeType = FileUtils.getMimeType(filename);
-        if (mimeType != null && FileUtils.isImageType(mimeType)) {
+        String mimeType = FileUtils.getMimeType(this, uri);
+        if (mimeType != null && Utils.isImageType(mimeType)) {
             takePersistableContentUriPermission(this, uri);
             mmsParts.add(new MmsPartDataObject(mimeType, uri, filename, fileSize, contact));
         }
@@ -213,9 +213,7 @@ public class InitiateMmsTransfer extends RcsActivity {
                     public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
                         MmsPartDataObject mmsPart = (MmsPartDataObject) (parent.getAdapter())
                                 .getItem(pos);
-                        String msg = getString(R.string.toast_mms_image, mmsPart.getFilename(),
-                                mContact.toString());
-                        Utils.showPictureAndExit(InitiateMmsTransfer.this, mmsPart.getFile(), msg);
+                        Utils.showPicture(InitiateMmsTransfer.this, mmsPart.getFile());
                     }
 
                 });

@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010 France Telecom S.A.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,16 +25,6 @@ import com.gsma.services.rcs.sharing.image.ImageSharing;
 import com.gsma.services.rcs.sharing.image.ImageSharingListener;
 import com.gsma.services.rcs.sharing.image.ImageSharingService;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -50,11 +40,22 @@ import android.view.MenuItem;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
+
 import java.util.Set;
 
 /**
  * Receive image sharing
- * 
+ *
  * @author Jean-Marc AUFFRET
  * @author Philippe LEMORDANT
  */
@@ -79,12 +80,14 @@ public class ReceiveImageSharing extends RcsActivity {
 
     private OnClickListener mDeclineBtnListener;
 
+    private ReceiveImageSharing mActivity;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intitialize();
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.image_sharing_receive);
+        initialize();
         /* Register to API connection manager */
         if (!isServiceConnected(RcsServiceName.IMAGE_SHARING, RcsServiceName.CONTACT)) {
             showMessageThenExit(R.string.label_service_not_available);
@@ -139,7 +142,8 @@ public class ReceiveImageSharing extends RcsActivity {
             fromTextView.setText(getString(R.string.label_from_args, from));
 
             long fileSize = mIshDao.getSize();
-            String size = getString(R.string.label_file_size, fileSize / 1024);
+            String size = getString(R.string.label_file_size,
+                    FileUtils.humanReadableByteCount(fileSize, true));
             TextView sizeTxt = (TextView) findViewById(R.id.image_size);
             sizeTxt.setText(size);
 
@@ -148,7 +152,8 @@ public class ReceiveImageSharing extends RcsActivity {
             /* Display accept/reject dialog */
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(R.string.title_image_sharing);
-            builder.setMessage(getString(R.string.label_ft_from_size, from, fileSize / 1024));
+            builder.setMessage(getString(R.string.label_ft_from_size, from,
+                    FileUtils.humanReadableByteCount(fileSize, true)));
             builder.setCancelable(false);
             builder.setIcon(R.drawable.ri_notif_csh_icon);
             builder.setPositiveButton(R.string.label_accept, mAcceptBtnListener);
@@ -248,7 +253,8 @@ public class ReceiveImageSharing extends RcsActivity {
         return true;
     }
 
-    private void intitialize() {
+    private void initialize() {
+        mActivity = this;
         mListener = new ImageSharingListener() {
 
             @Override
@@ -308,10 +314,7 @@ public class ReceiveImageSharing extends RcsActivity {
                                 progressBar.setProgress(progressBar.getMax());
 
                                 // Show the shared image
-                                String toast = getString(R.string.label_receive_image,
-                                        mIshDao.getFilename(), mIshDao.getContact().toString());
-                                Utils.showPictureAndExit(ReceiveImageSharing.this,
-                                        mIshDao.getFile(), toast);
+                                Utils.showPicture(mActivity, mIshDao.getFile());
                                 break;
 
                             default:

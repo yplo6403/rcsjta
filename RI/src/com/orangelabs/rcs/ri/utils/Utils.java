@@ -88,17 +88,12 @@ public class Utils {
     }
 
     /**
-     * Show a picture and exit activity
+     * Show a picture
      * 
      * @param activity Activity
      * @param uri Picture to be displayed
-     * @param toastMessage The toast message
      */
-    public static void showPictureAndExit(final Activity activity, Uri uri, String toastMessage) {
-        if (activity.isFinishing()) {
-            return;
-        }
-        Toast.makeText(activity, toastMessage, Toast.LENGTH_LONG).show();
+    public static void showPicture(final Activity activity, Uri uri) {
         Intent intent = new Intent();
         intent.setAction(android.content.Intent.ACTION_VIEW);
         intent.setDataAndType(uri, "image/*");
@@ -106,6 +101,35 @@ public class Utils {
         activity.startActivity(intent);
     }
 
+    /**
+     * Checks if mime type is an image type
+     *
+     * @param mime MIME type
+     * @return True if mime type is an image type
+     */
+    public static boolean isImageType(String mime) {
+        return mime.toLowerCase().startsWith("image/");
+    }
+
+    /**
+     * Checks if mime type is an audio type
+     *
+     * @param mime MIME type
+     * @return True if mime type is an audio type
+     */
+    public static boolean isAudioType(String mime) {
+        return mime.toLowerCase().startsWith("audio/");
+    }
+
+    /**
+     * Checks if mime type is an video type
+     *
+     * @param mime MIME type
+     * @return True if mime type is an video type
+     */
+    public static boolean isVideoType(String mime) {
+        return mime.toLowerCase().startsWith("video/");
+    }
     /**
      * Show an info with a specific title
      * 

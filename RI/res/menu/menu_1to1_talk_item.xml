@@ -32,4 +32,8 @@
     <item
         android:id="@+id/menu_resend_via_xms"
         android:title="@string/menu_resend_via_sms"/>
+
+    <item
+        android:id="@+id/menu_display_content"
+        android:title="@string/menu_view_message" />
 </menu>

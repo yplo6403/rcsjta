@@ -24,6 +24,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -165,15 +166,15 @@ public class FileUtils {
     /**
      * Fetch the file name from URI
      *
-     * @param context Context
+     * @param ctx Context
      * @param file URI
      * @return fileName String
      * @throws IllegalArgumentException
      */
-    public static String getFileName(Context context, Uri file) throws IllegalArgumentException {
+    public static String getFileName(Context ctx, Uri file) throws IllegalArgumentException {
         Cursor cursor = null;
         try {
-            cursor = context.getContentResolver().query(file, null, null, null, null);
+            cursor = ctx.getContentResolver().query(file, null, null, null, null);
             if (ContentResolver.SCHEME_CONTENT.equals(file.getScheme())) {
                 if (cursor != null && cursor.moveToFirst()) {
                     return cursor.getString(cursor
@@ -196,15 +197,15 @@ public class FileUtils {
     /**
      * Fetch the file size from URI
      *
-     * @param context Context
+     * @param ctx Context
      * @param file URI
      * @return fileSize long
      * @throws IllegalArgumentException
      */
-    public static long getFileSize(Context context, Uri file) throws IllegalArgumentException {
+    public static long getFileSize(Context ctx, Uri file) throws IllegalArgumentException {
         Cursor cursor = null;
         try {
-            cursor = context.getContentResolver().query(file, null, null, null, null);
+            cursor = ctx.getContentResolver().query(file, null, null, null, null);
             if (ContentResolver.SCHEME_CONTENT.equals(file.getScheme())) {
                 if (cursor != null && cursor.moveToFirst()) {
                     return Long.valueOf(cursor.getString(cursor
@@ -215,7 +216,7 @@ public class FileUtils {
             } else if (ContentResolver.SCHEME_FILE.equals(file.getScheme())) {
                 return (new File(file.getPath())).length();
             }
-            throw new IllegalArgumentException("Unsupported URI scheme");
+            throw new IllegalArgumentException("Unsupported URI scheme: " + file);
 
         } finally {
             if (cursor != null) {
@@ -224,54 +225,71 @@ public class FileUtils {
         }
     }
 
-    /**
-     * Returns URL extension
-     *
-     * @param filename The filename
-     * @return Extension
-     */
-    private static String getFileExtension(String filename) {
-        if (filename.indexOf('.') != -1) {
-            return filename.substring(filename.lastIndexOf('.') + 1);
+    private static String getMimeTypeFromFile(Context ctx, Uri file) {
+        MediaMetadataRetriever mmr = null;
+        try {
+            mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(ctx, file);
+            return mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+
+        } finally {
+            if (mmr != null) {
+                mmr.release();
+            }
         }
-        return null;
     }
 
     /**
-     * Returns mime type from filename
+     * Gets the mime-type from file Uri
      *
-     * @param filename The filename
-     * @return Extension
+     * @param ctx the context
+     * @param file the file Uri
+     * @return the mime-type
      */
-    public static String getMimeType(String filename) {
-        String extension = getFileExtension(filename);
-        if (extension == null) {
-            return null;
+    public static String getMimeType(Context ctx, Uri file) {
+        String scheme = file.getScheme();
+        if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+            return ctx.getContentResolver().getType(file);
         }
-        if (sMimeTypeMapSingleton == null) {
-            sMimeTypeMapSingleton = MimeTypeMap.getSingleton();
+        if (ContentResolver.SCHEME_FILE.equals(scheme)) {
+            String path = file.getPath();
+            if (path == null) {
+                throw new RuntimeException("Invalid file path for Uri='" + file + "'!");
+            }
+            String extension = MimeTypeMap.getFileExtensionFromUrl(path);
+            if (extension != null) {
+                String result = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+                        extension.toLowerCase());
+                if (result == null) {
+                    throw new IllegalArgumentException("Invalid mime type for extension='"
+                            + extension + "'!");
+                }
+                if (Utils.isVideoType(result)) {
+                    /*
+                     * Warning: Audio and Video files share the same extensions so we need to
+                     * retrieve mime type directly from file.
+                     */
+                    String mimeTypeFromMediaFile = getMimeTypeFromFile(ctx, file);
+                    if (mimeTypeFromMediaFile != null) {
+                        return mimeTypeFromMediaFile;
+                    }
+                }
+                return result;
+            }
+            throw new IllegalArgumentException("Invalid extension for URI='" + file + "'!");
         }
-        return sMimeTypeMapSingleton.getMimeTypeFromExtension(extension.toLowerCase());
+        throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
     }
 
-    /**
-     * Is a image type
-     *
-     * @param mime MIME type
-     * @return Boolean
-     */
-    public static boolean isImageType(String mime) {
-        return mime.toLowerCase().startsWith("image/");
-    }
-
-    /**
-     * Is a video type
-     *
-     * @param mime MIME type
-     * @return Boolean
-     */
-    public static boolean isVideoType(String mime) {
-        return mime.toLowerCase().startsWith("video/");
+    private static Intent forgeIntentToOpenFile() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            intent = new Intent(Intent.ACTION_GET_CONTENT, null);
+        } else {
+            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        }
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        return intent;
     }
 
     /**
@@ -287,16 +305,6 @@ public class FileUtils {
         activity.startActivityForResult(intent, action);
     }
 
-    private static Intent forgeIntentToOpenFile() {
-        Intent intent;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            intent = new Intent(Intent.ACTION_GET_CONTENT, null);
-        } else {
-            intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        }
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        return intent;
-    }
 
     public static void openFiles(Activity activity, String[] mimeTypes, int action) {
         Intent intent = forgeIntentToOpenFile();

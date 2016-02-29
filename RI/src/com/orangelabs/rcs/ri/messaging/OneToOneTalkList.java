@@ -23,24 +23,17 @@ import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
+import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
-
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayAdapter;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayItem;
-import com.orangelabs.rcs.ri.settings.RiSettings;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Context;
 import android.content.Intent;
@@ -57,6 +50,16 @@ import android.view.View;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayAdapter;
+import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayItem;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,12 +115,16 @@ public class OneToOneTalkList extends RcsActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        /* Replace the value of intent */
-        setIntent(intent);
-        // TODO test action
-        OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
-                mUpdateTalkListListener);
-        updateTalkList.execute();
+        String action = intent.getAction();
+        if (OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE.equals(action)
+                || XmsMessageIntent.ACTION_NEW_XMS_MESSAGE.equals(action)
+                || FileTransferIntent.ACTION_NEW_INVITATION.equals(action)) {
+            /* Replace the value of intent */
+            setIntent(intent);
+            OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
+                    mUpdateTalkListListener);
+            updateTalkList.execute();
+        }
     }
 
     @Override
@@ -356,6 +363,9 @@ public class OneToOneTalkList extends RcsActivity {
                                 getString(R.string.label_delete_chat_success, contact.toString()));
                     }
                 });
+                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
+                        mUpdateTalkListListener);
+                updateTalkList.execute();
             }
         };
         mXmsMessageListener = new XmsMessageListener() {
@@ -371,6 +381,9 @@ public class OneToOneTalkList extends RcsActivity {
                                 getString(R.string.label_xms_delete_success, contact.toString()));
                     }
                 });
+                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
+                        mUpdateTalkListListener);
+                updateTalkList.execute();
             }
 
             @Override
@@ -378,7 +391,6 @@ public class OneToOneTalkList extends RcsActivity {
                     XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
             }
         };
-
         mUpdateTalkListListener = new OneToOneTalkListUpdate.TaskCompleted() {
             @Override
             public void onTaskComplete(Collection<OneToOneTalkArrayItem> result) {
@@ -396,13 +408,16 @@ public class OneToOneTalkList extends RcsActivity {
 
     /**
      * Notify new conversation event
+     * 
+     * @param ctx the context
+     * @param action the action intent
      */
-    public static void notifyNewConversationEvent(Context ctx) {
+    public static void notifyNewConversationEvent(Context ctx, String action) {
         if (sActivityVisible) {
             Intent intent = new Intent(ctx, OneToOneTalkList.class);
+            intent.setAction(action);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(intent);
         }
-
     }
 }

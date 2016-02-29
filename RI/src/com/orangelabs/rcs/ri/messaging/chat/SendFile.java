@@ -20,22 +20,10 @@ package com.orangelabs.rcs.ri.messaging.chat;
 
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
-import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
@@ -52,7 +40,15 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 /**
  * Send file
@@ -78,53 +74,26 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
 
     protected FileTransfer mFileTransfer;
 
-    private Dialog mProgressDialog;
-
     protected Button mResumeBtn;
 
     protected Button mPauseBtn;
-
-    private boolean mResuming = false;
 
     private Button mInviteBtn;
 
     private Button mSelectBtn;
 
     protected FileTransferService mFileTransferService;
-
-    private OnClickListener mBtnInviteListener;
-
-    private OnClickListener mBtnSelectListener;
-
-    private OnClickListener mBtnPauseListener;
-
-    private OnClickListener mBtnResumeListener;
+    private CheckBox mCheckThumNail;
 
     private static final String LOGTAG = LogUtils.getTag(SendFile.class.getSimpleName());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initialize();
-        mResuming = FileTransferIntent.ACTION_RESUME.equals(getIntent().getAction());
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.chat_send_file);
 
-        mInviteBtn = (Button) findViewById(R.id.invite_btn);
-        mInviteBtn.setOnClickListener(mBtnInviteListener);
-        mInviteBtn.setEnabled(false);
-
-        mSelectBtn = (Button) findViewById(R.id.select_btn);
-        mSelectBtn.setOnClickListener(mBtnSelectListener);
-
-        mPauseBtn = (Button) findViewById(R.id.pause_btn);
-        mPauseBtn.setOnClickListener(mBtnPauseListener);
-        mPauseBtn.setEnabled(false);
-
-        mResumeBtn = (Button) findViewById(R.id.resume_btn);
-        mResumeBtn.setOnClickListener(mBtnResumeListener);
-        mResumeBtn.setEnabled(false);
+        initialize();
 
         /* Register to API connection manager */
         if (!isServiceConnected(RcsServiceName.CHAT, RcsServiceName.FILE_TRANSFER,
@@ -157,22 +126,12 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
     }
 
     private void initiateTransfer() {
-        /* Get thumbnail option */
-        CheckBox ftThumb = (CheckBox) findViewById(R.id.ft_thumb);
-        if (transferFile(mFile, ftThumb.isChecked())) {
-            /* Display a progress dialog */
-            mProgressDialog = showProgressDialog(getString(R.string.label_command_in_progress));
-            mProgressDialog.setOnCancelListener(new OnCancelListener() {
-                public void onCancel(DialogInterface dialog) {
-                    Toast.makeText(SendFile.this, getString(R.string.label_transfer_cancelled),
-                            Toast.LENGTH_SHORT).show();
-                    quitSession();
-                }
-            });
+        if (transferFile(mFile, mCheckThumNail.isChecked())) {
             /* Hide buttons */
             mInviteBtn.setVisibility(View.INVISIBLE);
             mSelectBtn.setVisibility(View.INVISIBLE);
-            ftThumb.setVisibility(View.INVISIBLE);
+            /* Disable checkboxes */
+            mCheckThumNail.setEnabled(false);
         }
     }
 
@@ -184,28 +143,23 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
         switch (requestCode) {
             case SELECT_IMAGE:
                 if ((data != null) && (data.getData() != null)) {
-                    /* Get selected photo URI */
-                    mFile = data.getData();
-                    /* Display the selected filename attribute */
-                    TextView uriEdit = (TextView) findViewById(R.id.uri);
-                    mFilename = FileUtils.getFileName(this, mFile);
-                    mFilesize = FileUtils.getFileSize(this, mFile) / 1024;
-                    uriEdit.setText(mFilesize + " KB");
-
+                    displayFileInfo(data);
                     mInviteBtn.setEnabled(true);
+                    mCheckThumNail.setEnabled(true);
                 }
                 break;
         }
     }
 
-    /**
-     * Hide progress dialog
-     */
-    protected void hideProgressDialog() {
-        if (mProgressDialog != null && mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
+    private void displayFileInfo(Intent data) {
+        mFile = data.getData();
+        /* Display the selected filename attribute */
+        TextView uriEdit = (TextView) findViewById(R.id.uri);
+        TextView sizeEdit = (TextView) findViewById(R.id.size);
+        mFilename = FileUtils.getFileName(this, mFile);
+        mFilesize = FileUtils.getFileSize(this, mFile);
+        sizeEdit.setText(FileUtils.humanReadableByteCount(mFilesize, true));
+        uriEdit.setText(mFilename);
     }
 
     /**
@@ -290,7 +244,7 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
 
     @Override
     public void initialize() {
-        mBtnInviteListener = new OnClickListener() {
+        OnClickListener btnInviteListener = new OnClickListener() {
             public void onClick(View v) {
                 long warnSize = 0;
                 try {
@@ -302,7 +256,8 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
                 if (warnSize > 0 && mFilesize >= warnSize) {
                     // Display a warning message
                     AlertDialog.Builder builder = new AlertDialog.Builder(SendFile.this);
-                    builder.setMessage(getString(R.string.label_sharing_warn_size, mFilesize));
+                    builder.setMessage(getString(R.string.label_sharing_warn_size,
+                            FileUtils.humanReadableByteCount(mFilesize, true)));
                     builder.setCancelable(false);
                     builder.setPositiveButton(R.string.label_yes,
                             new DialogInterface.OnClickListener() {
@@ -318,14 +273,19 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
                 }
             }
         };
+        mInviteBtn = (Button) findViewById(R.id.invite_btn);
+        mInviteBtn.setOnClickListener(btnInviteListener);
+        mInviteBtn.setEnabled(false);
 
-        mBtnSelectListener = new OnClickListener() {
+        OnClickListener btnSelectListener = new OnClickListener() {
             public void onClick(View v) {
                 FileUtils.openFile(SendFile.this, "image/*", SELECT_IMAGE);
             }
         };
+        mSelectBtn = (Button) findViewById(R.id.select_btn);
+        mSelectBtn.setOnClickListener(btnSelectListener);
 
-        mBtnPauseListener = new OnClickListener() {
+        OnClickListener btnPauseListener = new OnClickListener() {
             public void onClick(View v) {
                 try {
                     if (mFileTransfer.isAllowedToPauseTransfer()) {
@@ -339,8 +299,11 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
                 }
             }
         };
+        mPauseBtn = (Button) findViewById(R.id.pause_btn);
+        mPauseBtn.setOnClickListener(btnPauseListener);
+        mPauseBtn.setEnabled(false);
 
-        mBtnResumeListener = new OnClickListener() {
+        OnClickListener btnResumeListener = new OnClickListener() {
             public void onClick(View v) {
                 try {
                     if (mFileTransfer.isAllowedToResumeTransfer()) {
@@ -354,6 +317,12 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
                 }
             }
         };
+        mResumeBtn = (Button) findViewById(R.id.resume_btn);
+        mResumeBtn.setOnClickListener(btnResumeListener);
+        mResumeBtn.setEnabled(false);
+
+        mCheckThumNail = (CheckBox) findViewById(R.id.ft_thumb);
+        mCheckThumNail.setEnabled(false);
     }
 
 }

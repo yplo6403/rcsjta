@@ -27,22 +27,8 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.sharing.image.ImageSharing;
 import com.gsma.services.rcs.sharing.image.ImageSharingListener;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.utils.ContactListAdapter;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
@@ -59,7 +45,18 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.ContactListAdapter;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.Set;
 
@@ -90,8 +87,6 @@ public class InitiateImageSharing extends RcsActivity {
 
     private String mSharingId;
 
-    private Dialog mProgressDialog;
-
     /**
      * Spinner for contact selection
      */
@@ -117,7 +112,8 @@ public class InitiateImageSharing extends RcsActivity {
 
         // Set contact selector
         mSpinner = (Spinner) findViewById(R.id.contact);
-        mSpinner.setAdapter(ContactListAdapter.createRcsContactListAdapter(this));
+        ContactListAdapter adapter = ContactListAdapter.createRcsContactListAdapter(this);
+        mSpinner.setAdapter(adapter);
 
         // Set buttons callback
         Button inviteBtn = (Button) findViewById(R.id.invite_btn);
@@ -130,7 +126,7 @@ public class InitiateImageSharing extends RcsActivity {
         dialBtn.setOnClickListener(mBtnDialListener);
         dialBtn.setEnabled(false);
         // Disable button if no contact available
-        if (mSpinner.getAdapter().getCount() != 0) {
+        if (adapter == null || mSpinner.getAdapter().getCount() != 0) {
             dialBtn.setEnabled(true);
             selectBtn.setEnabled(true);
         }
@@ -173,22 +169,12 @@ public class InitiateImageSharing extends RcsActivity {
             // Display the selected filename attribute
             TextView uriEdit = (TextView) findViewById(R.id.uri);
             mFilename = FileUtils.getFileName(this, mFile);
-            mFilesize = FileUtils.getFileSize(this, mFile) / 1024;
-            uriEdit.setText(mFilesize + " KB");
+            mFilesize = FileUtils.getFileSize(this, mFile);
+            uriEdit.setText(FileUtils.humanReadableByteCount(mFilesize, true));
             // Enable invite button
             Button inviteBtn = (Button) findViewById(R.id.invite_btn);
             inviteBtn.setEnabled(true);
         }
-    }
-
-    private void hideProgressDialog() {
-        if (mProgressDialog == null) {
-            return;
-        }
-        if (mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-        }
-        mProgressDialog = null;
     }
 
     private void updateProgressBar(long currentSize, long totalSize) {
@@ -306,17 +292,6 @@ public class InitiateImageSharing extends RcsActivity {
                     mImageSharing = getImageSharingApi().shareImage(remote, mFile);
                     mSharingId = mImageSharing.getSharingId();
 
-                    // Display a progress dialog
-                    mProgressDialog = showProgressDialog(getString(R.string.label_command_in_progress));
-                    mProgressDialog.setOnCancelListener(new OnCancelListener() {
-                        public void onCancel(DialogInterface dialog) {
-                            Toast.makeText(InitiateImageSharing.this,
-                                    getString(R.string.label_sharing_cancelled), Toast.LENGTH_SHORT)
-                                    .show();
-                            quitSession();
-                        }
-                    });
-
                     // Disable UI
                     mSpinner.setEnabled(false);
 
@@ -384,8 +359,6 @@ public class InitiateImageSharing extends RcsActivity {
                         TextView statusView = (TextView) findViewById(R.id.progress_status);
                         switch (state) {
                             case STARTED:
-                                // Session is established: hide progress dialog
-                                hideProgressDialog();
                                 // Display session status
                                 statusView.setText(_state);
                                 break;
@@ -406,8 +379,6 @@ public class InitiateImageSharing extends RcsActivity {
                                 break;
 
                             case TRANSFERRED:
-                                // Hide progress dialog
-                                hideProgressDialog();
                                 // Display transfer progress
                                 statusView.setText(_state);
                                 break;

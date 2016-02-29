@@ -25,10 +25,11 @@ import android.net.Uri;
  */
 public class FileTransferProperties {
 
-    private Uri mUri;
+    private final Uri mUri;
+    private final String mMimeType;
     private boolean mFileicon;
-    private String mFilename;
-    private long mSize;
+    private final String mFilename;
+    private final long mSize;
     private String mStatus;
     private int mProgress;
     private String mReasonCode;
@@ -39,11 +40,13 @@ public class FileTransferProperties {
      * @param uri the file URI
      * @param filename the file name
      * @param size the file size
+     * @param mimeType the mime type
      */
-    public FileTransferProperties(Uri uri, String filename, long size) {
+    public FileTransferProperties(Uri uri, String filename, long size, String mimeType) {
         mUri = uri;
         mFilename = filename;
         mSize = size;
+        mMimeType = mimeType;
     }
 
     /**
@@ -78,13 +81,6 @@ public class FileTransferProperties {
      */
     public String getFilename() {
         return mFilename;
-    }
-
-    /**
-     * @param filename the FileName to set
-     */
-    public void setFilename(String filename) {
-        mFilename = filename;
     }
 
     /**
@@ -133,15 +129,6 @@ public class FileTransferProperties {
     }
 
     /**
-     * Sets the file size
-     * 
-     * @param size the size
-     */
-    public void setSize(long size) {
-        mSize = size;
-    }
-
-    /**
      * Gets the reason code
      * 
      * @return the reason code
@@ -157,6 +144,15 @@ public class FileTransferProperties {
      */
     public void setReasonCode(String reasonCode) {
         mReasonCode = reasonCode;
+    }
+
+    /**
+     * Gets the mime type
+     *
+     * @return the mime type
+     */
+    public String getMimeType() {
+        return mMimeType;
     }
 
 }

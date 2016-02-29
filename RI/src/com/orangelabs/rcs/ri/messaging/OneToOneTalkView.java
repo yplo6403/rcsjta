@@ -52,27 +52,6 @@ import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
-import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
-import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
-import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.messaging.chat.ChatView;
-import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
-import com.orangelabs.rcs.ri.messaging.chat.single.SendSingleFile;
-import com.orangelabs.rcs.ri.messaging.chat.single.SingleChatIntentService;
-import com.orangelabs.rcs.ri.messaging.filetransfer.FileTransferIntentService;
-import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
-import com.orangelabs.rcs.ri.settings.RiSettings;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -105,6 +84,28 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
+import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
+import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
+import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.messaging.chat.ChatView;
+import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
+import com.orangelabs.rcs.ri.messaging.chat.single.SendSingleFile;
+import com.orangelabs.rcs.ri.messaging.chat.single.SingleChatIntentService;
+import com.orangelabs.rcs.ri.messaging.filetransfer.FileTransferIntentService;
+import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -922,63 +923,109 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_1to1_talk_item, menu);
-
         /* Get the list item position */
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor) mAdapter.getItem(info.position);
+        /* Adapt the contextual menu according to the selected item */
+        int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
         RcsService.Direction direction = RcsService.Direction.valueOf(cursor.getInt(cursor
                 .getColumnIndexOrThrow(HistoryLog.DIRECTION)));
+        if (FileTransferLog.HISTORYLOG_MEMBER_ID == providerId) {
+            String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
+            if (Utils.isImageType(mimeType)) {
+                if (RcsService.Direction.INCOMING == direction) {
+                    Long transferred = cursor.getLong(cursor
+                            .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
+                    Long size = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE));
+                    if (!size.equals(transferred)) {
+                        /* file is not transferred: do no allow to display */
+                        menu.findItem(R.id.menu_display_content).setVisible(false);
+                    }
+                }
+            } else {
+                // only image files are playable
+                menu.findItem(R.id.menu_display_content).setVisible(false);
+            }
+        } else {
+            // Only file are playable
+            menu.findItem(R.id.menu_display_content).setVisible(false);
+        }
         if (RcsService.Direction.OUTGOING != direction) {
             menu.findItem(R.id.menu_resend_message).setVisible(false);
             menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
             return;
         }
-        /* Adapt the contextual menu according to the selected item */
-        int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
-        switch (providerId) {
-            case XmsMessageLog.HISTORYLOG_MEMBER_ID:
-                menu.findItem(R.id.menu_resend_message).setVisible(false);
-                menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
-                break;
+        String id = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+        try {
+            switch (providerId) {
+                case XmsMessageLog.HISTORYLOG_MEMBER_ID:
+                    menu.findItem(R.id.menu_resend_message).setVisible(false);
+                    menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
+                    break;
 
-            case ChatLog.Message.HISTORYLOG_MEMBER_ID:
-                menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
-                menu.findItem(R.id.menu_resend_message).setVisible(false);
-                ChatLog.Message.Content.Status status = ChatLog.Message.Content.Status
-                        .valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.STATUS)));
-                if (ChatLog.Message.Content.Status.FAILED == status) {
-                    menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
-                }
-                boolean expiredDelivery = cursor.getInt(cursor
-                        .getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY)) == 1;
-                if (expiredDelivery) {
-                    menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
-                }
-                break;
+                case ChatLog.Message.HISTORYLOG_MEMBER_ID:
+                    menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
+                    menu.findItem(R.id.menu_resend_message).setVisible(false);
+                    ChatLog.Message.Content.Status status = ChatLog.Message.Content.Status
+                            .valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.STATUS)));
+                    if (ChatLog.Message.Content.Status.FAILED == status) {
+                        String number = cursor.getString(cursor
+                                .getColumnIndexOrThrow(HistoryLog.CONTACT));
+                        if (number != null) {
+                            ContactId contact = ContactUtil.formatContact(number);
+                            OneToOneChat chat = mChatService.getOneToOneChat(contact);
+                            if (chat != null && chat.isAllowedToSendMessage()) {
+                                menu.findItem(R.id.menu_resend_message).setVisible(true);
+                            } else {
+                                menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
+                            }
+                        }
+                    } else {
+                        boolean expiredDelivery = cursor.getInt(cursor
+                                .getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY)) == 1;
+                        if (expiredDelivery) {
+                            /* only allow resend via XMS if expired delivery */
+                            menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
+                        }
+                    }
+                    break;
 
-            case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                menu.findItem(R.id.menu_resend_message).setVisible(false);
-                menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
-                FileTransfer.State state = FileTransfer.State.valueOf(cursor.getInt(cursor
-                        .getColumnIndexOrThrow(HistoryLog.STATUS)));
-                if (FileTransfer.State.FAILED == state) {
-                    menu.findItem(R.id.menu_resend_message).setVisible(true);
-                }
-                if (mCanSendMms) {
+                case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                    menu.findItem(R.id.menu_resend_message).setVisible(false);
+                    menu.findItem(R.id.menu_resend_via_xms).setVisible(false);
                     String mimeType = cursor.getString(cursor
                             .getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
-                    if (FileUtils.isImageType(mimeType)) {
-                        expiredDelivery = cursor.getInt(cursor
+                    FileTransfer.State state = FileTransfer.State.valueOf(cursor.getInt(cursor
+                            .getColumnIndexOrThrow(HistoryLog.STATUS)));
+                    if (FileTransfer.State.FAILED == state) {
+                        FileTransfer transfer = mFileTransferService.getFileTransfer(id);
+                        if (transfer != null && transfer.isAllowedToResendTransfer()) {
+                            menu.findItem(R.id.menu_resend_message).setVisible(true);
+
+                        } else if (mCanSendMms && Utils.isImageType(mimeType)) {
+                            menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
+                        }
+                    }
+                    if (mCanSendMms && Utils.isImageType(mimeType)) {
+                        boolean expiredDelivery = cursor.getInt(cursor
                                 .getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY)) == 1;
                         if (expiredDelivery) {
                             menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
                         }
                     }
-                }
-                break;
+                    break;
 
-            default:
-                throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+                default:
+                    throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+            }
+        } catch (RcsServiceNotAvailableException e) {
+            menu.findItem(R.id.menu_resend_message).setVisible(false);
+            menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
+
+        } catch (RcsGenericException | RcsPersistentStorageException e) {
+            menu.findItem(R.id.menu_resend_message).setVisible(false);
+            menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
+            showException(e);
         }
     }
 
@@ -1049,11 +1096,28 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     }
                     return true;
 
+                case R.id.menu_display_content:
+                    switch (providerId) {
+                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                            String file = cursor.getString(cursor
+                                    .getColumnIndexOrThrow(HistoryLog.CONTENT));
+                            Utils.showPicture(this, Uri.parse(file));
+                            break;
+
+                        default:
+                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+                    }
+                    return true;
+
                 default:
                     return super.onContextItemSelected(item);
             }
-        } catch (RcsServiceException e) {
-            showExceptionThenExit(e);
+        } catch (RcsGenericException | RcsPermissionDeniedException | RcsPersistentStorageException e) {
+            showException(e);
+            return true;
+
+        } catch (RcsServiceNotAvailableException e) {
+            Utils.displayLongToast(this, getString(R.string.label_service_not_available));
             return true;
         }
     }
@@ -1228,7 +1292,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         }
         List<Uri> files = new ArrayList<>();
         Uri file = fileTransfer.getFile();
-        if (!FileUtils.isImageType(fileTransfer.getMimeType())) {
+        if (!Utils.isImageType(fileTransfer.getMimeType())) {
             if (LogUtils.isActive) {
                 Log.e(LOGTAG, "Cannot resend via MMS transfer ID=" + fileTransferId
                         + ": not image!");

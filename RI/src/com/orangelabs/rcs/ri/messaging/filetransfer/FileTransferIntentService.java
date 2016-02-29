@@ -32,18 +32,6 @@ import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
-import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.settings.RiSettings;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -55,6 +43,17 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
+import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -181,7 +180,7 @@ public class FileTransferIntentService extends IntentService {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Notification notif = buildNotification(pi, title, message);
         notificationManager.notify(uniqueId, notif);
-        OneToOneTalkList.notifyNewConversationEvent(this);
+        OneToOneTalkList.notifyNewConversationEvent(this, FileTransferIntent.ACTION_NEW_INVITATION);
     }
 
     private void handleUndeliveredFileTransfer(Intent intent, String transferId,
@@ -278,7 +277,7 @@ public class FileTransferIntentService extends IntentService {
                 }
                 List<Uri> files = new ArrayList<>();
                 Uri file = fileTransfer.getFile();
-                if (!FileUtils.isImageType(fileTransfer.getMimeType())) {
+                if (!Utils.isImageType(fileTransfer.getMimeType())) {
                     if (LogUtils.isActive) {
                         Log.e(LOGTAG, "Cannot resend via MMS transfer ID=" + id + ": not image!");
                     }

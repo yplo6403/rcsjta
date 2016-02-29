@@ -24,20 +24,9 @@ import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
-import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.history.HistoryLog;
-
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
-import com.orangelabs.rcs.ri.utils.BitmapCache;
-import com.orangelabs.rcs.ri.utils.BitmapLoader;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.app.Activity;
 import android.content.Context;
@@ -56,6 +45,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
+import com.orangelabs.rcs.ri.utils.BitmapCache;
+import com.orangelabs.rcs.ri.utils.BitmapLoader;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 /**
  * Conversation cursor adapter
@@ -81,9 +79,6 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
     private final Activity mActivity;
     private LayoutInflater mInflater;
     private BitmapCache bitmapCache;
-
-    private static final String LOGTAG = LogUtils.getTag(OneToOneTalkCursorAdapter.class
-            .getSimpleName());
 
     /**
      * Constructor
@@ -162,7 +157,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
 
             case VIEW_TYPE_MMS_IN:
             case VIEW_TYPE_MMS_OUT:
-                bindMmsView(view, cursor, viewType);
+                bindMmsView(view, cursor);
                 break;
 
             case VIEW_TYPE_RCS_CHAT_LOC_OUT:
@@ -176,7 +171,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
                 break;
 
             case VIEW_TYPE_RCS_FILE_TRANSFER_IN:
-                bindRcsFileTransferInView(view, cursor, Direction.INCOMING);
+                bindRcsFileTransferInView(view, cursor);
                 break;
 
             case VIEW_TYPE_RCS_FILE_TRANSFER_OUT:
@@ -241,14 +236,14 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
     }
 
     private void bindRcsFileTransferOutView(View view, Cursor cursor) {
-        bindRcsFileTransferInView(view, cursor, Direction.OUTGOING);
+        bindRcsFileTransferInView(view, cursor);
         RcsFileTransferOutViewHolder holder = (RcsFileTransferOutViewHolder) view.getTag();
         boolean undeliveredExpiration = cursor.getInt(holder.getColumnExpiredDeliveryIdx()) == 1;
         holder.getStatusText().setCompoundDrawablesWithIntrinsicBounds(
                 undeliveredExpiration ? R.drawable.chat_view_undelivered : 0, 0, 0, 0);
     }
 
-    private void bindRcsFileTransferInView(View view, Cursor cursor, final Direction dir) {
+    private void bindRcsFileTransferInView(View view, Cursor cursor) {
         RcsFileTransferInViewHolder holder = (RcsFileTransferInViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
@@ -270,7 +265,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
             int reason = cursor.getInt(holder.getColumnReasonCodeIdx());
             FileTransfer.ReasonCode reasonCode = FileTransfer.ReasonCode.valueOf(reason);
             if (FileTransfer.ReasonCode.UNSPECIFIED == reasonCode) {
-                if (FileUtils.isImageType(mimeType)) {
+                if (Utils.isImageType(mimeType)) {
                     final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
                     String filePath = FileUtils.getPath(mContext, file);
                     Bitmap imageBitmap = null;
@@ -298,20 +293,11 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
                         } else {
                             imageView.setImageResource(R.drawable.ri_filetransfer_on);
                         }
-                        final String number = cursor.getString(holder.getColumnContactIdx());
                         imageView.setOnClickListener(new View.OnClickListener() {
 
                             @Override
                             public void onClick(View v) {
-                                String toast;
-                                if (Direction.INCOMING == dir) {
-                                    toast = mActivity.getString(R.string.mms_image_in, filename,
-                                            number);
-                                } else {
-                                    toast = mActivity.getString(R.string.mms_image_out, filename,
-                                            number);
-                                }
-                                Utils.showPictureAndExit(mActivity, file, toast);
+                                Utils.showPicture(mActivity, file);
                             }
                         });
                     } else {
@@ -368,7 +354,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
         holder.getStatusText().setText(getXmsStatus(cursor, holder));
     }
 
-    private void bindMmsView(View view, Cursor cursor, final int viewType) {
+    private void bindMmsView(View view, Cursor cursor) {
         MmsViewHolder holder = (MmsViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
@@ -403,9 +389,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
             ImageView imageView = (ImageView) mmsItemView.findViewById(R.id.image);
             TextView filenameText = (TextView) mmsItemView.findViewById(R.id.FileName);
             TextView fileSizeText = (TextView) mmsItemView.findViewById(R.id.FileSize);
-            final ContactId contact = mmsPart.getContact();
             final Uri file = mmsPart.getFile();
-            final String filename = mmsPart.getFilename();
             byte[] fileIcon = mmsPart.getFileIcon();
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
@@ -436,15 +420,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
 
                     @Override
                     public void onClick(View v) {
-                        String toast;
-                        if (VIEW_TYPE_MMS_IN == viewType) {
-                            toast = mActivity.getString(R.string.mms_image_in, filename,
-                                    contact.toString());
-                        } else {
-                            toast = mActivity.getString(R.string.mms_image_out, filename,
-                                    contact.toString());
-                        }
-                        Utils.showPictureAndExit(mActivity, file, toast);
+                        Utils.showPicture(mActivity, file);
                     }
                 });
                 imageView.setLayoutParams(mImageParams);

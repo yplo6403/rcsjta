@@ -18,13 +18,6 @@
 
 package com.orangelabs.rcs.ri.messaging.adapter;
 
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
-import com.orangelabs.rcs.ri.utils.BitmapCache;
-import com.orangelabs.rcs.ri.utils.BitmapLoader;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -35,6 +28,14 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
+import com.orangelabs.rcs.ri.utils.BitmapCache;
+import com.orangelabs.rcs.ri.utils.BitmapLoader;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.List;
 
@@ -77,7 +78,7 @@ public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
             holder.mFileSizeText
                     .setText(FileUtils.humanReadableByteCount(item.getFileSize(), true));
             Bitmap fileIcon = null;
-            if (FileUtils.isImageType(item.getMimeType())) {
+            if (Utils.isImageType(item.getMimeType())) {
                 String filePath = FileUtils.getPath(mCtx, item.getFile());
                 if (filePath != null) {
                     LruCache<String, BitmapLoader.BitmapCacheInfo> memoryCache = bitmapCache

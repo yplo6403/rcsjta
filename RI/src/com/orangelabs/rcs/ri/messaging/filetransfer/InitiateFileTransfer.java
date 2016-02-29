@@ -28,23 +28,9 @@ import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.utils.ContactListAdapter;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
@@ -65,7 +51,18 @@ import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.utils.ContactListAdapter;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsSessionUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.Set;
 
@@ -96,10 +93,7 @@ public class InitiateFileTransfer extends RcsActivity {
 
     private FileTransfer mFileTransfer;
 
-    private Dialog mProgressDialog;
-
-    private static final String LOGTAG = LogUtils
-            .getTag(InitiateFileTransfer.class.getSimpleName());
+    private static final String LOGTAG = LogUtils.getTag(InitiateFileTransfer.class.getName());
 
     private String mFileTransferId;
 
@@ -118,45 +112,20 @@ public class InitiateFileTransfer extends RcsActivity {
 
     private OneToOneFileTransferListener mFileTransferListener;
 
-    private OnClickListener mBtnInviteListener;
-
-    private OnClickListener mBtnSelectListener;
-
-    private OnClickListener mBtnPauseListener;
-
-    private OnClickListener mBtnResumeListener;
-
     private FileTransferService mFileTransferService;
+    private TextView mUriTextView;
+    private TextView mSizeTextView;
+    private CheckBox mIconCheckBox;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        intitialize();
-        ContactId remoteContact;
         Intent intent = getIntent();
         boolean resuming = FileTransferIntent.ACTION_RESUME.equals(intent.getAction());
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.filetransfer_initiate);
 
-        /* Set contact selector */
-        mSpinner = (Spinner) findViewById(R.id.contact);
-
-        /* Set buttons callback */
-        mInviteBtn = (Button) findViewById(R.id.invite_btn);
-        mInviteBtn.setOnClickListener(mBtnInviteListener);
-        mInviteBtn.setEnabled(false);
-        mSelectBtn = (Button) findViewById(R.id.select_btn);
-        mSelectBtn.setOnClickListener(mBtnSelectListener);
-        mSelectBtn.setEnabled(false);
-
-        mPauseBtn = (Button) findViewById(R.id.pause_btn);
-        mPauseBtn.setOnClickListener(mBtnPauseListener);
-        mPauseBtn.setEnabled(false);
-
-        mResumeBtn = (Button) findViewById(R.id.resume_btn);
-        mResumeBtn.setOnClickListener(mBtnResumeListener);
-        mResumeBtn.setEnabled(false);
+        intitialize();
 
         TableRow expiration = (TableRow) findViewById(R.id.expiration);
         expiration.setVisibility(View.GONE);
@@ -180,7 +149,7 @@ public class InitiateFileTransfer extends RcsActivity {
                     finish();
                     return;
                 }
-                remoteContact = ftdao.getContact();
+                ContactId remoteContact = ftdao.getContact();
                 mFileTransferId = ftdao.getTransferId();
                 mFilename = ftdao.getFilename();
                 mFilesize = ftdao.getSize();
@@ -189,10 +158,8 @@ public class InitiateFileTransfer extends RcsActivity {
                             remoteContact.toString()
                         });
                 mSpinner.setAdapter(adapter);
-                TextView uriEdit = (TextView) findViewById(R.id.uri);
-                TextView sizeEdit = (TextView) findViewById(R.id.size);
-                sizeEdit.setText((mFilesize / 1024) + " KB");
-                uriEdit.setText(mFilename);
+                mSizeTextView.setText(FileUtils.humanReadableByteCount(mFilesize, true));
+                mUriTextView.setText(mFilename);
                 /* Check if session still exists */
                 if (mFileTransferService.getFileTransfer(mFileTransferId) == null) {
                     /* Session not found or expired */
@@ -237,8 +204,7 @@ public class InitiateFileTransfer extends RcsActivity {
 
     private void initiateTransfer(ContactId remote) {
         /* Get thumbnail option */
-        CheckBox ftThumb = (CheckBox) findViewById(R.id.ft_thumb);
-        boolean tryToSendFileicon = ftThumb.isChecked();
+        boolean tryToSendFileicon = mIconCheckBox.isChecked();
         String mimeType = getContentResolver().getType(mFile);
         if (tryToSendFileicon && mimeType != null && !mimeType.startsWith("image")) {
             tryToSendFileicon = false;
@@ -249,21 +215,13 @@ public class InitiateFileTransfer extends RcsActivity {
             /* Initiate transfer */
             mFileTransfer = mFileTransferService.transferFile(remote, mFile, tryToSendFileicon);
             mFileTransferId = mFileTransfer.getTransferId();
-            mProgressDialog = showProgressDialog(getString(R.string.label_command_in_progress));
-            mProgressDialog.setOnCancelListener(new OnCancelListener() {
-                public void onCancel(DialogInterface dialog) {
-                    Toast.makeText(InitiateFileTransfer.this,
-                            getString(R.string.label_transfer_cancelled), Toast.LENGTH_SHORT)
-                            .show();
-                    quitSession();
-                }
-            });
+
             /* Disable UI */
             mSpinner.setEnabled(false);
             /* Hide buttons */
             mInviteBtn.setVisibility(View.INVISIBLE);
             mSelectBtn.setVisibility(View.INVISIBLE);
-            ftThumb.setVisibility(View.INVISIBLE);
+            mIconCheckBox.setEnabled(false);
 
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
@@ -291,40 +249,37 @@ public class InitiateFileTransfer extends RcsActivity {
         registerDialog(builder.show());
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode != RESULT_OK || (data == null) || (data.getData() == null)) {
-            return;
-        }
-        mFile = data.getData();
-        TextView uriEdit = (TextView) findViewById(R.id.uri);
-        TextView sizeEdit = (TextView) findViewById(R.id.size);
-        switch (requestCode) {
-            case SELECT_IMAGE:
-            case SELECT_TEXT_FILE:
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "Selected file uri:" + mFile);
-                }
-                /*
-                 * Display file info and the selected filename attribute.
-                 */
-                mFilename = FileUtils.getFileName(this, mFile);
-                mFilesize = FileUtils.getFileSize(this, mFile) / 1024;
-                sizeEdit.setText(mFilesize + " KB");
-                uriEdit.setText(mFilename);
-                if (LogUtils.isActive) {
-                    Log.i(LOGTAG, "Select file " + mFilename + " of size " + mFilesize + " file="
-                            + mFile);
-                }
-                mInviteBtn.setEnabled(true);
-                break;
+    private void displaySelectedFileInfo() {
+        /*
+         * Display file info and the selected filename attribute.
+         */
+        mFilename = FileUtils.getFileName(this, mFile);
+        mFilesize = FileUtils.getFileSize(this, mFile);
+        mSizeTextView.setText(FileUtils.humanReadableByteCount(mFilesize, true));
+        mUriTextView.setText(mFilename);
+        if (LogUtils.isActive) {
+            Log.i(LOGTAG, "Select file " + mFilename + " of size " + mFilesize);
         }
     }
 
-    private void hideProgressDialog() {
-        if (mProgressDialog != null && mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != RESULT_OK || data == null) {
+            return;
+        }
+        switch (requestCode) {
+            case SELECT_IMAGE:
+            case SELECT_TEXT_FILE:
+                mFile = data.getData();
+                if (mFile == null) {
+                    return;
+                }
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Selected file uri:".concat(mFile.toString()));
+                }
+                displaySelectedFileInfo();
+                mInviteBtn.setEnabled(true);
+                break;
         }
     }
 
@@ -418,6 +373,99 @@ public class InitiateFileTransfer extends RcsActivity {
     }
 
     private void intitialize() {
+        OnClickListener btnInviteListener = new OnClickListener() {
+            public void onClick(View v) {
+                ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
+                String phoneNumber = adapter.getSelectedNumber(mSpinner.getSelectedView());
+                final ContactId remote = ContactUtil.formatContact(phoneNumber);
+
+                long warnSize;
+                try {
+                    warnSize = mFileTransferService.getConfiguration().getWarnSize();
+
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                    return;
+                }
+                if ((warnSize > 0) && (mFilesize >= warnSize)) {
+                    // Display a warning message
+                    AlertDialog.Builder builder = new AlertDialog.Builder(InitiateFileTransfer.this);
+                    builder.setMessage(getString(R.string.label_sharing_warn_size, mFilesize));
+                    builder.setCancelable(false);
+                    builder.setPositiveButton(R.string.label_yes,
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int position) {
+                                    initiateTransfer(remote);
+                                }
+                            });
+                    builder.setNegativeButton(R.string.label_no, null);
+                    registerDialog(builder.show());
+
+                } else {
+                    initiateTransfer(remote);
+                }
+            }
+        };
+        OnClickListener btnSelectListener = new OnClickListener() {
+            public void onClick(View v) {
+                selectDocument();
+            }
+        };
+
+        OnClickListener btnPauseListener = new OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    if (mFileTransfer.isAllowedToPauseTransfer()) {
+                        mFileTransfer.pauseTransfer();
+                    } else {
+                        mPauseBtn.setEnabled(false);
+                        showMessage(R.string.label_pause_ft_not_allowed);
+                    }
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                }
+            }
+        };
+
+        OnClickListener btnResumeListener = new OnClickListener() {
+            public void onClick(View v) {
+                try {
+                    if (mFileTransfer.isAllowedToResumeTransfer()) {
+                        mFileTransfer.resumeTransfer();
+
+                    } else {
+                        mResumeBtn.setEnabled(false);
+                        showMessage(R.string.label_resume_ft_not_allowed);
+                    }
+                } catch (RcsServiceException e) {
+                    showExceptionThenExit(e);
+                }
+            }
+        };
+        /* Set contact selector */
+        mSpinner = (Spinner) findViewById(R.id.contact);
+
+        /* Set buttons callback */
+        mInviteBtn = (Button) findViewById(R.id.invite_btn);
+        mInviteBtn.setOnClickListener(btnInviteListener);
+        mInviteBtn.setEnabled(false);
+        mSelectBtn = (Button) findViewById(R.id.select_btn);
+        mSelectBtn.setOnClickListener(btnSelectListener);
+        mSelectBtn.setEnabled(false);
+
+        mPauseBtn = (Button) findViewById(R.id.pause_btn);
+        mPauseBtn.setOnClickListener(btnPauseListener);
+        mPauseBtn.setEnabled(false);
+
+        mResumeBtn = (Button) findViewById(R.id.resume_btn);
+        mResumeBtn.setOnClickListener(btnResumeListener);
+        mResumeBtn.setEnabled(false);
+
+        mUriTextView = (TextView) findViewById(R.id.uri);
+        mSizeTextView = (TextView) findViewById(R.id.size);
+
+        mIconCheckBox = (CheckBox) findViewById(R.id.ft_thumb);
+
         mFileTransferListener = new OneToOneFileTransferListener() {
 
             @Override
@@ -472,8 +520,6 @@ public class InitiateFileTransfer extends RcsActivity {
                         TextView statusView = (TextView) findViewById(R.id.progress_status);
                         switch (state) {
                             case STARTED:
-                                /* Session is well established : hide progress dialog */
-                                hideProgressDialog();
                                 /* Display session status */
                                 statusView.setText(_state);
                                 break;
@@ -494,7 +540,6 @@ public class InitiateFileTransfer extends RcsActivity {
                                 break;
 
                             case TRANSFERRED:
-                                hideProgressDialog(); // TODO check if required
                                 /* Display transfer progress */
                                 statusView.setText(_state);
 
@@ -527,77 +572,6 @@ public class InitiateFileTransfer extends RcsActivity {
             public void onDeleted(ContactId contact, Set<String> transferIds) {
                 if (LogUtils.isActive) {
                     Log.w(LOGTAG, "onDeleted contact=" + contact + " transferIds=" + transferIds);
-                }
-            }
-        };
-
-        mBtnInviteListener = new OnClickListener() {
-            public void onClick(View v) {
-                ContactListAdapter adapter = (ContactListAdapter) mSpinner.getAdapter();
-                String phoneNumber = adapter.getSelectedNumber(mSpinner.getSelectedView());
-                final ContactId remote = ContactUtil.formatContact(phoneNumber);
-
-                long warnSize;
-                try {
-                    warnSize = mFileTransferService.getConfiguration().getWarnSize();
-
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
-                    return;
-                }
-                if ((warnSize > 0) && (mFilesize >= warnSize)) {
-                    // Display a warning message
-                    AlertDialog.Builder builder = new AlertDialog.Builder(InitiateFileTransfer.this);
-                    builder.setMessage(getString(R.string.label_sharing_warn_size, mFilesize));
-                    builder.setCancelable(false);
-                    builder.setPositiveButton(R.string.label_yes,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int position) {
-                                    initiateTransfer(remote);
-                                }
-                            });
-                    builder.setNegativeButton(R.string.label_no, null);
-                    registerDialog(builder.show());
-
-                } else {
-                    initiateTransfer(remote);
-                }
-            }
-        };
-
-        mBtnSelectListener = new OnClickListener() {
-            public void onClick(View v) {
-                selectDocument();
-            }
-        };
-
-        mBtnPauseListener = new OnClickListener() {
-            public void onClick(View v) {
-                try {
-                    if (mFileTransfer.isAllowedToPauseTransfer()) {
-                        mFileTransfer.pauseTransfer();
-                    } else {
-                        mPauseBtn.setEnabled(false);
-                        showMessage(R.string.label_pause_ft_not_allowed);
-                    }
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
-                }
-            }
-        };
-
-        mBtnResumeListener = new OnClickListener() {
-            public void onClick(View v) {
-                try {
-                    if (mFileTransfer.isAllowedToResumeTransfer()) {
-                        mFileTransfer.resumeTransfer();
-
-                    } else {
-                        mResumeBtn.setEnabled(false);
-                        showMessage(R.string.label_resume_ft_not_allowed);
-                    }
-                } catch (RcsServiceException e) {
-                    showExceptionThenExit(e);
                 }
             }
         };

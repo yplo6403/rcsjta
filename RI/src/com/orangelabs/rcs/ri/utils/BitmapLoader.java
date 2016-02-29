@@ -63,7 +63,7 @@ public abstract class BitmapLoader extends AsyncTask<String, Void, BitmapLoader.
     }
 
     public interface SetViewCallback {
-        public void loadView(final BitmapCacheInfo cacheInfo);
+        void loadView(final BitmapCacheInfo cacheInfo);
     }
 
     /**
@@ -74,12 +74,10 @@ public abstract class BitmapLoader extends AsyncTask<String, Void, BitmapLoader.
      */
     public class BitmapCacheInfo {
         private final String mFilename;
-        private final String mMimeType;
         private final Bitmap mBitmap;
 
         public BitmapCacheInfo(String filename, Bitmap bitmap) {
             mFilename = filename;
-            mMimeType = FileUtils.getMimeType(filename);
             mBitmap = bitmap;
         }
 
@@ -89,10 +87,6 @@ public abstract class BitmapLoader extends AsyncTask<String, Void, BitmapLoader.
 
         public String getFilename() {
             return mFilename;
-        }
-
-        public String getMimeType() {
-            return mMimeType;
         }
 
     }

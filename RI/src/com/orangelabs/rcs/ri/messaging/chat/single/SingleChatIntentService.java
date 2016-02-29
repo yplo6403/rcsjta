@@ -26,6 +26,16 @@ import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.app.IntentService;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.media.RingtoneManager;
+import android.support.v4.app.NotificationCompat;
+import android.util.Log;
+
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
@@ -36,16 +46,6 @@ import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-
-import android.app.IntentService;
-import android.app.Notification;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
-import android.database.Cursor;
-import android.media.RingtoneManager;
-import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -205,7 +205,8 @@ public class SingleChatIntentService extends IntentService {
             }
             Notification notif = buildNotification(contentIntent, title, msg);
             mChatPendingIntentManager.postNotification(uniqueId, notif);
-                OneToOneTalkList.notifyNewConversationEvent(this);
+            OneToOneTalkList.notifyNewConversationEvent(this,
+                    OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE);
         }
     }
 
