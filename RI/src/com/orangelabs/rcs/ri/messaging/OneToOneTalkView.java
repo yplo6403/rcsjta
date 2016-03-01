@@ -110,7 +110,6 @@ import com.orangelabs.rcs.ri.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -155,14 +154,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
      */
     private static final String WHERE_CLAUSE = HistoryLog.CHAT_ID + "=?";
     private final static String ORDER_ASC = HistoryLog.TIMESTAMP + " ASC";
-
-    private final static String[] PROJECTION_UNREAD_MESSAGE = new String[] {
-            HistoryLog.PROVIDER_ID, HistoryLog.ID
-    };
-
-    private final static String UNREADS_WHERE_CLAUSE = HistoryLog.CHAT_ID + "=? AND "
-            + HistoryLog.READ_STATUS + "=" + RcsService.ReadStatus.UNREAD.toInt() + " AND "
-            + HistoryLog.DIRECTION + "=" + RcsService.Direction.INCOMING.toInt();
 
     private static final String OPEN_TALK = "open_talk";
 
@@ -575,11 +566,9 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     private void markMessagesAsRead() throws RcsGenericException, RcsPersistentStorageException,
             RcsServiceNotAvailableException {
-        /* Set activity title with display name */
-        String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
-        setTitle(getString(R.string.title_chat, displayName));
         /* Mark as read messages if required */
-        Map<String, Integer> msgIdUnReads = getUnreadMessageIds(mContact);
+        Map<String, Integer> msgIdUnReads = ChatView.getUnreadMessageIds(this, mUriHistoryProvider,
+                mContact.toString());
         for (Map.Entry<String, Integer> entryMsgIdUnread : msgIdUnReads.entrySet()) {
             int providerId = entryMsgIdUnread.getValue();
             String id = entryMsgIdUnread.getKey();
@@ -698,43 +687,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         if (!mRcsMode) {
             /* Request for capabilities ony if they are not available or expired */
             requestCapabilities(mContact);
-        }
-    }
-
-    /**
-     * Get unread messages for contact
-     *
-     * @param contact contact ID
-     * @return Map of unread message IDs associated with the provider ID
-     */
-    private Map<String, Integer> getUnreadMessageIds(ContactId contact) {
-        Map<String, Integer> unReadMessageIDs = new HashMap<>();
-        String[] where_args = new String[] {
-            contact.toString()
-        };
-        Cursor cursor = null;
-        try {
-            cursor = getContentResolver().query(mUriHistoryProvider, PROJECTION_UNREAD_MESSAGE,
-                    UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
-            if (cursor == null) {
-                throw new IllegalStateException("Cannot query unread messages for contact="
-                        + contact);
-            }
-            if (!cursor.moveToFirst()) {
-                return unReadMessageIDs;
-            }
-            int msgIdcolumIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
-            int providerIdColumIdx = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
-            do {
-                unReadMessageIDs.put(cursor.getString(msgIdcolumIdx),
-                        cursor.getInt(providerIdColumIdx));
-            } while (cursor.moveToNext());
-            return unReadMessageIDs;
-
-        } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
         }
     }
 

@@ -24,17 +24,22 @@ import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactService;
 import com.gsma.services.rcs.contact.RcsContact;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.ri.R;
-
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.support.v4.util.LruCache;
 import android.util.Log;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.ri.R;
+
+import java.io.InputStream;
 
 /**
  * Utilities to manage the RCS display name
@@ -51,9 +56,14 @@ public class RcsContactUtil {
     private ContactService mService;
     private final String mDefaultDisplayName;
     private LruCache<ContactId, String> mDisplayNameAndroidCache;
+    private LruCache<ContactId, Bitmap> mPhotoContactCache;
 
     private static final String[] PROJ_DISPLAY_NAME = new String[] {
         ContactsContract.PhoneLookup.DISPLAY_NAME
+    };
+
+    private static final String[] PROJ_CONTACT_ID = new String[] {
+        ContactsContract.PhoneLookup._ID
     };
 
     /**
@@ -66,6 +76,7 @@ public class RcsContactUtil {
         mResolver = context.getContentResolver();
         mDefaultDisplayName = context.getString(R.string.label_no_contact);
         mDisplayNameAndroidCache = new LruCache<>(MAX_DISPLAY_NAME_IN_CACHE);
+        mPhotoContactCache = new LruCache<>(MAX_DISPLAY_NAME_IN_CACHE);
     }
 
     /**
@@ -99,16 +110,16 @@ public class RcsContactUtil {
         try {
             cursor = mResolver.query(uri, PROJ_DISPLAY_NAME, null, null, null);
             if (cursor == null) {
+                throw new IllegalStateException("Cannot query display name for contact=" + contact);
+            }
+            if (!cursor.moveToFirst()) {
                 return null;
             }
-            if (cursor.moveToFirst()) {
-                displayName = cursor.getString(cursor
-                        .getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME));
-                /* Insert in cache */
-                mDisplayNameAndroidCache.put(contact,displayName);
-                return displayName;
-            }
-            return null;
+            displayName = cursor.getString(cursor
+                    .getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME));
+            /* Insert in cache */
+            mDisplayNameAndroidCache.put(contact, displayName);
+            return displayName;
 
         } finally {
             if (cursor != null) {
@@ -179,5 +190,48 @@ public class RcsContactUtil {
         }
         ContactId contact = ContactUtil.formatContact(number);
         return getDisplayName(contact);
+    }
+
+    /**
+     * Gets the photo of a contact, or null if no photo is present
+     * 
+     * @param contact the contact ID
+     * @return an Bitmap of the photo, or null if no photo is present
+     */
+    public Bitmap getPhotoFromContactId(ContactId contact) {
+        /* First try to get it from cache */
+        Bitmap photo = mPhotoContactCache.get(contact);
+        if (photo != null) {
+            return photo;
+        }
+        Uri contactUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_FILTER_URI,
+                Uri.encode(contact.toString()));
+        Cursor cursor = null;
+        try {
+            cursor = mResolver.query(contactUri, PROJ_CONTACT_ID, null, null, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query photo for contact=" + contact);
+            }
+            if (!cursor.moveToFirst()) {
+                return null;
+            }
+            long contactId = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(ContactsContract.PhoneLookup._ID));
+            InputStream photoInputStream = ContactsContract.Contacts.openContactPhotoInputStream(
+                    mResolver,
+                    ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId));
+            if (photoInputStream != null) {
+                photo = BitmapFactory.decodeStream(photoInputStream);
+                /* Insert in cache */
+                mPhotoContactCache.put(contact, photo);
+                return photo;
+            }
+            return null;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 }

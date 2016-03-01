@@ -402,7 +402,7 @@
     <string name="cms_sync_contact_completed">CMS synchronized for contact %1$s</string>
     <string name="cms_sync_timestamp">Synchronized at</string>
     <string name="err_select_file">Select at least one image or video file</string>
-    <string name="label_xms_list_empty">No XMS message</string>
+    <string name="label_list_empty">No message</string>
     <string name="label_xms_delete_success">XMS with contact %1$s deleted</string>
     <string name="error_conversation_delete">Delete conversation failed</string>
     <string name="title_send_mms">Send MMS to %1$s</string>

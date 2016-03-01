@@ -535,7 +535,7 @@
             android:name=".cms.synchronization.CmsSyncGroup"
             android:label="@string/menu_cms_sync_title" />
         <activity
-            android:name=".messaging.OneToOneTalkList"
+            android:name=".messaging.TalkList"
             android:label="@string/menu_cms_log_title"
             android:launchMode="singleTop" />
         <activity

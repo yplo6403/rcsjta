@@ -23,6 +23,9 @@ import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.chat.GroupChat;
+import com.gsma.services.rcs.chat.GroupChatIntent;
+import com.gsma.services.rcs.chat.GroupChatListener;
 import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
@@ -34,6 +37,7 @@ import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
+import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
 
 import android.content.Context;
 import android.content.Intent;
@@ -49,7 +53,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -57,8 +60,9 @@ import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayAdapter;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkArrayItem;
+import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayAdapter;
+import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayItem;
+import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatView;
 import com.orangelabs.rcs.ri.settings.RiSettings;
 import com.orangelabs.rcs.ri.utils.LogUtils;
 import com.orangelabs.rcs.ri.utils.Utils;
@@ -74,14 +78,14 @@ import java.util.Set;
  *
  * @author Philippe LEMORDANT
  */
-public class OneToOneTalkList extends RcsActivity {
+public class TalkList extends RcsActivity {
 
     private CmsService mCmsService;
     private boolean mXmsMessageListenerSet;
-    private OneToOneTalkArrayAdapter mAdapter;
+    private TalkListArrayAdapter mAdapter;
     private Handler mHandler = new Handler();
-    private List<OneToOneTalkArrayItem> mMessageLogs;
-    private static final String LOGTAG = LogUtils.getTag(OneToOneTalkList.class.getSimpleName());
+    private List<TalkListArrayItem> mMessageLogs;
+    private static final String LOGTAG = LogUtils.getTag(TalkList.class.getSimpleName());
 
     private XmsMessageListener mXmsMessageListener;
     private ChatService mChatService;
@@ -91,8 +95,10 @@ public class OneToOneTalkList extends RcsActivity {
     private Context mCtx;
     private boolean mFileTransferListenerSet;
     private OneToOneFileTransferListener mOneToOneFileTransferListener;
-    private OneToOneTalkListUpdate.TaskCompleted mUpdateTalkListListener;
+    private TalkListUpdate.TaskCompleted mUpdateTalkListListener;
     private static boolean sActivityVisible;
+    private boolean mGroupChatListenerSet;
+    private GroupChatListener mGroupChatListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,14 +124,23 @@ public class OneToOneTalkList extends RcsActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         String action = intent.getAction();
-        if (OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE.equals(action)
-                || XmsMessageIntent.ACTION_NEW_XMS_MESSAGE.equals(action)
-                || FileTransferIntent.ACTION_NEW_INVITATION.equals(action)) {
-            /* Replace the value of intent */
-            setIntent(intent);
-            OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
-                    mUpdateTalkListListener);
-            updateTalkList.execute();
+        if (action == null) {
+            return;
+        }
+        switch (action) {
+            case GroupChatIntent.ACTION_NEW_INVITATION:
+            case GroupChatIntent.ACTION_NEW_GROUP_CHAT_MESSAGE:
+            case OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE:
+            case XmsMessageIntent.ACTION_NEW_XMS_MESSAGE:
+            case FileTransferIntent.ACTION_NEW_INVITATION:
+                /* Replace the value of intent */
+                setIntent(intent);
+                TalkListUpdate updateTalkList = new TalkListUpdate(this, mUpdateTalkListListener);
+                updateTalkList.execute();
+                break;
+
+            default:
+                throw new IllegalArgumentException("Invalid action=" + action);
         }
     }
 
@@ -142,6 +157,9 @@ public class OneToOneTalkList extends RcsActivity {
             if (mOneToOneChatListenerSet) {
                 mChatService.removeEventListener(mOneToOneChatListener);
             }
+            if (mGroupChatListenerSet) {
+                mChatService.removeEventListener(mGroupChatListener);
+            }
             if (mFileTransferListenerSet) {
                 mFileTransferService.removeEventListener(mOneToOneFileTransferListener);
             }
@@ -154,8 +172,7 @@ public class OneToOneTalkList extends RcsActivity {
     protected void onResume() {
         super.onResume();
         sActivityVisible = true;
-        OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(this,
-                mUpdateTalkListListener);
+        TalkListUpdate updateTalkList = new TalkListUpdate(this, mUpdateTalkListListener);
         updateTalkList.execute();
     }
 
@@ -190,7 +207,7 @@ public class OneToOneTalkList extends RcsActivity {
         try {
             switch (item.getItemId()) {
                 case R.id.menu_clear_log:
-                    /* Delete all XMS messages */
+                    /* Delete all messages */
                     if (!isServiceConnected(RcsServiceName.CMS, RcsServiceName.CHAT,
                             RcsServiceName.FILE_TRANSFER)) {
                         showMessage(R.string.label_service_not_available);
@@ -209,6 +226,11 @@ public class OneToOneTalkList extends RcsActivity {
                         mOneToOneChatListenerSet = true;
                     }
                     mChatService.deleteOneToOneChats();
+                    if (!mGroupChatListenerSet) {
+                        mChatService.addEventListener(mGroupChatListener);
+                        mGroupChatListenerSet = true;
+                    }
+                    mChatService.deleteGroupChats();
                     if (!mFileTransferListenerSet) {
                         mFileTransferService.addEventListener(mOneToOneFileTransferListener);
                         mFileTransferListenerSet = true;
@@ -245,10 +267,11 @@ public class OneToOneTalkList extends RcsActivity {
     public boolean onContextItemSelected(MenuItem item) {
         /* Get selected item */
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        OneToOneTalkArrayItem message = mAdapter.getItem(info.position);
+        TalkListArrayItem message = mAdapter.getItem(info.position);
+        String chatId = message.getChatId();
         ContactId contact = message.getContact();
         if (LogUtils.isActive) {
-            Log.d(LOGTAG, "onContextItemSelected contact=".concat(contact.toString()));
+            Log.d(LOGTAG, "onContextItemSelected chatId=".concat(chatId));
         }
         try {
             switch (item.getItemId()) {
@@ -259,7 +282,15 @@ public class OneToOneTalkList extends RcsActivity {
                         return true;
                     }
                     if (LogUtils.isActive) {
-                        Log.d(LOGTAG, "Delete conversation for contact=".concat(contact.toString()));
+                        Log.d(LOGTAG, "Delete conversation for chatId=".concat(chatId));
+                    }
+                    if (message.isGroupChat()) {
+                        if (!mGroupChatListenerSet) {
+                            mChatService.addEventListener(mGroupChatListener);
+                            mGroupChatListenerSet = true;
+                        }
+                        mChatService.deleteGroupChat(chatId);
+                        return true;
                     }
                     if (!mXmsMessageListenerSet) {
                         mCmsService.addEventListener(mXmsMessageListener);
@@ -271,12 +302,14 @@ public class OneToOneTalkList extends RcsActivity {
                         mOneToOneChatListenerSet = true;
                     }
                     mChatService.deleteOneToOneChat(contact);
+
                     if (!mFileTransferListenerSet) {
                         mFileTransferService.addEventListener(mOneToOneFileTransferListener);
                         mFileTransferListenerSet = true;
                     }
                     mFileTransferService.deleteOneToOneFileTransfers(contact);
                     return true;
+
                 default:
                     return super.onContextItemSelected(item);
             }
@@ -299,25 +332,29 @@ public class OneToOneTalkList extends RcsActivity {
         listView.setEmptyView(emptyView);
         registerForContextMenu(listView);
 
-        mAdapter = new OneToOneTalkArrayAdapter(this, mMessageLogs);
+        mAdapter = new TalkListArrayAdapter(this, mMessageLogs);
         listView.setAdapter(mAdapter);
-        listView.setOnItemClickListener(new OnItemClickListener() {
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                OneToOneTalkArrayItem message = mAdapter.getItem(position);
-                startActivity(OneToOneTalkView.forgeIntentToOpenConversation(getApplicationContext(), message.getContact()));
+                TalkListArrayItem message = mAdapter.getItem(position);
+                if (message.isGroupChat()) {
+                    GroupChatView.openGroupChat(mCtx, message.getChatId());
+                } else {
+                    startActivity(OneToOneTalkView.forgeIntentToOpenConversation(mCtx, message.getContact()));
+                }
             }
         });
 
         mOneToOneFileTransferListener = new OneToOneFileTransferListener() {
             @Override
             public void onStateChanged(ContactId contact, String transferId,
-                    FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
+                                       FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
             }
 
             @Override
             public void onProgressUpdate(ContactId contact, String transferId, long currentSize,
-                    long totalSize) {
+                                         long totalSize) {
             }
 
             @Override
@@ -338,8 +375,8 @@ public class OneToOneTalkList extends RcsActivity {
         mOneToOneChatListener = new OneToOneChatListener() {
             @Override
             public void onMessageStatusChanged(ContactId contact, String mimeType, String msgId,
-                    ChatLog.Message.Content.Status status,
-                    ChatLog.Message.Content.ReasonCode reasonCode) {
+                                               ChatLog.Message.Content.Status status,
+                                               ChatLog.Message.Content.ReasonCode reasonCode) {
             }
 
             @Override
@@ -349,7 +386,7 @@ public class OneToOneTalkList extends RcsActivity {
             @Override
             public void onMessagesDeleted(final ContactId contact, Set<String> msgIds) {
                 if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onMessagesDeleted contact=" + contact + " chat IDs=" + msgIds);
+                    Log.d(LOGTAG, "onMessagesDeleted contact=" + contact + " msg IDs=" + msgIds);
                 }
                 mHandler.post(new Runnable() {
                     public void run() {
@@ -357,9 +394,53 @@ public class OneToOneTalkList extends RcsActivity {
                                 getString(R.string.label_delete_chat_success, contact.toString()));
                     }
                 });
-                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
-                        mUpdateTalkListListener);
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
                 updateTalkList.execute();
+            }
+        };
+        mGroupChatListener = new GroupChatListener() {
+            @Override
+            public void onStateChanged(String chatId, GroupChat.State state,
+                                       GroupChat.ReasonCode reasonCode) {
+            }
+
+            @Override
+            public void onComposingEvent(String chatId, ContactId contact, boolean status) {
+            }
+
+            @Override
+            public void onMessageStatusChanged(String chatId, String mimeType, String msgId,
+                                               ChatLog.Message.Content.Status status,
+                                               ChatLog.Message.Content.ReasonCode reasonCode) {
+            }
+
+            @Override
+            public void onMessageGroupDeliveryInfoChanged(String chatId, ContactId contact,
+                                                          String mimeType, String msgId, GroupDeliveryInfo.Status status,
+                                                          GroupDeliveryInfo.ReasonCode reasonCode) {
+            }
+
+            @Override
+            public void onParticipantStatusChanged(String chatId, ContactId contact,
+                                                   GroupChat.ParticipantStatus status) {
+            }
+
+            @Override
+            public void onDeleted(Set<String> chatIds) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onDeleted chatIds=" + chatIds);
+                }
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        Utils.displayLongToast(mCtx, getString(R.string.label_delete_gchat_success));
+                    }
+                });
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
+                updateTalkList.execute();
+            }
+
+            @Override
+            public void onMessagesDeleted(final String chatId, Set<String> msgIds) {
             }
         };
         mXmsMessageListener = new XmsMessageListener() {
@@ -371,23 +452,21 @@ public class OneToOneTalkList extends RcsActivity {
                 }
                 mHandler.post(new Runnable() {
                     public void run() {
-                        Utils.displayLongToast(OneToOneTalkList.this,
-                                getString(R.string.label_xms_delete_success, contact.toString()));
+                        Utils.displayLongToast(mCtx, getString(R.string.label_xms_delete_success, contact.toString()));
                     }
                 });
-                OneToOneTalkListUpdate updateTalkList = new OneToOneTalkListUpdate(mCtx,
-                        mUpdateTalkListListener);
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
                 updateTalkList.execute();
             }
 
             @Override
             public void onStateChanged(ContactId contact, String mimeType, String messageId,
-                    XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+                                       XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
             }
         };
-        mUpdateTalkListListener = new OneToOneTalkListUpdate.TaskCompleted() {
+        mUpdateTalkListListener = new TalkListUpdate.TaskCompleted() {
             @Override
-            public void onTaskComplete(Collection<OneToOneTalkArrayItem> result) {
+            public void onTaskComplete(Collection<TalkListArrayItem> result) {
                 if (!sActivityVisible) {
                     return;
                 }
@@ -402,13 +481,13 @@ public class OneToOneTalkList extends RcsActivity {
 
     /**
      * Notify new conversation event
-     * 
-     * @param ctx the context
+     *
+     * @param ctx    the context
      * @param action the action intent
      */
     public static void notifyNewConversationEvent(Context ctx, String action) {
         if (sActivityVisible) {
-            Intent intent = new Intent(ctx, OneToOneTalkList.class);
+            Intent intent = new Intent(ctx, TalkList.class);
             intent.setAction(action);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(intent);

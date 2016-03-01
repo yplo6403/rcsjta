@@ -31,7 +31,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
+import com.orangelabs.rcs.ri.messaging.TalkList;
 import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.utils.LogUtils;
@@ -129,7 +129,7 @@ public class XmsIntentService extends IntentService {
         }
         Notification notif = buildNotification(contentIntent, title, message.getContent());
         mChatPendingIntentManager.postNotification(uniqueId, notif);
-        OneToOneTalkList.notifyNewConversationEvent(this, XmsMessageIntent.ACTION_NEW_XMS_MESSAGE);
+        TalkList.notifyNewConversationEvent(this, XmsMessageIntent.ACTION_NEW_XMS_MESSAGE);
     }
 
     private Notification buildNotification(PendingIntent invitation, String title, String message) {

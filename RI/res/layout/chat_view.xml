@@ -61,8 +61,8 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_alignParentRight="true"
-                    android:drawableEnd="@drawable/action_send_xms"
-                    android:drawableRight="@drawable/action_send_xms" />
+                    android:drawableEnd="@drawable/action_send_rcs"
+                    android:drawableRight="@drawable/action_send_rcs" />
             </RelativeLayout>
         </LinearLayout>
     </ScrollView>

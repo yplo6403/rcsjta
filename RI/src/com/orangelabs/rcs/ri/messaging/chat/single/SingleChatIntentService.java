@@ -39,7 +39,7 @@ import android.util.Log;
 import com.orangelabs.rcs.api.connection.ConnectionManager;
 import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.OneToOneTalkList;
+import com.orangelabs.rcs.ri.messaging.TalkList;
 import com.orangelabs.rcs.ri.messaging.OneToOneTalkView;
 import com.orangelabs.rcs.ri.messaging.chat.ChatMessageDAO;
 import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
@@ -205,7 +205,7 @@ public class SingleChatIntentService extends IntentService {
             }
             Notification notif = buildNotification(contentIntent, title, msg);
             mChatPendingIntentManager.postNotification(uniqueId, notif);
-            OneToOneTalkList.notifyNewConversationEvent(this,
+            TalkList.notifyNewConversationEvent(this,
                     OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE);
         }
     }

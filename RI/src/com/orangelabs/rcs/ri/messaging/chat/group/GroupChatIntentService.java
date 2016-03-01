@@ -23,12 +23,6 @@ import com.gsma.services.rcs.chat.GroupChat;
 import com.gsma.services.rcs.chat.GroupChatIntent;
 import com.gsma.services.rcs.contact.ContactId;
 
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.chat.ChatMessageDAO;
-import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -37,6 +31,13 @@ import android.media.RingtoneManager;
 import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
+
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.TalkList;
+import com.orangelabs.rcs.ri.messaging.chat.ChatMessageDAO;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
 /**
  * File transfer intent service
@@ -127,6 +128,7 @@ public class GroupChatIntentService extends IntentService {
             return;
         }
         forwardGCInvitation2UI(invitation, chatId, groupChatDAO);
+        TalkList.notifyNewConversationEvent(this, GroupChatIntent.ACTION_NEW_INVITATION);
     }
 
     private void handleNewGroupChatMessage(Intent newGroupChatMessage, String messageId) {
@@ -140,6 +142,8 @@ public class GroupChatIntentService extends IntentService {
             Log.d(LOGTAG, "Group chat message =".concat(messageDAO.toString()));
         }
         forwardGCMessage2UI(newGroupChatMessage, messageDAO);
+        TalkList.notifyNewConversationEvent(this,
+                GroupChatIntent.ACTION_NEW_GROUP_CHAT_MESSAGE);
     }
 
     private void forwardGCMessage2UI(Intent newGroupChatMessage, ChatMessageDAO message) {

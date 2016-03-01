@@ -122,6 +122,9 @@ public class MmsPartDataObject {
                     new String[] {
                         messageId
                     }, null);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query parts for message ID=" + messageId);
+            }
             if (!cursor.moveToFirst()) {
                 return result;
             }

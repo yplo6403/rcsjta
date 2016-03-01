@@ -19,6 +19,7 @@
 package com.orangelabs.rcs.ri.messaging.chat;
 
 import com.gsma.services.rcs.Geoloc;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
@@ -28,16 +29,9 @@ import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-
 import android.app.AlertDialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -59,6 +53,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Chat view
@@ -128,10 +133,57 @@ public abstract class ChatView extends RcsFragmentActivity implements
     };
     // @formatter:on
 
+    private final static String[] PROJECTION_UNREAD_MESSAGE = new String[] {
+            HistoryLog.PROVIDER_ID, HistoryLog.ID
+    };
+
+    private final static String UNREADS_WHERE_CLAUSE = HistoryLog.CHAT_ID + "=? AND "
+            + HistoryLog.READ_STATUS + "=" + RcsService.ReadStatus.UNREAD.toInt() + " AND "
+            + HistoryLog.DIRECTION + "=" + RcsService.Direction.INCOMING.toInt();
+
+    private final static String ORDER_ASC = HistoryLog.TIMESTAMP + " ASC";
+
     /**
      * Query sort order
      */
     protected final static String ORDER_CHAT_MSG = HistoryLog.TIMESTAMP + " ASC";
+
+    /**
+     * Get unread messages for contact
+     *
+     * @param ctx the context
+     * @param chatId the chat ID
+     * @return Map of unread message IDs associated with the provider ID
+     */
+    public static Map<String, Integer> getUnreadMessageIds(Context ctx, Uri uri, String chatId) {
+        Map<String, Integer> unReadMessageIDs = new HashMap<>();
+        String[] where_args = new String[] {
+            chatId
+        };
+        Cursor cursor = null;
+        try {
+            cursor = ctx.getContentResolver().query(uri, PROJECTION_UNREAD_MESSAGE,
+                    UNREADS_WHERE_CLAUSE, where_args, ORDER_ASC);
+            if (cursor == null) {
+                throw new IllegalStateException("Cannot query unread messages for chatId=" + chatId);
+            }
+            if (!cursor.moveToFirst()) {
+                return unReadMessageIDs;
+            }
+            int msgIdcolumIdx = cursor.getColumnIndexOrThrow(HistoryLog.ID);
+            int providerIdColumIdx = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
+            do {
+                unReadMessageIDs.put(cursor.getString(msgIdcolumIdx),
+                        cursor.getInt(providerIdColumIdx));
+            } while (cursor.moveToNext());
+            return unReadMessageIDs;
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

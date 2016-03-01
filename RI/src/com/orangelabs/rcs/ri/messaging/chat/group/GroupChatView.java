@@ -20,8 +20,10 @@ package com.orangelabs.rcs.ri.messaging.chat.group;
 
 import com.gsma.services.rcs.Geoloc;
 import com.gsma.services.rcs.RcsGenericException;
+import com.gsma.services.rcs.RcsPersistentStorageException;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatLog.Message;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content;
@@ -35,6 +37,7 @@ import com.gsma.services.rcs.chat.GroupChatListener;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.contact.RcsContact;
+import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
 import com.gsma.services.rcs.history.HistoryLog;
@@ -62,6 +65,7 @@ import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
 import com.orangelabs.rcs.ri.R;
 import com.orangelabs.rcs.ri.RiApplication;
 import com.orangelabs.rcs.ri.messaging.GroupDeliveryInfoList;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.orangelabs.rcs.ri.messaging.chat.ChatView;
 import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
 import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager.INotifyComposing;
@@ -209,6 +213,9 @@ public class GroupChatView extends ChatView {
                         showMessageThenExit(R.string.label_session_not_found);
                         return false;
                     }
+                    ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
+                            .getChatPendingIntentManager(this);
+                    pendingIntentManager.clearNotification(mChatId);
                     setCursorLoader(oldChatId == null);
                     sChatIdOnForeground = mChatId;
                     mSubject = mGroupChat.getSubject();
@@ -219,6 +226,7 @@ public class GroupChatView extends ChatView {
                         Log.i(LOGTAG, "processIntent chatId=" + mChatId + " subject='" + mSubject
                                 + "'");
                     }
+                    markMessagesAsRead();
                     return true;
 
                 case INCOMING:
@@ -777,6 +785,29 @@ public class GroupChatView extends ChatView {
             }
 
         };
+    }
+
+    private void markMessagesAsRead() throws RcsGenericException, RcsPersistentStorageException,
+            RcsServiceNotAvailableException {
+        /* Mark as read messages if required */
+        Map<String, Integer> msgIdUnReads = getUnreadMessageIds(this,
+                mUriHistoryProvider, mChatId);
+        for (Map.Entry<String, Integer> entryMsgIdUnread : msgIdUnReads.entrySet()) {
+            int providerId = entryMsgIdUnread.getValue();
+            String id = entryMsgIdUnread.getKey();
+            switch (providerId) {
+                case ChatLog.Message.HISTORYLOG_MEMBER_ID:
+                    mChatService.markMessageAsRead(id);
+                    break;
+
+                case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                    mFileTransferService.markFileTransferAsRead(id);
+                    break;
+
+                default:
+                    throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+            }
+        }
     }
 
 }
