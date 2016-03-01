@@ -307,6 +307,10 @@ public final class CmsObject {
         return mUid;
     }
 
+    public void setUid(Integer uid) {
+        mUid = uid ;
+    }
+
     public ReadStatus getReadStatus() {
         return mReadStatus;
     }

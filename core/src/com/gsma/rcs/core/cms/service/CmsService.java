@@ -46,6 +46,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
@@ -81,7 +82,7 @@ public class CmsService extends ImsService {
         mCmsLog = cmsLog;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager = new CmsManager(context, mCmsLog, xmsLog, messagingLog, rcsSettings);
+        mCmsManager = new CmsManager(context, parent, mCmsLog, xmsLog, messagingLog, rcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -321,11 +322,12 @@ public class CmsService extends ImsService {
 
     /**
      * Updates deleted flag in CMS provider and synchronizes
-     * 
-     * @param messageId the message ID
+     *
+     * @param contact the message ID
+     * @param messageIds the set of message ID
      */
-    public void updateDeletedFlag(String messageId) {
-        mCmsManager.onDeleteXmsMessage(messageId);
+    public void updateDeletedFlag(ContactId contact, Set<String> messageIds) {
+        mCmsManager.onDeleteXmsMessage(contact, messageIds);
     }
 
     public void deleteCmsData() {

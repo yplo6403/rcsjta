@@ -70,4 +70,18 @@ public class CmsUtils {
                 + settings.getMessageStoreDirectorySeparator() + conversationId
                 + settings.getMessageStoreDirectorySeparator() + contributionId;
     }
+
+    public static String cmsFolderToChatId(RcsSettings settings, String cmsFolder) {
+        String folder = StringUtils.removeQuotes(cmsFolder);
+        String directorySeparator = settings.getMessageStoreDirectorySeparator();
+        String prefix = settings.getMessageStoreDefaultDirectoryName() + directorySeparator;
+        if (cmsFolder.startsWith(prefix)) {
+            folder = folder.substring(prefix.length());
+        }
+        String[] val = folder.split(directorySeparator, 2);
+        if (val.length != 2) {
+            return null;
+        }
+        return val[0];
+    }
 }

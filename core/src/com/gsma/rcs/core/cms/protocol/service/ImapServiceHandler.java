@@ -41,6 +41,8 @@ public class ImapServiceHandler {
 
     private static final int SOCKET_TIMEOUT_IN_MS = 30000;
 
+    private final RcsSettings mRcsSettings;
+
     private BasicImapService mBasicImapService;
 
     /**
@@ -49,20 +51,22 @@ public class ImapServiceHandler {
      * @param rcsSettings the RCS settings accessor
      */
     public ImapServiceHandler(RcsSettings rcsSettings) {
-        IoService io = new SocketIoService(URI.create(rcsSettings.getMessageStoreUri().toString()),
-                SOCKET_TIMEOUT_IN_MS);
-        mBasicImapService = new BasicImapService(io);
-        // TODO FGI : Handle SSL authentication with message store
-        // TODO FGI : See MESSAGE_STORE_AUTH parameter in provisioning
-        mBasicImapService.setAuthenticationDetails(rcsSettings.getMessageStoreUser(),
-                rcsSettings.getMessageStorePwd(), null, null, false);
+        mRcsSettings = rcsSettings;
     }
 
     public synchronized BasicImapService openService() throws NetworkException, PayloadException {
         if (sLogger.isActivated()) {
             sLogger.debug("--> open IMAP Service");
         }
+
         try {
+            IoService io = new SocketIoService(URI.create(mRcsSettings.getMessageStoreUri()
+                    .toString()), SOCKET_TIMEOUT_IN_MS);
+            mBasicImapService = new BasicImapService(io);
+            // TODO FGI : Handle SSL authentication with message store
+            // TODO FGI : See MESSAGE_STORE_AUTH parameter in provisioning
+            mBasicImapService.setAuthenticationDetails(mRcsSettings.getMessageStoreUser(),
+                    mRcsSettings.getMessageStorePwd(), null, null, false);
             mBasicImapService.init();
             return mBasicImapService;
         } catch (IOException e) {

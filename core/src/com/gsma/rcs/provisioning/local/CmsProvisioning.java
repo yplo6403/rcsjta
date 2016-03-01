@@ -39,7 +39,7 @@ import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
-import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
+import com.gsma.rcs.provider.settings.RcsSettingsData.EventReportingFrameworkConfig;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -59,8 +59,8 @@ public class CmsProvisioning extends Activity {
     private RcsSettings mRcsSettings;
 
     private String[] mEventFramework = new String[] {
-            EventFrameworkMode.DISABLED.toString(), EventFrameworkMode.IMAP.toString(),
-            EventFrameworkMode.SIP.toString()
+            EventReportingFrameworkConfig.DISABLED.toString(), EventReportingFrameworkConfig.ENABLED.toString(),
+            EventReportingFrameworkConfig.IMAP_ONLY.toString()
     };
 
     private boolean mInFront;
@@ -128,24 +128,14 @@ public class CmsProvisioning extends Activity {
             cmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
 
-        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_xms_spinner);
+        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_spinner);
         String selected = (String) spinner.getSelectedItem();
         if (bundle != null) {
-            bundle.putInt(RcsSettingsData.EVENT_FRAMEWORK_XMS,
-                    EventFrameworkMode.valueOf(selected).toInt());
+            bundle.putInt(RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
+                    EventReportingFrameworkConfig.valueOf(selected).toInt());
         } else {
-            mRcsSettings.writeInteger(RcsSettingsData.EVENT_FRAMEWORK_XMS,
-                    EventFrameworkMode.valueOf(selected).toInt());
-        }
-
-        spinner = (Spinner) findViewById(R.id.message_store_event_framework_chat_spinner);
-        selected = (String) spinner.getSelectedItem();
-        if (bundle != null) {
-            bundle.putInt(RcsSettingsData.EVENT_FRAMEWORK_CHAT,
-                    EventFrameworkMode.valueOf(selected).toInt());
-        } else {
-            mRcsSettings.writeInteger(RcsSettingsData.EVENT_FRAMEWORK_CHAT,
-                    EventFrameworkMode.valueOf(selected).toInt());
+            mRcsSettings.writeInteger(RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
+                    EventReportingFrameworkConfig.valueOf(selected).toInt());
         }
 
         saveStringEditTextParam(R.id.message_store_default_directory_name,
@@ -176,20 +166,12 @@ public class CmsProvisioning extends Activity {
         setCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
                 helper);
 
-        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_xms_spinner);
+        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(CmsProvisioning.this,
                 android.R.layout.simple_spinner_item, mEventFramework);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
-        setSpinnerParameter(spinner, RcsSettingsData.EVENT_FRAMEWORK_XMS, true, mEventFramework,
-                helper);
-
-        spinner = (Spinner) findViewById(R.id.message_store_event_framework_chat_spinner);
-        adapter = new ArrayAdapter<>(CmsProvisioning.this, android.R.layout.simple_spinner_item,
-                mEventFramework);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        setSpinnerParameter(spinner, RcsSettingsData.EVENT_FRAMEWORK_CHAT, true, mEventFramework,
+        setSpinnerParameter(spinner, RcsSettingsData.EVENT_REPORTING_FRAMEWORK, true, mEventFramework,
                 helper);
 
         setStringEditTextParam(R.id.message_store_default_directory_name,

@@ -150,9 +150,7 @@
     <string name="message_store_pwd_label">Message store pwd</string>
     <string name="message_store_push_sms_label">Push SMS</string>
     <string name="message_store_push_mms_label">Push MMS</string>
-    <string name="message_store_event_framework_label">Event framework</string>
-    <string name="message_store_event_framework_xms_label">SMS &amp; MMS</string>
-    <string name="message_store_event_framework_chat_label">Chat (1To1 &amp; Group)</string>
+    <string name="message_store_event_framework_label">Event Reporting Framework</string>
     <string name="message_store_default_directory_name_label">Message store default directory name</string>
     <string name="message_store_default_directory_separator_label">Message store default directory separator</string>
     <string name="data_connection_sync_timer_label">Data connection sync timer (ms)</string>

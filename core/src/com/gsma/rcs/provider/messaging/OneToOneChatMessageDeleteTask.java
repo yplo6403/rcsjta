@@ -127,8 +127,8 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
         DeliveryExpirationManager expirationManager = mImService.getDeliveryExpirationManager();
         for (String messageId : msgIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(messageId);
-            mImService.getImsModule().getCmsService().getCmsManager().getChatEventHandler().onDeleteChatMessage(messageId);
         }
+        mImService.getImsModule().getCmsService().getCmsManager().getChatEventHandler().onDeleteChatMessages(contact, msgIds);
         mChatService.broadcastOneToOneMessagesDeleted(contact, msgIds);
     }
 }

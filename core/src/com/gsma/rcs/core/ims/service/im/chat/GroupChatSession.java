@@ -870,12 +870,8 @@ public abstract class GroupChatSession extends ChatSession {
             }
 
             String chatId = getContributionID();
-            if (TypeMsrpChunk.MessageDeliveredReport.equals(typeMsrpChunk)) {
-                for (ImsSessionListener listener : getListeners()) {
-                    ((GroupChatSessionListener) listener).onDeliveryReportSendViaMsrpFailure(msgId,
-                            chatId, typeMsrpChunk);
-                }
-            } else if (TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
+            if (TypeMsrpChunk.MessageDeliveredReport.equals(typeMsrpChunk) ||
+                    TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
                 for (ImsSessionListener listener : getListeners()) {
                     ((GroupChatSessionListener) listener).onDeliveryReportSendViaMsrpFailure(msgId,
                             chatId, typeMsrpChunk);

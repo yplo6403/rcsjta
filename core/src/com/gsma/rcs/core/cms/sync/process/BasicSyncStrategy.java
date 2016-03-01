@@ -179,8 +179,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         return sync;
     }
 
-    private void pushLocalMessages(String localFolderName) throws NetworkException,
-            PayloadException {
+    private void pushLocalMessages(String localFolderName) throws FileAccessException,
+            NetworkException, PayloadException {
         XmsLog xmsLog = XmsLog.getInstance();
         CmsLog cmsLog = CmsLog.getInstance();
         if (xmsLog == null || cmsLog == null) {
@@ -200,11 +200,10 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             }
         }
         if (!messagesToPush.isEmpty()) {
-            CmsSyncPushMessageTask pushMessageTask = new CmsSyncPushMessageTask(mContext,
-                    mRcsSettings, xmsLog, cmsLog);
-            pushMessageTask.setBasicImapService(mBasicImapService);
-            pushMessageTask.pushMessages(messagesToPush);
-            for (Entry<String, Integer> entry : pushMessageTask.getCreatedUids().entrySet()) {
+            CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mRcsSettings,
+                    cmsObjects, xmsLog);
+            task.execute(mBasicImapService);
+            for (Entry<String, Integer> entry : task.getNewUids().entrySet()) {
                 String baseId = entry.getKey();
                 Integer uid = entry.getValue();
                 cmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);

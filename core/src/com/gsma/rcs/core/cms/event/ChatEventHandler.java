@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import com.gsma.rcs.core.cms.event.framework.EventFrameworkHandler;
+import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
@@ -38,28 +38,30 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
+import java.util.Set;
+
 public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessageListener {
 
     private static final Logger sLogger = Logger.getLogger(ChatEventHandler.class.getSimpleName());
     protected final MessagingLog mMessagingLog;
     protected final CmsLog mCmsLog;
     protected final RcsSettings mSettings;
-    protected final EventFrameworkHandler mEventFrameworkHandler;
+    protected final EventReportingFrameworkManager mEventFrameworkManager;
     protected final ImdnDeliveryReportListener mImdnDeliveryReportListener;
 
     /**
      * Default constructor
      *
-     * @param eventFrameworkHandler the event framework handler
+     * @param eventFrameworkManager the event framework handler
      * @param cmsLog the IMAP log accessor
      * @param messagingLog the messaging log accessor
      * @param settings the RCS settings accessor
      * @param imdnDeliveryReportListener the listener for delivery report event
      */
-    public ChatEventHandler(EventFrameworkHandler eventFrameworkHandler, CmsLog cmsLog,
+    public ChatEventHandler(EventReportingFrameworkManager eventFrameworkManager, CmsLog cmsLog,
             MessagingLog messagingLog, RcsSettings settings,
             ImdnDeliveryReportListener imdnDeliveryReportListener) {
-        mEventFrameworkHandler = eventFrameworkHandler;
+        mEventFrameworkManager = eventFrameworkManager;
         mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
         mSettings = settings;
@@ -131,7 +133,6 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact,
             TypeMsrpChunk chunktype) {
-        mImdnDeliveryReportListener.onDeliveryReport(contact, msgId);
     }
 
     @Override
@@ -161,19 +162,39 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onReadChatMessage(String messageId) {
+
+        // From RCS 5.3 specification, the reporting event framework should not be used
+        // when the "IMDN Displayed" report is enabled. In this case, this is the participating
+        // function
+        // which is in charge of updating the flags on the CMS server.
+        boolean isImdnReportDisplayed = mSettings.isImReportsActivated()
+                && mSettings.isRespondToDisplayReports();
+
+        // TODO To be removed when the AS will update flags on the CMS server
+        isImdnReportDisplayed = false;
+
         mCmsLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
-                ReadStatus.READ_REPORT_REQUESTED);
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.updateFlagsForChat();
+                isImdnReportDisplayed ? ReadStatus.READ : ReadStatus.READ_REPORT_REQUESTED);
+
+        if (!isImdnReportDisplayed && mEventFrameworkManager != null) {
+            if (mMessagingLog.isOneToOneChatMessage(messageId)) {
+                mEventFrameworkManager.updateFlagsForChat(mMessagingLog
+                        .getMessageContact(messageId));
+            } else {
+                mEventFrameworkManager.updateFlagsForGroupChat(mMessagingLog
+                        .getMessageChatId(messageId));
+            }
         }
     }
 
     @Override
-    public void onDeleteChatMessage(String messageId) {
-        mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, messageId,
-                DeleteStatus.DELETED_REPORT_REQUESTED);
-        if (mEventFrameworkHandler != null) {
-            mEventFrameworkHandler.updateFlagsForChat();
+    public void onDeleteChatMessages(ContactId contact, Set<String> msgIds) {
+        for (String msgId : msgIds) {
+            mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED);
+        }
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForChat(contact);
         }
     }
 }

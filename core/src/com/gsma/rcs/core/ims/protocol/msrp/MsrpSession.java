@@ -60,7 +60,7 @@ public class MsrpSession {
      * MSRP Chunk type
      */
     public enum TypeMsrpChunk {
-        TextMessage, IsComposing, MessageDisplayedReport, MessageDeliveredReport, OtherMessageDeliveredReportStatus, FileSharing, HttpFileSharing, ImageTransfer, EmptyChunk, GeoLocation, StatusReport, Unknown
+        TextMessage, IsComposing, MessageDisplayedReport, MessageDeliveredReport, OtherMessageDeliveredReportStatus, FileSharing, HttpFileSharing, ImageTransfer, EmptyChunk, GeoLocation, StatusReport, EventReportingFramework, Unknown
     }
 
     /**

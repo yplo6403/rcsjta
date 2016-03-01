@@ -22,23 +22,20 @@ package com.gsma.rcs.core.cms.sync.scheduler;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
-import com.gsma.rcs.core.cms.sync.process.Synchronizer;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncParams.ExtraParameter;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncBasicTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask.PushMessageTaskListener;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask.UpdateFlagTaskListener;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -51,7 +48,6 @@ import android.os.Message;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -59,7 +55,7 @@ import java.util.Set;
 /**
  * This class is used to schedule operation with the message store
  */
-public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTaskListener {
+public class CmsSyncScheduler {
 
     private static final Logger sLogger = Logger.getLogger(CmsSyncScheduler.class.getSimpleName());
     private static final String MESSAGE_STORE_SYNC_OPERATIONS = "MessageStoreSyncOperations";
@@ -171,10 +167,15 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
         return mStarted && schedule(CmsSyncSchedulerTaskType.PUSH_MESSAGES, parameters);
     }
 
-    public boolean scheduleUpdateFlags(EventFrameworkMode xmsMode, EventFrameworkMode chatMode) {
+    public boolean scheduleUpdateFlags(ContactId contact) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
-        parameters.addExtraParameter(ExtraParameter.UPDATE_XMS_FLAGS, xmsMode);
-        parameters.addExtraParameter(ExtraParameter.UPDATE_CHAT_FLAGS, chatMode);
+        parameters.addExtraParameter(ExtraParameter.CONTACT_ID, contact);
+        return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
+    }
+
+    public boolean scheduleUpdateFlags(String chatId) {
+        SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
+        parameters.addExtraParameter(ExtraParameter.CHAT_ID, chatId);
         return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 
@@ -182,9 +183,12 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
         SyncParams parameters = new SyncParams(SyncType.ALL);
         boolean scheduled = schedule(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION, parameters);
         if (!scheduled) {
+            long syncTimerInterval = mRcsSettings.getMessageStoreSyncTimer();
+            if (syncTimerInterval <= 0) { // Periodic sync is disabled
+                return;
+            }
             // start new periodic sync
             long delta = System.currentTimeMillis() - sEndOfLastSync;
-            long syncTimerInterval = mRcsSettings.getMessageStoreSyncTimer();
             if (delta < syncTimerInterval) {
                 parameters.addExtraParameter(ExtraParameter.DELAY, syncTimerInterval - delta);
             }
@@ -285,50 +289,22 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
             mCurrentOperation = CmsSyncSchedulerTaskType.valueOf(msg.what);
             SyncParams syncParams = null;
             boolean result = false;
-
-            try {
-                BasicImapService basicImapService = mImapServiceHandler.openService();
-                switch (mCurrentOperation) {
-                    case PUSH_MESSAGES:
-                        syncParams = (SyncParams) msg.obj;
-                        executePush(basicImapService,
-                                (ContactId) syncParams.getExtraParameter(ExtraParameter.CONTACT_ID));
-                        result = true;
-                        break;
-
-                    case UPDATE_FLAGS:
-                        syncParams = (SyncParams) msg.obj;
-                        EventFrameworkMode xmsMode = (EventFrameworkMode) syncParams
-                                .getExtraParameter(ExtraParameter.UPDATE_XMS_FLAGS);
-                        EventFrameworkMode chatMode = (EventFrameworkMode) syncParams
-                                .getExtraParameter(ExtraParameter.UPDATE_CHAT_FLAGS);
-                        executeUpdate(basicImapService, xmsMode, chatMode);
-                        result = true;
-                        break;
-
-                    case SYNC_FOR_DATA_CONNECTION:
-                    case SYNC_FOR_USER_ACTIVITY:
-                    case SYNC_PERIODIC:
-                        syncParams = (SyncParams) msg.obj;
-                        executeSync(basicImapService, syncParams);
-                        result = true;
-                }
-            } catch (NetworkException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("Failed to sync : " + e.getMessage());
-                }
-            } catch (PayloadException | FileAccessException | RuntimeException e) {
-                sLogger.error("Failed to sync : ", e);
-
-            } finally {
-                try {
-                    mImapServiceHandler.closeService();
-
-                } catch (NetworkException | PayloadException | RuntimeException e) {
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Failed to sync : " + e);
-                    }
-                }
+            switch (mCurrentOperation) {
+                case PUSH_MESSAGES:
+                    syncParams = (SyncParams) msg.obj;
+                    result = executePush((ContactId) syncParams
+                            .getExtraParameter(ExtraParameter.CONTACT_ID));
+                    break;
+                case UPDATE_FLAGS:
+                    syncParams = (SyncParams) msg.obj;
+                    result = executeUpdate(syncParams);
+                    break;
+                case SYNC_FOR_DATA_CONNECTION:
+                case SYNC_FOR_USER_ACTIVITY:
+                case SYNC_PERIODIC:
+                    syncParams = (SyncParams) msg.obj;
+                    result = executeSync(syncParams);
+                    break;
             }
 
             // notify listeners
@@ -352,15 +328,16 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
             mCurrentOperation = null;
             sEndOfLastSync = System.currentTimeMillis();
             // schedule new periodic sync on all conversations
-            syncParams = new SyncParams(SyncType.ALL);
-            syncParams.addExtraParameter(ExtraParameter.DELAY,
-                    mRcsSettings.getMessageStoreSyncTimer());
-            schedule(CmsSyncSchedulerTaskType.SYNC_PERIODIC, syncParams);
+            long syncTimerInterval = mRcsSettings.getMessageStoreSyncTimer();
+            if (syncTimerInterval > 0) {
+                syncParams = new SyncParams(SyncType.ALL);
+                syncParams.addExtraParameter(ExtraParameter.DELAY, syncTimerInterval);
+                schedule(CmsSyncSchedulerTaskType.SYNC_PERIODIC, syncParams);
+            }
         }
     }
 
-    private void executeSync(BasicImapService basicImapService, SyncParams syncParams)
-            throws PayloadException, NetworkException, FileAccessException {
+    private boolean executeSync(SyncParams syncParams) {
         String remoteFolder = null;
         if (syncParams.mSyncType == SyncType.ONE_TO_ONE) {
             ContactId contact = (ContactId) syncParams.getExtraParameter(ExtraParameter.CONTACT_ID);
@@ -371,38 +348,133 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
             remoteFolder = CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId, chatId);
         }
 
-        Synchronizer synchronizer = new Synchronizer(mContext, mRcsSettings, mLocalStorage,
-                basicImapService);
+        CmsSyncBasicTask task = null;
         switch (syncParams.mSyncType) {
             case ONE_TO_ONE:
             case GROUP:
-                synchronizer.syncFolder(remoteFolder);
+                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage, remoteFolder);
                 break;
             case ALL:
-                synchronizer.syncAll();
+                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage);
                 break;
         }
+        boolean res = executeTask(task);
+        if (res) {
+            if (sLogger.isActivated()) {
+                String msg = "Sync successfully executed";
+                if (remoteFolder != null) {
+                    msg += " for folder : " + remoteFolder;
+                }
+                sLogger.info(msg);
+            }
+        }
+        return res;
     }
 
-    private void executePush(BasicImapService basicImapService, ContactId contact) {
-        CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mRcsSettings, mXmsLog,
-                mCmsLog, contact, this);
-        task.setBasicImapService(basicImapService);
-        task.run();
+    private boolean executePush(ContactId contact) {
+        String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, contact);
+        Set<CmsObject> objectsToPush = mCmsLog.getXmsMessages(remoteFolder,
+                PushStatus.PUSH_REQUESTED);
+        if (objectsToPush.isEmpty()) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("There is no message to push on CMS for remote folder : "
+                        + remoteFolder);
+            }
+            return true;
+        }
+
+        CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mRcsSettings,
+                objectsToPush, mXmsLog);
+        boolean res = executeTask(task);
+
+        if (res) { // update local storage when no error occurred during task execution
+            if (sLogger.isActivated()) {
+                sLogger.info("PushMessage task successfully executed for remote folder :"
+                        + remoteFolder);
+            }
+            for (Entry<String, Integer> entry : task.getNewUids().entrySet()) {
+                String baseId = entry.getKey();
+                Integer uid = entry.getValue();
+                mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+            }
+        }
+
+        return res;
     }
 
-    private void executeUpdate(BasicImapService basicImapService, EventFrameworkMode xmsMode,
-            EventFrameworkMode chatMode) {
-        CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(mCmsLog, xmsMode, chatMode, this);
-        task.setBasicImapService(basicImapService);
-        task.run();
+    private boolean executeUpdate(SyncParams syncParams) {
+
+        ContactId contact = (ContactId) syncParams.getExtraParameter(ExtraParameter.CONTACT_ID);
+        String chatId = (String) syncParams.getExtraParameter(ExtraParameter.CHAT_ID);
+        String remoteFolder = null;
+        if (contact != null) {
+            remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, contact);
+        } else if (chatId != null) {
+            remoteFolder = CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId, chatId);
+        }
+
+        if (remoteFolder == null) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Can not update flags with CMS because remote folder is null");
+            }
+            return false;
+        }
+
+        Set<CmsObject> objectsToSync = mCmsLog.getMessagesToSync(remoteFolder);
+        if (objectsToSync.isEmpty()) {
+            if (sLogger.isActivated()) {
+                sLogger.info("There is no message to update with CMS for remote folder : "
+                        + remoteFolder);
+            }
+            return true;
+        }
+
+        CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(remoteFolder, objectsToSync, mCmsLog);
+        boolean res = executeTask(task);
+        if (res) { // update local storage when no error occurred during task execution
+            if (sLogger.isActivated()) {
+                sLogger.info("UpdateFlag task successfully executed for folder : " + remoteFolder);
+            }
+            for (Integer uid : task.getReadRequestedUids()) {
+                mCmsLog.updateReadStatus(remoteFolder, uid, ReadStatus.READ);
+            }
+            for (Integer uid : task.getDeletedRequestedUids()) {
+                mCmsLog.updateDeleteStatus(remoteFolder, uid, DeleteStatus.DELETED);
+            }
+        }
+        return res;
+    }
+
+    private boolean executeTask(CmsSyncSchedulerTask task) {
+        boolean success = false;
+        try {
+            BasicImapService basicImapService = mImapServiceHandler.openService();
+            task.execute(basicImapService);
+            success = true;
+        } catch (NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("Failed to sync : " + e.getMessage());
+            }
+        } catch (FileAccessException | PayloadException | RuntimeException e) {
+            sLogger.error("Failed to sync : ", e);
+
+        } finally {
+            try {
+                mImapServiceHandler.closeService();
+            } catch (NetworkException | PayloadException | RuntimeException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Failed to sync : " + e);
+                }
+            }
+        }
+        return success;
     }
 
     /* package private */static class SyncParams {
 
         enum ExtraParameter {
             DELAY, // delay before executing task in ms
-            CONTACT_ID, CHAT_ID, UPDATE_XMS_FLAGS, UPDATE_CHAT_FLAGS
+            CONTACT_ID, CHAT_ID
         }
 
         final SyncType mSyncType;
@@ -431,37 +503,6 @@ public class CmsSyncScheduler implements PushMessageTaskListener, UpdateFlagTask
             }
             sb.append('}');
             return sb.toString();
-        }
-    }
-
-    @Override
-    public void onPushMessageTaskCallbackExecuted(Map<String, Integer> uidsMap) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onPushMessageTaskCallbackExecuted");
-        }
-        for (Entry<String, Integer> entry : uidsMap.entrySet()) {
-            String baseId = entry.getKey();
-            Integer uid = entry.getValue();
-            mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
-        }
-    }
-
-    @Override
-    public void onUpdateFlagTaskExecuted(List<FlagChange> flags) {
-        if (sLogger.isActivated()) {
-            sLogger.info("onUpdateFlagTaskExecuted");
-        }
-        for (FlagChange fg : flags) {
-            boolean deleted = fg.isDeleted();
-            boolean seen = fg.isSeen();
-            String folderName = fg.getFolder();
-            for (Integer uid : fg.getUids()) {
-                if (deleted) {
-                    mCmsLog.updateDeleteStatus(folderName, uid, DeleteStatus.DELETED);
-                } else if (seen) {
-                    mCmsLog.updateReadStatus(folderName, uid, ReadStatus.READ);
-                }
-            }
         }
     }
 

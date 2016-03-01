@@ -102,27 +102,10 @@
                 android:paddingTop="5dip"
                 android:text="@string/message_store_event_framework_label" />
 
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/message_store_event_framework_xms_label" />
-
             <Spinner
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/message_store_event_framework_xms_spinner"/>
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/message_store_event_framework_chat_label" />
-
-            <Spinner
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/message_store_event_framework_chat_spinner"/>
+                android:id="@+id/message_store_event_framework_spinner"/>
 
             <TextView
                 android:layout_width="fill_parent"

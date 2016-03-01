@@ -27,6 +27,8 @@ import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.event.framework.SipEventReportingFrameworkDocument;
+import com.gsma.rcs.core.cms.event.framework.SipEventReportingFrameworkManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;

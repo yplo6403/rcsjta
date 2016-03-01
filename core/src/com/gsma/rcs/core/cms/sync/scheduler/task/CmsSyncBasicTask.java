@@ -23,6 +23,7 @@ import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -35,16 +36,13 @@ import android.content.Context;
  * are applied in local storage. In a second step, change from local storage are applied on the CMS
  * server
  */
-public class CmsSyncBasicTask implements Runnable {
+public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
 
-    private static final Logger sLogger = Logger.getLogger(CmsSyncBasicTask.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncBasicTask.class.getSimpleName());
 
     private final Context mContext;
     private final RcsSettings mRcsSettings;
-    private final BasicSynchronizationTaskListener mListener;
     private final LocalStorage mLocalStorageHandler;
-    private final BasicImapService mBasicImapService;
     private final String mFolderName;
 
     /**
@@ -52,19 +50,14 @@ public class CmsSyncBasicTask implements Runnable {
      * 
      * @param context the context
      * @param rcsSettings the RCS settings accessor
-     * @param basicImapService the IMAP service
      * @param localStorageHandler the local storage accessor
      * @param folderName the folder name
-     * @param listener the sync listener
      */
     public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
-                            BasicImapService basicImapService, LocalStorage localStorageHandler, String folderName,
-                            BasicSynchronizationTaskListener listener) {
+            LocalStorage localStorageHandler, String folderName) {
         mContext = context;
         mRcsSettings = rcsSettings;
-        mBasicImapService = basicImapService;
         mLocalStorageHandler = localStorageHandler;
-        mListener = listener;
         mFolderName = folderName;
     }
 
@@ -73,44 +66,20 @@ public class CmsSyncBasicTask implements Runnable {
      * 
      * @param context the context
      * @param rcsSettings the RCS settings accessor
-     * @param basicImapService the IMAP service
      * @param localStorageHandler the local storage accessor
-     * @param listener the sync listener
      */
     public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
-                            BasicImapService basicImapService, LocalStorage localStorageHandler,
-                            BasicSynchronizationTaskListener listener) {
-        this(context, rcsSettings, basicImapService, localStorageHandler, null, listener);
+            LocalStorage localStorageHandler) {
+        this(context, rcsSettings, localStorageHandler, null);
     }
 
     @Override
-    public void run() {
-        boolean result = false;
-        try {
-            if (mFolderName != null) {
-                result = syncFolder(mFolderName);
-            } else {
-                result = syncAll();
-            }
-        } catch (NetworkException e) {
-            if (sLogger.isActivated()) {
-                if (mFolderName != null) {
-                    sLogger.info("Failed to sync CMS for folder=" + mFolderName + ": "
-                            + e.getMessage());
-                } else {
-                    sLogger.info("Failed to sync CMS: " + e.getMessage());
-                }
-            }
-        } catch (RuntimeException | PayloadException | FileAccessException e) {
-            if (mFolderName != null) {
-                sLogger.error("Failed to sync CMS for folder=" + mFolderName, e);
-            } else {
-                sLogger.error("Failed to sync CMS", e);
-            }
-        } finally {
-            if (mListener != null) {
-                mListener.onBasicSynchronizationTaskExecuted(result);
-            }
+    public void execute(BasicImapService basicImapService) throws NetworkException,
+            PayloadException, FileAccessException {
+        if (mFolderName != null) {
+            syncFolder(basicImapService, mFolderName);
+        } else {
+            syncAll(basicImapService);
         }
     }
 
@@ -121,13 +90,13 @@ public class CmsSyncBasicTask implements Runnable {
      * @return True if sync is successful
      * @throws FileAccessException, PayloadException, NetworkException
      */
-    public boolean syncFolder(String folder) throws FileAccessException, PayloadException,
-            NetworkException {
+    protected boolean syncFolder(BasicImapService basicImapService, String folder)
+            throws FileAccessException, PayloadException, NetworkException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync folder: ".concat(folder));
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                mBasicImapService, mLocalStorageHandler);
+                basicImapService, mLocalStorageHandler);
         strategy.execute(folder);
         return strategy.getExecutionResult();
     }
@@ -138,26 +107,14 @@ public class CmsSyncBasicTask implements Runnable {
      * @return True if sync is successful
      * @throws PayloadException, NetworkException, FileAccessException
      */
-    public boolean syncAll() throws PayloadException, NetworkException, FileAccessException {
+    protected boolean syncAll(BasicImapService basicImapService) throws PayloadException,
+            NetworkException, FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.info("Sync all");
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                mBasicImapService, mLocalStorageHandler);
+                basicImapService, mLocalStorageHandler);
         strategy.execute();
         return strategy.getExecutionResult();
-    }
-
-    /**
-     * Interface to be notified of the end of a sync (when used in an asynchronous way)
-     */
-    public interface BasicSynchronizationTaskListener {
-
-        /**
-         * Callback method
-         * 
-         * @param result True if result is successful
-         */
-        void onBasicSynchronizationTaskExecuted(Boolean result);
     }
 }

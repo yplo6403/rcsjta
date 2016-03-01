@@ -312,12 +312,8 @@ public abstract class OneToOneChatSession extends ChatSession {
         }
 
         ContactId remote = getRemoteContact();
-        if (TypeMsrpChunk.MessageDeliveredReport.equals(typeMsrpChunk)) {
-            for (ImsSessionListener listener : getListeners()) {
-                ((OneToOneChatSessionListener) listener).onDeliveryReportSendViaMsrpFailure(msgId,
-                        remote, typeMsrpChunk);
-            }
-        } else if (TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
+        if (TypeMsrpChunk.MessageDeliveredReport.equals(typeMsrpChunk) ||
+                TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
             for (ImsSessionListener listener : getListeners()) {
                 ((OneToOneChatSessionListener) listener).onDeliveryReportSendViaMsrpFailure(msgId,
                         remote, typeMsrpChunk);

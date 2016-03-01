@@ -19,6 +19,10 @@
 
 package com.gsma.rcs.core.cms.event;
 
+import com.gsma.services.rcs.contact.ContactId;
+
+import java.util.Set;
+
 /**
  * Interface used to take into account changes for chat messages.
  */
@@ -32,9 +36,10 @@ public interface ChatMessageListener {
     void onReadChatMessage(String messageId);
 
     /**
-     * Take into account that a chat message is deleted
+     * Take into account deletion of 1to1 chat messages
      *
-     * @param messageId the message ID
+     * @param contact
+     * @param msgIds the messages ID
      */
-    void onDeleteChatMessage(String messageId);
+    void onDeleteChatMessages(ContactId contact, Set<String> msgIds);
 }

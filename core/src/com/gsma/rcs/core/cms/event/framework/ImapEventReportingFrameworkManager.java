@@ -20,21 +20,20 @@
 package com.gsma.rcs.core.cms.event.framework;
 
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
-import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 /**
  * This class is in charge of updating flags on the message store using IMAP commands
  */
-public class ImapEventFrameworkHandler {
+public class ImapEventReportingFrameworkManager {
 
-    private static final Logger sLogger = Logger.getLogger(ImapEventFrameworkHandler.class
+    private static final Logger sLogger = Logger.getLogger(ImapEventReportingFrameworkManager.class
             .getSimpleName());
 
     private final CmsSyncScheduler mScheduler;
 
-    /* package private */ImapEventFrameworkHandler(CmsSyncScheduler scheduler) {
+    /* package private */ImapEventReportingFrameworkManager(CmsSyncScheduler scheduler) {
         mScheduler = scheduler;
     }
 
@@ -46,10 +45,19 @@ public class ImapEventFrameworkHandler {
         }
     }
 
-    /* package private */void updateFlags(EventFrameworkMode xmsMode, EventFrameworkMode chatMode) {
-        if (!mScheduler.scheduleUpdateFlags(xmsMode, chatMode)) {
+    /* package private */void updateFlags(ContactId contact) {
+        if (!mScheduler.scheduleUpdateFlags(contact)) {
             if (sLogger.isActivated()) {
-                sLogger.info("--> can not schedule update flag operation");
+                sLogger.info("--> can not schedule update flag operation for contact : "
+                        + contact.toString());
+            }
+        }
+    }
+
+    /* package private */void updateFlags(String chatId) {
+        if (!mScheduler.scheduleUpdateFlags(chatId)) {
+            if (sLogger.isActivated()) {
+                sLogger.info("--> can not schedule update flag operation for chatId : " + chatId);
             }
         }
     }

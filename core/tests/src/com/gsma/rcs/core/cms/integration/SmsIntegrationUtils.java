@@ -18,7 +18,10 @@
 
 package com.gsma.rcs.core.cms.integration;
 
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
 import com.gsma.rcs.core.cms.sync.process.FlagChange.Operation;
@@ -54,19 +57,18 @@ public class SmsIntegrationUtils {
 
     public static class Test2 {
 
-        public static FlagChange[] flagChangesSeen = new FlagChange[] {
-                new FlagChange(Test1.folderName, 1, Flag.Seen, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 2, Flag.Seen, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 3, Flag.Seen, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 4, Flag.Seen, Operation.ADD_FLAG)
+        public static CmsObject[] cmsObjectReadRequested = new CmsObject[] {
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "2", null),
+                new CmsObject(Test1.folderName, 3, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "3", null),
+                new CmsObject(Test1.folderName, 4, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "4", null),
         };
 
-        public static FlagChange[] flagChangesDeleted = new FlagChange[] {
-                new FlagChange(Test1.folderName, 1, Flag.Deleted, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 2, Flag.Deleted, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 3, Flag.Deleted, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 4, Flag.Deleted, Operation.ADD_FLAG)
-
+        public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "2", null),
+                new CmsObject(Test1.folderName, 3, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "3", null),
+                new CmsObject(Test1.folderName, 4, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "4", null),
         };
 
     }
@@ -75,9 +77,9 @@ public class SmsIntegrationUtils {
 
         public static ContactId contactId = ContactUtil
                 .createContactIdFromTrustedData("+33640332858");
-        public static FlagChange[] flagChangesDeleted = new FlagChange[] {
-                new FlagChange(Test1.folderName, 1, Flag.Deleted, Operation.ADD_FLAG),
-                new FlagChange(Test1.folderName, 2, Flag.Deleted, Operation.ADD_FLAG),
+        public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "2", null),
         };
 
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.READ;

@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
+import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
@@ -38,6 +39,7 @@ import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.Map;
+import java.util.Set;
 
 public class GroupChatEventHandler extends ChatEventHandler implements GroupChatSessionListener,
         GroupChatListener {
@@ -48,13 +50,15 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
     /**
      * Default constructor
      *
+     * @param eventFrameworkManager the event framework handler
      * @param cmsLog the IMAP log accessor
      * @param messagingLog the messaging accessor
      * @param settings the RCS settings accessor
      */
-    public GroupChatEventHandler(CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings,
+    public GroupChatEventHandler(EventReportingFrameworkManager eventFrameworkManager,
+            CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings,
             ImdnDeliveryReportListener imdnDeliveryReportListener) {
-        super(null, cmsLog, messagingLog, settings, imdnDeliveryReportListener);
+        super(eventFrameworkManager, cmsLog, messagingLog, settings, imdnDeliveryReportListener);
     }
 
     @Override
@@ -65,6 +69,17 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, conversationId,
                 contributionId), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED, MessageType.CPM_SESSION, contributionId, null));
+    }
+
+    @Override
+    public void onDeleteGroupChatMessages(String chatId, Set<String> msgIds) {
+        for (String msgId : msgIds) {
+            mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED);
+        }
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForGroupChat(chatId);
+        }
     }
 
     @Override
@@ -139,10 +154,6 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, String chatId,
             TypeMsrpChunk chunktype) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onDeliveryReportSendViaMsrpFailure: ".concat(msgId));
-        }
-        mImdnDeliveryReportListener.onDeliveryReport(chatId, msgId);
     }
 
     @Override

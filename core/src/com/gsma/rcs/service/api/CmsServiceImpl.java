@@ -606,9 +606,10 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     /**
      * Updates the deleted flags
      *
-     * @param messageId the message ID
+     * @param contact the message ID
+     * @param messageIds the message ID
      */
-    public void updateDeletedFlags(String messageId) {
-        mCmsService.updateDeletedFlag(messageId);
+    public void updateDeletedFlags(ContactId contact, Set<String> messageIds) {
+        mCmsService.updateDeletedFlag(contact,  messageIds);
     }
 }

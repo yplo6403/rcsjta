@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler.task;
 
+import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -44,6 +45,9 @@ public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
     private final String mMailbox;
     private static final Logger sLogger = Logger.getLogger(CmsSyncDeleteTask.class.getSimpleName());
 
+    private BasicImapService mBasicImapService;
+
+
     /**
      * Constructor
      *
@@ -58,10 +62,10 @@ public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
     }
 
     @Override
-    public void run() {
+    public void execute(BasicImapService basicImapService) {
         boolean result = false;
         try {
-            delete(mMailbox);
+            delete(basicImapService, mMailbox);
             result = true;
 
         } catch (NetworkException e) {
@@ -84,7 +88,8 @@ public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
      * 
      * @param mailbox the mailbox
      */
-    public void delete(String mailbox) throws NetworkException, PayloadException {
+    public void delete(BasicImapService basicImapService, String mailbox) throws NetworkException, PayloadException {
+        mBasicImapService = basicImapService;
         try {
             switch (mOperation) {
                 case DELETE_ALL:
@@ -107,18 +112,18 @@ public class CmsSyncDeleteTask extends CmsSyncSchedulerTask {
     }
 
     private void deleteAll() throws IOException, ImapException {
-        for (String imapFolder : getBasicImapService().list()) {
-            getBasicImapService().delete(imapFolder);
+        for (String imapFolder : mBasicImapService.list()) {
+            mBasicImapService.delete(imapFolder);
         }
     }
 
     private void deleteMailbox(String mailbox) throws IOException, ImapException {
-        getBasicImapService().delete(mailbox);
+        mBasicImapService.delete(mailbox);
     }
 
     private void deleteMessages(String mailbox) throws IOException, ImapException {
-        getBasicImapService().select(mailbox);
-        getBasicImapService().expunge();
+        mBasicImapService.select(mailbox);
+        mBasicImapService.expunge();
     }
 
     /**

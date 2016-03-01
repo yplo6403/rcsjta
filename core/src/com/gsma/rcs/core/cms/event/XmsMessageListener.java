@@ -21,11 +21,13 @@ package com.gsma.rcs.core.cms.event;
 
 import com.gsma.services.rcs.contact.ContactId;
 
+import java.util.Set;
+
 public interface XmsMessageListener {
 
     void onReadXmsMessage(String messageId);
 
-    void onDeleteXmsMessage(String messageId);
+    void onDeleteXmsMessage(ContactId contactId, Set<String> messageIds);
 
     void onReadXmsConversation(ContactId contact);
 }

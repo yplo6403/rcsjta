@@ -431,10 +431,8 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_SMS);
             addParameter(db, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
                     RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_MMS);
-            addParameter(db, RcsSettingsData.EVENT_FRAMEWORK_XMS,
-                    RcsSettingsData.DEFAULT_EVENT_FRAMEWORK_XMS.toInt());
-            addParameter(db, RcsSettingsData.EVENT_FRAMEWORK_CHAT,
-                    RcsSettingsData.DEFAULT_EVENT_FRAMEWORK_CHAT.toInt());
+            addParameter(db, RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
+                    RcsSettingsData.DEFAULT_EVENT_REPORTING_FRAMEWORK.toInt());
             addParameter(db, RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME,
                     RcsSettingsData.DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME);
             addParameter(db, RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR,

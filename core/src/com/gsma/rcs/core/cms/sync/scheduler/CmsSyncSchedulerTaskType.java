@@ -63,7 +63,7 @@ public enum CmsSyncSchedulerTaskType {
         if (entry != null) {
             return entry;
         }
-        throw new IllegalArgumentException("No enum const class " +
-                CmsSyncSchedulerTaskType.class.getName() + "" + value);
+        throw new IllegalArgumentException("No enum const class "
+                + CmsSyncSchedulerTaskType.class.getName() + "" + value);
     }
 }

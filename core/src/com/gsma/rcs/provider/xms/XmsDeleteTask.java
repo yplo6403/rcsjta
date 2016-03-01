@@ -74,12 +74,12 @@ public class XmsDeleteTask extends DeleteTask.GroupedByContactId {
     @Override
     protected void onRowDelete(ContactId groupId, String messageId) throws PayloadException {
         mCmsService.deleteMmsParts(messageId);
-        mCmsService.updateDeletedFlags(messageId);
         mCmsService.removeXmsMessage(messageId);
     }
 
     @Override
     protected void onCompleted(ContactId contact, Set<String> deletedIds) {
         mCmsService.broadcastMessageDeleted(contact, deletedIds);
+        mCmsService.updateDeletedFlags(contact, deletedIds);
     }
 }

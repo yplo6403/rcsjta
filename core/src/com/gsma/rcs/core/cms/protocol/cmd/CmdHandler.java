@@ -31,7 +31,7 @@ public abstract class CmdHandler {
      * IMAP command definition
      */
     public enum CommandType {
-        LIST, LIST_STATUS, SELECT_CONDSTORE, FETCH_FLAGS, FETCH_HEADERS, FETCH_MESSAGES_BODY
+        LIST, LIST_STATUS, SELECT_CONDSTORE, FETCH_FLAGS, FETCH_HEADERS, FETCH_MESSAGES_BODY, UID_SEARCH
     }
 
     /**
@@ -64,6 +64,10 @@ public abstract class CmdHandler {
             case FETCH_MESSAGES_BODY:
                 handler = new FetchMessageCmdHandler();
                 break;
+            case UID_SEARCH:
+                handler = new UidSearchCmdHandler();
+                break;
+
         }
         return handler.checkCapabilities(capabilities) ? handler : null;
     }

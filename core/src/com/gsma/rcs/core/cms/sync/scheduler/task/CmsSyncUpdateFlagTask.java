@@ -19,7 +19,9 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler.task;
 
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -28,16 +30,14 @@ import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
-import com.gsma.rcs.provider.settings.RcsSettingsData.EventFrameworkMode;
 import com.gsma.rcs.utils.logger.Logger;
 
+import android.text.TextUtils;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,161 +48,83 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
     private static final Logger sLogger = Logger.getLogger(CmsSyncUpdateFlagTask.class
             .getSimpleName());
 
-    private final UpdateFlagTaskListener mListener;
+    private final Set<CmsObject> mCmsObjects;
     private final CmsLog mCmsLog;
-    private final EventFrameworkMode mXmsMode;
-    private final EventFrameworkMode mChatMode;
-    private final List<FlagChange> mSuccessFullFlagChanges;
-    private List<FlagChange> mFlagChanges;
+    private final String mRemoteFolder;
+
+    private Set<Integer> mReadRequestedUids;
+    private Set<Integer> mDeletedRequestedUids;
 
     /**
      * Constructor
      *
-     * @param flagChanges the list of changed flags
-     * @param listener the update flag listener
+     * @param remoteFolder the CMS folder
+     * @param cmsObjects the CmsObjects which should be updated on the message store
+     * @param cmsLog the CmsLog accesssor
      */
-    public CmsSyncUpdateFlagTask(List<FlagChange> flagChanges, UpdateFlagTaskListener listener) {
-        mListener = listener;
-        mCmsLog = null;
-        mXmsMode = mChatMode = EventFrameworkMode.DISABLED;
-        mFlagChanges = flagChanges;
-        mSuccessFullFlagChanges = new ArrayList<>();
-    }
-
-    /**
-     * Constructor
-     *
-     * @param cmsLog the CMS log accessor
-     * @param xmsMode the XMS mode
-     * @param chatMode the chat mode
-     * @param listener the update flag listener
-     */
-    public CmsSyncUpdateFlagTask(CmsLog cmsLog, EventFrameworkMode xmsMode,
-            EventFrameworkMode chatMode, UpdateFlagTaskListener listener) {
+    public CmsSyncUpdateFlagTask(String remoteFolder, Set<CmsObject> cmsObjects, CmsLog cmsLog) {
+        mRemoteFolder = remoteFolder;
+        mCmsObjects = cmsObjects;
         mCmsLog = cmsLog;
-        mXmsMode = xmsMode;
-        mChatMode = chatMode;
-        mListener = listener;
-        mSuccessFullFlagChanges = new ArrayList<>();
     }
 
     @Override
-    public void run() {
-        try {
-            if (mFlagChanges == null) { // get from db
-                mFlagChanges = new ArrayList<>();
-                mFlagChanges.addAll(getReadChanges());
-                mFlagChanges.addAll(getDeleteChanges());
-            }
-            updateFlags();
-
-        } catch (NetworkException e) {
-            if (sLogger.isActivated()) {
-                sLogger.info("Cannot update flag on CMS server: " + e.getMessage());
-            }
-
-        } catch (PayloadException | RuntimeException e) {
-            sLogger.error("Cannot update flag status on CMS server!", e);
-
-        } finally {
-            if (mListener != null) {
-                mListener.onUpdateFlagTaskExecuted(mSuccessFullFlagChanges);
-            }
-        }
-    }
-
-    private List<FlagChange> getReadChanges() {
-        Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
-        List<FlagChange> flagChanges = new ArrayList<>();
-        if (EventFrameworkMode.DISABLED == mXmsMode && EventFrameworkMode.DISABLED == mChatMode) {
-            return flagChanges;
-        }
-
-        Set<CmsObject> cmsObjectList;
-        if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
-            cmsObjectList = mCmsLog.getMessages(ReadStatus.READ_REPORT_REQUESTED);
-        } else if (EventFrameworkMode.IMAP == mXmsMode) {
-            cmsObjectList = mCmsLog.getXmsMessages(ReadStatus.READ_REPORT_REQUESTED);
-        } else {
-            cmsObjectList = mCmsLog.getChatMessages(ReadStatus.READ_REPORT_REQUESTED);
-        }
-
-        for (CmsObject cmsObject : cmsObjectList) {
-            Integer uid = cmsObject.getUid();
-            if (uid == null) {
-                continue;
-            }
-            String folderName = cmsObject.getFolder();
-            if (!folderUidsMap.containsKey(folderName)) {
-                folderUidsMap.put(folderName, new HashSet<Integer>());
-            }
-            folderUidsMap.get(folderName).add(uid);
-        }
-
-        for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
-            String folderName = entry.getKey();
-            Set<Integer> uids = entry.getValue();
-            flagChanges.add(new FlagChange(folderName, uids, Flag.Seen));
-        }
-        return flagChanges;
-    }
-
-    private List<FlagChange> getDeleteChanges() {
-        Map<String, Set<Integer>> folderUidsMap = new HashMap<>();
-        List<FlagChange> flagChanges = new ArrayList<>();
-        if (EventFrameworkMode.DISABLED == mXmsMode && EventFrameworkMode.DISABLED == mChatMode) {
-            return flagChanges;
-        }
-        Set<CmsObject> cmsObjectList;
-        if (EventFrameworkMode.IMAP == mXmsMode && EventFrameworkMode.IMAP == mChatMode) {
-            cmsObjectList = mCmsLog.getMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
-        } else if (EventFrameworkMode.IMAP == mXmsMode) {
-            cmsObjectList = mCmsLog.getXmsMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
-        } else {
-            cmsObjectList = mCmsLog.getChatMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
-        }
-        for (CmsObject cmsObject : cmsObjectList) {
-            Integer uid = cmsObject.getUid();
-            if (uid == null) {
-                continue;
-            }
-            String folderName = cmsObject.getFolder();
-            if (!folderUidsMap.containsKey(folderName)) {
-                folderUidsMap.put(folderName, new HashSet<Integer>());
-            }
-            folderUidsMap.get(folderName).add(uid);
-        }
-        for (Map.Entry<String, Set<Integer>> entry : folderUidsMap.entrySet()) {
-            String folderName = entry.getKey();
-            Set<Integer> uids = entry.getValue();
-            flagChanges.add(new FlagChange(folderName, uids, Flag.Deleted));
-        }
-        return flagChanges;
+    public void execute(BasicImapService basicImapService) throws NetworkException,
+            PayloadException, FileAccessException {
+        updateFlags(basicImapService, mRemoteFolder, mCmsObjects);
     }
 
     /**
-     * Update flags
+     * Update flags fr a remote folder
      */
-    public void updateFlags() throws NetworkException, PayloadException {
-        String previousFolder = null;
+    public void updateFlags(BasicImapService basicImapService, String remoteFolder,
+            Set<CmsObject> cmsObjects) throws NetworkException, PayloadException {
+
+        mReadRequestedUids = new HashSet<>();
+        mDeletedRequestedUids = new HashSet<>();
+
         try {
-            for (FlagChange flagChange : mFlagChanges) {
-                String folder = flagChange.getFolder();
-                if (!folder.equals(previousFolder)) {
-                    getBasicImapService().select(folder);
-                    previousFolder = folder;
+            basicImapService.select(remoteFolder);
+            for (CmsObject cmsObject : cmsObjects) {
+                Integer uid = cmsObject.getUid();
+                if (uid == null) { // search uid on CMS server
+                    switch (cmsObject.getMessageType()) {
+                        case CHAT_MESSAGE:
+                            uid = basicImapService.searchUidWithHeader(
+                                    Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
+                            if (uid != null) {
+                                cmsObject.setUid(uid);
+                                mCmsLog.updateUid(MessageType.CHAT_MESSAGE,
+                                        cmsObject.getMessageId(), uid);
+                            }
+                            break;
+                        case SMS:
+                            // TODO FGI
+                            break;
+                        case MMS:
+                            // TODO FGI
+                            break;
+                    }
                 }
-                switch (flagChange.getOperation()) {
-                    case ADD_FLAG:
-                        getBasicImapService().addFlags(flagChange.getJoinedUids(),
-                                flagChange.getFlag());
-                        break;
-                    case REMOVE_FLAG:
-                        getBasicImapService().removeFlags(flagChange.getJoinedUids(),
-                                flagChange.getFlag());
-                        break;
+
+                if (uid == null) { // we are not able to update flags without UID
+                    continue;
                 }
-                mSuccessFullFlagChanges.add(flagChange);
+
+                if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
+                    mReadRequestedUids.add(uid);
+                }
+                if (DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
+                    mDeletedRequestedUids.add(uid);
+                }
+            }
+
+            if (!mReadRequestedUids.isEmpty()) {
+                basicImapService.addFlags(TextUtils.join(",", mReadRequestedUids), Flag.Seen);
+            }
+
+            if (!mDeletedRequestedUids.isEmpty()) {
+                basicImapService.addFlags(TextUtils.join(",", mDeletedRequestedUids), Flag.Deleted);
             }
         } catch (IOException e) {
             throw new NetworkException("Failed to update flags!", e);
@@ -212,16 +134,11 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
         }
     }
 
-    /**
-     * Interface used to notify listener when flags have been updated on the CMS server
-     */
-    public interface UpdateFlagTaskListener {
-        /**
-         * Callback method
-         * 
-         * @param flags list of changed flags
-         */
-        void onUpdateFlagTaskExecuted(List<FlagChange> flags);
+    public Set<Integer> getReadRequestedUids() {
+        return mReadRequestedUids;
     }
 
+    public Set<Integer> getDeletedRequestedUids() {
+        return mDeletedRequestedUids;
+    }
 }

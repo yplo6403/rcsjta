@@ -19,6 +19,8 @@
 
 package com.gsma.rcs.core.cms.event;
 
+import java.util.Set;
+
 public interface GroupChatListener {
 
     /**
@@ -28,6 +30,14 @@ public interface GroupChatListener {
      * @param contributionId contribution ID
      */
     void onCreateGroupChat(String conversationId, String contributionId);
+
+    /**
+     * Take into account deletion of group chat messages
+     *
+     * @param chatId
+     * @param msgIds the messages ID
+     */
+    void onDeleteGroupChatMessages(String chatId, Set<String> msgIds);
 
     /**
      * Called when group chat conversation is deleted

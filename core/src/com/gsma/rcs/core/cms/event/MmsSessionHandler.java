@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import com.gsma.rcs.core.cms.event.framework.EventFrameworkHandler;
+import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -38,7 +38,7 @@ public class MmsSessionHandler implements MmsSessionListener {
     private final CmsLog mCmsLog;
     private final XmsLog mXmsLog;
     private final RcsSettings mSettings;
-    private final EventFrameworkHandler mImapEventFrameworkHandler;
+    private final EventReportingFrameworkManager mImapEventFrameworkManager;
 
     /**
      * Default constructor
@@ -47,11 +47,11 @@ public class MmsSessionHandler implements MmsSessionListener {
      * @param settings the RCS settings accessor
      */
     public MmsSessionHandler(CmsLog cmsLog, XmsLog xmsLog, RcsSettings settings,
-            EventFrameworkHandler imapEventFrameworkHandler) {
+            EventReportingFrameworkManager imapEventFrameworkManager) {
         mCmsLog = cmsLog;
         mXmsLog = xmsLog;
         mSettings = settings;
-        mImapEventFrameworkHandler = imapEventFrameworkHandler;
+        mImapEventFrameworkManager = imapEventFrameworkManager;
     }
 
     @Override
@@ -66,10 +66,10 @@ public class MmsSessionHandler implements MmsSessionListener {
                 MessageType.MMS, mmsId, null));
 
         MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
-        if (mImapEventFrameworkHandler == null) {
+        if (mImapEventFrameworkManager == null) {
             return;
         }
-        mImapEventFrameworkHandler.pushMmsMessage(mms.getContact());
+        mImapEventFrameworkManager.pushMmsMessage(mms.getContact());
     }
 
     @Override

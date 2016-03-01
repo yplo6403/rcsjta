@@ -31,6 +31,7 @@ import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
+import com.gsma.rcs.core.ims.service.im.chat.TerminatingOneToOneChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.standfw.StoreAndForwardManager;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
@@ -368,7 +369,6 @@ public class ImsServiceDispatcher extends Thread {
                                 request, timestamp);
                     }
                 }
-
             } else if (isTagPresent(sdp, "rtp")
                     && SipUtils.isFeatureTagPresent(request, FeatureTags.FEATURE_3GPP_VIDEO_SHARE)) {
                 if (mRcsSettings.isVideoSharingSupported()) {

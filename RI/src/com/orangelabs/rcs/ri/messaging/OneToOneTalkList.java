@@ -47,7 +47,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -237,9 +239,6 @@ public class OneToOneTalkList extends RcsActivity {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_log_xms_item, menu);
-        if (RiSettings.isSyncAutomatic(this)) {
-            menu.findItem(R.id.menu_sync_xms).setVisible(false);
-        }
     }
 
     @Override
@@ -253,10 +252,6 @@ public class OneToOneTalkList extends RcsActivity {
         }
         try {
             switch (item.getItemId()) {
-                case R.id.menu_open_talk:
-                    startActivity(OneToOneTalkView.forgeIntentToOpenConversation(this, contact));
-                    return true;
-
                 case R.id.menu_delete_message:
                     if (!isServiceConnected(RcsServiceName.CMS, RcsServiceName.CHAT,
                             RcsServiceName.FILE_TRANSFER)) {
@@ -282,14 +277,6 @@ public class OneToOneTalkList extends RcsActivity {
                     }
                     mFileTransferService.deleteOneToOneFileTransfers(contact);
                     return true;
-
-                case R.id.menu_sync_xms:
-                    if (LogUtils.isActive) {
-                        Log.d(LOGTAG, "Sync XMS messages for contact=".concat(contact.toString()));
-                    }
-                    mCmsService.syncOneToOneConversation(contact);
-                    return true;
-
                 default:
                     return super.onContextItemSelected(item);
             }
@@ -314,6 +301,13 @@ public class OneToOneTalkList extends RcsActivity {
 
         mAdapter = new OneToOneTalkArrayAdapter(this, mMessageLogs);
         listView.setAdapter(mAdapter);
+        listView.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                OneToOneTalkArrayItem message = mAdapter.getItem(position);
+                startActivity(OneToOneTalkView.forgeIntentToOpenConversation(getApplicationContext(), message.getContact()));
+            }
+        });
 
         mOneToOneFileTransferListener = new OneToOneFileTransferListener() {
             @Override

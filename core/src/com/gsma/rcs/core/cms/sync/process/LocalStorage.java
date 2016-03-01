@@ -257,8 +257,7 @@ public class LocalStorage implements SyncProcessorHandler {
         Set<FlagChange> changes = new HashSet<>();
         Set<Integer> readUids = new HashSet<>();
         Set<Integer> deletedUids = new HashSet<>();
-        for (CmsObject cmsObject : mCmsLog.getMessages(folder, ReadStatus.READ_REPORT_REQUESTED,
-                DeleteStatus.DELETED_REPORT_REQUESTED)) {
+        for (CmsObject cmsObject : mCmsLog.getMessagesToSync(folder)) {
             Integer uid = cmsObject.getUid();
             if (uid != null) {
                 if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {

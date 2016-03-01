@@ -19,17 +19,14 @@
 
 package com.gsma.rcs.core.cms.sync.scheduler;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
+import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.protocol.PayloadException;
 
-public abstract class CmsSyncSchedulerTask implements Runnable {
+public abstract class CmsSyncSchedulerTask {
 
-    private BasicImapService mBasicImapService;
+    public abstract void execute(BasicImapService imapService) throws PayloadException,
+            NetworkException, FileAccessException;
 
-    public void setBasicImapService(BasicImapService basicImapService) {
-        mBasicImapService = basicImapService;
-    }
-
-    public BasicImapService getBasicImapService() {
-        return mBasicImapService;
-    }
 }

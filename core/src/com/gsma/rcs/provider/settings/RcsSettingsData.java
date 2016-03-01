@@ -449,34 +449,36 @@ public class RcsSettingsData {
     }
 
     /**
-     * Configuration of the event framework for the message store
+     * Configuration of the event reporting framework for the message store
      */
-    public enum EventFrameworkMode {
+    public enum EventReportingFrameworkConfig {
 
         /**
          * Event framework disabled
          */
         DISABLED(0),
         /**
-         * Event framework via IMAP protocol
+         * Event framework with SIP AND IMAP protocol
          */
-        IMAP(1),
+        ENABLED(1),
         /**
-         * Event framework via SIP protocol
+         * TODO FGI:
+         * Should be removed when the SIP Event reporting will be fully implemented
+         * Event reporting framework with IMAP protocol only
          */
-        SIP(2);
+        IMAP_ONLY(2);
 
         private final int mValue;
 
-        private static SparseArray<EventFrameworkMode> mValueToEnum = new SparseArray<>();
+        private static SparseArray<EventReportingFrameworkConfig> mValueToEnum = new SparseArray<>();
 
         static {
-            for (EventFrameworkMode entry : EventFrameworkMode.values()) {
+            for (EventReportingFrameworkConfig entry : EventReportingFrameworkConfig.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
             }
         }
 
-        private EventFrameworkMode(int value) {
+        EventReportingFrameworkConfig(int value) {
             mValue = value;
         }
 
@@ -489,15 +491,15 @@ public class RcsSettingsData {
 
         /**
          * @param value
-         * @return EventFrameworkMode
+         * @return EventFrameworkConfiguration
          */
-        public final static EventFrameworkMode valueOf(int value) {
-            EventFrameworkMode entry = mValueToEnum.get(value);
+        public final static EventReportingFrameworkConfig valueOf(int value) {
+            EventReportingFrameworkConfig entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
             throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(EventFrameworkMode.class.getName()).append(".").append(value)
+                    .append(EventReportingFrameworkConfig.class.getName()).append(".").append(value)
                     .toString());
         }
 
@@ -1502,13 +1504,10 @@ public class RcsSettingsData {
     public static final String MESSAGE_STORE_PUSH_MMS = "messageStorePushMms";
     /* package private */static final Boolean DEFAULT_MESSAGE_STORE_PUSH_MMS = true;
 
-    /* Flag events for XMS messages */
-    public static final String EVENT_FRAMEWORK_XMS = "eventFrameworkXms";
-    public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_XMS = EventFrameworkMode.IMAP;
+    /* Event Reporting framework */
+    public static final String EVENT_REPORTING_FRAMEWORK = "eventReportingFramework";
+    public static final EventReportingFrameworkConfig DEFAULT_EVENT_REPORTING_FRAMEWORK = EventReportingFrameworkConfig.IMAP_ONLY;
 
-    /* Flag events for Chat messages */
-    public static final String EVENT_FRAMEWORK_CHAT = "eventFrameworkChat";
-    public static final EventFrameworkMode DEFAULT_EVENT_FRAMEWORK_CHAT = EventFrameworkMode.IMAP;
 
     public static final String MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "messageStoreDefaultDirectory";
     /* package private */static final String DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "Default";

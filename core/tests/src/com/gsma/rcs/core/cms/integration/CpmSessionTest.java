@@ -123,8 +123,7 @@ public class CpmSessionTest extends AndroidTestCase {
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
         CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
-        deleteTask.setBasicImapService(mBasicImapService);
-        deleteTask.delete(mailbox);
+        deleteTask.delete(mBasicImapService, mailbox);
         try {
             mBasicImapService.close();
         } catch (IOException ignore) {

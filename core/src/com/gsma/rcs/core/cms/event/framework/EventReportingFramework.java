@@ -21,12 +21,17 @@ package com.gsma.rcs.core.cms.event.framework;
 
 import com.gsma.services.rcs.contact.ContactId;
 
-public interface EventFramework {
+public interface EventReportingFramework {
+
     void pushSmsMessage(ContactId contact);
 
     void pushMmsMessage(ContactId contact);
 
-    void updateFlagsForChat();
+    void updateFlagsForChat(ContactId contact);
 
-    void updateFlagsForXms();
+    void updateFlagsForGroupChat(String chatId);
+
+    void updateFlagsForXms(ContactId contact);
+
+    void stop();
 }

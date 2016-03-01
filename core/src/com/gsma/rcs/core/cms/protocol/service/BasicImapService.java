@@ -26,6 +26,7 @@ import com.gsma.rcs.core.cms.protocol.cmd.FetchHeaderCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.cmd.ListCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.ListStatusCmdHandler;
+import com.gsma.rcs.core.cms.protocol.cmd.UidSearchCmdHandler;
 import com.gsma.rcs.core.cms.sync.process.FlagChange;
 import com.gsma.rcs.imaplib.imap.DefaultImapService;
 import com.gsma.rcs.imaplib.imap.Flag;
@@ -152,6 +153,38 @@ public class BasicImapService extends DefaultImapService {
             checkResponseOk(line);
         }
         return handler.getResult();
+    }
+
+    /**
+     * Execute UID SEARCH command on CMS server
+     *
+     * @param headerName
+     * @param headerValue
+     * @return An ordered collection of uids
+     * @throws ImapException
+     * @throws IOException
+     */
+    public Integer searchUidWithHeader(String headerName, String headerValue) throws ImapException,
+            IOException {
+
+        UidSearchCmdHandler handler = (UidSearchCmdHandler) CmdHandler.getHandler(
+                CommandType.UID_SEARCH, getCapabilities());
+        synchronized (getIoService()) {
+            writeCommand(handler.buildCommand("HEADER " + headerName + " " + headerValue));
+            String line;
+            while (true) {
+                line = ioReadLine();
+                checkResponseNotBad(line);
+                if (isTagged(line)) {
+                    break;
+                }
+                handler.handleLine(line);
+            }
+            checkResponseOk(line);
+        }
+
+        List<Integer> result = handler.getResult();
+        return result.size() == 1 ? result.get(0) : null;
     }
 
     /**
