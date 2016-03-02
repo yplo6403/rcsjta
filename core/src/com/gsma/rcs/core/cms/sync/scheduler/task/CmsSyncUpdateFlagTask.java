@@ -38,6 +38,7 @@ import android.text.TextUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -48,7 +49,7 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
     private static final Logger sLogger = Logger.getLogger(CmsSyncUpdateFlagTask.class
             .getSimpleName());
 
-    private final Set<CmsObject> mCmsObjects;
+    private final List<CmsObject> mCmsObjects;
     private final CmsLog mCmsLog;
     private final String mRemoteFolder;
 
@@ -62,7 +63,7 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
      * @param cmsObjects the CmsObjects which should be updated on the message store
      * @param cmsLog the CmsLog accesssor
      */
-    public CmsSyncUpdateFlagTask(String remoteFolder, Set<CmsObject> cmsObjects, CmsLog cmsLog) {
+    public CmsSyncUpdateFlagTask(String remoteFolder, List<CmsObject> cmsObjects, CmsLog cmsLog) {
         mRemoteFolder = remoteFolder;
         mCmsObjects = cmsObjects;
         mCmsLog = cmsLog;
@@ -78,7 +79,7 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
      * Update flags fr a remote folder
      */
     public void updateFlags(BasicImapService basicImapService, String remoteFolder,
-            Set<CmsObject> cmsObjects) throws NetworkException, PayloadException {
+            List<CmsObject> cmsObjects) throws NetworkException, PayloadException {
 
         mReadRequestedUids = new HashSet<>();
         mDeletedRequestedUids = new HashSet<>();

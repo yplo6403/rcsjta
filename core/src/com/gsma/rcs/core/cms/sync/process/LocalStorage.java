@@ -176,6 +176,7 @@ public class LocalStorage implements SyncProcessorHandler {
         boolean isActivated = sLogger.isActivated();
         if (messageType == MessageType.SMS || messageType == MessageType.MMS
                 || messageType == MessageType.MESSAGE_CPIM
+                || messageType == MessageType.GROUP_STATE
                 || messageType == MessageType.CPM_SESSION) {
             return true;
         }
@@ -221,6 +222,7 @@ public class LocalStorage implements SyncProcessorHandler {
     private Map<MessageType, List<IImapMessage>> resolveMessagesByType(Set<ImapMessage> rawMessages) {
         Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap<>();
         mapOfMessages.put(MessageType.CPM_SESSION, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.CHAT_MESSAGE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.SMS, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.MMS, new ArrayList<IImapMessage>());

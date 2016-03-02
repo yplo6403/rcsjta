@@ -514,14 +514,14 @@ public class CmsLog {
     }
 
     /**
-     * Get messages by folderName
+     * Get list of messages to synchronize with CMS
      *
      * @param folderName the folder name
      * @return CmsObject
      */
-    public Set<CmsObject> getMessagesToSync(String folderName) {
+    public List<CmsObject> getMessagesToSync(String folderName) {
         Cursor cursor = null;
-        Set<CmsObject> messages = new HashSet<>();
+        List<CmsObject> messages = new ArrayList<>();
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
                     Message.SELECTION_MESSAGES_TO_SYNC, new String[] {

@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.event.framework;
 
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
+import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -132,11 +133,17 @@ public class EventReportingFrameworkManager implements EventReportingFramework {
         // When enabled, try to report events with an established MSRP session first and with an
         // IMAP session otherwise
         if (EventReportingFrameworkConfig.ENABLED == cfg) {
-            ChatSession chatSession = isOneToOne ? mInstantMessagingService
-                    .getOneToOneChatSession(contactId) : mInstantMessagingService
-                    .getGroupChatSession(chatId);
+            ChatSession chatSession;
+            String cmsFolder;
+            if(isOneToOne){
+                chatSession = mInstantMessagingService.getOneToOneChatSession(contactId);
+                cmsFolder = CmsUtils.contactToCmsFolder(mSettings, contactId);
+            }else{
+                chatSession = mInstantMessagingService.getGroupChatSession(chatId);
+                cmsFolder = CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId);
+            }
             if (chatSession != null && chatSession.isMediaEstablished()) {
-                mSipEventReportingFrameworkManager.tryToReportEvents(chatSession);
+                mSipEventReportingFrameworkManager.tryToReportEvents(cmsFolder, chatSession);
             } else { // no MSRP session available, use IMAP session instead
                 if (isOneToOne) {
                     mImapEventReportingFrameworkManager.updateFlags(contactId);

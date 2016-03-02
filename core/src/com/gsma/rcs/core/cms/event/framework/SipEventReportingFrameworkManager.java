@@ -24,6 +24,8 @@ import static com.gsma.rcs.utils.StringUtils.UTF8;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
+import com.gsma.rcs.core.ims.service.im.chat.GroupChatSession;
+import com.gsma.rcs.core.ims.service.im.chat.OneToOneChatSession;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
@@ -32,9 +34,13 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.FifoBuffer;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.chat.GroupChat;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SipEventReportingFrameworkManager extends Thread {
 
@@ -105,22 +111,23 @@ public class SipEventReportingFrameworkManager extends Thread {
         }
     }
 
-    public void tryToReportEvents(ChatSession chatSession) {
-
+    public void tryToReportEvents(String cmsFolder, ChatSession chatSession) {
         boolean logActivated = sLogger.isActivated();
-
+        if (logActivated) {
+            sLogger.debug("--> try to report events for Cms folder : " + cmsFolder);
+        }
         if (chatSession == null || !chatSession.isMediaEstablished()) {
             if (logActivated) {
-                sLogger.debug("There is no active MSRP ChatSession");
-                sLogger.debug("--> Can not report events ");
+                sLogger.debug(" There is no active MSRP ChatSession");
+                sLogger.debug(" --> Can not report events ");
             }
             return;
         }
 
-        SipEventReportingFrameworkDocument doc = buildDocument();
+        SipEventReportingFrameworkDocument doc = buildDocument(cmsFolder);
         if (doc == null) { // nothing to report
             if (sLogger.isActivated()) {
-                sLogger.debug("--> Nothing to report, xml document is null");
+                sLogger.debug(" --> Nothing to report, xml document is null");
             }
             return;
         }
@@ -128,10 +135,19 @@ public class SipEventReportingFrameworkManager extends Thread {
         mBuffer.addObject(new SipEventReporting(doc, chatSession));
     }
 
-    private SipEventReportingFrameworkDocument buildDocument() {
+    private SipEventReportingFrameworkDocument buildDocument(String cmsFolder) {
 
-        List<CmsObject> seenObjects = mCmsLog.getMessages(ReadStatus.READ_REPORT_REQUESTED);
-        List<CmsObject> deletedObjects = mCmsLog.getMessages(DeleteStatus.DELETED_REPORT_REQUESTED);
+        List<CmsObject> seenObjects = new ArrayList<>();
+        List<CmsObject> deletedObjects = new ArrayList<>();
+        for (CmsObject cmsObject : mCmsLog.getMessagesToSync(cmsFolder)) {
+            if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
+                seenObjects.add(cmsObject);
+            }
+            if (DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
+                deletedObjects.add(cmsObject);
+            }
+        }
+
         if (seenObjects.isEmpty() && deletedObjects.isEmpty()) {
             return null;
         }

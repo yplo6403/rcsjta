@@ -48,6 +48,7 @@ import android.os.Message;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -420,7 +421,7 @@ public class CmsSyncScheduler {
             return false;
         }
 
-        Set<CmsObject> objectsToSync = mCmsLog.getMessagesToSync(remoteFolder);
+        List<CmsObject> objectsToSync = mCmsLog.getMessagesToSync(remoteFolder);
         if (objectsToSync.isEmpty()) {
             if (sLogger.isActivated()) {
                 sLogger.info("There is no message to update with CMS for remote folder : "

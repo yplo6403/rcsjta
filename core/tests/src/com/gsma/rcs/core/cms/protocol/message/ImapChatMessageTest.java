@@ -61,8 +61,8 @@ public class ImapChatMessageTest extends AndroidTestCase {
         try {
 
             String folderName = "myFolder";
-            String headerFrom = "+33642575779";
-            String headerTo = "+33640332859";
+            String headerFrom = "tel:+33642575779";
+            String headerTo = "tel:+33640332859";
             String direction = Constants.DIRECTION_RECEIVED;
             String contributionId = "1443517760826";
 
@@ -115,8 +115,8 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
         try {
             String folderName = "myFolder";
-            String headerFrom = "+33642575779";
-            String headerTo = "+33640332859";
+            String headerFrom = "tel:+33642575779";
+            String headerTo = "tel:+33640332859";
             String direction = Constants.DIRECTION_RECEIVED;
             String contributionId = "1443517760826";
 
@@ -147,7 +147,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
             Assert.assertEquals("Message/CPIM",
                     imapChatMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-            Assert.assertEquals(headerFrom,
+            Assert.assertEquals("<" + headerFrom + ">",
                     imapChatMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
             Assert.assertEquals(ImapChatMessage.ANONYMOUS, imapChatMessage.getCpimMessage()
                     .getHeader(Constants.HEADER_TO));
@@ -166,7 +166,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
     public String getPayload(boolean isOneToOne, String headerFrom, String headerTo,
             String contributionId, String direction) {
 
-        String headerFromCpim = isOneToOne ? ImapChatMessage.ANONYMOUS : headerFrom;
+        String headerFromCpim = isOneToOne ? ImapChatMessage.ANONYMOUS : "<" + headerFrom + ">";
 
         return new StringBuilder().append("From: ").append(headerFrom).append(Constants.CRLF)
                 .append("To: ").append(headerTo).append(Constants.CRLF).append("Date: ")

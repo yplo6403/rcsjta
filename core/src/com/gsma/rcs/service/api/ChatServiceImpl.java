@@ -1082,7 +1082,8 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     public void broadcastNewChatMessage(ChatMessage chatMessage) {
         ChatMessagePersistedStorageAccessor persistedStorage = new ChatMessagePersistedStorageAccessor(mMessagingLog, chatMessage.getMessageId());
-        if(persistedStorage.getChatId().equals(persistedStorage.getRemoteContact().toString())){ // OneToOne chat message
+        ContactId contact = persistedStorage.getRemoteContact();
+        if(contact != null && contact.toString().equals(persistedStorage.getChatId())){ // OneToOne chat message
             mOneToOneChatEventBroadcaster.broadcastMessageReceived(persistedStorage.getMimeType(), chatMessage.getMessageId());
         } else{ // GC message
             mGroupChatEventBroadcaster.broadcastMessageReceived(persistedStorage.getMimeType(), chatMessage.getMessageId());
