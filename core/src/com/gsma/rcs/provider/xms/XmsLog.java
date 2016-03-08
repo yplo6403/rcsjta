@@ -454,6 +454,7 @@ public class XmsLog {
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
 
+        values.clear();
         values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
         values.put(XmsData.KEY_CONTACT, contact);
         values.put(XmsData.KEY_CHAT_ID, contact);
