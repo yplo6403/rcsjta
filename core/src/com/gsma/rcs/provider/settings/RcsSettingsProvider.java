@@ -80,7 +80,7 @@ public class RcsSettingsProvider extends ContentProvider {
     }
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 116;
+        private static final int DATABASE_VERSION = 117;
 
         /**
          * Add a parameter in the db
@@ -441,6 +441,14 @@ public class RcsSettingsProvider extends ContentProvider {
                     RcsSettingsData.DEFAULT_DATA_CONNECTION_SYNC_TIMER);
             addParameter(db, RcsSettingsData.MESSAGE_STORE_SYNC_TIMER,
                     RcsSettingsData.DEFAULT_MESSAGE_STORE_SYNC_TIMER);
+            addParameter(db, RcsSettingsData.NTP_SERVERS,
+                    RcsSettingsData.DEFAULT_NTP_SERVERS);
+            addParameter(db, RcsSettingsData.NTP_SERVER_TIMEOUT,
+                    RcsSettingsData.DEFAULT_NTP_SERVER_TIMEOUT);
+            addParameter(db, RcsSettingsData.NTP_LOCAL_OFFSET,
+                    RcsSettingsData.DEFAULT_NTP_LOCAL_OFFSET);
+            addParameter(db, RcsSettingsData.NTP_CACHE_VALIDITY,
+                    RcsSettingsData.DEFAULT_NTP_CACHE_VALIDITY);
 
         }
 

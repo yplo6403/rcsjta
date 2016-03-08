@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.presence;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -272,7 +273,7 @@ public class PublishManager extends PeriodicRefresher {
         saveEntityTag((SIPETagHeader) resp.getHeader(SIPETagHeader.NAME));
 
         // Start the periodic publish
-        startTimer(System.currentTimeMillis(), mExpirePeriod, 0.5);
+        startTimer(NtpTrustedTime.currentTimeMillis(), mExpirePeriod, 0.5);
     }
 
     /**
@@ -460,7 +461,7 @@ public class PublishManager extends PeriodicRefresher {
         }
         if (mEntityTag != null) {
             RegistryFactory.getFactory().writeString(REGISTRY_SIP_ETAG, mEntityTag);
-            long etagExpiration = System.currentTimeMillis() + mExpirePeriod;
+            long etagExpiration = NtpTrustedTime.currentTimeMillis() + mExpirePeriod;
             RegistryFactory.getFactory().writeLong(REGISTRY_SIP_ETAG_EXPIRATION, etagExpiration);
             if (sLogger.isActivated()) {
                 sLogger.debug("New entity tag: " + mEntityTag + ", expire at=" + etagExpiration);

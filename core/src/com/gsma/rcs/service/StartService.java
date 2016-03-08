@@ -26,6 +26,7 @@ import com.gsma.rcs.R;
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.addressbook.RcsAccountException;
 import com.gsma.rcs.addressbook.RcsAccountManager;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.platform.registry.AndroidRegistryFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -598,7 +599,7 @@ public class StartService extends Service {
             sLogger.debug("Retry polling telephony manager (mcc=" + mcc + ",mnc=" + mnc + ")");
         }
         AlarmManager am = (AlarmManager) mCtx.getSystemService(Context.ALARM_SERVICE);
-        TimerUtils.setExactTimer(am, System.currentTimeMillis() + TELEPHONY_MANAGER_POOLING_PERIOD,
+        TimerUtils.setExactTimer(am, NtpTrustedTime.currentTimeMillis() + TELEPHONY_MANAGER_POOLING_PERIOD,
                 mPoolTelephonyManagerIntent);
     }
 

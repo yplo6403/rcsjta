@@ -22,6 +22,7 @@ w * Software Name : RCS IMS Stack
 
 package com.gsma.rcs.core.ims.service.im.filetransfer.http;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -104,7 +105,7 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
             if (mImdnManager.isSendOneToOneDeliveryDisplayedReportsEnabled()) {
                 /* Send delivery report "displayed" */
                 sendDeliveryReport(ImdnDocument.DELIVERY_STATUS_DISPLAYED,
-                        System.currentTimeMillis());
+                        NtpTrustedTime.currentTimeMillis());
             }
 
         } catch (FileNotFoundException e) {

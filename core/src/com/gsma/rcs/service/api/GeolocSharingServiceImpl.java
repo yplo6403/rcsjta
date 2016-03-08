@@ -24,6 +24,7 @@ package com.gsma.rcs.service.api;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.GeolocContent;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.ImsModule;
@@ -273,7 +274,7 @@ public class GeolocSharingServiceImpl extends IGeolocSharingService.Stub {
         ServerApiUtils.testIms();
         try {
             String msgId = IdGenerator.generateMessageID();
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             String geolocDoc = ChatUtils.buildGeolocDocument(geoloc, ImsModule.getImsUserProfile()
                     .getPublicUri(), msgId, timestamp);
             byte[] data = geolocDoc.getBytes(UTF8);

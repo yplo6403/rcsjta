@@ -18,6 +18,8 @@
 
 package com.gsma.rcs.core.ims.service;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 /**
  * Session ID generator
  * 
@@ -27,7 +29,7 @@ public class SessionIdGenerator {
     /**
      * Counter
      */
-    private static long current = System.currentTimeMillis();
+    private static long current = NtpTrustedTime.currentTimeMillis();
 
     /**
      * Returns a unique integer ID

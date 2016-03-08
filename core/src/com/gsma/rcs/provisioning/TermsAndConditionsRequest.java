@@ -25,6 +25,7 @@ package com.gsma.rcs.provisioning;
 import com.gsma.rcs.R;
 import com.gsma.rcs.addressbook.RcsAccountException;
 import com.gsma.rcs.addressbook.RcsAccountManager;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -212,7 +213,7 @@ public class TermsAndConditionsRequest extends Activity {
         Notification.Builder notif = new Notification.Builder(this);
         notif.setContentIntent(pi);
         notif.setSmallIcon(R.drawable.rcs_notif_on_icon);
-        notif.setWhen(System.currentTimeMillis());
+        notif.setWhen(NtpTrustedTime.currentTimeMillis());
         notif.setAutoCancel(true);
         notif.setOnlyAlertOnce(true);
         notif.setContentTitle(getString(R.string.rcs_core_terms_title));

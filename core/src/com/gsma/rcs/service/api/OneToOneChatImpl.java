@@ -23,6 +23,7 @@
 package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
@@ -370,7 +371,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
         }
         try {
             mImService.removeOneToOneChatComposingStatus(mContact); /* clear cache */
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /* For outgoing message, timestampSent = timestamp */
             final ChatMessage msg = ChatUtils.createTextMessage(mContact, message, timestamp,
                     timestamp);
@@ -422,7 +423,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
             sLogger.debug("Send geolocation message.");
         }
         try {
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /** For outgoing message, timestampSent = timestamp */
             final ChatMessage geolocMsg = ChatUtils.createGeolocMessage(mContact, geoloc,
                     timestamp, timestamp);
@@ -506,7 +507,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
     private void sendFileInfoInNewSession(String fileTransferId, String fileInfo,
             OneToOneFileTransferImpl oneToOneFileTransfer) throws PayloadException,
             NetworkException {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
         long timestampSent = timestamp;
         mMessagingLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);
@@ -763,7 +764,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
                         mMessagingLog, msgId);
                 final String mimeType = persistentStorage.getMimeType();
                 /* Set new timestamp for resend message */
-                long timestamp = System.currentTimeMillis();
+                long timestamp = NtpTrustedTime.currentTimeMillis();
                 /* For outgoing message, timestampSent = timestamp */
                 final ChatMessage msg = new ChatMessage(msgId, mContact, persistentStorage
                         .getContent(), mimeType, timestamp, timestamp, null);
@@ -1077,7 +1078,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
             /* Send the delivered notification by SIP */
             ContactId remote = getRemoteContact();
             mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DELIVERED, System.currentTimeMillis());
+                    ImdnDocument.DELIVERY_STATUS_DELIVERED, NtpTrustedTime.currentTimeMillis());
         } else if (TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
             if (sLogger.isActivated()) {
                 sLogger.info(new StringBuilder(
@@ -1087,7 +1088,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
             /* Send the displayed notification by SIP */
             ContactId remote = getRemoteContact();
             mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, System.currentTimeMillis());
+                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, NtpTrustedTime.currentTimeMillis());
         }
     }
 

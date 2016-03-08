@@ -23,6 +23,7 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -263,12 +264,12 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
         Bundle result = getResultExtras(true);
         IntentProcessor intentProcessor = new IntentProcessor(ctx, intent, result);
         intentProcessor.start();
-        long endTime = System.currentTimeMillis() + INTENT_RESPONSE_TIMEOUT;
+        long endTime = NtpTrustedTime.currentTimeMillis() + INTENT_RESPONSE_TIMEOUT;
         // TODO Such synchronization has little effect, since different threads usually will have
         // different values for the local variable or parameter.
         synchronized (result) {
             while (!intentProcessor.mHaveResult) {
-                long delay = endTime - System.currentTimeMillis();
+                long delay = endTime - NtpTrustedTime.currentTimeMillis();
                 if (delay <= 0) {
                     sLogger.warn("Waiting for result for " + action + " has reached deadline!");
                     break;

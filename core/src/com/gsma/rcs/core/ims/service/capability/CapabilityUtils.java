@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.capability;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.GeolocContent;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -290,7 +291,7 @@ public class CapabilityUtils {
                 capaBuilder.setImageSharing(false);
             }
         }
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         capaBuilder.setTimestampOfLastResponse(timestamp);
         capaBuilder.setTimestampOfLastRequest(timestamp);
         return capaBuilder.build();

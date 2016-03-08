@@ -182,7 +182,7 @@ public class SmsTest extends AndroidTestCase {
         test1();
 
         // update messages with 'seen' flag on CMS
-        updateRemoteFlags(Test1.folderName, new HashSet<>(Arrays.asList(Test2.cmsObjectReadRequested)));
+        updateRemoteFlags(Test1.folderName, Arrays.asList(Test2.cmsObjectReadRequested));
 
         // sync with CMS
         startSynchro();
@@ -201,7 +201,7 @@ public class SmsTest extends AndroidTestCase {
         }
 
         // update messages with 'deleted' flag on CMS
-        updateRemoteFlags(Test1.folderName, new HashSet<>(Arrays.asList(Test2.cmsObjectDeletedRequested)));
+        updateRemoteFlags(Test1.folderName, Arrays.asList(Test2.cmsObjectDeletedRequested));
 
         // sync with CMS
         startSynchro();
@@ -315,7 +315,7 @@ public class SmsTest extends AndroidTestCase {
 
         // mark messages as deleted on server and expunge them.
         try {
-            updateRemoteFlags(Test1.folderName, new HashSet<>(Arrays.asList(Test5.cmsObjectDeletedRequested)));
+            updateRemoteFlags(Test1.folderName, Arrays.asList(Test5.cmsObjectDeletedRequested));
             deleteRemoteMessages(CmsUtils.contactToCmsFolder(mSettings,
                     SmsIntegrationUtils.Test1.contact));
         } catch (Exception e) {
@@ -619,7 +619,7 @@ public class SmsTest extends AndroidTestCase {
         deleteTask.delete(mBasicImapService, mailbox);
     }
 
-    private void updateRemoteFlags(String remoteFolder,  Set<CmsObject> cmsObjects) throws NetworkException,
+    private void updateRemoteFlags(String remoteFolder,  List<CmsObject> cmsObjects) throws NetworkException,
             PayloadException, FileAccessException {
         CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(remoteFolder, cmsObjects, null);
         task.execute(mBasicImapService);

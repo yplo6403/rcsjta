@@ -18,6 +18,7 @@ package com.gsma.rcs.provider.history;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -143,7 +144,7 @@ public class OneToOneChatDequeueTask extends DequeueTask {
                                 continue;
                             }
                             String content = cursor.getString(contentIdx);
-                            long timestamp = System.currentTimeMillis();
+                            long timestamp = NtpTrustedTime.currentTimeMillis();
                             /* For outgoing message, timestampSent = timestamp */
                             ChatMessage msg = ChatUtils.createChatMessage(id, mimeType, content,
                                     contact, null, timestamp, timestamp);

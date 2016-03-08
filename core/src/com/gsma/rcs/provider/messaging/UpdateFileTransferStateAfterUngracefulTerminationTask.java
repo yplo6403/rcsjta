@@ -16,6 +16,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.ContactUtil;
@@ -160,7 +161,7 @@ public class UpdateFileTransferStateAfterUngracefulTerminationTask implements Ru
                             }
                             break;
                         case INVITED:
-                            if (cursor.getLong(fileExpirationIdx) > System.currentTimeMillis()) {
+                            if (cursor.getLong(fileExpirationIdx) > NtpTrustedTime.currentTimeMillis()) {
                                 /* File is not yet expired on the server */
                                 break;
                             }

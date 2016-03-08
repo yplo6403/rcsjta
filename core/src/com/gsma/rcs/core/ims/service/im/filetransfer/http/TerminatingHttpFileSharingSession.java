@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.filetransfer.http;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -131,7 +132,7 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             handleFileTransferred();
             if (mImdnManager.isSendOneToOneDeliveryDisplayedReportsEnabled()) {
                 sendDeliveryReport(ImdnDocument.DELIVERY_STATUS_DISPLAYED,
-                        System.currentTimeMillis());
+                        NtpTrustedTime.currentTimeMillis());
             }
 
         } catch (NetworkException e) {
@@ -256,7 +257,7 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                     handleFileTransferred();
                     if (mImdnManager.isSendOneToOneDeliveryDisplayedReportsEnabled()) {
                         sendDeliveryReport(ImdnDocument.DELIVERY_STATUS_DISPLAYED,
-                                System.currentTimeMillis());
+                                NtpTrustedTime.currentTimeMillis());
                     }
 
                 } catch (NetworkException e) {

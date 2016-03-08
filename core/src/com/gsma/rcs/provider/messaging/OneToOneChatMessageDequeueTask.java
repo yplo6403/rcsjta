@@ -17,6 +17,7 @@
 package com.gsma.rcs.provider.messaging;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
@@ -105,7 +106,7 @@ public class OneToOneChatMessageDequeueTask extends DequeueTask {
                         continue;
                     }
                     String content = cursor.getString(contentIdx);
-                    long timestamp = System.currentTimeMillis();
+                    long timestamp = NtpTrustedTime.currentTimeMillis();
 
                     /* For outgoing message, timestampSent = timestamp */
                     ChatMessage msg = ChatUtils.createChatMessage(id, mimeType, content, mContact,

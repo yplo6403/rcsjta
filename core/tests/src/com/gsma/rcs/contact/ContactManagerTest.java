@@ -23,6 +23,7 @@
 package com.gsma.rcs.contact;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.service.ContactInfo;
 import com.gsma.rcs.core.ims.service.ContactInfo.BlockingState;
 import com.gsma.rcs.core.ims.service.ContactInfo.RcsStatus;
@@ -166,7 +167,7 @@ public class ContactManagerTest extends AndroidTestCase {
          * second.
          */
         Thread.sleep(1010);
-        mContactManager.updateCapabilitiesTimeLastResponse(mContact, System.currentTimeMillis());
+        mContactManager.updateCapabilitiesTimeLastResponse(mContact, NtpTrustedTime.currentTimeMillis());
         Capabilities newCapa = mContactManager.getContactCapabilities(mContact);
         assertNotNull(newCapa);
         assertNotNull(oldCapa);
@@ -180,7 +181,7 @@ public class ContactManagerTest extends AndroidTestCase {
     }
 
     public CapabilitiesBuilder createRcsContact() throws ContactManagerException, FileAccessException {
-        long now = System.currentTimeMillis();
+        long now = NtpTrustedTime.currentTimeMillis();
         CapabilitiesBuilder capaBuilder = new CapabilitiesBuilder();
         /*
          * For capabilities which do not depend on provisioning, support is chosen randomly.

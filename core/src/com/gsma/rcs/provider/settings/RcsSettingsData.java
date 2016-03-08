@@ -1515,4 +1515,16 @@ public class RcsSettingsData {
     public static final String MESSAGE_STORE_DIRECTORY_SEPARATOR = "messageStoreDirectorySeparator";
     /* package private */static final String DEFAULT_MESSAGE_STORE_DIRECTORY_SEPARATOR = "/";
 
+    public static final String NTP_SERVERS = "ntpServers";
+    /* package private */static final String DEFAULT_NTP_SERVERS = "172.20.1.104,10.194.124.1";
+
+    public static final String NTP_SERVER_TIMEOUT = "ntpServersTimeout";
+    /* package private */static final long DEFAULT_NTP_SERVER_TIMEOUT = 10000L;
+
+    public static final String NTP_LOCAL_OFFSET = "ntpLocalOffset";
+    /* package private */static final long DEFAULT_NTP_LOCAL_OFFSET = 0L;
+
+    public static final String NTP_CACHE_VALIDITY = "ntpCacheValidity";
+    /* package private */static final long DEFAULT_NTP_CACHE_VALIDITY = 24 * 60 * 60 * 1000L; //one day
+
 }

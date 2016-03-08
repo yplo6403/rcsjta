@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.sip;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -165,7 +166,7 @@ public class SipService extends ImsService {
             sLogger.info("Initiate a MSRP session with contact " + contact);
         }
         return new OriginatingSipMsrpSession(this, contact, featureTag, mRcsSettings,
-                System.currentTimeMillis(), mContactManager);
+                NtpTrustedTime.currentTimeMillis(), mContactManager);
     }
 
     /**
@@ -257,7 +258,7 @@ public class SipService extends ImsService {
             sLogger.info("Initiate a RTP session with contact " + contact);
         }
         return new OriginatingSipRtpSession(this, contact, featureTag, mRcsSettings,
-                System.currentTimeMillis(), mContactManager);
+                NtpTrustedTime.currentTimeMillis(), mContactManager);
     }
 
     /**

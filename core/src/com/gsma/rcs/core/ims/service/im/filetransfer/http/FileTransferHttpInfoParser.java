@@ -41,6 +41,7 @@ import android.net.Uri;
 import android.util.TimeFormatException;
 
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.DateUtils;
 import com.gsma.rcs.utils.logger.Logger;
@@ -208,7 +209,7 @@ public class FileTransferHttpInfoParser extends DefaultHandler {
                 if (logger.isActivated()) {
                     logger.error("Could not parse transfer expiration:" + expiration);
                 }
-                return System.currentTimeMillis() + 300000; // TODO default validity ?
+                return NtpTrustedTime.currentTimeMillis() + 300000; // TODO default validity ?
             }
         }
     }

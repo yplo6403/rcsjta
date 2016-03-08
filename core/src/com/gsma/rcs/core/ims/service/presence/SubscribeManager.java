@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.presence;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -430,7 +431,7 @@ public abstract class SubscribeManager extends PeriodicRefresher {
         retrieveExpirePeriod(resp);
 
         // Start the periodic subscribe
-        startTimer(System.currentTimeMillis(), mExpirePeriod, 0.5);
+        startTimer(NtpTrustedTime.currentTimeMillis(), mExpirePeriod, 0.5);
     }
 
     /**

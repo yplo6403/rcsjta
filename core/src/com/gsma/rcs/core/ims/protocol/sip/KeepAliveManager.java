@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.protocol.sip;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.PeriodicRefresher;
@@ -68,7 +69,7 @@ public class KeepAliveManager extends PeriodicRefresher {
         if (sLogger.isActivated()) {
             sLogger.debug("Start keep-alive");
         }
-        startTimer(System.currentTimeMillis(), mPeriod);
+        startTimer(NtpTrustedTime.currentTimeMillis(), mPeriod);
     }
 
     /**
@@ -94,7 +95,7 @@ public class KeepAliveManager extends PeriodicRefresher {
             /* Send a double-CRLF */
             mSip.getDefaultSipProvider().getListeningPoints()[0].sendHeartbeat(
                     mSip.getOutboundProxyAddr(), mSip.getOutboundProxyPort());
-            startTimer(System.currentTimeMillis(), mPeriod);
+            startTimer(NtpTrustedTime.currentTimeMillis(), mPeriod);
         } catch (IOException e) {
             throw new NetworkException("Failed to send keep-alive!", e);
         }

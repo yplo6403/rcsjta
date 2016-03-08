@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.im.filetransfer;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.FileContent;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.provider.CursorUtil;
@@ -339,7 +340,7 @@ public class FileTransferLogTest extends AndroidTestCase {
             mMessagingLog.addOneToOneFileTransfer(fileTransferId, mContact, Direction.OUTGOING,
                     mContent, null, State.INITIATING, ReasonCode.UNSPECIFIED, mTimestamp,
                     mTimestampSent, mFileExpiration, FileTransferLog.UNKNOWN_EXPIRATION);
-            mMessagingLog.setFileInfoDequeued(fileTransferId, System.currentTimeMillis());
+            mMessagingLog.setFileInfoDequeued(fileTransferId, NtpTrustedTime.currentTimeMillis());
         }
         Cursor cursor = mMessagingLog.getUnDeliveredOneToOneFileTransfers();
         assertEquals(4, cursor.getCount());

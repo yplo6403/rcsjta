@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.sync.scheduler;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
@@ -189,7 +190,7 @@ public class CmsSyncScheduler {
                 return;
             }
             // start new periodic sync
-            long delta = System.currentTimeMillis() - sEndOfLastSync;
+            long delta = NtpTrustedTime.currentTimeMillis() - sEndOfLastSync;
             if (delta < syncTimerInterval) {
                 parameters.addExtraParameter(ExtraParameter.DELAY, syncTimerInterval - delta);
             }
@@ -213,7 +214,7 @@ public class CmsSyncScheduler {
                         || mCurrentOperation == CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY) {
                     return false;
                 }
-                long now = System.currentTimeMillis();
+                long now = NtpTrustedTime.currentTimeMillis();
                 long delta = now - sEndOfLastSync;
                 long dataConnectionInterval = mRcsSettings.getDataConnectionSyncTimer();
                 if (CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION == newOperation
@@ -327,7 +328,7 @@ public class CmsSyncScheduler {
                 }
             }
             mCurrentOperation = null;
-            sEndOfLastSync = System.currentTimeMillis();
+            sEndOfLastSync = NtpTrustedTime.currentTimeMillis();
             // schedule new periodic sync on all conversations
             long syncTimerInterval = mRcsSettings.getMessageStoreSyncTimer();
             if (syncTimerInterval > 0) {

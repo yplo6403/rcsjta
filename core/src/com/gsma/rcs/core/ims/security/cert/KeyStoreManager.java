@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.security.cert;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -296,7 +297,7 @@ public class KeyStoreManager {
             }
             X509Certificate[] certChain = new X509Certificate[1];
             X500Name subjectName = new X500Name("CN=com.gsma.rcs.client");
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             Date startDate = new Date(timestamp - 24 * 60 * 60
                     * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
             Date endDate = new Date(timestamp + 365L * 26 * 60 * 60

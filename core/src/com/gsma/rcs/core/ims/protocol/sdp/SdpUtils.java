@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.core.ims.protocol.sdp;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.security.cert.KeyStoreManager;
 import com.gsma.rcs.utils.InetAddressUtils;
@@ -266,7 +267,7 @@ public class SdpUtils {
             String acceptTypes, String wrapperTypes, String transferId, String selector,
             String disposition, String setup, String path, String direction, String media,
             long maxSize) {
-        String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
+        String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
 
         StringBuffer sdp = new StringBuffer("v=0" + SipUtils.CRLF + "o=- " + ntpTime + " "
                 + ntpTime + " " + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "s=-"

@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.chat;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -180,7 +181,7 @@ public abstract class OneToOneChatSession extends ChatSession {
             String fileInfo, boolean displayedReportEnabled, boolean deliveredReportEnabled)
             throws NetworkException {
         String networkContent;
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
         long timestampSent = timestamp;
         mMessagingLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);

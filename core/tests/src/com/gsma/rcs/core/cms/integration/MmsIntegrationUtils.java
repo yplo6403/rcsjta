@@ -18,21 +18,18 @@
 
 package com.gsma.rcs.core.cms.integration;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
-import com.gsma.rcs.core.cms.sync.process.FlagChange.Operation;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
-
-import com.gsma.rcs.imaplib.imap.Flag;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,15 +46,15 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", contact, "Hello!", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() - 4000, 1L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() - 4000, 1L, 1L, parts),
                 new MmsDataObject("mmsId2", "messageId2", contact, "How are you?",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 3000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId3", "messageId3", contact, "Fine, and you?",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 2000, 3L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000, 3L, 1L,
                         parts),
                 new MmsDataObject("mmsId4", "messageId4", contact, "Fine, thanks",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis(), 4L, 1L, parts),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L, 1L, parts),
         };
     }
 
@@ -92,15 +89,15 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", contactId, "Hello!", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() - 4000, 1L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() - 4000, 1L, 1L, parts),
                 new MmsDataObject("mmsId2", "messageId2", contactId, "How are you?",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 3000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId3", "messageId3", contactId, "Fine, and you?",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() - 2000, 3L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000, 3L, 1L,
                         parts),
                 new MmsDataObject("mmsId4", "messageId4", contactId, "Fine, thanks",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis(), 4L, 1L, parts),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L, 1L, parts),
         };
     }
 
@@ -116,13 +113,13 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", contactId, "Hello!", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() - 4000, 1L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() - 4000, 1L, 1L, parts),
                 new MmsDataObject("mmsId2", "messageId2", contactId, "yes", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() - 3000, 2L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() - 3000, 2L, 1L, parts),
                 new MmsDataObject("mmsId3", "messageId3", contactId, "yes", Direction.OUTGOING,
-                        readStatus, System.currentTimeMillis() - 2000, 3L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() - 2000, 3L, 1L, parts),
                 new MmsDataObject("mmsId4", "messageId4", contactId, "yes", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis(), 4L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis(), 4L, 1L, parts),
         };
     }
 
@@ -136,22 +133,22 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation_remote = new MmsDataObject[] {
                 new MmsDataObject("mmsId2", "messageId2", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 2000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId1", "messageId1", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 1000, 1L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L,
                         parts),
         };
 
         public static MmsDataObject[] conversation_local = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 1000, 1L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L,
                         parts),
                 new MmsDataObject("mmsId2", "messageId2", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 2000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId3", "messageId3", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 3000, 3L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 3L, 1L,
                         parts),
 
         };
@@ -166,19 +163,19 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation_remote = new MmsDataObject[] {
                 new MmsDataObject("mmsId3", "messageId3", Test1.contact, "Hello",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 3000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId1", "messageId1", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 1000, 1L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L,
                         parts),
         };
 
         public static MmsDataObject[] conversation_local = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 1000, 1L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L,
                         parts),
                 new MmsDataObject("mmsId2", "messageId2", Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, System.currentTimeMillis() + 2000, 2L, 1L,
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
         };
 
@@ -202,31 +199,31 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation_1 = new MmsDataObject[] {
                 new MmsDataObject("mmsId1", "messageId1", contact1, "Hello 1!", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 1000, 2L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 2L, 1L, parts),
                 new MmsDataObject("mmsId2", "messageId2", contact1, "Hi 1", Direction.INCOMING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 2000, 2L, 1L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId3", "messageId3", contact1, "Ciao 1", Direction.OUTGOING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 2000, 2L, 1L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId4", "messageId4", contact1, "Bye 1", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 2000, 2L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L, parts),
         };
 
         public static MmsDataObject[] conversation_2 = new MmsDataObject[] {
                 new MmsDataObject("mmsId5", "messageId5", contact2, "Hi 2!", Direction.OUTGOING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 2000, 2L, 1L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
                 new MmsDataObject("mmsId6", "messageId6", contact2, "Ciao 2", Direction.OUTGOING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 2000, 2L, 1L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L,
                         parts),
         };
 
         public static MmsDataObject[] conversation_3 = new MmsDataObject[] {
                 new MmsDataObject("mmsId7", "messageId7", contact3, "Hello 3!", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 1000, 1L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L, parts),
                 new MmsDataObject("mmsId8", "messageId8", contact3, "Bye 3", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 2000, 2L, 1L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L, parts),
         };
     }
 
@@ -244,23 +241,23 @@ public class MmsIntegrationUtils {
 
         public static MmsDataObject[] conversation_1 = new MmsDataObject[] {
             new MmsDataObject("mmsId1", "messageId1", contact1, "Hello !", Direction.INCOMING,
-                    readStatus, System.currentTimeMillis() + 1000, 1L, 1L, parts),
+                    readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L, parts),
         };
 
         public static MmsDataObject[] conversation_2 = new MmsDataObject[] {
                 new MmsDataObject("mmsId2", "messageId2", contact2, "Hi", Direction.INCOMING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 1000, 1L, 2L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 2L,
                         parts),
                 new MmsDataObject("mmsId3", "messageId3", contact2, "Ciao", Direction.INCOMING,
-                        RcsService.ReadStatus.READ, System.currentTimeMillis() + 1000, 2L, 2L,
+                        RcsService.ReadStatus.READ, NtpTrustedTime.currentTimeMillis() + 1000, 2L, 2L,
                         parts),
         };
 
         public static MmsDataObject[] conversation_3 = new MmsDataObject[] {
                 new MmsDataObject("mmsId4", "messageId4", contact3, "Hello", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 1000, 1L, 3L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, 3L, parts),
                 new MmsDataObject("mmsId5", "messageId5", contact3, "Bye", Direction.INCOMING,
-                        readStatus, System.currentTimeMillis() + 1000, 2L, 3L, parts),
+                        readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 2L, 3L, parts),
         };
     }
 }

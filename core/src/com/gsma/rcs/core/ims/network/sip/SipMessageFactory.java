@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.network.sip;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipDialogPath;
@@ -1168,7 +1169,7 @@ public class SipMessageFactory {
             Request refer = dialog.getStackDialog().createRequest(Request.REFER);
 
             // Generate a list URI
-            String listID = "Id_" + System.currentTimeMillis();
+            String listID = "Id_" + NtpTrustedTime.currentTimeMillis();
 
             // Set feature tags
             String[] tags = {

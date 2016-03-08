@@ -18,6 +18,8 @@
 
 package com.gsma.rcs.utils;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 import java.util.UUID;
 
 /**
@@ -52,7 +54,7 @@ public class IdGenerator {
     /**
      * The number of generated characters for the uniq identifier
      * <p>
-     * System.currentTimeMillis() returns long, but only 42 bit are taken, which seems to be enough
+     * NtpTrustedTime.currentTimeMillis() returns long, but only 42 bit are taken, which seems to be enough
      * for more than 100 years after 1970, these 42 bits need 7 chars for their coding, the number
      * of chars for the counter is added:
      * 
@@ -109,7 +111,7 @@ public class IdGenerator {
      * @return Unique identifier
      */
     public static synchronized String getIdentifier() {
-        long time = System.currentTimeMillis();
+        long time = NtpTrustedTime.currentTimeMillis();
 
         int counter = -1;
         if (N_COUNTERS_CHARS > 0)

@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -141,7 +142,7 @@ public class SessionTimerManager extends PeriodicRefresher {
         mExpirePeriod = expirePeriod;
 
         // Reset last session refresh time
-        mLastSessionRefresh = System.currentTimeMillis();
+        mLastSessionRefresh = NtpTrustedTime.currentTimeMillis();
 
         // Start processing the session timer
         startProcessing();
@@ -151,7 +152,7 @@ public class SessionTimerManager extends PeriodicRefresher {
      * Start processing the session timer
      */
     private void startProcessing() {
-        long currentTime = System.currentTimeMillis();
+        long currentTime = NtpTrustedTime.currentTimeMillis();
         if (UAC_ROLE.equals(mRefresher)) {
             startTimer(currentTime, mExpirePeriod, 0.5);
         } else {
@@ -243,7 +244,7 @@ public class SessionTimerManager extends PeriodicRefresher {
                         }
 
                         mSession.getDialogPath().setSigEstablished();
-                        mLastSessionRefresh = System.currentTimeMillis();
+                        mLastSessionRefresh = NtpTrustedTime.currentTimeMillis();
 
                         if (mLogger.isActivated()) {
                             mLogger.debug("Send ACK");
@@ -321,7 +322,7 @@ public class SessionTimerManager extends PeriodicRefresher {
         if (mLogger.isActivated()) {
             mLogger.debug("Session timer refresh (UAS role)");
         }
-        if ((System.currentTimeMillis() - mLastSessionRefresh) >= mExpirePeriod) {
+        if ((NtpTrustedTime.currentTimeMillis() - mLastSessionRefresh) >= mExpirePeriod) {
             if (mLogger.isActivated()) {
                 mLogger.debug("Session timer refresh has failed: close the session");
             }
@@ -349,7 +350,7 @@ public class SessionTimerManager extends PeriodicRefresher {
         if (mLogger.isActivated()) {
             mLogger.debug("Session refresh request received");
         }
-        mLastSessionRefresh = System.currentTimeMillis();
+        mLastSessionRefresh = NtpTrustedTime.currentTimeMillis();
         if (mLogger.isActivated()) {
             mLogger.debug("Send 200 OK");
         }
@@ -381,7 +382,7 @@ public class SessionTimerManager extends PeriodicRefresher {
         if (mLogger.isActivated()) {
             mLogger.debug("Session refresh request received");
         }
-        mLastSessionRefresh = System.currentTimeMillis();
+        mLastSessionRefresh = NtpTrustedTime.currentTimeMillis();
         if (mLogger.isActivated()) {
             mLogger.debug("Send 200 OK");
         }

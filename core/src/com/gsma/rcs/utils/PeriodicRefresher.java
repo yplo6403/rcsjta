@@ -23,6 +23,7 @@
 package com.gsma.rcs.utils;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.platform.AndroidFactory;
@@ -68,7 +69,7 @@ public abstract class PeriodicRefresher {
         mAlarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         /* Create a unique pending intent */
         mAction = new StringBuilder(getClass().getName()).append('_')
-                .append(System.currentTimeMillis()).toString(); /* Unique action ID */
+                .append(NtpTrustedTime.currentTimeMillis()).toString(); /* Unique action ID */
         mAlarmIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(mAction), 0);
     }
 

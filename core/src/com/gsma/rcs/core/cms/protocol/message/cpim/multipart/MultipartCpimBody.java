@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.protocol.message.cpim.multipart;
 
 import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
 import com.gsma.rcs.imaplib.imap.Header;
@@ -71,7 +72,7 @@ public class MultipartCpimBody extends CpimBody {
 
         StringBuilder sb = new StringBuilder();
         if (mBoundary == null) {
-            mBoundary = new StringBuilder(C_BOUNDARY).append(System.currentTimeMillis()).toString();
+            mBoundary = new StringBuilder(C_BOUNDARY).append(NtpTrustedTime.currentTimeMillis()).toString();
         }
 
         // content type : multipart/related

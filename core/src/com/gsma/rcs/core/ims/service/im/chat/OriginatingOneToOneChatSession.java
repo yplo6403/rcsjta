@@ -109,7 +109,7 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
 
             // Build SDP part
             // String ntpTime =
-            // SipUtils.constructNTPtime(System.currentTimeMillis());
+            // SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
             String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
             String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,

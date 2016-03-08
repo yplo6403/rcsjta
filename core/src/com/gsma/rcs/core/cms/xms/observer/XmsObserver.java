@@ -23,6 +23,7 @@ import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
 import static com.gsma.rcs.provider.CursorUtil.close;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Conversation;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Mms;
@@ -211,7 +212,7 @@ public class XmsObserver implements XmsObserverListener {
                     direction = Direction.OUTGOING;
                 }
                 SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(),
-                        contactId, body, direction, date, _id, threadId);
+                        contactId, body, direction, NtpTrustedTime.currentTimeMillis(), _id, threadId);
                 if (Direction.INCOMING == direction) {
                     smsDataObject.setState(State.RECEIVED);
                     onIncomingSms(smsDataObject);
@@ -407,7 +408,7 @@ public class XmsObserver implements XmsObserverListener {
                 ContactId contact = entry.getKey();
                 MmsDataObject mmsDataObject = new MmsDataObject(mmsId, transactionId,
                         messageIds.get(contact), contact, subject, direction, readStatus,
-                        date * 1000, id, threadId, entry.getValue());
+                        NtpTrustedTime.currentTimeMillis(), id, threadId, entry.getValue());
                 if (Direction.INCOMING == direction) {
                     mmsDataObject.setState(State.RECEIVED);
                     onIncomingMms(mmsDataObject);

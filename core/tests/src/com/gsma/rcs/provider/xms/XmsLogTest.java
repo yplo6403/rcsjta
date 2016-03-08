@@ -20,6 +20,7 @@ package com.gsma.rcs.provider.xms;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -126,7 +127,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     }
 
     public void testSmsMessage() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
                 RcsService.Direction.OUTGOING, ReadStatus.UNREAD, timestamp, null, null);
         mXmsLog.addSms(sms);
@@ -166,7 +167,7 @@ public class XmsLogTest extends InstrumentationTestCase {
 
     public void testMmsMessage() throws IOException, RemoteException,
             OperationApplicationException, MmsFileSizeException, FileAccessException {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         List<Uri> files = new ArrayList<>();
         files.add(mUriCat1);
         files.add(mUriCat2);
@@ -239,7 +240,7 @@ public class XmsLogTest extends InstrumentationTestCase {
 
     public void testDeleteMmsMessageId() throws RemoteException, OperationApplicationException,
             IOException, MmsFileSizeException, FileAccessException {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         MmsDataObject mms = new MmsDataObject(mContext, "mms_id", mMessageId, mContact,
                 "MMS test subject", "MMS test message", RcsService.Direction.INCOMING, timestamp,
                 new ArrayList<Uri>(), null, 50000L);
@@ -258,7 +259,7 @@ public class XmsLogTest extends InstrumentationTestCase {
     }
 
     public void testDeleteSmsMessageId() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         SmsDataObject sms = new SmsDataObject(mMessageId, mContact, "SMS test message",
                 RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp, null, null);
         mXmsLog.addSms(sms);

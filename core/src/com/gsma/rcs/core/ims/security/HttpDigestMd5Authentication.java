@@ -22,6 +22,8 @@
 
 package com.gsma.rcs.core.ims.security;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 /**
@@ -83,7 +85,7 @@ public class HttpDigestMd5Authentication {
     /**
      * Cnonce
      */
-    private String mCnonce = Long.toString(System.currentTimeMillis());
+    private String mCnonce = Long.toString(NtpTrustedTime.currentTimeMillis());
 
     /**
      * Cnonce counter

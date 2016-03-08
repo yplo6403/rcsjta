@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.filetransfer.http;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.service.ImsSessionListener;
@@ -193,7 +194,7 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                     mMessagingLog.setRemoteSipId(getFileTransferId(), mRemoteInstanceId);
                 }
                 /* Compute the delay before file validity expiration */
-                long delay = fileExpiration - System.currentTimeMillis();
+                long delay = fileExpiration - NtpTrustedTime.currentTimeMillis();
                 if (delay <= 0) {
                     if (logActivated) {
                         sLogger.debug("File no more available on server: transfer rejected on timeout");

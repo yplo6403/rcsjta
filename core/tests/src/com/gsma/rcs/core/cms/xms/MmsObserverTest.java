@@ -19,6 +19,7 @@
 package com.gsma.rcs.core.cms.xms;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -56,16 +57,16 @@ public class MmsObserverTest extends AndroidTestCase {
         ContactId contact1 = ContactUtil.getInstance(context).formatContact("+33600000001");
 
         mIncomingMms1 = new MmsDataObject("mmsId1", "messageId1", contact1, "subject",
-                Direction.INCOMING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
+                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         mOutgoingMms2 = new MmsDataObject("mmsId2", "messageId2", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
+                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         mIncomingMms3 = new MmsDataObject("mmsId3", "messageId3", contact1, "subject",
-                Direction.INCOMING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
+                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
         mOutgoingMms4 = new MmsDataObject("mmsId4", "messageId4", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.UNREAD, System.currentTimeMillis(), null, 1l,
+                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
                 new ArrayList<MmsPart>());
 
         mXmsObserver = new XmsObserver(context);

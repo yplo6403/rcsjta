@@ -5,6 +5,7 @@
 
 package com.gsma.service.rcs.history;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.FileContent;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.content.VideoContent;
@@ -74,15 +75,15 @@ public class HistoryLogTest extends AndroidTestCase {
     private static final String SELECTION_NOT_EMPTY = HistoryLog.CONTACT + "='"
             + REMOTE_CONTACT_NUMBER + "'";
 
-    private static final String FILE_TRANSFER_ID = "FtId" + System.currentTimeMillis();
+    private static final String FILE_TRANSFER_ID = "FtId" + NtpTrustedTime.currentTimeMillis();
 
-    private static final String MESSAGE_ID = "MsgId" + System.currentTimeMillis();
+    private static final String MESSAGE_ID = "MsgId" + NtpTrustedTime.currentTimeMillis();
 
-    private static final String IMAGE_SHARING_ID = "ImageSharingId" + System.currentTimeMillis();
+    private static final String IMAGE_SHARING_ID = "ImageSharingId" + NtpTrustedTime.currentTimeMillis();
 
-    private static final String VIDEO_SHARING_ID = "VideoSharingId" + System.currentTimeMillis();
+    private static final String VIDEO_SHARING_ID = "VideoSharingId" + NtpTrustedTime.currentTimeMillis();
 
-    private static final String GEOLOC_SHARING_ID = "GeolocSharingId" + System.currentTimeMillis();
+    private static final String GEOLOC_SHARING_ID = "GeolocSharingId" + NtpTrustedTime.currentTimeMillis();
 
     private static final String IMAGE_FILE_NAME = "image1.jpg";
 

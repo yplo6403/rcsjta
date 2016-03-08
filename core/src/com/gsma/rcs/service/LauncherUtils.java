@@ -24,6 +24,7 @@ package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.addressbook.RcsAccountManager;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.platform.registry.AndroidRegistryFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -309,7 +310,7 @@ public class LauncherUtils {
             return;
         }
         /* Calculate next expiration time in milliseconds */
-        long next = System.currentTimeMillis() + validity;
+        long next = NtpTrustedTime.currentTimeMillis() + validity;
         SharedPreferences preferences = context.getSharedPreferences(
                 AndroidRegistryFactory.RCS_PREFS_NAME, Activity.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();

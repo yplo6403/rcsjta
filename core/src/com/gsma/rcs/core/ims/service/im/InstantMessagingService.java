@@ -27,6 +27,7 @@ import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.i
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.ImsModule;
@@ -1953,7 +1954,7 @@ public class InstantMessagingService extends ImsService {
      */
     public boolean isCapabilitiesValid(Capabilities capabilities) {
         long msgCapValidityPeriod = mRcsSettings.getMsgCapValidityPeriod();
-        return System.currentTimeMillis() <= capabilities.getTimestampOfLastResponse()
+        return NtpTrustedTime.currentTimeMillis() <= capabilities.getTimestampOfLastResponse()
                 + msgCapValidityPeriod;
     }
 

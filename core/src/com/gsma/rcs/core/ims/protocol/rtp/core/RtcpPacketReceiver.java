@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.protocol.rtp.core;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.rtp.event.RtcpApplicationEvent;
 import com.gsma.rcs.core.ims.protocol.rtp.event.RtcpByeEvent;
@@ -133,7 +134,7 @@ public class RtcpPacketReceiver extends Thread implements Closeable {
                 packet.mData = data;
                 packet.mLength = data.length;
                 packet.mOffset = 0;
-                packet.mReceivedAt = System.currentTimeMillis();
+                packet.mReceivedAt = NtpTrustedTime.currentTimeMillis();
 
                 // Process the received packet
                 /* Update statistics */

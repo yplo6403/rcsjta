@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -509,7 +510,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                                 .append(mFileTransferId).append("': already accepted").toString());
                         return;
                     }
-                    if (download.getFileExpiration() < System.currentTimeMillis()) {
+                    if (download.getFileExpiration() < NtpTrustedTime.currentTimeMillis()) {
                         sLogger.error(new StringBuilder(
                                 "Cannot accept transfer with fileTransferId '")
                                 .append(mFileTransferId).append("': file has expired").toString());
@@ -1102,7 +1103,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
             if (!mRcsSettings.isFtHttpCapAlwaysOn()) {
                 long timeout = mRcsSettings.getMsgDeliveryTimeoutPeriod();
                 if (timeout > 0) {
-                    deliveryExpiration = System.currentTimeMillis() + timeout;
+                    deliveryExpiration = NtpTrustedTime.currentTimeMillis() + timeout;
                     mImService.getDeliveryExpirationManager()
                             .scheduleOneToOneFileTransferDeliveryTimeoutAlarm(contact,
                                     mFileTransferId, deliveryExpiration);
@@ -1225,7 +1226,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     && Direction.OUTGOING == mPersistentStorage.getDirection()) {
                 long timeout = mRcsSettings.getMsgDeliveryTimeoutPeriod();
                 if (timeout > 0) {
-                    deliveryExpiration = System.currentTimeMillis() + timeout;
+                    deliveryExpiration = NtpTrustedTime.currentTimeMillis() + timeout;
                     mImService.getDeliveryExpirationManager()
                             .scheduleOneToOneFileTransferDeliveryTimeoutAlarm(contact,
                                     mFileTransferId, deliveryExpiration);

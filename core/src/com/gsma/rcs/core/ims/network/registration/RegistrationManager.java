@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.network.registration;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
@@ -481,7 +482,7 @@ public class RegistrationManager extends PeriodicRefresher {
         mReasonCode = ReasonCode.UNSPECIFIED;
 
         // Start the periodic registration
-        long currentTime = System.currentTimeMillis();
+        long currentTime = NtpTrustedTime.currentTimeMillis();
         if (mExpirePeriod <= DEFAULT_EXPIRE_PERIOD) {
             startTimer(currentTime, mExpirePeriod, 0.5);
         } else {

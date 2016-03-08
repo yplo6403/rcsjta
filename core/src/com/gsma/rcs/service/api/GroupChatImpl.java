@@ -23,6 +23,7 @@
 package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
@@ -1148,7 +1149,7 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
         }
         try {
             mImService.removeGroupChatComposingStatus(mChatId); /* clear cache */
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /* For outgoing message, timestampSent = timestamp */
             final ChatMessage msg = ChatUtils.createTextMessage(null, text, timestamp, timestamp);
             ChatMessagePersistedStorageAccessor persistedStorage = new ChatMessagePersistedStorageAccessor(
@@ -1207,7 +1208,7 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
             }
         }
         try {
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /** For outgoing message, timestampSent = timestamp */
             final ChatMessage geolocMsg = ChatUtils.createGeolocMessage(null, geoloc, timestamp,
                     timestamp);
@@ -1902,7 +1903,7 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
                         .append(remote).append("(msgId = ").append(msgId).toString());
             }
             mImService.getImdnManager().sendMessageDeliveryStatus(chatId, remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DELIVERED, System.currentTimeMillis());
+                    ImdnDocument.DELIVERY_STATUS_DELIVERED, NtpTrustedTime.currentTimeMillis());
         } else if (TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
             if (sLogger.isActivated()) {
                 sLogger.debug(new StringBuilder(
@@ -1910,7 +1911,7 @@ public class GroupChatImpl extends IGroupChat.Stub implements GroupChatSessionLi
                         .append(remote).append("(msgId = ").append(msgId).toString());
             }
             mImService.getImdnManager().sendMessageDeliveryStatus(chatId, remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, System.currentTimeMillis());
+                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, NtpTrustedTime.currentTimeMillis());
         }
     }
 

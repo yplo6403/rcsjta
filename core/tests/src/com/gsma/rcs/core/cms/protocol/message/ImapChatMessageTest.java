@@ -20,6 +20,7 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
@@ -50,7 +51,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
     public void init() throws Exception {
         mExpectedContact = ContactUtil.getInstance(getContext()).formatContact("+33642575779");
-        mDate = System.currentTimeMillis();
+        mDate = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_IMAP_DATE_FORMAT);
         mCpimDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_CPIM_DATE_FORMAT);
     }

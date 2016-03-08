@@ -19,6 +19,7 @@ package com.gsma.rcs.provider.history;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -142,7 +143,7 @@ public class GroupChatDequeueTask extends DequeueTask {
                                 setGroupChatMessageAsFailedDequeue(mChatId, id, mimeType);
                                 continue;
                             }
-                            long timestamp = System.currentTimeMillis();
+                            long timestamp = NtpTrustedTime.currentTimeMillis();
                             String content = cursor.getString(contentIdx);
                             /* For outgoing message, timestampSent = timestamp */
                             ChatMessage message = ChatUtils.createChatMessage(id, mimeType,

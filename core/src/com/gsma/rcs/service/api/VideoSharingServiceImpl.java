@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.VideoContent;
 import com.gsma.rcs.core.ims.service.SessionIdGenerator;
 import com.gsma.rcs.core.ims.service.richcall.RichcallService;
@@ -283,7 +284,7 @@ public class VideoSharingServiceImpl extends IVideoSharingService.Stub {
         }
         ServerApiUtils.testIms();
         try {
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             final VideoStreamingSession session = mRichcallService.createLiveVideoSharingSession(
                     contact, player, timestamp);
             final String sharingId = session.getSessionID();

@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.capability;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.contact.ContactManager;
@@ -76,7 +77,7 @@ public class PollingManager extends PeriodicRefresher {
         if (pollingPeriod == 0) {
             return;
         }
-        startTimer(System.currentTimeMillis(), pollingPeriod);
+        startTimer(NtpTrustedTime.currentTimeMillis(), pollingPeriod);
     }
 
     /**
@@ -107,7 +108,7 @@ public class PollingManager extends PeriodicRefresher {
         }
 
         // Restart timer
-        startTimer(System.currentTimeMillis(), mRcsSettings.getCapabilityPollingPeriod());
+        startTimer(NtpTrustedTime.currentTimeMillis(), mRcsSettings.getCapabilityPollingPeriod());
     }
 
     /**
@@ -163,7 +164,7 @@ public class PollingManager extends PeriodicRefresher {
      */
     private boolean isCapabilityRefreshRequired(long timestampOfLastResponse,
             RcsSettings rcsSettings) {
-        long now = System.currentTimeMillis();
+        long now = NtpTrustedTime.currentTimeMillis();
         // Is current time before last capability response ? (may occur if system time has been
         // modified)
         if (now < timestampOfLastResponse) {

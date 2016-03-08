@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.im.filetransfer.msrp;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
@@ -313,7 +314,7 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
             if (sLogger.isActivated()) {
                 sLogger.info("Data transferred");
             }
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             fileTransfered();
             closeMediaSession();
             closeSession(TerminationReason.TERMINATION_BY_USER);
@@ -396,7 +397,7 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
     @Override
     public void handle200OK(SipResponse resp) throws PayloadException, NetworkException,
             FileAccessException {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         mImService.receiveOneToOneFileDeliveryStatus(getRemoteContact(), new ImdnDocument(
                 getFileTransferId(), ImdnDocument.POSITIVE_DELIVERY,
                 ImdnDocument.DELIVERY_STATUS_DELIVERED, timestamp));

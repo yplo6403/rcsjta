@@ -28,6 +28,16 @@ import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.history.HistoryLog;
 
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
+import com.orangelabs.rcs.ri.messaging.TalkUtils;
+import com.orangelabs.rcs.ri.utils.BitmapCache;
+import com.orangelabs.rcs.ri.utils.BitmapLoader;
+import com.orangelabs.rcs.ri.utils.FileUtils;
+import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
+import com.orangelabs.rcs.ri.utils.Utils;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -37,7 +47,6 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.v4.util.LruCache;
 import android.support.v4.widget.CursorAdapter;
-import android.text.format.DateUtils;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,15 +54,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.cms.messaging.MmsPartDataObject;
-import com.orangelabs.rcs.ri.utils.BitmapCache;
-import com.orangelabs.rcs.ri.utils.BitmapLoader;
-import com.orangelabs.rcs.ri.utils.FileUtils;
-import com.orangelabs.rcs.ri.utils.ImageBitmapLoader;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 /**
  * Conversation cursor adapter
@@ -149,6 +149,9 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
     @Override
     public void bindView(View view, Context ctx, Cursor cursor) {
         int viewType = getItemViewType(cursor);
+
+        checkDaytime(view, cursor);
+
         switch (viewType) {
             case VIEW_TYPE_SMS_IN:
             case VIEW_TYPE_SMS_OUT:
@@ -247,9 +250,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
         RcsFileTransferInViewHolder holder = (RcsFileTransferInViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
-        holder.getTimestampText().setText(
-                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getTimestampText().setText(TalkUtils.formatDateAsTime(date));
         String mimeType = cursor.getString(holder.getColumnMimetypeIdx());
         final String filename = cursor.getString(holder.getColumnFilenameIdx());
         StringBuilder progress = new StringBuilder(filename);
@@ -328,9 +329,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
         RcsChatInViewHolder holder = (RcsChatInViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
-        holder.getTimestampText().setText(
-                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getTimestampText().setText(TalkUtils.formatDateAsTime(date));
         String mimeType = cursor.getString(holder.getColumnMimetypeIdx());
         TextView contentText = holder.getContentText();
         String data = cursor.getString(holder.getColumnContentIdx());
@@ -347,9 +346,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
         SmsViewHolder holder = (SmsViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
-        holder.getTimestampText().setText(
-                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getTimestampText().setText(TalkUtils.formatDateAsTime(date));
         holder.getContentText().setText(cursor.getString(holder.getColumnContentIdx()));
         holder.getStatusText().setText(getXmsStatus(cursor, holder));
     }
@@ -358,9 +355,7 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
         MmsViewHolder holder = (MmsViewHolder) view.getTag();
         // Set the date/time field by mixing relative and absolute times
         long date = cursor.getLong(holder.getColumnTimestampIdx());
-        holder.getTimestampText().setText(
-                DateUtils.getRelativeTimeSpanString(date, System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getTimestampText().setText(TalkUtils.formatDateAsTime(date));
         String mmsId = cursor.getString(holder.getColumnIdIdx());
         String subject = cursor.getString(holder.getColumnSubjectIdx());
         holder.getSubjectText().setText(subject);
@@ -502,4 +497,25 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
                 .append(context.getString(R.string.label_accuracy)).append(" ")
                 .append(geoloc.getAccuracy()).toString();
     }
+
+    private void checkDaytime(View view, Cursor cursor) {
+        final int currentPosition = cursor.getPosition();
+        BasicViewHolder holder = (BasicViewHolder) view.getTag();
+        long currentDate = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP));
+        // Warning : cursor is stacked from bottom
+        if (cursor.move(-1)) {
+            long nextDate = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP));
+            if (!TalkUtils.compareDaytime(currentDate, nextDate)) {
+                holder.mDateSeparator.setText(TalkUtils.buildDaytimeSeparator(currentDate));
+                holder.mDateSeparator.setVisibility(View.VISIBLE);
+            } else {
+                holder.mDateSeparator.setVisibility(View.GONE);
+            }
+        } else { // Display date for the first element of the list
+            holder.mDateSeparator.setText(TalkUtils.buildDaytimeSeparator(currentDate));
+            holder.mDateSeparator.setVisibility(View.VISIBLE);
+        }
+        cursor.moveToPosition(currentPosition);
+    }
+
 }

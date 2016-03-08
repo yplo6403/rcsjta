@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.imdn;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -262,7 +263,7 @@ public class ImdnManager extends Thread {
                     deliveryStatus.getStatus(), deliveryStatus.getTimestamp());
             /* Timestamp for CPIM DateTime */
             String cpim = ChatUtils.buildCpimDeliveryReport(from, to, deliveryStatus.getImdnMessageId(), imdn,
-                    System.currentTimeMillis());
+                    NtpTrustedTime.currentTimeMillis());
 
             // Create authentication agent
             SessionAuthenticationAgent authenticationAgent = new SessionAuthenticationAgent(

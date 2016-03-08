@@ -68,6 +68,7 @@ import static com.gsma.rcs.provider.contact.ContactData.TRUE_VALUE;
 import com.gsma.rcs.R;
 import com.gsma.rcs.addressbook.RcsAccountManager;
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.service.ContactInfo;
 import com.gsma.rcs.core.ims.service.ContactInfo.BlockingState;
 import com.gsma.rcs.core.ims.service.ContactInfo.RcsStatus;
@@ -592,7 +593,7 @@ public final class ContactManager {
             values.put(KEY_BLOCKING_TIMESTAMP, INVALID_TIME);
         }
 
-        values.put(KEY_TIMESTAMP_CONTACT_UPDATED, System.currentTimeMillis());
+        values.put(KEY_TIMESTAMP_CONTACT_UPDATED, NtpTrustedTime.currentTimeMillis());
 
         /* Save the registration state */
         values.put(KEY_REGISTRATION_STATE, newInfo.getRegistrationState().toInt());
@@ -786,7 +787,7 @@ public final class ContactManager {
     private ContactInfo getContactInfoFromProvider(ContactId contact) {
         ContactInfo infos = new ContactInfo();
         infos.setRcsStatus(RcsStatus.NO_INFO);
-        infos.setRcsStatusTimestamp(System.currentTimeMillis());
+        infos.setRcsStatusTimestamp(NtpTrustedTime.currentTimeMillis());
         infos.setContact(contact);
 
         CapabilitiesBuilder capaBuilder = new CapabilitiesBuilder();
@@ -1025,7 +1026,7 @@ public final class ContactManager {
      */
     public void updateRcsStatusOrCreateNewContact(ContactId contact, RcsStatus rcsStatus) {
         synchronized (mContactInfoCache) {
-            long currentTime = System.currentTimeMillis();
+            long currentTime = NtpTrustedTime.currentTimeMillis();
             ContentValues values = new ContentValues();
             values.put(KEY_PRESENCE_SHARING_STATUS, rcsStatus.toInt());
             values.put(KEY_TIMESTAMP_CONTACT_UPDATED, currentTime);
@@ -1325,7 +1326,7 @@ public final class ContactManager {
                     // Needed for inserting PRESENCE
                     .withValue(StatusUpdates.PROTOCOL, Im.PROTOCOL_CUSTOM)
                     .withValue(StatusUpdates.CUSTOM_PROTOCOL, " " /* Intentional left blank */)
-                    .withValue(StatusUpdates.STATUS_TIMESTAMP, System.currentTimeMillis()).build());
+                    .withValue(StatusUpdates.STATUS_TIMESTAMP, NtpTrustedTime.currentTimeMillis()).build());
             return ops;
 
         } finally {
@@ -1376,7 +1377,7 @@ public final class ContactManager {
                 .withValue(StatusUpdates.PROTOCOL, Im.PROTOCOL_CUSTOM)
                 .withValue(StatusUpdates.CUSTOM_PROTOCOL,
                 // Intentional left blank
-                        " ").withValue(StatusUpdates.STATUS_TIMESTAMP, System.currentTimeMillis())
+                        " ").withValue(StatusUpdates.STATUS_TIMESTAMP, NtpTrustedTime.currentTimeMillis())
                 .build());
         return ops;
     }
@@ -1927,7 +1928,7 @@ public final class ContactManager {
         synchronized (mContactInfoCache) {
             ContactInfo contactInfo = getContactInfoInternal(contact);
             Capabilities capabilities = contactInfo.getCapabilities();
-            long now = System.currentTimeMillis();
+            long now = NtpTrustedTime.currentTimeMillis();
             /* Update the cache */
             CapabilitiesBuilder capaBuilder = new CapabilitiesBuilder(capabilities);
             capaBuilder.setTimestampOfLastRequest(now);
@@ -2862,7 +2863,7 @@ public final class ContactManager {
             ContactInfo newInfo = new ContactInfo(oldInfo);
             /* Update the state */
             newInfo.setBlockingState(state);
-            newInfo.setBlockingTimestamp(System.currentTimeMillis());
+            newInfo.setBlockingTimestamp(NtpTrustedTime.currentTimeMillis());
             /* Save the modifications */
             setContactInfoInternal(newInfo, oldInfo);
         }

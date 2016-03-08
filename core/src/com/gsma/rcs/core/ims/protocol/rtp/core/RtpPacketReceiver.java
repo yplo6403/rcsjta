@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.protocol.rtp.core;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.platform.network.DatagramConnection;
 import com.gsma.rcs.platform.network.NetworkFactory;
@@ -221,7 +222,7 @@ public class RtpPacketReceiver extends Thread implements Closeable {
         packet.mLength = data.length;
 
         // Set received timestamp
-        packet.mReceivedAt = System.currentTimeMillis();
+        packet.mReceivedAt = NtpTrustedTime.currentTimeMillis();
 
         // Read extension bit
         packet.extension = (data[0] & 0x10) > 0;

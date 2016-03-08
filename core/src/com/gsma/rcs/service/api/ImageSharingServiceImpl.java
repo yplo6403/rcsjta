@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.service.SessionIdGenerator;
@@ -286,7 +287,7 @@ public class ImageSharingServiceImpl extends IImageSharingService.Stub {
             FileDescription desc = FileFactory.getFactory().getFileDescription(localFile);
             MmContent content = ContentManager.createMmContent(localFile, desc.getSize(),
                     desc.getName());
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             final ImageTransferSession session = mRichcallService.createImageSharingSession(
                     contact, content, null, timestamp);
             final String sharingId = session.getSessionID();

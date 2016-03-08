@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.richcall.geoloc;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -217,7 +218,7 @@ public class TerminatingGeolocTransferSession extends GeolocTransferSession impl
             String localIpAddress = getImsService().getImsModule().getCurrentNetworkInterface()
                     .getNetworkAccess().getIpAddress();
             msrpMgr = new MsrpManager(localIpAddress, localMsrpPort, mRcsSettings);
-            String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
+            String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
             String ipAddress = dialogPath.getSipStack().getLocalIpAddress();
             String sdp = "v=0" + SipUtils.CRLF + "o=- " + ntpTime + " " + ntpTime + " "
                     + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "s=-" + SipUtils.CRLF

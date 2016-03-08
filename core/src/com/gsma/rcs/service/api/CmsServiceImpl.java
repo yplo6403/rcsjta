@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerListener;
@@ -307,7 +308,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         try {
             checkUris(files);
             String mMessageId = IdGenerator.generateMessageID();
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             MmsDataObject mmsDataObject = new MmsDataObject(mCtx, null, mMessageId, contact,
                     subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
                     mRcsSettings.getMaxFileIconSize());
@@ -550,7 +551,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void onMmsTransferStarted(ContactId contact, String mmsId) {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         setXmsStateAndTimestamp(mmsId, contact, XmsMessage.State.SENDING, timestamp, timestamp);
     }
 

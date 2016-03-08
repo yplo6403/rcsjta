@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.sip.streaming;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -140,7 +141,7 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
      * @return SDP built
      */
     public String generateSdp() {
-        String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
+        String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
         String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
         return "v=0" + SipUtils.CRLF + "o=- " + ntpTime + " " + ntpTime + " "
                 + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "s=-" + SipUtils.CRLF
@@ -197,7 +198,7 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
         if (!mMediaSessionStarted) {
             throw new SessionNotEstablishedException("Unable to send payload!");
         }
-        mDataSender.addFrame(content, System.currentTimeMillis());
+        mDataSender.addFrame(content, NtpTrustedTime.currentTimeMillis());
     }
 
     @Override

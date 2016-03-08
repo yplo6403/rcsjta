@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.provider;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsServiceControl;
@@ -126,7 +127,7 @@ public class UserProfilePersistedStorageUtil {
                         .append(dstDir).append("'").toString());
             }
         }
-        dstDir.setLastModified(System.currentTimeMillis());
+        dstDir.setLastModified(NtpTrustedTime.currentTimeMillis());
     }
 
     /**

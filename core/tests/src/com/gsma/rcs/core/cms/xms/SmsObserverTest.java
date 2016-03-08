@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.core.cms.xms;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
@@ -61,13 +62,13 @@ public class SmsObserverTest extends AndroidTestCase {
         contact3 = ContactUtil.getInstance(mContext).formatContact("+33600000003");
 
         incomingSms = new SmsDataObject("messageId1", contact1, "myContent1", Direction.INCOMING,
-                ReadStatus.UNREAD, System.currentTimeMillis(), 1l, 1l);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 1l, 1l);
         outgoingSms = new SmsDataObject("messageId2", contact2, "myContent2", Direction.OUTGOING,
-                ReadStatus.UNREAD, System.currentTimeMillis(), 2l, 1l);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 2l, 1l);
         sms = new SmsDataObject("messageId3", contact3, "myContent3", Direction.INCOMING,
-                ReadStatus.UNREAD, System.currentTimeMillis(), 3l, 1l);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 3l, 1l);
         sms2 = new SmsDataObject("messageId4", contact3, "myContent3", Direction.OUTGOING,
-                ReadStatus.UNREAD, System.currentTimeMillis(), 4l, 1l);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 4l, 1l);
 
         mXmsObserver = new XmsObserver(mContext);
         mNativeSmsListenerMock = new NativeSmsListenerMock();

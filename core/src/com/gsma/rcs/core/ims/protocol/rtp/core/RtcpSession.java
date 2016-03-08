@@ -18,6 +18,8 @@
 
 package com.gsma.rcs.core.ims.protocol.rtp.core;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 import java.util.Random;
 
 /**
@@ -250,7 +252,7 @@ public class RtcpSession {
      * @return The current time.
      */
     public long currentTime() {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         tc = timestamp;
         return timestamp;
     }

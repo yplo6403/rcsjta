@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipManager;
@@ -423,11 +424,11 @@ public abstract class ImsServiceSession extends Thread {
         /* Wait until received response or received timeout */
         try {
             long timeToWait = (timeout > 0) ? timeout : mRingingPeriod;
-            long startTime = System.currentTimeMillis();
+            long startTime = NtpTrustedTime.currentTimeMillis();
             while (InvitationStatus.INVITATION_NOT_ANSWERED == mInvitationStatus) {
                 synchronized (mWaitUserAnswer) {
                     mWaitUserAnswer.wait(timeToWait);
-                    long waitedTime = System.currentTimeMillis() - startTime;
+                    long waitedTime = NtpTrustedTime.currentTimeMillis() - startTime;
                     if (waitedTime < timeToWait) {
                         timeToWait -= waitedTime;
                     } else if (InvitationStatus.INVITATION_NOT_ANSWERED == mInvitationStatus) {

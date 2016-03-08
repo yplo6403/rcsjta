@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.event;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -604,7 +605,7 @@ public class ConferenceEventSubscribeManager extends PeriodicRefresher {
         retrieveExpirePeriod(resp);
 
         // Start the periodic subscribe
-        startTimer(System.currentTimeMillis(), mExpirePeriod, 0.5);
+        startTimer(NtpTrustedTime.currentTimeMillis(), mExpirePeriod, 0.5);
 
         Core.getInstance().getImService()
                 .addGroupChatConferenceSubscriber(mDialogPath.getCallId(), mSession);

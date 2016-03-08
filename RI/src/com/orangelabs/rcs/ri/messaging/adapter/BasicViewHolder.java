@@ -31,6 +31,7 @@ import android.widget.TextView;
  * findViewById() or getColumnIndex() on each row.
  */
 public abstract class BasicViewHolder {
+    protected final TextView mDateSeparator;
     protected final TextView mStatusText;
     protected final TextView mTimestampText;
     protected final int mColumnDirectionIdx;
@@ -53,6 +54,7 @@ public abstract class BasicViewHolder {
         mColumnMimetypeIdx = cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE);
         mColumnReasonCodeIdx = cursor.getColumnIndexOrThrow(HistoryLog.REASON_CODE);
         /* Save children views */
+        mDateSeparator = (TextView) base.findViewById(R.id.date_separator);
         mStatusText = (TextView) base.findViewById(R.id.status_text);
         mTimestampText = (TextView) base.findViewById(R.id.timestamp_text);
     }

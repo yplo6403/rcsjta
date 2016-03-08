@@ -18,6 +18,8 @@
 
 package com.gsma.rcs.core.ims.service.presence;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 /**
  * Presence info
  * 
@@ -74,7 +76,7 @@ public class PresenceInfo {
     /**
      * Presence timestamp
      */
-    private long timestamp = System.currentTimeMillis();
+    private long timestamp = NtpTrustedTime.currentTimeMillis();
 
     /**
      * Presence status
@@ -138,7 +140,7 @@ public class PresenceInfo {
      * @return Timestamp
      */
     public static long getNewTimestamp() {
-        return System.currentTimeMillis();
+        return NtpTrustedTime.currentTimeMillis();
     }
 
     /**

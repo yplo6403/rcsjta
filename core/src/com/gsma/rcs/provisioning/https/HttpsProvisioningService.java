@@ -23,6 +23,7 @@
 package com.gsma.rcs.provisioning.https;
 
 import com.gsma.rcs.addressbook.RcsAccountException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -179,7 +180,7 @@ public class HttpsProvisioningService extends Service {
             if (expiration <= 0) {
                 requestConfig = true;
             } else {
-                long now = System.currentTimeMillis();
+                long now = NtpTrustedTime.currentTimeMillis();
                 if (expiration <= now) {
                     if (logActivated) {
                         sLogger.debug("Configuration validity expired at ".concat(DateUtils
@@ -282,7 +283,7 @@ public class HttpsProvisioningService extends Service {
                     + DateUtils.formatElapsedTime(delay / 1000));
         }
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        TimerUtils.setExactTimer(am, System.currentTimeMillis() + delay, intent);
+        TimerUtils.setExactTimer(am, NtpTrustedTime.currentTimeMillis() + delay, intent);
     }
 
     /**

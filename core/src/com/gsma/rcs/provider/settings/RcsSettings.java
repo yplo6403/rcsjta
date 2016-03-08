@@ -50,7 +50,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -2492,6 +2494,30 @@ public class RcsSettings {
 
     public void setMessageStoreSyncTimer(long dataConnectionSyncTimer) {
         writeLong(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, dataConnectionSyncTimer);
+    }
+
+    public void setNtpServers(String ntpServers){
+        writeString(RcsSettingsData.NTP_SERVERS, ntpServers);
+    }
+
+    public List<String> getNtpServers(){
+        return Arrays.asList(readString(RcsSettingsData.NTP_SERVERS).split(","));
+    }
+
+    public long getNtpServerTimeout(){
+        return readLong(RcsSettingsData.NTP_SERVER_TIMEOUT);
+    }
+
+    public long getNtpCacheValidity(){
+        return readLong(RcsSettingsData.NTP_CACHE_VALIDITY);
+    }
+
+    public void setNtpLocalOffset(long localOffset){
+        writeLong(RcsSettingsData.NTP_LOCAL_OFFSET, localOffset);
+    }
+
+    public long getNtpLocalOffset(){
+       return readLong(RcsSettingsData.NTP_LOCAL_OFFSET);
     }
 
 }

@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.im.chat;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
@@ -94,7 +95,7 @@ public class ChatMessageTest extends AndroidTestCase {
     }
 
     public void testTextMessage() throws PayloadException, IOException {
-        String msgId = Long.toString(System.currentTimeMillis());
+        String msgId = Long.toString(NtpTrustedTime.currentTimeMillis());
         ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                 mTimestamp, mTimestampSent, "display");
 
@@ -191,7 +192,7 @@ public class ChatMessageTest extends AndroidTestCase {
         ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                 mTimestamp, mTimestampSent, "display");
         mMessagingLog.addOutgoingOneToOneChatMessage(msg, Status.SENDING, ReasonCode.UNSPECIFIED,
-                System.currentTimeMillis() + 30000L);
+                NtpTrustedTime.currentTimeMillis() + 30000L);
         assertFalse(mMessagingLog.isChatMessageExpiredDelivery(msgId));
         mMessagingLog.setChatMessageDeliveryExpired(msgId);
         assertTrue(mMessagingLog.isChatMessageExpiredDelivery(msgId));
@@ -217,7 +218,7 @@ public class ChatMessageTest extends AndroidTestCase {
             ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                     mTimestamp, mTimestampSent, "display");
             mMessagingLog.addOutgoingOneToOneChatMessage(msg, Status.SENDING,
-                    ReasonCode.UNSPECIFIED, System.currentTimeMillis() + 30000L);
+                    ReasonCode.UNSPECIFIED, NtpTrustedTime.currentTimeMillis() + 30000L);
         }
         Cursor cursor = mMessagingLog.getUndeliveredOneToOneChatMessages();
         assertEquals(4, cursor.getCount());

@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -410,7 +411,7 @@ public abstract class GroupChatSession extends ChatSession {
         String msgId = IdGenerator.generateMessageID();
         String content = ChatUtils.buildCpimMessage(getDialogPath(), to,
                 IsComposingInfo.buildIsComposingInfo(status), IsComposingInfo.MIME_TYPE,
-                System.currentTimeMillis());
+                NtpTrustedTime.currentTimeMillis());
         sendDataChunks(msgId, content, CpimMessage.MIME_TYPE, TypeMsrpChunk.IsComposing);
     }
 
@@ -434,7 +435,7 @@ public abstract class GroupChatSession extends ChatSession {
         /* Timestamp for CPIM DateTime */
         String imdnMessageId = IdGenerator.generateMessageID();
         String content = ChatUtils.buildCpimDeliveryReport(getDialogPath(), toUri, imdnMessageId, imdn,
-                System.currentTimeMillis());
+                NtpTrustedTime.currentTimeMillis());
 
         // Send data
         TypeMsrpChunk typeMsrpChunk = TypeMsrpChunk.OtherMessageDeliveredReportStatus;
@@ -472,7 +473,7 @@ public abstract class GroupChatSession extends ChatSession {
             String fileInfo, boolean displayedReportEnabled, boolean deliveredReportEnabled)
             throws NetworkException {
         String networkContent;
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
         long timestampSent = timestamp;
         mMessagingLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);
@@ -751,7 +752,7 @@ public abstract class GroupChatSession extends ChatSession {
          * Set message's timestamp to the System.currentTimeMillis, not the session's itself
          * timestamp
          */
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         long timestampSent = cpimMsg.getTimestampSent();
 
         // Analyze received message thanks to the MIME type

@@ -27,8 +27,7 @@ import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
-import com.gsma.rcs.core.cms.event.framework.SipEventReportingFrameworkDocument;
-import com.gsma.rcs.core.cms.event.framework.SipEventReportingFrameworkManager;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -507,7 +506,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
              * Set message's timestamp to the System.currentTimeMillis, not the session's itself
              * timestamp
              */
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /**
              * Since legacy server can send non CPIM data (like plain text without timestamp) in the
              * payload, we need to fake timesampSent by using the local timestamp even if this is
@@ -553,7 +552,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                  * Set message's timestamp to the System.currentTimeMillis, not the session's itself
                  * timestamp
                  */
-                long timestamp = System.currentTimeMillis();
+                long timestamp = NtpTrustedTime.currentTimeMillis();
                 long timestampSent = cpimMsg.getTimestampSent();
 
                 if (isFToHTTP) {
@@ -910,7 +909,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         /* Timestamp for CPIM DateTime */
         String imdnMessageId = IdGenerator.generateMessageID();
         String content = ChatUtils.buildCpimDeliveryReport(fromUri, toUri, imdnMessageId, imdn,
-                System.currentTimeMillis());
+                NtpTrustedTime.currentTimeMillis());
 
         TypeMsrpChunk typeMsrpChunk = TypeMsrpChunk.OtherMessageDeliveredReportStatus;
         if (status.equalsIgnoreCase(ImdnDocument.DELIVERY_STATUS_DISPLAYED)) {

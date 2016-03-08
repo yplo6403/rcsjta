@@ -559,6 +559,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
         /* Associate the list adapter with the ListView. */
         ListView listView = (ListView) findViewById(android.R.id.list);
+        listView.setDivider(null);
         listView.setAdapter(mAdapter);
 
         registerForContextMenu(listView);

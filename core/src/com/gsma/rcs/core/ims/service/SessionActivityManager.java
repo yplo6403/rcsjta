@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -69,7 +70,7 @@ public class SessionActivityManager extends PeriodicRefresher {
      * Update the session activity
      */
     public void updateActivity() {
-        mActivityTimestamp = System.currentTimeMillis();
+        mActivityTimestamp = NtpTrustedTime.currentTimeMillis();
     }
 
     /**
@@ -86,7 +87,7 @@ public class SessionActivityManager extends PeriodicRefresher {
         updateActivity();
 
         // Start a timer to check if the inactivity period has been reach or not each 10seconds
-        startTimer(System.currentTimeMillis(), timeout);
+        startTimer(NtpTrustedTime.currentTimeMillis(), timeout);
     }
 
     /**
@@ -109,7 +110,7 @@ public class SessionActivityManager extends PeriodicRefresher {
      */
     public void periodicProcessing() throws PayloadException, NetworkException {
         long timeout = mRcsSettings.getChatIdleDuration();
-        long inactivityPeriod = System.currentTimeMillis() - mActivityTimestamp;
+        long inactivityPeriod = NtpTrustedTime.currentTimeMillis() - mActivityTimestamp;
         long remainingPeriod = timeout - inactivityPeriod;
         if (logger.isActivated()) {
             logger.debug(new StringBuilder("Check inactivity period: inactivity=")
@@ -125,7 +126,7 @@ public class SessionActivityManager extends PeriodicRefresher {
             mSession.handleInactivityEvent();
         } else {
             // Restart timer
-            startTimer(System.currentTimeMillis(), remainingPeriod);
+            startTimer(NtpTrustedTime.currentTimeMillis(), remainingPeriod);
         }
     }
 }

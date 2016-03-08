@@ -18,6 +18,8 @@
 
 package com.gsma.rcs.core.ims.protocol.rtp.util;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 /**
  * Time base
  */
@@ -26,7 +28,7 @@ public class SystemTimeBase {
     /**
      * Offset time (start-up time)
      */
-    private static long offset = System.currentTimeMillis() * 1000000L;
+    private static long offset = NtpTrustedTime.currentTimeMillis() * 1000000L;
 
     /**
      * Returns a timestamp base value in nanoseconds
@@ -34,6 +36,6 @@ public class SystemTimeBase {
      * @return Timestamp
      */
     public long getTimestamp() {
-        return (System.currentTimeMillis() * 1000000L) - offset;
+        return (NtpTrustedTime.currentTimeMillis() * 1000000L) - offset;
     }
 }

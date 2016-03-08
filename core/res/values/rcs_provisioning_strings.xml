@@ -156,5 +156,7 @@
     <string name="data_connection_sync_timer_label">Data connection sync timer (ms)</string>
     <string name="message_store_sync_timer_label">Periodic syn timer (ms)</string>
     <string name="message_store_save_ok_label">Changes have been taken into account</string>
-
+    <string name="ntp_servers">NTP servers (comma separated list)</string>
+    <string name="ntp_server_timeout">Timeout for NTP server (milliseconds)</string>
+    <string name="ntp_cache_validity">NTP cache validity (milliseconds)</string>
 </resources>

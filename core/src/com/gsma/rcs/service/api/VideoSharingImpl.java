@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.content.VideoContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -134,11 +135,11 @@ public class VideoSharingImpl extends IVideoSharing.Stub implements VideoStreami
 
         switch (state) {
             case STARTED:
-                mStartTime = System.currentTimeMillis();
+                mStartTime = NtpTrustedTime.currentTimeMillis();
                 break;
             case ABORTED:
             case FAILED:
-                duration = mStartTime > 0 ? System.currentTimeMillis() - mStartTime : 0;
+                duration = mStartTime > 0 ? NtpTrustedTime.currentTimeMillis() - mStartTime : 0;
                 //$FALL-THROUGH$
             default:
                 break;
@@ -496,7 +497,7 @@ public class VideoSharingImpl extends IVideoSharing.Stub implements VideoStreami
             if (session == null) {
                 return mPersistentStorage.getDuration();
             }
-            return mStartTime > 0 ? System.currentTimeMillis() - mStartTime : 0;
+            return mStartTime > 0 ? NtpTrustedTime.currentTimeMillis() - mStartTime : 0;
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {

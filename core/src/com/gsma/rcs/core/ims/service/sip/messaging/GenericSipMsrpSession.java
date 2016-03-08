@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.sip.messaging;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -136,7 +137,7 @@ public abstract class GenericSipMsrpSession extends GenericSipSession implements
             msrpPort = getMsrpMgr().getLocalMsrpPort();
         }
 
-        String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
+        String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
         String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
 
         return "v=0" + SipUtils.CRLF + "o=- " + ntpTime + " " + ntpTime + " "

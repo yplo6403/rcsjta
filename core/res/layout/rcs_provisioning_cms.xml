@@ -171,6 +171,55 @@
                 android:maxLength="100"
                 android:singleLine="true" />
 
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/ntp_servers" />
+
+            <EditText
+                android:id="@+id/ntp_servers"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/ntp_server_timeout" />
+
+            <EditText
+                android:id="@+id/ntp_server_timeout"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dip"
+                android:text="@string/ntp_cache_validity" />
+
+            <EditText
+                android:id="@+id/ntp_cache_validity"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dip"
+                android:layout_marginRight="5dip"
+                android:lines="1"
+                android:maxLength="100"
+                android:singleLine="true" />
+
         </LinearLayout>
     </ScrollView>
 

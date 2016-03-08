@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.im.filetransfer;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -96,7 +97,7 @@ public abstract class ImsFileSharingSession extends FileSharingSession {
      * @return String
      */
     public String getFileTransferIdAttribute() {
-        return Long.toString(System.currentTimeMillis());
+        return Long.toString(NtpTrustedTime.currentTimeMillis());
     }
 
     /**

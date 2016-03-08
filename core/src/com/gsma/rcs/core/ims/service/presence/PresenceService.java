@@ -27,6 +27,7 @@ import static com.gsma.rcs.utils.StringUtils.UTF8_STR;
 import com.gsma.rcs.addressbook.AddressBookEventListener;
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -776,7 +777,7 @@ public class PresenceService extends ImsService implements AddressBookEventListe
                 // Removed quotes
                 etag = StringUtils.removeQuotes(etag);
             } else {
-                etag = "" + System.currentTimeMillis();
+                etag = "" + NtpTrustedTime.currentTimeMillis();
             }
 
             // Set the Etag of the photo-icon

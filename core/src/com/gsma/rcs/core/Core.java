@@ -24,6 +24,7 @@ package com.gsma.rcs.core;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
+import com.gsma.rcs.platform.ntp.NtpManager;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -75,6 +76,8 @@ public class Core {
     private ImsModule mImsModule;
 
     private AddressBookManager mAddressBookManager;
+
+    private NtpManager mNtpManager;
 
     private static final Logger sLogger = Logger.getLogger(BACKGROUND_THREAD_NAME);
 
@@ -195,6 +198,9 @@ public class Core {
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
                 messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
 
+        /* Create the NTP manager */
+        mNtpManager = new NtpManager(ctx, rcsSettings);
+
         if (logActivated) {
             sLogger.info("Terminal core is created with success");
         }
@@ -252,6 +258,7 @@ public class Core {
         mAddressBookManager.start();
         mXmsManager.start();
         mLocaleManager.start();
+        mNtpManager.start();
         mListener.onCoreLayerStarted();
 
         mStarted = true;
@@ -280,6 +287,7 @@ public class Core {
         mAddressBookManager.stop();
         mXmsManager.stop();
         mImsModule.stop();
+        mNtpManager.stop();
 
         mStopping = false;
         mStarted = false;

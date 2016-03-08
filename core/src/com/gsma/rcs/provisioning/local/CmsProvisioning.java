@@ -146,6 +146,13 @@ public class CmsProvisioning extends Activity {
                 RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
         saveLongEditTextParam(R.id.message_store_sync_timer,
                 RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
+        saveStringEditTextParam(R.id.ntp_servers,
+                RcsSettingsData.NTP_SERVERS, helper);
+        saveLongEditTextParam(R.id.ntp_server_timeout,
+                RcsSettingsData.NTP_SERVER_TIMEOUT, helper);
+        saveLongEditTextParam(R.id.ntp_cache_validity,
+                RcsSettingsData.NTP_CACHE_VALIDITY, helper);
+
     }
 
     /**
@@ -183,6 +190,14 @@ public class CmsProvisioning extends Activity {
                 RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
         setLongEditTextParam(R.id.message_store_sync_timer,
                 RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
+
+        setStringEditTextParam(R.id.ntp_servers,
+                RcsSettingsData.NTP_SERVERS, helper);
+        setLongEditTextParam(R.id.ntp_server_timeout,
+                RcsSettingsData.NTP_SERVER_TIMEOUT, helper);
+        setLongEditTextParam(R.id.ntp_cache_validity,
+                RcsSettingsData.NTP_CACHE_VALIDITY, helper);
+
     }
 
     /**

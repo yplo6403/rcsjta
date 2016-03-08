@@ -1,6 +1,8 @@
 
 package com.gsma.rcs.utils;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 import android.test.AndroidTestCase;
 
 import java.util.Date;
@@ -17,7 +19,7 @@ public class DateUtilsTest extends AndroidTestCase {
 
     @SuppressWarnings("deprecation")
     public void testEncodeDecode() {
-        long t = System.currentTimeMillis();
+        long t = NtpTrustedTime.currentTimeMillis();
         String encoded = DateUtils.encodeDate(t);
         long decoded = DateUtils.decodeDate(encoded);
 

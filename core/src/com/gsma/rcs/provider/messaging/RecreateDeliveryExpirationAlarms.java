@@ -16,6 +16,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.DeliveryExpirationManager;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.utils.ContactUtil;
@@ -46,7 +47,7 @@ public class RecreateDeliveryExpirationAlarms implements Runnable {
         }
         Cursor cursor = null;
         try {
-            long currentTime = System.currentTimeMillis();
+            long currentTime = NtpTrustedTime.currentTimeMillis();
             cursor = mMessagingLog.getUndeliveredOneToOneChatMessages();
             int msgIdIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_MESSAGE_ID);
             int chatMessageContactIdx = cursor.getColumnIndexOrThrow(MessageData.KEY_CONTACT);

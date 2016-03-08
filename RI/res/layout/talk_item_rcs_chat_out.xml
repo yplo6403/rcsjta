@@ -24,6 +24,15 @@
     android:paddingBottom="5dip"
     android:paddingTop="5dip">
 
+    <TextView
+        android:id="@+id/date_separator"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:visibility="gone"
+        android:paddingBottom="5dip"
+        />
+
     <RelativeLayout
         android:id="@+id/conv_item_chat_text_out"
         android:layout_width="wrap_content"
@@ -31,7 +40,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:background="@drawable/msg_item_left"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_below="@id/date_separator">
 
         <TextView
             android:id="@+id/content_text"

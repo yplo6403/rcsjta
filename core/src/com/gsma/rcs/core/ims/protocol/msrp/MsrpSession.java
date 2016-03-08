@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.protocol.msrp;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.contact.ContactManagerException;
@@ -72,7 +73,7 @@ public class MsrpSession {
         public String mMsrpMsgId;
         public String mCpimMsgId;
         public TypeMsrpChunk mTypeMsrpChunk = TypeMsrpChunk.Unknown;
-        private long mTimestamp = System.currentTimeMillis();
+        private long mTimestamp = NtpTrustedTime.currentTimeMillis();
 
         /**
          * MSRP transaction info constructor
@@ -88,7 +89,7 @@ public class MsrpSession {
             mMsrpMsgId = msrpMsgId;
             mCpimMsgId = cpimMsgId;
             mTypeMsrpChunk = typeMsrpChunk;
-            mTimestamp = System.currentTimeMillis();
+            mTimestamp = NtpTrustedTime.currentTimeMillis();
         }
 
         @Override
@@ -132,7 +133,7 @@ public class MsrpSession {
     /**
      * Random generator
      */
-    private static Random mRandom = new Random(System.currentTimeMillis());
+    private static Random mRandom = new Random(NtpTrustedTime.currentTimeMillis());
 
     private ReportTransaction mReportTransaction;
 
@@ -1125,7 +1126,7 @@ public class MsrpSession {
                 msrpTransactionInfos = new ArrayList<>(mTransactionInfoMap.values());
             }
             for (MsrpTransactionInfo msrpTransactionInfo : msrpTransactionInfos) {
-                long delta = System.currentTimeMillis() - msrpTransactionInfo.mTimestamp;
+                long delta = NtpTrustedTime.currentTimeMillis() - msrpTransactionInfo.mTimestamp;
                 if ((delta >= TRANSACTION_INFO_EXPIRY_PERIOD) || (delta < 0)) {
                     if (sLogger.isActivated()) {
                         sLogger.debug("Transaction info have expired (transactionId: "

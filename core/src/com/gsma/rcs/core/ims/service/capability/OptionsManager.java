@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.capability;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -129,7 +130,7 @@ public class OptionsManager implements DiscoveryManager {
      * @return true if capability request is authorized
      */
     private boolean isCapabilityRefreshAuthorized(long timestampOfLastRequest) {
-        long currentTime = System.currentTimeMillis();
+        long currentTime = NtpTrustedTime.currentTimeMillis();
         /*
          * Is current time before last capability request ? (may occur if current time has been
          * updated)

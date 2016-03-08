@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.iscomposing;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8_STR;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.utils.DateUtils;
 import com.gsma.services.rcs.chat.ChatLog.Message.MimeType;
 
@@ -132,7 +133,7 @@ public class IsComposingInfo {
                 .append(CRLF).append("<state>").append(status ? "active" : "idle")
                 .append("</state>").append(CRLF).append("<contenttype>")
                 .append(MimeType.TEXT_MESSAGE).append("</contenttype>").append(CRLF)
-                .append("<lastactive>").append(DateUtils.encodeDate(System.currentTimeMillis()))
+                .append("<lastactive>").append(DateUtils.encodeDate(NtpTrustedTime.currentTimeMillis()))
                 .append("</lastactive>").append(CRLF).append("<refresh>60</refresh>").append(CRLF)
                 .append("</isComposing>").toString();
     }

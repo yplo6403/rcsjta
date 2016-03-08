@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
@@ -461,7 +462,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             sLogger.info("Initiate an ad-hoc group chat session");
         }
         try {
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             final GroupChatSession session = mImService.createOriginatingAdHocGroupChatSession(
                     new HashSet<>(contacts), subject, timestamp);
             final String chatId = session.getContributionID();

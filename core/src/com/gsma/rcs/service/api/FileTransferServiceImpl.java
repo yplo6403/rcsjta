@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -490,7 +491,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
      */
     public void dequeueOneToOneFileTransfer(String fileTransferId, ContactId contact,
             MmContent file, MmContent fileIcon) {
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
         long timestampSent = timestamp;
         FileTransferProtocol ftProtocol = getFileTransferProtocolForOneToOneFileTransfer(contact);
@@ -520,7 +521,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
     /* package private */void resendOneToOneFile(ContactId contact, MmContent file,
             MmContent fileIcon, String fileTransferId) {
         /* Set new timestamp for the resend file */
-        long timestamp = System.currentTimeMillis();
+        long timestamp = NtpTrustedTime.currentTimeMillis();
         /* For outgoing file transfer, timestampSent = timestamp */
         long timestampSent = timestamp;
         if (!ServerApiUtils.isImsConnected()) {
@@ -667,7 +668,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                 fileIconContent = FileTransferUtils.createFileicon(localFile, fileTransferId,
                         mRcsSettings);
             }
-            final long timestamp = System.currentTimeMillis();
+            final long timestamp = NtpTrustedTime.currentTimeMillis();
             /* For outgoing file transfer, timestampSent = timestamp */
             final long timestampSent = timestamp;
             /* Always insert with State QUEUED */
@@ -776,7 +777,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         if (groupChatSession == null) {
             mImService.rejoinGroupChatAsPartOfSendOperation(chatId);
         } else if (groupChatSession.isMediaEstablished()) {
-            long timestamp = System.currentTimeMillis();
+            long timestamp = NtpTrustedTime.currentTimeMillis();
             /* For outgoing file transfer, timestampSent = timestamp */
             long timestampSent = timestamp;
             FileSharingSession session = mImService.createGroupFileTransferSession(fileTransferId,
@@ -842,7 +843,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                 fileIconContent = FileTransferUtils.createFileicon(content.getUri(), fileTransferId,
                         mRcsSettings);
             }
-            final long timestamp = System.currentTimeMillis();
+            final long timestamp = NtpTrustedTime.currentTimeMillis();
             /* For outgoing file transfer, timestampSent = timestamp */
             /* Always insert file transfer with status QUEUED */
             addOutgoingGroupFileTransfer(fileTransferId, chatId, content, fileIconContent,

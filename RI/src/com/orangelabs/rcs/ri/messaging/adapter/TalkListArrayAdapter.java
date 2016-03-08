@@ -22,19 +22,19 @@ import com.gsma.services.rcs.Geoloc;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.contact.ContactId;
 
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.messaging.TalkUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
 
 import java.util.List;
 
@@ -114,7 +114,8 @@ public class TalkListArrayAdapter extends ArrayAdapter<TalkListArrayItem> {
         holder.getSubjectText().setText(item.getSubject());
     }
 
-    private void bindViewOneToOneTalk(TalkListArrayItem item, TalkListArrayItem.ViewHolderOneToOne holder) {
+    private void bindViewOneToOneTalk(TalkListArrayItem item,
+            TalkListArrayItem.ViewHolderOneToOne holder) {
         ImageView avatar = holder.getAvatarImage();
         ContactId contact = item.getContact();
         Bitmap photo = mRcsContactUtil.getPhotoFromContactId(contact);
@@ -132,9 +133,7 @@ public class TalkListArrayAdapter extends ArrayAdapter<TalkListArrayItem> {
 
     private void setTimestamp(TalkListArrayItem.ViewHolder holder, long timestamp) {
         /* Set the date/time field by mixing relative and absolute times */
-        holder.getTimestampText().setText(
-                DateUtils.getRelativeTimeSpanString(timestamp, System.currentTimeMillis(),
-                        DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE));
+        holder.getTimestampText().setText(TalkUtils.formatDate(timestamp));
     }
 
     private void setStatus(TalkListArrayItem.ViewHolder holder, int unReads) {

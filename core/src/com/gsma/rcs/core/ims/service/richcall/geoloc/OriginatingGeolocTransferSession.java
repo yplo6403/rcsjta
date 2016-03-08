@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.richcall.geoloc;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.GeolocContent;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -110,7 +111,7 @@ public class OriginatingGeolocTransferSession extends GeolocTransferSession impl
             msrpMgr = new MsrpManager(localIpAddress, localMsrpPort, mRcsSettings);
 
             // Build SDP part
-            String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
+            String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
             String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
             String sdp = "v=0" + SipUtils.CRLF + "o=- " + ntpTime + " " + ntpTime + " "
                     + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "s=-" + SipUtils.CRLF

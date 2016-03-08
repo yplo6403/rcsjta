@@ -19,6 +19,7 @@
 package com.gsma.rcs.core.cms.xms.mms;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -44,7 +45,7 @@ public final class MmsEncodedMessage {
         mTo.add(recipient.toString().concat("/TYPE=PLMN"));
         mSubject = subject;
         mTransactionId = transactionId;
-        mDate = System.currentTimeMillis();
+        mDate = NtpTrustedTime.currentTimeMillis();
         mParts = parts;
         mCtx = ctx;
     }
