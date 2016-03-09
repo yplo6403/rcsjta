@@ -284,9 +284,10 @@ public class XmsSynchronizer implements Runnable {
                 return null;
             }
             ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE));
+            long ntpLocalOffset = mSettings.getNtpLocalOffset();
+            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE)) + ntpLocalOffset;
             long date_sent = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(TextBasedSmsColumns.DATE_SENT));
+                    .getColumnIndexOrThrow(TextBasedSmsColumns.DATE_SENT)) + ntpLocalOffset;
             String protocol = cursor.getString(cursor
                     .getColumnIndexOrThrow(TextBasedSmsColumns.PROTOCOL));
             String body = cursor.getString(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.BODY));
