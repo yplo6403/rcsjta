@@ -20,10 +20,10 @@
 package com.gsma.rcs.core.cms.protocol.message.cpim.multipart;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.utils.logger.Logger;
 
 import java.util.ArrayList;
@@ -72,7 +72,8 @@ public class MultipartCpimBody extends CpimBody {
 
         StringBuilder sb = new StringBuilder();
         if (mBoundary == null) {
-            mBoundary = new StringBuilder(C_BOUNDARY).append(NtpTrustedTime.currentTimeMillis()).toString();
+            mBoundary = new StringBuilder(C_BOUNDARY).append(NtpTrustedTime.currentTimeMillis())
+                    .toString();
         }
 
         // content type : multipart/related
@@ -161,14 +162,15 @@ public class MultipartCpimBody extends CpimBody {
 
         private void fromPayload(String partContent) {
             String[] parts = partContent.split(Constants.CRLFCRLF, 2);
-            parseHeaders(parts[0]);
-            mContent = parts[1].substring(0, parts[1].lastIndexOf(Constants.CRLF));
+            if (2 == parts.length) {
+                parseHeaders(parts[0]);
+                mContent = parts[1].substring(0, parts[1].lastIndexOf(Constants.CRLF));
+            }
         }
 
         private void parseHeaders(String headerContent) {
-            for (String header : headerContent.split(Constants.CRLF)) {
-                String[] val = header.split(Constants.HEADER_SEP);
-                mHeaderPart.addHeader(val[0].trim().toLowerCase(), val[1].trim());
+            for (Header header : Header.parseHeaders(headerContent).values()) {
+                mHeaderPart.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
         }
 

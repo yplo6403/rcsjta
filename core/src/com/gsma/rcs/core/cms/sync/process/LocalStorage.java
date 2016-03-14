@@ -167,6 +167,12 @@ public class LocalStorage implements SyncProcessorHandler {
                 if (sLogger.isActivated()) {
                     sLogger.info(e.getMessage());
                 }
+            } catch (RuntimeException e) {
+                /*
+                 * Intentionally catch runtime exceptions as else it will abruptly end the sync
+                 * process
+                 */
+                sLogger.error("Failed to filter new messages : ", e);
             }
         }
         return uids;
@@ -176,8 +182,7 @@ public class LocalStorage implements SyncProcessorHandler {
         boolean isActivated = sLogger.isActivated();
         if (messageType == MessageType.SMS || messageType == MessageType.MMS
                 || messageType == MessageType.MESSAGE_CPIM
-                || messageType == MessageType.GROUP_STATE
-                || messageType == MessageType.CPM_SESSION) {
+                || messageType == MessageType.GROUP_STATE || messageType == MessageType.CPM_SESSION) {
             return true;
         }
         if (isActivated) {
@@ -214,6 +219,14 @@ public class LocalStorage implements SyncProcessorHandler {
                     if (sLogger.isActivated()) {
                         sLogger.info(e.getMessage());
                     }
+                } catch (RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the sync
+                     * process
+                     */
+
+                    sLogger.error("Failed to create message : ", e);
+
                 }
             }
         }
@@ -249,7 +262,14 @@ public class LocalStorage implements SyncProcessorHandler {
                 if (sLogger.isActivated()) {
                     sLogger.info(e.getMessage());
                 }
+            } catch (RuntimeException e) {
+                /*
+                 * Intentionally catch runtime exceptions as else it will abruptly end the sync
+                 * process
+                 */
+                sLogger.error("Failed to resolve message : ", e);
             }
+
         }
         return mapOfMessages;
     }
