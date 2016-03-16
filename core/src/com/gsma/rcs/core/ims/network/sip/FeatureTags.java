@@ -143,12 +143,7 @@ public class FeatureTags {
     /**
      * 3GPP CPM Service
      */
-    public final static String FEATURE_3GPP_SERVICE_CPM = "urn:urn-7:3gpp-service.ims.icsi.oma.cpm.systemmsg";
-
-    /**
-     * 3GPP CPM Service percent encoded
-     */
-    public final static String FEATURE_3GPP_SERVICE_CPM_ENCODED = "urn%3Aurn-7%3A3gpp-service.ims.icsi.oma.cpm.systemmsg";
+    public final static String FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG = "urn%3Aurn-7%3A3gpp-service.ims.icsi.oma.cpm.systemmsg";
 
     /**
      * SIP Automata feature tag

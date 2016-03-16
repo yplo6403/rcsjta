@@ -27,6 +27,8 @@ import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.i
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.event.framework.EventReportingSession;
+import com.gsma.rcs.core.cms.event.framework.TerminatingEventReportingSession;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;

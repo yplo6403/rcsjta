@@ -369,6 +369,13 @@ public class ImsServiceDispatcher extends Thread {
                                 request, timestamp);
                     }
                 }
+            } else if (isTagPresent(sdp, "msrp")
+                    && SipUtils.isFeatureTagPresent(request, FeatureTags.FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG)) {
+                if (logActivated) {
+                    sLogger.debug("Event reporting session invitation");
+                }
+                mImsModule.getCmsService().onEventReportingSessionReceived(
+                        request, timestamp);
             } else if (isTagPresent(sdp, "rtp")
                     && SipUtils.isFeatureTagPresent(request, FeatureTags.FEATURE_3GPP_VIDEO_SHARE)) {
                 if (mRcsSettings.isVideoSharingSupported()) {

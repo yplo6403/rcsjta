@@ -20,9 +20,13 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.cms.event.framework.EventReportingSession;
+import com.gsma.rcs.core.cms.event.framework.TerminatingEventReportingSession;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.ims.ImsModule;
+import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.provider.CursorUtil;
@@ -48,6 +52,8 @@ import android.os.HandlerThread;
 import java.util.List;
 import java.util.Set;
 
+import javax2.sip.message.Response;
+
 /**
  * Created by Philippe LEMORDANT on 12/11/2015.
  */
@@ -62,6 +68,9 @@ public class CmsService extends ImsService {
     private final Core mCore;
     private final Context mContext;
     private final CmsManager mCmsManager;
+    private final RcsSettings mRcsSettings;
+    private final ImsModule mImsModule;
+    private final MessagingLog mMessagingLog;
 
     /**
      * Constructor
@@ -77,12 +86,15 @@ public class CmsService extends ImsService {
     public CmsService(Core core, ImsModule parent, Context context, RcsSettings rcsSettings,
             XmsLog xmsLog, MessagingLog messagingLog, CmsLog cmsLog) {
         super(parent, true);
+        mImsModule = parent;
         mContext = context;
+        mRcsSettings = rcsSettings;
         mXmsLog = xmsLog;
+        mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager = new CmsManager(context, parent, mCmsLog, xmsLog, messagingLog, rcsSettings);
+        mCmsManager = new CmsManager(context, mImsModule, mCmsLog, xmsLog, mMessagingLog, mRcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -338,4 +350,44 @@ public class CmsService extends ImsService {
         return mCmsManager;
     }
 
+    /**
+     * Receive event reporting system msg session invitation
+     *
+     * @param invite Initial invite
+     * @param timestamp Local timestamp when got SipRequest
+     */
+    public void onEventReportingSessionReceived(final SipRequest invite, final long timestamp) {
+        scheduleImOperation(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    EventReportingSession session = new TerminatingEventReportingSession(
+                            mImsModule.getInstantMessagingService(), invite, mRcsSettings, mMessagingLog, timestamp);
+                    session.startSession();
+
+                } catch (NetworkException e) {
+                    if (sLogger.isActivated()) {
+                        sLogger.debug("Failed to receive o2o chat invitation! (" + e.getMessage()
+                                + ")");
+                    }
+                    tryToSendErrorResponse(invite, Response.BUSY_HERE);
+
+                } catch (PayloadException e) {
+                    sLogger.error("Failed to receive o2o chat invitation!", e);
+                    tryToSendErrorResponse(invite, Response.DECLINE);
+
+                } catch (RuntimeException e) {
+                    /*
+                     * Normally we are not allowed to catch runtime exceptions as these are genuine
+                     * bugs which should be handled/fixed within the code. However the cases when we
+                     * are executing operations on a thread unhandling such exceptions will
+                     * eventually lead to exit the system and thus can bring the whole system down,
+                     * which is not intended.
+                     */
+                    sLogger.error("Failed to receive o2o chat invitation!", e);
+                    tryToSendErrorResponse(invite, Response.DECLINE);
+                }
+            }
+        });
+    }
 }

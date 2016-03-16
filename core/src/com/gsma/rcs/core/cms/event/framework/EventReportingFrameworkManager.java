@@ -135,10 +135,10 @@ public class EventReportingFrameworkManager implements EventReportingFramework {
         if (EventReportingFrameworkConfig.ENABLED == cfg) {
             ChatSession chatSession;
             String cmsFolder;
-            if(isOneToOne){
+            if (isOneToOne) {
                 chatSession = mInstantMessagingService.getOneToOneChatSession(contactId);
                 cmsFolder = CmsUtils.contactToCmsFolder(mSettings, contactId);
-            }else{
+            } else {
                 chatSession = mInstantMessagingService.getGroupChatSession(chatId);
                 cmsFolder = CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId);
             }
