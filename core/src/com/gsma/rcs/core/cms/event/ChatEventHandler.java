@@ -74,9 +74,9 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                msg.getRemoteContact()), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(msg.getRemoteContact()),
+                ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
     }
 
     @Override
@@ -90,9 +90,9 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
             sLogger.debug("onMessageSent: ".concat(msgId));
         }
         ContactId contact = mMessagingLog.getMessageContact(msgId);
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.CHAT_MESSAGE, msgId, null));
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                msgId, null));
     }
 
     @Override
@@ -106,7 +106,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mImdnDeliveryReportListener.onDeliveryReport(contact, imdnMessageId);
+        mImdnDeliveryReportListener.onDeliveryReport(contact, imdn.getMsgId(), imdnMessageId);
     }
 
     @Override

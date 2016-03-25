@@ -2,11 +2,30 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
+        android:id="@+id/menu_sync_xms"
+        android:title="@string/menu_sync_cms"/>
+
+    <item
         android:id="@+id/menu_clear_log"
         android:title="@string/menu_clear_log"/>
 
     <item
-        android:id="@+id/menu_sync_xms"
-        android:title="@string/menu_sync_cms"/>
+        android:id="@+id/menu_initiate_chat"
+        android:title="@string/menu_initiate_chat"/>
 
+    <item
+        android:id="@+id/menu_initiate_group_chat"
+        android:title="@string/menu_initiate_group_chat"/>
+
+    <item
+        android:id="@+id/menu_settings"
+        android:title="@string/menu_settings"/>
+
+    <item
+        android:id="@+id/menu_contacts"
+        android:title="@string/menu_contacts"/>
+
+    <item
+        android:id="@+id/menu_about"
+        android:title="@string/menu_about"/>
 </menu>

@@ -63,7 +63,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder(CmsUtils.headerToContact(contact1)),
                 uid1,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -73,7 +73,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -96,7 +96,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
                 uid2,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -108,7 +108,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         seenObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects
                 );
@@ -142,7 +142,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact1)),
                 uid1,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -152,7 +152,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -175,7 +175,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
                 uid2,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -187,7 +187,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -220,7 +220,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact1)),
                 uid1,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -234,7 +234,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(mRcsSettings, CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
                 uid2,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -246,7 +246,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -280,7 +280,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId1, chatId1),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED,
@@ -289,7 +289,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -313,7 +313,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED,
@@ -324,7 +324,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         seenObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -360,7 +360,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId1, chatId1),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.UNREAD,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
                 PushStatus.PUSHED,
@@ -369,7 +369,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -393,7 +393,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
                 ReadStatus.UNREAD,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
                 PushStatus.PUSHED,
@@ -404,7 +404,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 
@@ -440,7 +440,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId1, chatId1),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED,
@@ -452,7 +452,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
                 ReadStatus.UNREAD,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
                 PushStatus.PUSHED,
@@ -463,7 +463,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
 
         sipEventReportingFrameworkDocument = new SipEventReportingFrameworkDocument(
-                mRcsSettings,
+                
                 seenObjects,
                 deletedObjects);
 

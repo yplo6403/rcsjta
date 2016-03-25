@@ -30,25 +30,28 @@ public interface ImdnDeliveryReportListener {
      * A delivery report message was received or sent
      *
      * @param contact
-     * @param imdnMessageId the message ID
+     * @param messageId the chat message ID
+     * @param imdnMessageId the IMDN message ID
      */
-    void onDeliveryReport(ContactId contact, String imdnMessageId);
+    void onDeliveryReport(ContactId contact, String messageId, String imdnMessageId);
 
     /**
      * A delivery report message was received or sent
      *
      * @param chatId
+     * @param messageId the chat message ID
      * @param imdnMessageId the message ID
      */
-    void onDeliveryReport(String chatId, String imdnMessageId);
+    void onDeliveryReport(String chatId, String messageId, String imdnMessageId);
 
     /**
      * A delivery report message was received or sent
      * 
      * @param contact
      * @param chatId
+     * @param messageId the chat message ID
      * @param imdnMessageId the message ID
      */
-    void onDeliveryReport(String chatId, ContactId contact, String imdnMessageId);
+    void onDeliveryReport(String chatId, ContactId contact, String messageId, String imdnMessageId);
 
 }

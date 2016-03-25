@@ -57,11 +57,11 @@
 
         <!-- Main -->
         <activity
-            android:name=".RI"
-            android:label="@string/app_name" >
+            android:name=".RiMessaging"
+            android:label="@string/app_name"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -536,7 +536,7 @@
             android:label="@string/menu_cms_sync_title" />
         <activity
             android:name=".messaging.TalkList"
-            android:label="@string/menu_cms_log_title"
+            android:label="@string/app_ri_messaging"
             android:launchMode="singleTop" />
         <activity
             android:name=".cms.messaging.InitiateOneToOneTalk"

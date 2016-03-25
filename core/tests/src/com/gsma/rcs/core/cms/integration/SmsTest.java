@@ -67,14 +67,12 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
+import junit.framework.Assert;
+
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import junit.framework.Assert;
 
 public class SmsTest extends AndroidTestCase {
 
@@ -239,7 +237,7 @@ public class SmsTest extends AndroidTestCase {
         // sync with CMS : during this first sync, messages are marked as 'Seen' on CMS
         startSynchro();
 
-        String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
+        String folder = CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
             Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
@@ -271,8 +269,7 @@ public class SmsTest extends AndroidTestCase {
         test1();
         // delete mailbox on CMS
         try {
-            deleteRemoteMailbox(CmsUtils.contactToCmsFolder(mSettings,
-                    SmsIntegrationUtils.Test1.contact));
+            deleteRemoteMailbox(CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact));
         } catch (Exception e) {
         }
 
@@ -285,7 +282,7 @@ public class SmsTest extends AndroidTestCase {
 
         startSynchro();
 
-        String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
+        String folder = CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
             Assert.assertEquals(CmsObject.ReadStatus.READ_REPORT_REQUESTED,
                     cmsObject.getReadStatus());
@@ -316,8 +313,7 @@ public class SmsTest extends AndroidTestCase {
         // mark messages as deleted on server and expunge them.
         try {
             updateRemoteFlags(Test1.folderName, Arrays.asList(Test5.cmsObjectDeletedRequested));
-            deleteRemoteMessages(CmsUtils.contactToCmsFolder(mSettings,
-                    SmsIntegrationUtils.Test1.contact));
+            deleteRemoteMessages(CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact));
         } catch (Exception e) {
             Assert.fail();
         }
@@ -331,7 +327,7 @@ public class SmsTest extends AndroidTestCase {
 
         startSynchro();
 
-        String folder = CmsUtils.contactToCmsFolder(mSettings, SmsIntegrationUtils.Test1.contact);
+        String folder = CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact);
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
             Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
@@ -366,9 +362,9 @@ public class SmsTest extends AndroidTestCase {
         // create messages in local storage
         for (SmsDataObject sms : SmsIntegrationUtils.Test1.conversation) {
             mXmsLog.addSms(sms);
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                    sms.getContact()), CmsObject.ReadStatus.READ, DeleteStatus.NOT_DELETED,
-                    PushStatus.PUSHED, MessageType.SMS, sms.getMessageId(), null));
+            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()),
+                    CmsObject.ReadStatus.READ, DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                    MessageType.SMS, sms.getMessageId(), null));
 
         }
 
@@ -397,9 +393,9 @@ public class SmsTest extends AndroidTestCase {
         for (SmsDataObject sms : SmsIntegrationUtils.Test7.conversation) {
             mXmsLog.addSms(sms);
             String messageId = sms.getMessageId();
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                    sms.getContact()), Test7.imapReadStatus, Test7.imapDeleteStatus,
-                    PushStatus.PUSHED, MessageType.SMS, messageId, null));
+            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()),
+                    Test7.imapReadStatus, Test7.imapDeleteStatus, PushStatus.PUSHED,
+                    MessageType.SMS, messageId, null));
         }
 
         startSynchro();
@@ -437,9 +433,9 @@ public class SmsTest extends AndroidTestCase {
         // create messages in local storage
         for (SmsDataObject sms : SmsIntegrationUtils.Test8.conversation_local) {
             mXmsLog.addSms(sms);
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                    sms.getContact()), Test8.imapReadStatus, Test8.imapDeleteStatus,
-                    PushStatus.PUSHED, MessageType.SMS, sms.getMessageId(), null));
+            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()),
+                    Test8.imapReadStatus, Test8.imapDeleteStatus, PushStatus.PUSHED,
+                    MessageType.SMS, sms.getMessageId(), null));
 
         }
 
@@ -479,9 +475,9 @@ public class SmsTest extends AndroidTestCase {
         for (SmsDataObject sms : SmsIntegrationUtils.Test9.conversation_local) {
             mXmsLog.addSms(sms);
             String messageId = sms.getMessageId();
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                    sms.getContact()), Test9.imapReadStatus, Test9.imapDeleteStatus,
-                    PushStatus.PUSHED, MessageType.SMS, messageId, null));
+            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()),
+                    Test9.imapReadStatus, Test9.imapDeleteStatus, PushStatus.PUSHED,
+                    MessageType.SMS, messageId, null));
         }
 
         startSynchro();
@@ -512,9 +508,9 @@ public class SmsTest extends AndroidTestCase {
         createRemoteMessages(SmsIntegrationUtils.Test10.conversation_2);
         for (SmsDataObject sms : SmsIntegrationUtils.Test10.conversation_2) {
             mXmsLog.addSms(sms);
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                    sms.getContact()), Test9.imapReadStatus, Test9.imapDeleteStatus,
-                    PushStatus.PUSHED, MessageType.SMS, sms.getMessageId(), null));
+            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()),
+                    Test9.imapReadStatus, Test9.imapDeleteStatus, PushStatus.PUSHED,
+                    MessageType.SMS, sms.getMessageId(), null));
         }
 
         startSynchro();
@@ -549,11 +545,10 @@ public class SmsTest extends AndroidTestCase {
                 mXmsLog.addSms(new SmsDataObject(msgId, sms.getContact(), sms.getBody(), sms
                         .getDirection(), sms.getReadStatus(), sms.getTimestamp(), sms
                         .getNativeProviderId(), sms.getNativeThreadId()));
-                mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings,
-                        sms.getContact()),
-                        sms.getReadStatus() == ReadStatus.READ ? CmsObject.ReadStatus.READ
-                                : CmsObject.ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
-                        PushStatus.PUSHED, MessageType.SMS, msgId, sms.getNativeThreadId()));
+                mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(sms.getContact()), sms
+                        .getReadStatus() == ReadStatus.READ ? CmsObject.ReadStatus.READ
+                        : CmsObject.ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
+                        MessageType.SMS, msgId, sms.getNativeThreadId()));
             }
             createRemoteMessages(SmsIntegrationUtils.Test10.conversation_3);
         }
@@ -619,8 +614,8 @@ public class SmsTest extends AndroidTestCase {
         deleteTask.delete(mBasicImapService, mailbox);
     }
 
-    private void updateRemoteFlags(String remoteFolder,  List<CmsObject> cmsObjects) throws NetworkException,
-            PayloadException, FileAccessException {
+    private void updateRemoteFlags(String remoteFolder, List<CmsObject> cmsObjects)
+            throws NetworkException, PayloadException, FileAccessException {
         CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(remoteFolder, cmsObjects, null);
         task.execute(mBasicImapService);
     }

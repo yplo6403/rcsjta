@@ -20,7 +20,6 @@
 package com.gsma.rcs.core.cms.sync.scheduler;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
@@ -31,6 +30,7 @@ import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
@@ -61,6 +61,13 @@ public class CmsSyncScheduler {
 
     private static final Logger sLogger = Logger.getLogger(CmsSyncScheduler.class.getSimpleName());
     private static final String MESSAGE_STORE_SYNC_OPERATIONS = "MessageStoreSyncOperations";
+
+    /**
+     * When entering in a conversation, the method markMessageAsRead (at the API level) is invoked for each unread message.
+     * We must delayed the Update Flag Task, otherwise this task will be executed before that all messages has been marked as read
+     * from the API.
+     */
+    private static final long UPDATE_FLAG_TASK_DELAY_IN_MS = 1000L;
 
     /* package private */static long sEndOfLastSync = 0L;
 
@@ -172,12 +179,14 @@ public class CmsSyncScheduler {
     public boolean scheduleUpdateFlags(ContactId contact) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CONTACT_ID, contact);
+        parameters.addExtraParameter(ExtraParameter.DELAY, UPDATE_FLAG_TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 
     public boolean scheduleUpdateFlags(String chatId) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CHAT_ID, chatId);
+        parameters.addExtraParameter(ExtraParameter.DELAY, UPDATE_FLAG_TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 
@@ -270,7 +279,7 @@ public class CmsSyncScheduler {
             case PUSH_MESSAGES:
             case UPDATE_FLAGS:
                 message = mSyncRequestHandler.obtainMessage(newOperation.toInt(), parameters);
-                mSyncRequestHandler.sendMessage(message);
+                mSyncRequestHandler.sendMessageDelayed(message, (long)parameters.getExtraParameter(ExtraParameter.DELAY));
                 break;
         }
         return true;
@@ -343,11 +352,11 @@ public class CmsSyncScheduler {
         String remoteFolder = null;
         if (syncParams.mSyncType == SyncType.ONE_TO_ONE) {
             ContactId contact = (ContactId) syncParams.getExtraParameter(ExtraParameter.CONTACT_ID);
-            remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, contact);
+            remoteFolder = CmsUtils.contactToCmsFolder(contact);
 
         } else if (syncParams.mSyncType == SyncType.GROUP) {
             String chatId = (String) syncParams.getExtraParameter(ExtraParameter.CHAT_ID);
-            remoteFolder = CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId, chatId);
+            remoteFolder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
         }
 
         CmsSyncBasicTask task = null;
@@ -374,7 +383,7 @@ public class CmsSyncScheduler {
     }
 
     private boolean executePush(ContactId contact) {
-        String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, contact);
+        String remoteFolder = CmsUtils.contactToCmsFolder(contact);
         Set<CmsObject> objectsToPush = mCmsLog.getXmsMessages(remoteFolder,
                 PushStatus.PUSH_REQUESTED);
         if (objectsToPush.isEmpty()) {
@@ -410,9 +419,9 @@ public class CmsSyncScheduler {
         String chatId = (String) syncParams.getExtraParameter(ExtraParameter.CHAT_ID);
         String remoteFolder = null;
         if (contact != null) {
-            remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings, contact);
+            remoteFolder = CmsUtils.contactToCmsFolder(contact);
         } else if (chatId != null) {
-            remoteFolder = CmsUtils.groupChatToCmsFolder(mRcsSettings, chatId, chatId);
+            remoteFolder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
         }
 
         if (remoteFolder == null) {
@@ -485,7 +494,7 @@ public class CmsSyncScheduler {
         SyncParams(SyncType syncType) {
             mSyncType = syncType;
             mExtraParameter = new HashMap<>();
-            mExtraParameter.put(ExtraParameter.DELAY, 0);
+            mExtraParameter.put(ExtraParameter.DELAY, 0L);
         }
 
         void addExtraParameter(ExtraParameter extra, Object value) {

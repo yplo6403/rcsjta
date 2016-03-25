@@ -250,6 +250,9 @@ public class CmsEventHandler implements CmsEventListener {
                 mMessagingLog.addIncomingGroupChatMessage(imapChatMessage.getChatId(), chatMessage,
                         !isSeen);
             }
+            if(isSeen){
+                mMessagingLog.markMessageAsRead(chatMessage.getMessageId());
+            }
             if (direction == Direction.INCOMING &&  !isSeen) {
                 mChatService.broadcastNewChatMessage(chatMessage);
             }

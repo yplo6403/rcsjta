@@ -40,6 +40,7 @@ import com.gsma.services.rcs.chat.OneToOneChat;
 import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageListener;
@@ -51,6 +52,29 @@ import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager;
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.RiApplication;
+import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
+import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
+import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
+import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.orangelabs.rcs.ri.messaging.chat.ChatView;
+import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
+import com.orangelabs.rcs.ri.messaging.chat.single.SendSingleFile;
+import com.orangelabs.rcs.ri.messaging.chat.single.SingleChatIntentService;
+import com.orangelabs.rcs.ri.messaging.filetransfer.FileTransferIntentService;
+import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.ContactUtil;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.RcsContactUtil;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.app.AlertDialog;
 import android.content.ContentResolver;
@@ -84,28 +108,6 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsFragmentActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.RiApplication;
-import com.orangelabs.rcs.ri.cms.messaging.InitiateMmsTransfer;
-import com.orangelabs.rcs.ri.cms.messaging.SendMmsInBackground;
-import com.orangelabs.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
-import com.orangelabs.rcs.ri.messaging.chat.ChatCursorObserver;
-import com.orangelabs.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.orangelabs.rcs.ri.messaging.chat.ChatView;
-import com.orangelabs.rcs.ri.messaging.chat.IsComposingManager;
-import com.orangelabs.rcs.ri.messaging.chat.single.SendSingleFile;
-import com.orangelabs.rcs.ri.messaging.chat.single.SingleChatIntentService;
-import com.orangelabs.rcs.ri.messaging.filetransfer.FileTransferIntentService;
-import com.orangelabs.rcs.ri.messaging.geoloc.EditGeoloc;
-import com.orangelabs.rcs.ri.settings.RiSettings;
-import com.orangelabs.rcs.ri.utils.ContactUtil;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.RcsContactUtil;
-import com.orangelabs.rcs.ri.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -166,7 +168,10 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private Uri mUriHistoryProvider;
     private ContactId mContact;
     private CmsService mCmsService;
+    private CmsSynchronizationListener mCmsSynchronizationListener;
+    private boolean mCmsSynchronizationListenerSet;
     private XmsMessageListener mXmsMessageListener;
+    private boolean mXmsMessageListenerSet;
     private ChatCursorObserver mObserver;
     private EditText mComposeText;
     private ChatService mChatService;
@@ -193,6 +198,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private RiSettings.PreferenceResendRcs mPreferenceResendFt;
     private boolean mCanSendMms;
     private Context mCtx;
+
+    private static boolean sActivityVisible;
 
     // @formatter:off
     private static final Set<String> sAllowedIntentActions = new HashSet<>(Arrays.asList(
@@ -237,22 +244,15 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_view);
-        if (!isServiceConnected(ConnectionManager.RcsServiceName.CMS,
-                ConnectionManager.RcsServiceName.CONTACT, ConnectionManager.RcsServiceName.CHAT,
-                ConnectionManager.RcsServiceName.FILE_TRANSFER,
-                ConnectionManager.RcsServiceName.CAPABILITY)) {
-            showMessageThenExit(R.string.label_service_not_available);
-            return;
-        }
         startMonitorServices(ConnectionManager.RcsServiceName.CMS,
                 ConnectionManager.RcsServiceName.CONTACT, ConnectionManager.RcsServiceName.CHAT,
                 ConnectionManager.RcsServiceName.FILE_TRANSFER,
                 ConnectionManager.RcsServiceName.CAPABILITY);
         try {
             initialize();
-            mCmsService.addEventListener(mXmsMessageListener);
             mChatService.addEventListener(mChatListener);
             mCapabilityService.addCapabilitiesListener(mCapabilitiesListener);
+            addCmsServiceListeners();
 
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
@@ -423,6 +423,56 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "onDeleted contact=" + contact + " for msg IDs=" + messageIds);
                 }
+            }
+        };
+
+        mCmsSynchronizationListener = new CmsSynchronizationListener() {
+            @Override
+            public void onAllSynchronized() {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onAllSynchronized");
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+
+            @Override
+            public void onOneToOneConversationSynchronized(final ContactId contact) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onOneToOneConversationSynchronized contact=" + contact);
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+
+            @Override
+            public void onGroupConversationSynchronized(final String chatId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onGroupConversationSynchronized chatId=" + chatId);
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         };
 
@@ -708,6 +758,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         try {
             if (isServiceConnected(ConnectionManager.RcsServiceName.CMS) && mCmsService != null) {
                 mCmsService.removeEventListener(mXmsMessageListener);
+                mCmsService.removeEventListener(mCmsSynchronizationListener);
             }
             if (isServiceConnected(ConnectionManager.RcsServiceName.CHAT) && mChatService != null) {
                 mChatService.removeEventListener(mChatListener);
@@ -725,7 +776,9 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     protected void onPause() {
         super.onPause();
+        sActivityVisible = false;
         ChatView.sChatIdOnForeground = null;
+        removeCmsServiceListeners();
     }
 
     @Override
@@ -739,9 +792,11 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+        sActivityVisible = true;
         if (mContact != null) {
             ChatView.sChatIdOnForeground = mContact.toString();
         }
+        addCmsServiceListeners();
     }
 
     @Override
@@ -859,7 +914,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 case R.id.menu_sync_cms:
                     try {
                         mCmsService.syncOneToOneConversation(mContact);
-
                     } catch (RcsServiceNotAvailableException e) {
                         showException(e);
                     }
@@ -1283,4 +1337,49 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         }
     }
 
+    private void addCmsServiceListeners() {
+        if (!isServiceConnected(RcsServiceName.CMS)) {
+            return;
+        }
+        if (!mXmsMessageListenerSet) {
+            try {
+                mCmsService.addEventListener(mXmsMessageListener);
+                mXmsMessageListenerSet = true;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+
+        if (!mCmsSynchronizationListenerSet) {
+            try {
+                mCmsService.addEventListener(mCmsSynchronizationListener);
+                mCmsSynchronizationListenerSet = true;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+    }
+
+    private void removeCmsServiceListeners() {
+        if (!isServiceConnected(RcsServiceName.CMS)) {
+            return;
+        }
+        if (mXmsMessageListenerSet) {
+            try {
+                mCmsService.removeEventListener(mXmsMessageListener);
+                mXmsMessageListenerSet = false;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+
+        if (mCmsSynchronizationListenerSet) {
+            try {
+                mCmsService.removeEventListener(mCmsSynchronizationListener);
+                mCmsSynchronizationListenerSet = false;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+    }
 }

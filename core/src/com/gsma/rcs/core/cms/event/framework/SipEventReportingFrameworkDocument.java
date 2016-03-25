@@ -23,7 +23,6 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -47,15 +46,13 @@ public class SipEventReportingFrameworkDocument {
             + "<conversation-id>%1$s</conversation-id>" + "<contribution-id>%2$s</contribution-id>"
             + "<message-id>%3$s</message-id>" + "</object>").toString();
 
-    private final RcsSettings mRcsSettings;
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mSeenObject;
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mDeletedObject;
 
-    public SipEventReportingFrameworkDocument(RcsSettings rcsSettings, List<CmsObject> seenObjects,
+    public SipEventReportingFrameworkDocument(List<CmsObject> seenObjects,
             List<CmsObject> deletedObjects) {
-        mRcsSettings = rcsSettings;
         mSeenObject = seenObjects;
         mDeletedObject = deletedObjects;
     }
@@ -103,7 +100,7 @@ public class SipEventReportingFrameworkDocument {
 
         if (MessageType.CHAT_MESSAGE == messageType) {
             String folder = object.getFolder();
-            ContactId contact = CmsUtils.cmsFolderToContact(mRcsSettings, folder);
+            ContactId contact = CmsUtils.cmsFolderToContact(folder);
             if (contact != null) { // 1-1
                 // For 1To1 conversation in Simple IM mode, contribution-Id and conversation-Id are
                 // not available.
@@ -112,7 +109,7 @@ public class SipEventReportingFrameworkDocument {
                         object.getMessageId(), Constants.TEL_PREFIX + contact.toString(),
                         object.getMessageId());
             } else { // GC
-                String chatId = CmsUtils.cmsFolderToChatId(mRcsSettings, folder);
+                String chatId = CmsUtils.cmsFolderToChatId(folder);
                 return String.format(XML_GCHAT_MESSAGE, chatId, chatId, object.getMessageId());
             }
         }

@@ -20,7 +20,6 @@
 package com.gsma.rcs.core.cms.utils;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.rcs.utils.StringUtils;
@@ -28,9 +27,9 @@ import com.gsma.services.rcs.contact.ContactId;
 
 public class CmsUtils {
 
-    public static String contactToCmsFolder(RcsSettings settings, ContactId contactId) {
-        return settings.getMessageStoreDefaultDirectoryName()
-                + settings.getMessageStoreDirectorySeparator() + Constants.TEL_PREFIX
+    public static String contactToCmsFolder(ContactId contactId) {
+        return Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR
+                + Constants.TEL_PREFIX
                 + contactId.toString();
     }
 
@@ -38,10 +37,9 @@ public class CmsUtils {
         return Constants.TEL_PREFIX + contactId.toString();
     }
 
-    public static ContactId cmsFolderToContact(RcsSettings settings, String cmsFolder) {
+    public static ContactId cmsFolderToContact(String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
-        String prefix = settings.getMessageStoreDefaultDirectoryName()
-                + settings.getMessageStoreDirectorySeparator() + (Constants.TEL_PREFIX);
+        String prefix = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + (Constants.TEL_PREFIX);
         if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
         }
@@ -64,21 +62,19 @@ public class CmsUtils {
         return ContactUtil.createContactIdFromValidatedData(phoneNumber);
     }
 
-    public static String groupChatToCmsFolder(RcsSettings settings, String conversationId,
+    public static String groupChatToCmsFolder(String conversationId,
             String contributionId) {
-        return settings.getMessageStoreDefaultDirectoryName()
-                + settings.getMessageStoreDirectorySeparator() + conversationId
-                + settings.getMessageStoreDirectorySeparator() + contributionId;
+        return Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + conversationId
+                + Constants.CMS_DIRECTORY_SEPARATOR + contributionId;
     }
 
-    public static String cmsFolderToChatId(RcsSettings settings, String cmsFolder) {
+    public static String cmsFolderToChatId(String cmsFolder) {
         String folder = StringUtils.removeQuotes(cmsFolder);
-        String directorySeparator = settings.getMessageStoreDirectorySeparator();
-        String prefix = settings.getMessageStoreDefaultDirectoryName() + directorySeparator;
+        String prefix =Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR;
         if (cmsFolder.startsWith(prefix)) {
             folder = folder.substring(prefix.length());
         }
-        String[] val = folder.split(directorySeparator, 2);
+        String[] val = folder.split(Constants.CMS_DIRECTORY_SEPARATOR, 2);
         if (val.length != 2) {
             return null;
         }

@@ -213,7 +213,7 @@ public class XmsSynchronizer implements Runnable {
                     }
                     mXmsLog.addSms(smsData);
                     mCmsLog.addMessage(new CmsObject(
-                            CmsUtils.contactToCmsFolder(mSettings, smsData.getContact()),
+                            CmsUtils.contactToCmsFolder(smsData.getContact()),
                             smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
                                     : CmsObject.ReadStatus.READ_REPORT_REQUESTED,
                             CmsObject.DeleteStatus.NOT_DELETED,
@@ -232,7 +232,7 @@ public class XmsSynchronizer implements Runnable {
                         mXmsLog.addIncomingMms(mmsData);
                     }
                     mCmsLog.addMessage(new CmsObject(
-                            CmsUtils.contactToCmsFolder(mSettings, mmsData.getContact()),
+                            CmsUtils.contactToCmsFolder(mmsData.getContact()),
                             mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
                                     : CmsObject.ReadStatus.READ_REPORT_REQUESTED,
                             CmsObject.DeleteStatus.NOT_DELETED,
@@ -285,7 +285,8 @@ public class XmsSynchronizer implements Runnable {
             }
             ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
             long ntpLocalOffset = mSettings.getNtpLocalOffset();
-            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE)) + ntpLocalOffset;
+            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE))
+                    + ntpLocalOffset;
             long date_sent = cursor.getLong(cursor
                     .getColumnIndexOrThrow(TextBasedSmsColumns.DATE_SENT)) + ntpLocalOffset;
             String protocol = cursor.getString(cursor

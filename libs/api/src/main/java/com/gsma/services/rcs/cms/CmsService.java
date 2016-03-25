@@ -56,6 +56,8 @@ public final class CmsService extends RcsService {
 
     private static boolean sApiCompatible = false;
 
+    private final Map<CmsSynchronizationListener, WeakReference<ICmsSynchronizationListener>> mCmsSyncListeners = new WeakHashMap<>();
+
     private final Map<XmsMessageListener, WeakReference<IXmsMessageListener>> mXmsMessageListeners = new WeakHashMap<>();
 
     /**
@@ -146,6 +148,58 @@ public final class CmsService extends RcsService {
     }
 
     /**
+     * Adds a listener on CMS synchronization events
+     *
+     * @param listener The CMS synchronization listener
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public void addEventListener(CmsSynchronizationListener listener)
+            throws RcsServiceNotAvailableException, RcsGenericException {
+        if (listener == null) {
+            throw new RcsIllegalArgumentException("listener must not be null!");
+        }
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            ICmsSynchronizationListener rcsListener = new CmsSynchronizationListenerImpl(listener);
+            mCmsSyncListeners.put(listener, new WeakReference<>(rcsListener));
+            mApi.addEventListener(rcsListener);
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Removes a listener on CMS synchronization events
+     *
+     * @param listener The CMS synchronization listener
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public void removeEventListener(CmsSynchronizationListener listener)
+            throws RcsServiceNotAvailableException, RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            WeakReference<ICmsSynchronizationListener> weakRef = mCmsSyncListeners.remove(listener);
+            if (weakRef == null) {
+                return;
+            }
+            ICmsSynchronizationListener rcsListener = weakRef.get();
+            if (rcsListener != null) {
+                mApi.removeEventListener(rcsListener);
+            }
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
      * Synchronizes all local CMS repository with network CMS repository.
      *
      * @throws RcsServiceNotAvailableException
@@ -170,8 +224,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void syncOneToOneConversation(ContactId contact)
-            throws RcsServiceNotAvailableException, RcsGenericException {
+    public void syncOneToOneConversation(ContactId contact) throws RcsServiceNotAvailableException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -192,8 +246,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void syncGroupConversation(String chatId)
-            throws RcsServiceNotAvailableException, RcsGenericException {
+    public void syncGroupConversation(String chatId) throws RcsServiceNotAvailableException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -214,8 +268,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage getXmsMessage(String messageId)
-            throws RcsGenericException, RcsServiceNotAvailableException {
+    public XmsMessage getXmsMessage(String messageId) throws RcsGenericException,
+            RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -236,8 +290,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void sendTextMessage(ContactId contact, String message)
-            throws RcsGenericException, RcsServiceNotAvailableException {
+    public void sendTextMessage(ContactId contact, String message) throws RcsGenericException,
+            RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -258,8 +312,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public boolean isAllowedToSendMultimediaMessage()
-            throws RcsServiceNotAvailableException, RcsGenericException {
+    public boolean isAllowedToSendMultimediaMessage() throws RcsServiceNotAvailableException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -283,7 +337,7 @@ public final class CmsService extends RcsService {
      */
     public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject,
             String body) throws RcsGenericException, RcsServiceNotAvailableException,
-                    RcsPersistentStorageException, RcsPermissionDeniedException {
+            RcsPersistentStorageException, RcsPermissionDeniedException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -343,7 +397,7 @@ public final class CmsService extends RcsService {
         try {
             IXmsMessageListener rcsListener = new XmsMessageListenerImpl(listener);
             mXmsMessageListeners.put(listener, new WeakReference<>(rcsListener));
-            mApi.addEventListener(rcsListener);
+            mApi.addEventListener2(rcsListener);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -370,7 +424,7 @@ public final class CmsService extends RcsService {
             }
             IXmsMessageListener rcsListener = weakRef.get();
             if (rcsListener != null) {
-                mApi.removeEventListener(rcsListener);
+                mApi.removeEventListener2(rcsListener);
             }
 
         } catch (Exception e) {
@@ -403,8 +457,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void deleteXmsMessages(ContactId contact)
-            throws RcsServiceNotAvailableException, RcsGenericException {
+    public void deleteXmsMessages(ContactId contact) throws RcsServiceNotAvailableException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -422,8 +476,8 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void deleteXmsMessage(String msgId)
-            throws RcsServiceNotAvailableException, RcsGenericException {
+    public void deleteXmsMessage(String msgId) throws RcsServiceNotAvailableException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
@@ -444,8 +498,8 @@ public final class CmsService extends RcsService {
             return;
         }
         Intent cmsServiceIntent = new Intent(ICmsService.class.getName());
-        List<ResolveInfo> stackServices = mCtx.getPackageManager()
-                .queryIntentServices(cmsServiceIntent, 0);
+        List<ResolveInfo> stackServices = mCtx.getPackageManager().queryIntentServices(
+                cmsServiceIntent, 0);
         for (ResolveInfo stackService : stackServices) {
             mCtx.grantUriPermission(stackService.serviceInfo.packageName, file,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION);

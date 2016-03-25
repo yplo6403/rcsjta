@@ -147,7 +147,7 @@ public class SipEventReportingFrameworkManager extends Thread {
             return null;
         }
 
-        return new SipEventReportingFrameworkDocument(mRcsSettings, seenObjects, deletedObjects);
+        return new SipEventReportingFrameworkDocument(seenObjects, deletedObjects);
     }
 
     /**

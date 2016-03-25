@@ -151,8 +151,6 @@
     <string name="message_store_push_sms_label">Push SMS</string>
     <string name="message_store_push_mms_label">Push MMS</string>
     <string name="message_store_event_framework_label">Event Reporting Framework</string>
-    <string name="message_store_default_directory_name_label">Message store default directory name</string>
-    <string name="message_store_default_directory_separator_label">Message store default directory separator</string>
     <string name="data_connection_sync_timer_label">Data connection sync timer (ms)</string>
     <string name="message_store_sync_timer_label">Periodic syn timer (ms)</string>
     <string name="message_store_save_ok_label">Changes have been taken into account</string>

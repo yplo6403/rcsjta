@@ -66,7 +66,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onCreateGroupChat: " + conversationId + "/" + contributionId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, conversationId,
+        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(conversationId,
                 contributionId), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED, MessageType.CPM_SESSION, contributionId, null));
     }
@@ -87,7 +87,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteGroupChat: " + chatId);
         }
-        mCmsLog.updateDeleteStatus(CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId),
+        mCmsLog.updateDeleteStatus(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 DeleteStatus.DELETED_REPORT_REQUESTED);
     }
 
@@ -98,7 +98,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
         String chatId = mMessagingLog.getMessageChatId(msg.getMessageId());
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId),
+        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
                 MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
     }
@@ -109,7 +109,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
             sLogger.debug("onMessageSent: ".concat(msgId));
         }
         String chatId = mMessagingLog.getMessageChatId(msgId);
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId),
+        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
                 MessageType.CHAT_MESSAGE, msgId, null));
     }
@@ -124,7 +124,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mImdnDeliveryReportListener.onDeliveryReport(contributionId, imdnMessageId);
+        mImdnDeliveryReportListener.onDeliveryReport(contributionId, imdn.getMsgId(), imdnMessageId);
     }
 
     @Override

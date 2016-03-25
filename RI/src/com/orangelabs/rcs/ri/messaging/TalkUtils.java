@@ -24,8 +24,7 @@ public class TalkUtils {
 
     private final static String TIME_FORMAT = "kk:mm";
     private final static String DAY_TIME_FORMAT = "EEE, dd MMM yyyy";
-    private final static String DATE_FORMAT = "kk:mm\ndd MMM yyyy";
-    private final static String DAYTIME_SEPARATOR = "------------------";
+    private final static String DATE_FORMAT = "dd MMM yyyy\nkk:mm";
 
     public static String formatDateAsTime(long date) {
         return new SimpleDateFormat(TIME_FORMAT).format(date);
@@ -37,11 +36,6 @@ public class TalkUtils {
 
     public static String formatDate(long date) {
         return new SimpleDateFormat(DATE_FORMAT).format(date);
-    }
-
-    public static String buildDaytimeSeparator(long date) {
-        return new StringBuilder(DAYTIME_SEPARATOR).append(formatDateAsDaytime(date))
-                .append(DAYTIME_SEPARATOR).toString();
     }
 
     public static boolean compareDaytime(long date1, long date2) {

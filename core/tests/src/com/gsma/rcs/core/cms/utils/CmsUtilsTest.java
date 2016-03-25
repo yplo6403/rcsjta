@@ -49,12 +49,10 @@ public class CmsUtilsTest extends AndroidTestCase {
         String header = "tel:+33600112233";
         String cmsFolder = "Default/tel:+33600112233";
 
-        Assert.assertEquals("Default/tel:+33600112233",
-                CmsUtils.contactToCmsFolder(mRcsSettings, contactId));
+        Assert.assertEquals("Default/tel:+33600112233", CmsUtils.contactToCmsFolder(contactId));
         Assert.assertEquals("tel:+33600112233", CmsUtils.contactToHeader(contactId));
         Assert.assertEquals("+33600112233", CmsUtils.headerToContact(header).toString());
-        Assert.assertEquals("+33600112233", CmsUtils.cmsFolderToContact(mRcsSettings, cmsFolder)
-                .toString());
+        Assert.assertEquals("+33600112233", CmsUtils.cmsFolderToContact(cmsFolder).toString());
     }
 
 }

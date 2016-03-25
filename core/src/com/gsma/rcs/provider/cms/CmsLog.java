@@ -101,6 +101,7 @@ public class CmsLog {
 
         private static final String SELECTION_CHAT_IMDN = "(" + SELECTION_CHAT + " OR " + SELECTION_IMDN + ")";
         private static final String SELECTION_XMS_MESSAGEID = SELECTION_XMS + " AND " + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_CHAT_MESSAGEID = SELECTION_CHAT + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_CHAT_IMDN_MESSAGEID = SELECTION_CHAT_IMDN + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_GROUP_STATE_MESSAGEID = SELECTION_GROUP_STATE + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_CPM_SESSION_MESSAGEID = SELECTION_CPM_SESSION + " AND " + SELECTION_MESSAGE_ID;
@@ -435,6 +436,16 @@ public class CmsLog {
      */
     public CmsObject getChatOrImdnData(String messageId) {
         return getData(messageId, Message.SELECTION_CHAT_IMDN_MESSAGEID);
+    }
+
+    /**
+     * Get chat or imdn data by messageId
+     *
+     * @param messageId the ID
+     * @return CmsObject
+     */
+    public CmsObject getChatData(String messageId) {
+        return getData(messageId, Message.SELECTION_CHAT_MESSAGEID);
     }
 
     /**

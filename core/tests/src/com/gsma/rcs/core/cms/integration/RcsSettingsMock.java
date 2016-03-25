@@ -31,14 +31,10 @@ public class RcsSettingsMock {
     private static final Uri mServerAddress = Uri.parse("imap://172.20.65.102");
     private static final String mUserLogin = "test_integration";
     private static final String mUserPwd = "test_integration";
-    private static final String mDefaultDirectory = "Default";
-    private static final String mDirectorySeparator = "/";
 
     private static Uri mOriServerUri;
     private static String mOriUserLogin;
     private static String mOriUserPwd;
-    private static String mOriDefaultDirectory;
-    private static String mOriDirectorySeparator;
     private static ContactId mOriContact;
 
     public static RcsSettings getMockSettings(Context context) {
@@ -47,17 +43,13 @@ public class RcsSettingsMock {
         mOriServerUri = settings.getMessageStoreUri();
         mOriUserLogin = settings.getMessageStoreUser();
         mOriUserPwd = settings.getMessageStorePwd();
-        mOriDefaultDirectory = settings.getMessageStoreDefaultDirectoryName();
-        mOriDirectorySeparator = settings.getMessageStoreDirectorySeparator();
         mOriContact = settings.getUserProfileImsUserName();
 
         settings.setMessageStoreUri(mServerAddress);
         settings.setMessageStoreUser(mUserLogin);
         settings.setMessageStorePwd(mUserPwd);
-        settings.setMessageStoreDefaultDirectoryName(mDefaultDirectory);
-        settings.setMessageStoreDirectorySeparator(mDirectorySeparator);
-        settings.setUserProfileImsUserName(
-                ContactUtil.createContactIdFromTrustedData("+33601020304"));
+        settings.setUserProfileImsUserName(ContactUtil
+                .createContactIdFromTrustedData("+33601020304"));
         return settings;
     }
 
@@ -66,8 +58,6 @@ public class RcsSettingsMock {
         settings.setMessageStoreUri(mOriServerUri);
         settings.setMessageStoreUser(mOriUserLogin);
         settings.setMessageStorePwd(mOriUserPwd);
-        settings.setMessageStoreDefaultDirectoryName(mOriDefaultDirectory);
-        settings.setMessageStoreDirectorySeparator(mOriDirectorySeparator);
         settings.setUserProfileImsUserName(mOriContact);
     }
 

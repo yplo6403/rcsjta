@@ -163,8 +163,7 @@ public class CmsSyncPushMessageTask extends CmsSyncSchedulerTask {
                             UUID.randomUUID().toString(), "" + mms.getTimestamp(), mms.getMmsId(),
                             mms.getMmsParts());
                 }
-                String remoteFolder = CmsUtils.contactToCmsFolder(mRcsSettings,
-                        message.getContact());
+                String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());
                 if (!cmsFolders.contains(remoteFolder)) {
                     basicImapService.create(remoteFolder);
                     cmsFolders.add(remoteFolder);

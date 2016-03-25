@@ -129,7 +129,7 @@ public class CmsManager implements XmsMessageListener {
         /*
          * Instantiate ImdnDeliveryReportHanlder
          */
-        mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog, mRcsSettings);
+        mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog);
 
         /*
          * instantiate ChatEventHandler in charge of handling events from ChatSession,read or

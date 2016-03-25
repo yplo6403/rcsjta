@@ -297,7 +297,7 @@ public class ImdnManager extends Thread {
                     .getCmsService()
                     .getCmsManager()
                     .getImdnDeliveryReportListener()
-                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),
+                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),deliveryStatus.getMsgId(),
                             deliveryStatus.getImdnMessageId());
 
         } catch (InvalidArgumentException e) {

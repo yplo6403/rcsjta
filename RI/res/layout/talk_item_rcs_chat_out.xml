@@ -28,20 +28,23 @@
         android:id="@+id/date_separator"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:background="#FCE454"
         android:gravity="center"
-        android:visibility="gone"
         android:paddingBottom="5dip"
-        />
+        android:paddingTop="5dip"
+        android:text="date divider"
+        android:textColor="@android:color/black"
+        android:visibility="visible"/>
 
     <RelativeLayout
         android:id="@+id/conv_item_chat_text_out"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:background="@drawable/msg_item_left"
-        android:orientation="vertical"
-        android:layout_below="@id/date_separator">
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@id/date_separator"
+        android:background="@drawable/msg_item_right"
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/content_text"
@@ -64,12 +67,9 @@
         android:id="@+id/status_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:layout_below="@id/conv_item_chat_text_out"
-        android:layout_marginLeft="12dip"
-        android:layout_marginStart="12dip"
-        android:drawablePadding="5dip"
         android:text="@string/label_state_unknown"
         android:textColor="@android:color/darker_gray" />
 

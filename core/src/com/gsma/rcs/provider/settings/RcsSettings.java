@@ -2464,22 +2464,6 @@ public class RcsSettings {
         return EventReportingFrameworkConfig.valueOf(readInteger(RcsSettingsData.EVENT_REPORTING_FRAMEWORK));
     }
 
-    public String getMessageStoreDefaultDirectoryName() {
-        return readString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME);
-    }
-
-    public void setMessageStoreDefaultDirectoryName(String defaultDirectory) {
-        writeString(RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, defaultDirectory);
-    }
-
-    public String getMessageStoreDirectorySeparator() {
-        return readString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR);
-    }
-
-    public void setMessageStoreDirectorySeparator(String directorySeparator) {
-        writeString(RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, directorySeparator);
-    }
-
     public long getDataConnectionSyncTimer() {
         return readLong(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
     }

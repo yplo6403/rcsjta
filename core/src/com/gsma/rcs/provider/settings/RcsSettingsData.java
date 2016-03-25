@@ -1508,13 +1508,6 @@ public class RcsSettingsData {
     public static final String EVENT_REPORTING_FRAMEWORK = "eventReportingFramework";
     public static final EventReportingFrameworkConfig DEFAULT_EVENT_REPORTING_FRAMEWORK = EventReportingFrameworkConfig.IMAP_ONLY;
 
-
-    public static final String MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "messageStoreDefaultDirectory";
-    /* package private */static final String DEFAULT_MESSAGE_STORE_DEFAULT_DIRECTORY_NAME = "Default";
-
-    public static final String MESSAGE_STORE_DIRECTORY_SEPARATOR = "messageStoreDirectorySeparator";
-    /* package private */static final String DEFAULT_MESSAGE_STORE_DIRECTORY_SEPARATOR = "/";
-
     public static final String NTP_SERVERS = "ntpServers";
     /* package private */static final String DEFAULT_NTP_SERVERS = "172.20.1.104,10.194.124.1";
 

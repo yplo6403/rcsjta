@@ -138,10 +138,6 @@ public class CmsProvisioning extends Activity {
                     EventReportingFrameworkConfig.valueOf(selected).toInt());
         }
 
-        saveStringEditTextParam(R.id.message_store_default_directory_name,
-                RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
-        saveStringEditTextParam(R.id.message_store_default_directory_separator,
-                RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
         saveLongEditTextParam(R.id.data_connection_sync_timer,
                 RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
         saveLongEditTextParam(R.id.message_store_sync_timer,
@@ -180,11 +176,6 @@ public class CmsProvisioning extends Activity {
         spinner.setAdapter(adapter);
         setSpinnerParameter(spinner, RcsSettingsData.EVENT_REPORTING_FRAMEWORK, true, mEventFramework,
                 helper);
-
-        setStringEditTextParam(R.id.message_store_default_directory_name,
-                RcsSettingsData.MESSAGE_STORE_DEFAULT_DIRECTORY_NAME, helper);
-        setStringEditTextParam(R.id.message_store_default_directory_separator,
-                RcsSettingsData.MESSAGE_STORE_DIRECTORY_SEPARATOR, helper);
 
         setLongEditTextParam(R.id.data_connection_sync_timer,
                 RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);

@@ -34,50 +34,53 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
     private static final Logger sLogger = Logger.getLogger(ImdnDeliveryReportHandler.class
             .getSimpleName());
     protected final CmsLog mCmsLog;
-    protected final RcsSettings mSettings;
 
     /**
      * Default constructor
      *
      * @param cmsLog the IMAP log accessor
-     * @param settings the RCS settings accessor
      */
-    public ImdnDeliveryReportHandler(CmsLog cmsLog, RcsSettings settings) {
+    public ImdnDeliveryReportHandler(CmsLog cmsLog) {
         mCmsLog = cmsLog;
-        mSettings = settings;
     }
 
     @Override
-    public void onDeliveryReport(String chatId, ContactId remote, String imdnMessageId) {
+    public void onDeliveryReport(String chatId, ContactId remote, String messageId, String imdnMessageId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + chatId + ", " + remote.toString() + ", "
                     + imdnMessageId);
         }
         if (chatId.equals(remote.toString())) { // OneToOne
-            onDeliveryReport(remote, imdnMessageId);
+            onDeliveryReport(remote, messageId, imdnMessageId);
         } else { // GC
-            onDeliveryReport(chatId, imdnMessageId);
+            onDeliveryReport(chatId, messageId, imdnMessageId);
         }
     }
 
     @Override
-    public void onDeliveryReport(String chatId, String imdnMessageId) {
+    public void onDeliveryReport(String chatId, String messageId, String imdnMessageId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + chatId + ", " + imdnMessageId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId),
+        if(mCmsLog.getChatData(messageId) == null){ // do not persist IMDN if chat message is not present
+            return;
+        }
+        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
                 MessageType.IMDN, imdnMessageId, null));
     }
 
     @Override
-    public void onDeliveryReport(ContactId contact, String imdnMessageId) {
+    public void onDeliveryReport(ContactId contact, String messageId, String imdnMessageId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + contact + ", " + imdnMessageId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.IMDN, imdnMessageId, null));
+        if(mCmsLog.getChatData(messageId) == null){// Do not persist IMDN if chat message is not present
+            return;
+        }
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.IMDN,
+                imdnMessageId, null));
     }
 
 }

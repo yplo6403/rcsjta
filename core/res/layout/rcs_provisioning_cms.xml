@@ -111,38 +111,6 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="5dip"
-                android:text="@string/message_store_default_directory_name_label" />
-
-            <EditText
-                android:id="@+id/message_store_default_directory_name"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip"
-                android:lines="1"
-                android:maxLength="100"
-                android:singleLine="true" />
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
-                android:text="@string/message_store_default_directory_separator_label" />
-
-            <EditText
-                android:id="@+id/message_store_default_directory_separator"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dip"
-                android:layout_marginRight="5dip"
-                android:lines="1"
-                android:maxLength="100"
-                android:singleLine="true" />
-
-            <TextView
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:paddingTop="5dip"
                 android:text="@string/data_connection_sync_timer_label" />
 
             <EditText

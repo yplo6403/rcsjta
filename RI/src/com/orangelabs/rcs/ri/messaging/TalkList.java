@@ -29,6 +29,7 @@ import com.gsma.services.rcs.chat.GroupChatListener;
 import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
+import com.gsma.services.rcs.cms.CmsSynchronizationListener;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageListener;
@@ -38,6 +39,21 @@ import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.filetransfer.OneToOneFileTransferListener;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
+
+import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
+import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.orangelabs.rcs.ri.AboutRI;
+import com.orangelabs.rcs.ri.R;
+import com.orangelabs.rcs.ri.cms.messaging.InitiateOneToOneTalk;
+import com.orangelabs.rcs.ri.contacts.TestContactsApi;
+import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayAdapter;
+import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayItem;
+import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatView;
+import com.orangelabs.rcs.ri.messaging.chat.group.InitiateGroupChat;
+import com.orangelabs.rcs.ri.settings.RiSettings;
+import com.orangelabs.rcs.ri.utils.LogUtils;
+import com.orangelabs.rcs.ri.utils.Utils;
 
 import android.content.Context;
 import android.content.Intent;
@@ -56,17 +72,6 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.ExceptionUtil;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
-import com.orangelabs.rcs.ri.R;
-import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayAdapter;
-import com.orangelabs.rcs.ri.messaging.adapter.TalkListArrayItem;
-import com.orangelabs.rcs.ri.messaging.chat.group.GroupChatView;
-import com.orangelabs.rcs.ri.settings.RiSettings;
-import com.orangelabs.rcs.ri.utils.LogUtils;
-import com.orangelabs.rcs.ri.utils.Utils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -81,13 +86,15 @@ import java.util.Set;
 public class TalkList extends RcsActivity {
 
     private CmsService mCmsService;
-    private boolean mXmsMessageListenerSet;
     private TalkListArrayAdapter mAdapter;
     private Handler mHandler = new Handler();
     private List<TalkListArrayItem> mMessageLogs;
     private static final String LOGTAG = LogUtils.getTag(TalkList.class.getSimpleName());
 
+    private CmsSynchronizationListener mCmsSynchronizationListener;
+    private boolean mCmsSynchronizationListenerSet;
     private XmsMessageListener mXmsMessageListener;
+    private boolean mXmsMessageListenerSet;
     private ChatService mChatService;
     private FileTransferService mFileTransferService;
     private boolean mOneToOneChatListenerSet;
@@ -154,6 +161,9 @@ public class TalkList extends RcsActivity {
             if (mXmsMessageListenerSet) {
                 mCmsService.removeEventListener(mXmsMessageListener);
             }
+            if (mCmsSynchronizationListenerSet) {
+                mCmsService.removeEventListener(mCmsSynchronizationListener);
+            }
             if (mOneToOneChatListenerSet) {
                 mChatService.removeEventListener(mOneToOneChatListener);
             }
@@ -171,6 +181,7 @@ public class TalkList extends RcsActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        addCmsServiceListeners();
         sActivityVisible = true;
         TalkListUpdate updateTalkList = new TalkListUpdate(this, mUpdateTalkListListener);
         updateTalkList.execute();
@@ -179,6 +190,7 @@ public class TalkList extends RcsActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        removeCmsServiceListeners();
         sActivityVisible = false;
     }
 
@@ -196,9 +208,7 @@ public class TalkList extends RcsActivity {
             menu.findItem(R.id.menu_clear_log).setVisible(false);
             menu.findItem(R.id.menu_sync_xms).setVisible(false);
         }
-        if (RiSettings.isSyncAutomatic(this)) {
-            menu.findItem(R.id.menu_sync_xms).setVisible(false);
-        }
+        menu.findItem(R.id.menu_sync_xms).setVisible(!RiSettings.isSyncAutomatic(this));
         return true;
     }
 
@@ -215,10 +225,6 @@ public class TalkList extends RcsActivity {
                     }
                     if (LogUtils.isActive) {
                         Log.d(LOGTAG, "delete one to one conversations");
-                    }
-                    if (!mXmsMessageListenerSet) {
-                        mCmsService.addEventListener(mXmsMessageListener);
-                        mXmsMessageListenerSet = true;
                     }
                     mCmsService.deleteXmsMessages();
                     if (!mOneToOneChatListenerSet) {
@@ -248,6 +254,40 @@ public class TalkList extends RcsActivity {
                         Log.d(LOGTAG, "start a XMS sync");
                     }
                     mCmsService.syncAll();
+                    break;
+
+                case R.id.menu_initiate_chat:
+                    /* Start a new 1To1 chat */
+                    startActivity(new Intent(this, InitiateOneToOneTalk.class));
+                    break;
+
+                case R.id.menu_initiate_group_chat:
+                    /* Start a new group chat */
+                    ChatService chatService = getChatApi();
+                    try {
+                        if (chatService.isAllowedToInitiateGroupChat()) {
+                            startActivity(new Intent(this, InitiateGroupChat.class));
+                        } else {
+                            showMessage(R.string.label_NotAllowedToInitiateGroupChat);
+                        }
+                    } catch (RcsServiceNotAvailableException e) {
+                        showMessage(R.string.label_service_not_available);
+
+                    } catch (RcsServiceException e) {
+                        showExceptionThenExit(e);
+                    }
+                    break;
+
+                case R.id.menu_settings:
+                    startActivity(new Intent(this, RiSettings.class));
+                    break;
+
+                case R.id.menu_contacts:
+                    startActivity(new Intent(this, TestContactsApi.class));
+                    break;
+
+                case R.id.menu_about:
+                    startActivity(new Intent(this, AboutRI.class));
                     break;
             }
         } catch (RcsServiceException e) {
@@ -292,10 +332,6 @@ public class TalkList extends RcsActivity {
                         mChatService.deleteGroupChat(chatId);
                         return true;
                     }
-                    if (!mXmsMessageListenerSet) {
-                        mCmsService.addEventListener(mXmsMessageListener);
-                        mXmsMessageListenerSet = true;
-                    }
                     mCmsService.deleteXmsMessages(contact);
                     if (!mOneToOneChatListenerSet) {
                         mChatService.addEventListener(mOneToOneChatListener);
@@ -320,6 +356,7 @@ public class TalkList extends RcsActivity {
     }
 
     private void initialize() {
+
         mCtx = this;
         mMessageLogs = new ArrayList<>();
 
@@ -341,7 +378,8 @@ public class TalkList extends RcsActivity {
                 if (message.isGroupChat()) {
                     GroupChatView.openGroupChat(mCtx, message.getChatId());
                 } else {
-                    startActivity(OneToOneTalkView.forgeIntentToOpenConversation(mCtx, message.getContact()));
+                    startActivity(OneToOneTalkView.forgeIntentToOpenConversation(mCtx,
+                            message.getContact()));
                 }
             }
         });
@@ -349,12 +387,12 @@ public class TalkList extends RcsActivity {
         mOneToOneFileTransferListener = new OneToOneFileTransferListener() {
             @Override
             public void onStateChanged(ContactId contact, String transferId,
-                                       FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
+                    FileTransfer.State state, FileTransfer.ReasonCode reasonCode) {
             }
 
             @Override
             public void onProgressUpdate(ContactId contact, String transferId, long currentSize,
-                                         long totalSize) {
+                    long totalSize) {
             }
 
             @Override
@@ -375,8 +413,8 @@ public class TalkList extends RcsActivity {
         mOneToOneChatListener = new OneToOneChatListener() {
             @Override
             public void onMessageStatusChanged(ContactId contact, String mimeType, String msgId,
-                                               ChatLog.Message.Content.Status status,
-                                               ChatLog.Message.Content.ReasonCode reasonCode) {
+                    ChatLog.Message.Content.Status status,
+                    ChatLog.Message.Content.ReasonCode reasonCode) {
             }
 
             @Override
@@ -401,7 +439,7 @@ public class TalkList extends RcsActivity {
         mGroupChatListener = new GroupChatListener() {
             @Override
             public void onStateChanged(String chatId, GroupChat.State state,
-                                       GroupChat.ReasonCode reasonCode) {
+                    GroupChat.ReasonCode reasonCode) {
             }
 
             @Override
@@ -410,19 +448,19 @@ public class TalkList extends RcsActivity {
 
             @Override
             public void onMessageStatusChanged(String chatId, String mimeType, String msgId,
-                                               ChatLog.Message.Content.Status status,
-                                               ChatLog.Message.Content.ReasonCode reasonCode) {
+                    ChatLog.Message.Content.Status status,
+                    ChatLog.Message.Content.ReasonCode reasonCode) {
             }
 
             @Override
             public void onMessageGroupDeliveryInfoChanged(String chatId, ContactId contact,
-                                                          String mimeType, String msgId, GroupDeliveryInfo.Status status,
-                                                          GroupDeliveryInfo.ReasonCode reasonCode) {
+                    String mimeType, String msgId, GroupDeliveryInfo.Status status,
+                    GroupDeliveryInfo.ReasonCode reasonCode) {
             }
 
             @Override
             public void onParticipantStatusChanged(String chatId, ContactId contact,
-                                                   GroupChat.ParticipantStatus status) {
+                    GroupChat.ParticipantStatus status) {
             }
 
             @Override
@@ -452,7 +490,8 @@ public class TalkList extends RcsActivity {
                 }
                 mHandler.post(new Runnable() {
                     public void run() {
-                        Utils.displayLongToast(mCtx, getString(R.string.label_xms_delete_success, contact.toString()));
+                        Utils.displayLongToast(mCtx,
+                                getString(R.string.label_xms_delete_success, contact.toString()));
                     }
                 });
                 TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
@@ -461,9 +500,48 @@ public class TalkList extends RcsActivity {
 
             @Override
             public void onStateChanged(ContactId contact, String mimeType, String messageId,
-                                       XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+                    XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
             }
         };
+
+        mCmsSynchronizationListener = new CmsSynchronizationListener() {
+            @Override
+            public void onAllSynchronized() {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onAllSynchronized");
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
+                updateTalkList.execute();
+            }
+
+            @Override
+            public void onOneToOneConversationSynchronized(final ContactId contact) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onOneToOneConversationSynchronized contact=" + contact);
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
+                updateTalkList.execute();
+            }
+
+            @Override
+            public void onGroupConversationSynchronized(final String chatId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onGroupConversationSynchronized chatId=" + chatId);
+                }
+                if (!sActivityVisible) {
+                    return;
+                }
+                TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
+                updateTalkList.execute();
+            }
+        };
+
         mUpdateTalkListListener = new TalkListUpdate.TaskCompleted() {
             @Override
             public void onTaskComplete(Collection<TalkListArrayItem> result) {
@@ -477,12 +555,13 @@ public class TalkList extends RcsActivity {
                 mAdapter.notifyDataSetChanged();
             }
         };
+
     }
 
     /**
      * Notify new conversation event
      *
-     * @param ctx    the context
+     * @param ctx the context
      * @param action the action intent
      */
     public static void notifyNewConversationEvent(Context ctx, String action) {
@@ -491,6 +570,54 @@ public class TalkList extends RcsActivity {
             intent.setAction(action);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
             ctx.startActivity(intent);
+        }
+    }
+
+    private void addCmsServiceListeners() {
+        if (!isServiceConnected(RcsServiceName.CMS)) {
+            return;
+        }
+
+        if (!mXmsMessageListenerSet) {
+            try {
+                mCmsService.addEventListener(mXmsMessageListener);
+                mXmsMessageListenerSet = true;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+
+        if (!mCmsSynchronizationListenerSet) {
+            try {
+                mCmsService.addEventListener(mCmsSynchronizationListener);
+                mCmsSynchronizationListenerSet = true;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+    }
+
+    private void removeCmsServiceListeners() {
+        if (!isServiceConnected(RcsServiceName.CMS)) {
+            return;
+        }
+
+        if (mXmsMessageListenerSet) {
+            try {
+                mCmsService.removeEventListener(mXmsMessageListener);
+                mXmsMessageListenerSet = false;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+
+        if (mCmsSynchronizationListenerSet) {
+            try {
+                mCmsService.removeEventListener(mCmsSynchronizationListener);
+                mCmsSynchronizationListenerSet = false;
+            } catch (RcsServiceException e) {
+                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            }
         }
     }
 }

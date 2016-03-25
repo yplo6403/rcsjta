@@ -932,7 +932,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         }
         getImsService().getImsModule().getCmsService().getCmsManager()
                 .getImdnDeliveryReportListener()
-                .onDeliveryReport(mRcsSettings.getUserProfileImsUserName(), imdnMessageId);
+                .onDeliveryReport(mRcsSettings.getUserProfileImsUserName(), msgId, imdnMessageId);
     }
 
     /**

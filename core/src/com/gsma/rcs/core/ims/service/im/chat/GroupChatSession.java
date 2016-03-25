@@ -455,7 +455,7 @@ public abstract class GroupChatSession extends ChatSession {
         }
         getImsService().getImsModule().getCmsService().getCmsManager()
                 .getImdnDeliveryReportListener()
-                .onDeliveryReport(getContributionID(), imdnMessageId);
+                .onDeliveryReport(getContributionID(), msgId, imdnMessageId);
 
     }
 

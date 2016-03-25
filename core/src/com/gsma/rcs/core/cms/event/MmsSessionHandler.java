@@ -60,7 +60,7 @@ public class MmsSessionHandler implements MmsSessionListener {
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(mSettings, contact),
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact),
                 ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
                         .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, mmsId, null));

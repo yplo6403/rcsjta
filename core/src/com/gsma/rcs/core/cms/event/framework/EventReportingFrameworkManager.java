@@ -137,10 +137,10 @@ public class EventReportingFrameworkManager implements EventReportingFramework {
             String cmsFolder;
             if (isOneToOne) {
                 chatSession = mInstantMessagingService.getOneToOneChatSession(contactId);
-                cmsFolder = CmsUtils.contactToCmsFolder(mSettings, contactId);
+                cmsFolder = CmsUtils.contactToCmsFolder(contactId);
             } else {
                 chatSession = mInstantMessagingService.getGroupChatSession(chatId);
-                cmsFolder = CmsUtils.groupChatToCmsFolder(mSettings, chatId, chatId);
+                cmsFolder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
             }
             if (chatSession != null && chatSession.isMediaEstablished()) {
                 mSipEventReportingFrameworkManager.tryToReportEvents(cmsFolder, chatSession);
