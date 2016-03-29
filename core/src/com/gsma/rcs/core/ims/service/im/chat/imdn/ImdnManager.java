@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ package com.gsma.rcs.core.ims.service.im.chat.imdn;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -37,11 +36,14 @@ import com.gsma.rcs.core.ims.service.SessionAuthenticationAgent;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.FifoBuffer;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.text.ParseException;
@@ -57,7 +59,7 @@ import javax2.sip.message.Response;
 public class ImdnManager extends Thread {
 
     private final InstantMessagingService mImService;
-
+    private final MessagingLog mMessagingLog;
     private FifoBuffer mBuffer = new FifoBuffer();
 
     private final RcsSettings mRcsSettings;
@@ -66,13 +68,16 @@ public class ImdnManager extends Thread {
 
     /**
      * Constructor
-     * 
-     * @param imService IMS service
-     * @param rcsSettings
+     *
+     * @param imService IM service
+     * @param rcsSettings the RCS settings accessor
+     * @param messagingLog the messaging log accessor
      */
-    public ImdnManager(InstantMessagingService imService, RcsSettings rcsSettings) {
+    public ImdnManager(InstantMessagingService imService, RcsSettings rcsSettings,
+            MessagingLog messagingLog) {
         mImService = imService;
         mRcsSettings = rcsSettings;
+        mMessagingLog = messagingLog;
     }
 
     /**
@@ -124,36 +129,44 @@ public class ImdnManager extends Thread {
                 && mRcsSettings.isRequestAndRespondToGroupDisplayReportsEnabled();
     }
 
-    /**
-     * Background processing
-     */
+    @Override
     public void run() {
-        DeliveryStatus delivery = null;
+        DeliveryStatus delivery;
         while ((delivery = (DeliveryStatus) mBuffer.getObject()) != null) {
             try {
+                boolean imdnDisplay = ImdnDocument.DELIVERY_STATUS_DISPLAYED.equals(delivery
+                        .getStatus());
+                String msgId = delivery.getMsgId();
+                if (imdnDisplay) {
+                    /*
+                     * Display notification are processed asynchronously from the server API.
+                     * Therefore the IMDN message may have already been processed. Here we need to
+                     * check if the Display Report is still requested.
+                     */
+                    ChatLog.Message.Content.Status status = mMessagingLog.getMessageStatus(msgId);
+                    if (ChatLog.Message.Content.Status.DISPLAY_REPORT_REQUESTED != status) {
+                        if (sLogger.isActivated()) {
+                            sLogger.debug("Display report for ID: " + msgId + " already processed!");
+                        }
+                        continue;
+                    }
+                }
                 sendSipMessageDeliveryStatus(delivery, null); // TODO: add sip.instance
                 /*
                  * Update rich messaging history when sending DISPLAYED report Since the requested
                  * display report was now successfully send we mark this message as fully received
                  */
-                if (ImdnDocument.DELIVERY_STATUS_DISPLAYED.equals(delivery.getStatus())) {
+                if (imdnDisplay) {
                     mImService.onChatMessageDisplayReportSent(delivery.getChatId(),
                             delivery.getRemote(), delivery.getMsgId());
                 }
-            } catch (PayloadException e) {
-                sLogger.error(new StringBuilder("Failed to send delivery status for chatId : ")
-                        .append(delivery.getChatId()).toString(), e);
+            } catch (PayloadException | RuntimeException e) {
+                sLogger.error("Failed to send delivery status for chatId: " + delivery.getChatId(),
+                        e);
             } catch (NetworkException e) {
                 if (sLogger.isActivated()) {
                     sLogger.debug(e.getMessage());
                 }
-            } catch (RuntimeException e) {
-                /*
-                 * Intentionally catch runtime exceptions as else it will abruptly end the thread
-                 * and eventually bring the whole system down, which is not intended.
-                 */
-                sLogger.error(new StringBuilder("Failed to send delivery status for chatId : ")
-                        .append(delivery.getChatId()).toString(), e);
             }
         }
     }
@@ -182,7 +195,7 @@ public class ImdnManager extends Thread {
      * @param remote Remote contact
      * @param msgId Message ID
      * @param status Delivery status
-     * @param remoteInstanceId
+     * @param remoteInstanceId the remote instance ID
      * @param timestamp Timestamp sent in payload for IMDN datetime
      * @throws PayloadException
      * @throws NetworkException
@@ -215,7 +228,7 @@ public class ImdnManager extends Thread {
 
                 /* Create a second MESSAGE request with the right token */
                 if (sLogger.isActivated()) {
-                    sLogger.info("Send second MESSAGE.");
+                    sLogger.info("Send second MESSAGE");
                 }
                 SipRequest msg = SipMessageFactory.createMessage(dialogPath,
                         FeatureTags.FEATURE_OMA_IM, CpimMessage.MIME_TYPE, cpim.getBytes(UTF8));
@@ -234,8 +247,8 @@ public class ImdnManager extends Thread {
                 }
                 break;
             default:
-                throw new NetworkException(new StringBuilder("Delivery report has failed: ")
-                        .append(statusCode).append(" response received").toString());
+                throw new NetworkException("Delivery report has failed: " + statusCode
+                        + " response received");
         }
     }
 
@@ -262,8 +275,8 @@ public class ImdnManager extends Thread {
             String imdn = ChatUtils.buildImdnDeliveryReport(deliveryStatus.getMsgId(),
                     deliveryStatus.getStatus(), deliveryStatus.getTimestamp());
             /* Timestamp for CPIM DateTime */
-            String cpim = ChatUtils.buildCpimDeliveryReport(from, to, deliveryStatus.getImdnMessageId(), imdn,
-                    NtpTrustedTime.currentTimeMillis());
+            String cpim = ChatUtils.buildCpimDeliveryReport(from, to,
+                    deliveryStatus.getImdnMessageId(), imdn, NtpTrustedTime.currentTimeMillis());
 
             // Create authentication agent
             SessionAuthenticationAgent authenticationAgent = new SessionAuthenticationAgent(
@@ -280,7 +293,7 @@ public class ImdnManager extends Thread {
 
             // Create MESSAGE request
             if (sLogger.isActivated()) {
-                sLogger.info("Send first MESSAGE.");
+                sLogger.info("Send first MESSAGE");
             }
             SipRequest msg = SipMessageFactory.createMessage(dialogPath,
                     FeatureTags.FEATURE_OMA_IM, CpimMessage.MIME_TYPE, cpim.getBytes(UTF8));
@@ -297,18 +310,12 @@ public class ImdnManager extends Thread {
                     .getCmsService()
                     .getCmsManager()
                     .getImdnDeliveryReportListener()
-                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),deliveryStatus.getMsgId(),
-                            deliveryStatus.getImdnMessageId());
+                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),
+                            deliveryStatus.getMsgId(), deliveryStatus.getImdnMessageId());
 
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Unable to set authorization header for remoteInstanceId : ").append(
-                    remoteInstanceId).toString(), e);
-
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Unable to set authorization header for remoteInstanceId : ").append(
-                    remoteInstanceId).toString(), e);
+        } catch (InvalidArgumentException | ParseException e) {
+            throw new PayloadException("Unable to set authorization header for remoteInstanceId : "
+                    + remoteInstanceId, e);
         }
     }
 
@@ -316,12 +323,12 @@ public class ImdnManager extends Thread {
      * Delivery status
      */
     private static class DeliveryStatus {
-        private String mChatId;
-        private ContactId mRemote;
-        private String mMsgId;
-        private String mStatus;
-        private long mTimestamp;
-        private String mImdnMessageId;
+        private final String mChatId;
+        private final ContactId mRemote;
+        private final String mMsgId;
+        private final String mStatus;
+        private final long mTimestamp;
+        private final String mImdnMessageId;
 
         public DeliveryStatus(String chatId, ContactId remote, String msgId, String status,
                 long timestamp, String imdnMessageId) {

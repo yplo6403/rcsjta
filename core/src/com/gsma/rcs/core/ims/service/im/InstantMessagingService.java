@@ -255,7 +255,7 @@ public class InstantMessagingService extends ImsService {
         mImDeleteOperationHandler = allocateBgHandler(IM_DELETE_OPERATION_THREAD_NAME);
         mStoreAndFwdMgr = new StoreAndForwardManager(this, mRcsSettings, mContactManager,
                 mMessagingLog);
-        mImdnManager = new ImdnManager(this, mRcsSettings);
+        mImdnManager = new ImdnManager(this, mRcsSettings, mMessagingLog);
         mDeliveryExpirationManager = new DeliveryExpirationManager(this, ctx, mMessagingLog);
     }
 
@@ -1892,7 +1892,7 @@ public class InstantMessagingService extends ImsService {
                         } catch (FileAccessException e) {
                             sLogger.error("Failed to download file icon", e);
                             oneToOneChatSession.sendErrorResponse(invite, oneToOneChatSession
-                                            .getDialogPath().getLocalTag(),
+                                    .getDialogPath().getLocalTag(),
                                     InvitationStatus.INVITATION_REJECTED_DECLINE);
 
                             /* Close session */

@@ -135,8 +135,9 @@ public interface IFileTransferLog {
      * Update file transfer read status
      * 
      * @param fileTransferId File transfer ID
+     * @return the number of rows affected
      */
-    void markFileTransferAsRead(String fileTransferId);
+    int markFileTransferAsRead(String fileTransferId);
 
     /**
      * Update file transfer download progress
@@ -371,8 +372,7 @@ public interface IFileTransferLog {
      * @param fileTransferId the file transfer ID
      * @param ftHttpInfo the file transfer HTTP information
      */
-    void setFileTransferDownloadInfo(String fileTransferId,
-            FileTransferHttpInfoDocument ftHttpInfo);
+    void setFileTransferDownloadInfo(String fileTransferId, FileTransferHttpInfoDocument ftHttpInfo);
 
     /**
      * Get file download info

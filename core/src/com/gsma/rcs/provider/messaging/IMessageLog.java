@@ -101,10 +101,11 @@ public interface IMessageLog {
 
     /**
      * Update chat message read status
-     * 
+     *
      * @param msgId Message ID
+     * @return the number of rows affected.
      */
-    void markMessageAsRead(String msgId);
+    int markMessageAsRead(String msgId);
 
     /**
      * Set chat message status and reason code. Note that this method should not be used for
@@ -140,7 +141,7 @@ public interface IMessageLog {
      * Check if the message is read by remote contact
      * 
      * @param msgId message ID
-     * @return true is read
+     * @return true if read, false if unread and null if record is not found
      */
     Boolean isMessageRead(String msgId);
 
