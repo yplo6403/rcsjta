@@ -24,7 +24,6 @@
     <string name="label_decline">Decline</string>
     <string name="label_refresh">Refresh</string>
     <string name="label_from_args">From: %s</string>
-    <string name="label_with_args">With: %s</string>
     <string name="label_yes">Yes</string>
     <string name="label_no">No</string>
     <string name="label_load_log_failed">Database access has failed</string>
@@ -46,10 +45,10 @@
     <string name="label_filename">File: %s</string>
     <string name="label_filesize">Size: %s bytes</string>
     <string name="label_progress_status">Status:</string>
+	<string name="label_position">Position:</string>
     <string name="label_progress_bar">Progress:</string>
     <string name="label_file">Selected file:</string>
     <string name="label_size">Size:</string>
-    <string name="label_receive_image">Received image %1$s from %2$s</string>
     <string name="label_remote">Remote contact:</string>
     <string name="label_select_file">Select file</string>
     <string name="label_invalid_contacts">Invalid list of participants</string>
@@ -60,9 +59,14 @@
     <string name="label_uninitialized_filesize">filesize</string>
     <string name="label_uninitialized_direction">direction</string>
     <string name="error_api_permission_denied">RCS API permission denied</string>
-    <string name="label_todo">Feature not yet implemented</string>
 	<string name="error_not_registered">Not registered to IMS</string>
-
+	<string name="text_dummy">dummy text</string>
+    <string name="timestamp_dummy">2016/01/02 03:00:00</string>
+    <string name="contact_dummy">+33123456789</string>
+    <string name="direction_dummy">direction</string>
+    <string name="number_dummy">0</string>
+    <string name="error_item_not_found">No record found!</string>
+	
     <!-- About menu -->
     <string name="label_about_title">Reference Implementation</string>
     <string name="label_about_release">Release: %s</string>
@@ -166,7 +170,6 @@
     <string name="label_contacts">Contacts:</string>
     <string name="label_contact_is_composing">%1$s is typing…</string>
     <string name="label_select_contacts">Select contacts</string>
-    <string name="label_chat_initiation_canceled">Chat session has been canceled</string>
     <string name="label_select_quicktext">Quick text</string>
     <string name="menu_quicktext">Quick text</string>
     <string name="label_continue_chat_failed">Can\'t continue the conversation: RCS service is not available</string>
@@ -210,38 +213,32 @@
 
     <!-- Sharing menu -->
     <string name="menu_sharing">Sharing</string>
-    <string name="menu_image_sharing">Image sharing</string>
     <string name="menu_video_sharing">Video sharing</string>
-    <string name="menu_geoloc_sharing">Geoloc sharing</string>
     <string name="label_dial">Dial</string>
     <string name="label_sharing_aborted">Sharing aborted (%1$s)</string>
-    <string name="label_sharing_cancelled">Sharing has been cancelled</string>
     <string name="label_sharing_failed">Sharing failed (%1$s)</string>
     <string name="label_sharing_rejected">Sharing rejected (%1$s)</string>
     <string name="menu_sharing_delete">Delete</string>
     <string name="menu_sharing_display">Display</string>
-    <string name="label_delete_sharing_success">Sharing successfully deleted</string>
 
     <!-- Image sharing menu -->
     <string name="menu_initiate_image_sharing">Initiate image sharing</string>
-    <string name="menu_image_sharing_log">Image sharing log</string>
     <string name="label_select_picture">Select picture</string>
-    <string name="label_selected_img">Selected picture:</string>
+    <string name="label_selected_img">Filename:</string>
+	<string name="label_selected_size">Size:</string>
     <string name="title_recv_image_sharing">Image sharing invitation</string>
     <string name="title_image_sharing">Image sharing</string>
     <string name="label_ish_state_changed">ISH state %1$s (%2$s)</string>
 
     <!-- Video sharing menu -->
     <string name="menu_initiate_video_sharing">Initiate video sharing</string>
-    <string name="menu_video_sharing_log">Video sharing log</string>
     <string name="label_initiate_sharing">Invite</string>
     <string name="title_recv_video_sharing">Video sharing invitation</string>
     <string name="title_video_sharing">Video sharing</string>
-    <string name="label_video_duration">Duration: %s</string>
     <string name="label_vsh_state_changed">VSH state %1$s (%2$s)</string>
     <string name="label_switch_camera">Switch camera</string>
     <string name="label_vsh_uninitialized_duration">duration</string>
-    <string name="label_video_format">Format: %s</string>
+    <string name="label_video_format">Format:</string>
 
     <!-- Geoloc sharing menu -->
     <string name="title_recv_geoloc_sharing">Geoloc sharing invitation</string>
@@ -362,27 +359,34 @@
     <string name="menu_open_chat_session">Open</string>
 
     <!-- HistoryLog  menu -->
-    <string name="menu_history_log">History Log</string>
-    <string name="menu_history_log_messaging">Messaging</string>
-    <string name="menu_history_log_sharing">Sharings</string>
-    <string name="title_history_log">History Log</string>
-    <string name="title_history_log_sharing">Sharing Log</string>
-    <string name="title_history_log_messaging">Messaging Log</string>
-    <string name="title_history_log_item">History Log detail</string>
+    <string name="label_log_contact">Contact:</string>
+    <string name="label_log_content">Content:</string>
+    <string name="label_log_date">Date:</string>
+    <string name="label_log_dir">Direction:</string>
+    <string name="label_log_duration">Duration:</string>
+    <string name="label_log_encoding">Encoding:</string>
+    <string name="label_log_file_size">Size:</string>
+    <string name="label_log_filename">Filename:</string>
+    <string name="label_log_height">Height :</string>
+    <string name="label_log_mime">Mime type:</string>
+    <string name="label_log_reason">Reason:</string>
+    <string name="label_log_state">State:</string>
+    <string name="label_log_transferred">Transferred:</string>
+    <string name="label_log_uri">Uri:</string>
+    <string name="label_log_width">Width :</string>
+    <string name="title_sharing_log_item">History Log detail</string>
+    <string name="menu_log_sharing">Sharing log</string>
+	<string name="label_sharing_log_menu_gsh">Geoloc Share</string>
+    <string name="label_sharing_log_menu_ish">Image Share</string>
+    <string name="label_sharing_log_menu_vsh">Video Share</string>
+	<string name="label_sharing_log_contact_spinner_default_value">No contact filter</string>
+    <string name="value_log_duration">Duration: %1$s</string>
+    <string name="title_sharing_log_dialog_filter_logs">Filter</string>
+
+    <string name="title_sharing_log">Sharing Log</string>
     <string name="label_history_log_menu_filter">Change filter</string>
-    <string name="label_history_log_menu_chat">Chat</string>
-    <string name="label_history_log_menu_file_transfer">File Transfer</string>
-    <string name="label_history_log_menu_image_sharing">Image Share</string>
-    <string name="label_history_log_menu_video_sharing">Video Share</string>
-    <string name="label_history_log_menu_geoloc_sharing">Geoloc Share</string>
-    <string name="title_history_log_dialog_filter_logs_title">Filter</string>
     <string name="label_history_log_empty">Log is empty</string>
     <string name="label_history_log_contact_spinner_default_value">No contact filter</string>
-    <string name="label_history_log_group_conversation">Group</string>
-    <string name="label_history_log_single_conversation">One To One</string>
-    <string name="label_history_log_image_sharing">Image share</string>
-    <string name="label_history_log_video_sharing">Video share</string>
-    <string name="label_history_log_geoloc_sharing">Geoloc share</string>
 
     <!-- Common Message Store menu -->
     <string name="menu_cms">Common Message Store</string>
@@ -390,18 +394,13 @@
     <string name="menu_cms_item1">Synchronization</string>
     <string name="menu_cms_item2">Messaging</string>
     <string name="menu_cms_messaging_title">CMS messaging</string>
-    <string name="menu_cms_messaging_history_title">Messaging history</string>
-    <string name="menu_cms_log_title">One to one messaging log</string>
     <string name="menu_cms_initiate_title">Initiate one to one conversation</string>
     <string name="menu_cms_messaging_item1">Initiate conversation</string>
     <string name="menu_cms_messaging_item2">CMS log</string>
-    <string name="menu_open_xms_talk">Open</string>
     <string name="menu_cms_sync_title">CMS synchronize</string>
     <string name="menu_cms_sync_all">Sync all</string>
     <string name="menu_cms_sync_one_to_one">Sync one-to-one conversation</string>
     <string name="menu_cms_sync_group">Sync group conversation</string>
-    <string name="cms_sync_completed">End of CMS synchronization</string>
-    <string name="cms_sync_contact_completed">CMS synchronized for contact %1$s</string>
     <string name="cms_sync_timestamp">Synchronized at</string>
     <string name="err_select_file">Select at least one image or video file</string>
     <string name="label_list_empty">No message</string>
@@ -411,12 +410,7 @@
     <string name="mms_image">MMS image</string>
     <string name="title_recv_sms">SMS from %s</string>
     <string name="title_recv_mms">MMS from %s</string>
-    <string name="toast_mms_image">MMS image %1$s for contact %2$s</string>
-    <string name="label_cms_sync_end">CMS is synchronized</string>
-    <string name="label_cms_sync_talk_end">CMS is synchronized for contact %1$s</string>
 
-    <string name="mms_image_in">Image %1$s received from contact %2$s</string>
-    <string name="mms_image_out">Image %1$s sent to contact %2$s</string>
     <string name="menu_delete_talk">Delete all messages</string>
     <string name="hint_type_subject">Enter the subject</string>
     <string name="menu_select_part">Select attachment</string>
@@ -440,8 +434,6 @@
     <string name="switch_mms_subject">MMS from %1$s</string>
     <string name="switch_mms_body">Automatic backup from RCS to MMS</string>
     <string name="menu_delete_imap_data">Delete IMAP data</string>
-    <string name="ri_settings_menus_display">Set the menus to display</string>
-    <string name="ri_settings_title_menus_display">Menu display</string>
 
     <!-- States -->
 

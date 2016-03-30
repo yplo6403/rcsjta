@@ -4,8 +4,8 @@ package com.orangelabs.rcs.cms.toolkit;
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.gsma.rcs.api.connection.utils.RcsActivity;
 
 import android.content.Context;
 import android.content.SharedPreferences;

@@ -20,6 +20,12 @@ android {
     //Required to support builds although lint errors exist
     lintOptions {
         abortOnError false
+		disable 'IconLocation'
+        disable 'IconDuplicates'
+		disable 'IconDuplicatesConfig'
+		disable 'IconColors'
+		disable 'IconMissingDensityFolder'
+		disable 'IconDensities'
     }
 
     //Google maps
@@ -28,11 +34,11 @@ android {
     buildToolsVersion rootProject.buildToolsVersion
 
     defaultConfig {
-        applicationId "com.orangelabs.rcs.ri"
+        applicationId "com.gsma.rcs.ri"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         versionCode 1
-        versionName "1.5.1"
+        versionName "2.0"
         archivesBaseName = "RI"
     }
 }

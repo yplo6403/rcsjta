@@ -8,8 +8,8 @@ import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.DeleteTaskListener;
 import com.gsma.rcs.core.cms.sync.scheduler.task.DeleteTask.Operation;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.orangelabs.rcs.api.connection.utils.RcsActivity;
+import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.gsma.rcs.api.connection.utils.RcsActivity;
 import com.orangelabs.rcs.cms.toolkit.AlertDialogUtils;
 import com.orangelabs.rcs.cms.toolkit.R;
 import com.orangelabs.rcs.cms.toolkit.ToolkitHandler;

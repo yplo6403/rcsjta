@@ -20,8 +20,8 @@ package com.orangelabs.rcs.cms.toolkit;
 
 import com.gsma.services.rcs.RcsServiceControl;
 
-import com.orangelabs.rcs.api.connection.ConnectionManager;
-import com.orangelabs.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.gsma.rcs.api.connection.ConnectionManager;
+import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
 
 import android.app.Application;
 import android.content.Context;
