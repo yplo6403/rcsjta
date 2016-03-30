@@ -23,6 +23,7 @@ import com.gsma.services.rcs.history.HistoryLog;
 
 import android.database.Cursor;
 import android.view.View;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 /**
@@ -38,6 +39,7 @@ public abstract class BasicViewHolder {
     protected final int mColumnStatusIdx;
     protected final int mColumnReasonCodeIdx;
     protected final int mColumnMimetypeIdx;
+    protected final RelativeLayout mDivider;
 
     /**
      * Constructor
@@ -54,6 +56,7 @@ public abstract class BasicViewHolder {
         mColumnReasonCodeIdx = cursor.getColumnIndexOrThrow(HistoryLog.REASON_CODE);
         /* Save children views */
         mDateSeparator = (TextView) base.findViewById(R.id.date_separator);
+        mDivider = (RelativeLayout) base.findViewById(R.id.talk_item_divider);
         mStatusText = (TextView) base.findViewById(R.id.status_text);
         mTimestampText = (TextView) base.findViewById(R.id.timestamp_text);
     }

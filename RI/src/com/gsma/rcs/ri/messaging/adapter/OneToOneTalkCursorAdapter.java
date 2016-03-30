@@ -506,13 +506,13 @@ public class OneToOneTalkCursorAdapter extends CursorAdapter {
             long nextDate = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP));
             if (!TalkUtils.compareDaytime(currentDate, nextDate)) {
                 holder.mDateSeparator.setText(TalkUtils.formatDateAsDaytime(currentDate));
-                holder.mDateSeparator.setVisibility(View.VISIBLE);
+                holder.mDivider.setVisibility(View.VISIBLE);
             } else {
-                holder.mDateSeparator.setVisibility(View.GONE);
+                holder.mDivider.setVisibility(View.GONE);
             }
         } else { // Display date for the first element of the list
             holder.mDateSeparator.setText(TalkUtils.formatDateAsDaytime(currentDate));
-            holder.mDateSeparator.setVisibility(View.VISIBLE);
+            holder.mDivider.setVisibility(View.VISIBLE);
         }
         cursor.moveToPosition(currentPosition);
     }
