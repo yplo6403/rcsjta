@@ -57,7 +57,6 @@ public class CapabilitiesList extends RcsActivity {
         CapabilitiesLog.AUTOMATA,
         CapabilitiesLog.TIMESTAMP
     };
-
     // @formatter:on
 
     private static final String SORT_ORDER = CapabilitiesLog.CONTACT + " DESC";
@@ -82,7 +81,7 @@ public class CapabilitiesList extends RcsActivity {
         Cursor cursor = getContentResolver().query(CapabilitiesLog.CONTENT_URI, PROJECTION, null,
                 null, SORT_ORDER);
         if (cursor == null) {
-            showMessageThenExit(R.string.label_load_log_failed);
+            showMessageThenExit(R.string.label_db_failed);
             return null;
         }
         return new CapabilitiesListAdapter(this, cursor);
@@ -123,7 +122,7 @@ public class CapabilitiesList extends RcsActivity {
             // Set display name from number
             String number = cursor.getString(holder.columnContact);
             String displayName = rcsDisplayName.getDisplayName(number);
-            holder.numberText.setText(getString(R.string.label_contact, displayName));
+            holder.numberText.setText(getString(R.string.label_contact_arg, displayName));
 
             holder.imBox
                     .setChecked(cursor.getInt(holder.columnCapabilityIm) == CapabilitiesLog.SUPPORTED);
@@ -135,10 +134,6 @@ public class CapabilitiesList extends RcsActivity {
                     .setChecked(cursor.getInt(holder.columnCapabilityVideoSharing) == CapabilitiesLog.SUPPORTED);
             holder.geolocBox
                     .setChecked(cursor.getInt(holder.columnCapabilityGeolocPush) == CapabilitiesLog.SUPPORTED);
-            holder.ipVoiceCallBox
-                    .setChecked(cursor.getInt(holder.columnCapabilityIpVoiceCall) == CapabilitiesLog.SUPPORTED);
-            holder.ipVideoCallBox
-                    .setChecked(cursor.getInt(holder.columnCapabilityIpVideoCall) == CapabilitiesLog.SUPPORTED);
             String exts = cursor.getString(holder.columnCapabilityExtensions);
             if (exts != null) {
                 exts = exts.replace(';', '\n');
@@ -165,47 +160,39 @@ public class CapabilitiesList extends RcsActivity {
     private class CapabilitiesItemViewHolder {
         public TextView numberText;
 
-        public CheckBox imBox;
+        public final CheckBox imBox;
 
-        public CheckBox ftBox;
+        public final CheckBox ftBox;
 
-        public CheckBox ishBox;
+        public final CheckBox ishBox;
 
-        public CheckBox vshBox;
+        public final CheckBox vshBox;
 
-        public CheckBox geolocBox;
+        public final CheckBox geolocBox;
 
-        public CheckBox ipVoiceCallBox;
+        public final TextView extsText;
 
-        public CheckBox ipVideoCallBox;
+        public final CheckBox automataBox;
 
-        public TextView extsText;
+        public final TextView lastRefreshText;
 
-        public CheckBox automataBox;
+        public final int columnContact;
 
-        public TextView lastRefreshText;
+        public final int columnCapabilityIm;
 
-        public int columnContact;
+        public final int columnCapabilityImageSharing;
 
-        public int columnCapabilityIm;
+        public final int columnCapabilityFileTransfer;
 
-        public int columnCapabilityImageSharing;
+        public final int columnCapabilityVideoSharing;
 
-        public int columnCapabilityFileTransfer;
+        public final int columnCapabilityGeolocPush;
 
-        public int columnCapabilityVideoSharing;
+        public final int columnCapabilityExtensions;
 
-        public int columnCapabilityIpVoiceCall;
+        public final int columnAutomata;
 
-        public int columnCapabilityIpVideoCall;
-
-        public int columnCapabilityGeolocPush;
-
-        public int columnCapabilityExtensions;
-
-        public int columnAutomata;
-
-        public int columnTimestamp;
+        public final int columnTimestamp;
 
         CapabilitiesItemViewHolder(View base, Cursor cursor) {
             columnContact = cursor.getColumnIndexOrThrow(CapabilitiesLog.CONTACT);

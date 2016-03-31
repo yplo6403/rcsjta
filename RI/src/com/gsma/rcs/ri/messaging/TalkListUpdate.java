@@ -30,6 +30,7 @@ import com.gsma.services.rcs.history.HistoryUriBuilder;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.net.Uri;
 import android.os.AsyncTask;
 
@@ -102,7 +103,7 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
             cursor = mCtx.getContentResolver().query(mUriHistoryProvider, PROJECTION, null, null,
                     null);
             if (cursor == null) {
-                throw new IllegalStateException("Cannot query History Log");
+                throw new SQLException("Cannot query History Log");
             }
             int columnTimestamp = cursor.getColumnIndexOrThrow(HistoryLog.TIMESTAMP);
             int columnProviderId = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
@@ -159,16 +160,14 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
                                 mimeType, unreadCount);
                         item.setSubject(content);
                     }
+                } else if (item != null) {
+                    String subject = item.getSubject();
+                    item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
+                            mimeType, unreadCount);
+                    item.setSubject(subject);
                 } else {
-                    if (item != null) {
-                        String subject = item.getSubject();
-                        item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
-                                mimeType, unreadCount);
-                        item.setSubject(subject);
-                    } else {
-                        item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
-                                mimeType, unreadCount);
-                    }
+                    item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
+                            mimeType, unreadCount);
                 }
                 dataMap.put(chatId, item);
             }

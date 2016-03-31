@@ -26,6 +26,7 @@
     <string name="label_from_args">From: %s</string>
     <string name="label_yes">Yes</string>
     <string name="label_no">No</string>
+    <string name="label_db_failed">Database access has failed</string>
     <string name="label_load_log_failed">Database access has failed</string>
     <string name="label_log_empty">No entry</string>
     <string name="label_incoming">incoming</string>
@@ -49,6 +50,7 @@
     <string name="label_progress_bar">Progress:</string>
     <string name="label_file">Selected file:</string>
     <string name="label_size">Size:</string>
+    <string name="label_contact">Contact:</string>
     <string name="label_remote">Remote contact:</string>
     <string name="label_select_file">Select file</string>
     <string name="label_invalid_contacts">Invalid list of participants</string>
@@ -101,7 +103,7 @@
     <string name="label_capabilities_extensions">Extensions:</string>
     <string name="label_request_in_background">Request has been sent in background for %s</string>
     <string name="label_capabilities_empty">No capabilities</string>
-    <string name="label_contact">Contact %s</string>
+    <string name="label_contact_arg">Contact %s</string>
     <string name="label_capabilities_geolocation_push">Geolocation push</string>
     <string name="label_automata">Automata:</string>
     <string name="label_capabilities_timestamp">Last refresh:</string>
@@ -111,6 +113,7 @@
     <string name="menu_messaging">Messaging</string>
     <string name="menu_file_transfer">File transfer</string>
     <string name="menu_chat">Chat</string>
+    <string name="menu_messaging_log">Messaging log</string>
 
     <!-- File transfer menu -->
     <string name="menu_transfer_file">Transfer a file</string>
@@ -152,9 +155,7 @@
     <!-- Chat menu -->
     <string name="menu_initiate_chat">Initiate single chat</string>
     <string name="menu_initiate_group_chat">Initiate group chat</string>
-    <string name="menu_chat_log">Chat log</string>
     <string name="menu_chat_config">Chat service configuration</string>
-    <string name="menu_group_chat_log">Group chat log</string>
     <string name="label_invite">Invite</string>
     <string name="title_recv_chat">Chat from %s</string>
     <string name="title_recv_group_chat">Group chat from %s</string>
@@ -172,8 +173,6 @@
     <string name="label_select_contacts">Select contacts</string>
     <string name="label_select_quicktext">Quick text</string>
     <string name="menu_quicktext">Quick text</string>
-    <string name="label_continue_chat_failed">Can\'t continue the conversation: RCS service is not available</string>
-    <string name="label_delete_chat_failed">Delete chat conversation failed</string>
     <string name="label_delete_chat_success">Chat with contact %1$s deleted</string>
     <string name="label_delete_gchat_success">Group chat successfully deleted</string>
     <string name="label_subject">Subject: </string>
@@ -237,7 +236,6 @@
     <string name="title_video_sharing">Video sharing</string>
     <string name="label_vsh_state_changed">VSH state %1$s (%2$s)</string>
     <string name="label_switch_camera">Switch camera</string>
-    <string name="label_vsh_uninitialized_duration">duration</string>
     <string name="label_video_format">Format:</string>
 
     <!-- Geoloc sharing menu -->

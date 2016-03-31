@@ -20,10 +20,8 @@ package com.gsma.rcs.ri.messaging.chat;
 
 import com.gsma.rcs.api.connection.utils.RcsListActivity;
 import com.gsma.rcs.ri.R;
-import com.gsma.rcs.ri.messaging.chat.group.GroupChatList;
 import com.gsma.rcs.ri.messaging.chat.group.InitiateGroupChat;
 import com.gsma.rcs.ri.messaging.chat.single.InitiateSingleChat;
-import com.gsma.rcs.ri.messaging.chat.single.SingleChatList;
 import com.gsma.rcs.ri.messaging.geoloc.DisplayGeoloc;
 import com.gsma.rcs.ri.utils.ContactUtil;
 import com.gsma.services.rcs.RcsServiceException;
@@ -64,10 +62,8 @@ public class TestChatApi extends RcsListActivity {
         // @formatter:off
         String[] items = {
                 getString(R.string.menu_initiate_chat), 
-                getString(R.string.menu_chat_log),
                 getString(R.string.menu_initiate_group_chat),
-                getString(R.string.menu_group_chat_log),
-                getString(R.string.menu_chat_service_config), 
+                getString(R.string.menu_chat_service_config),
                 getString(R.string.menu_showus_map),
         };
         // @formatter:on
@@ -82,10 +78,6 @@ public class TestChatApi extends RcsListActivity {
                 break;
 
             case 1:
-                startActivity(new Intent(this, SingleChatList.class));
-                break;
-
-            case 2:
                 /* Check if Group chat initialization is allowed */
                 ChatService chatService = getChatApi();
                 try {
@@ -102,28 +94,25 @@ public class TestChatApi extends RcsListActivity {
                 }
                 break;
 
-            case 3:
-                startActivity(new Intent(this, GroupChatList.class));
-                break;
-
-            case 4:
+            case 2:
                 startActivity(new Intent(this, ChatServiceConfigActivity.class));
                 break;
 
-            case 5:
+            case 3:
                 Set<ContactId> contacts = new HashSet<>();
                 Cursor cursor = null;
                 try {
                     cursor = getContentResolver().query(CapabilitiesLog.CONTENT_URI, PROJECTION,
                             null, null, null);
                     if (cursor == null) {
-                        throw new IllegalStateException("Cannot query capabilities");
+                        showMessageThenExit(R.string.label_db_failed);
+                        return;
                     }
                     if (!cursor.moveToFirst()) {
                         showMessage(getString(R.string.label_geoloc_not_found));
                         return;
                     }
-                    int contactColumIdx = cursor.getColumnIndex(CapabilitiesLog.CONTACT);
+                    int contactColumIdx = cursor.getColumnIndexOrThrow(CapabilitiesLog.CONTACT);
                     do {
                         String contact = cursor.getString(contactColumIdx);
                         contacts.add(ContactUtil.formatContact(contact));
@@ -136,7 +125,6 @@ public class TestChatApi extends RcsListActivity {
                     }
                 }
                 break;
-
         }
     }
 

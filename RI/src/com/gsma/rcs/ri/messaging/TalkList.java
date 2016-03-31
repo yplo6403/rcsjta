@@ -153,9 +153,6 @@ public class TalkList extends RcsActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mCmsService == null) {
-            return;
-        }
         try {
             if (mXmsMessageListenerSet) {
                 mCmsService.removeEventListener(mXmsMessageListener);
@@ -223,7 +220,11 @@ public class TalkList extends RcsActivity {
                         break;
                     }
                     if (LogUtils.isActive) {
-                        Log.d(LOGTAG, "delete one to one conversations");
+                        Log.d(LOGTAG, "delete conversations");
+                    }
+                    if (!mXmsMessageListenerSet) {
+                        mCmsService.addEventListener(mXmsMessageListener);
+                        mXmsMessageListenerSet = true;
                     }
                     mCmsService.deleteXmsMessages();
                     if (!mOneToOneChatListenerSet) {
@@ -263,17 +264,10 @@ public class TalkList extends RcsActivity {
                 case R.id.menu_initiate_group_chat:
                     /* Start a new group chat */
                     ChatService chatService = getChatApi();
-                    try {
-                        if (chatService.isAllowedToInitiateGroupChat()) {
-                            startActivity(new Intent(this, InitiateGroupChat.class));
-                        } else {
-                            showMessage(R.string.label_NotAllowedToInitiateGroupChat);
-                        }
-                    } catch (RcsServiceNotAvailableException e) {
-                        showMessage(R.string.label_service_not_available);
-
-                    } catch (RcsServiceException e) {
-                        showExceptionThenExit(e);
+                    if (chatService.isAllowedToInitiateGroupChat()) {
+                        startActivity(new Intent(this, InitiateGroupChat.class));
+                    } else {
+                        showMessage(R.string.label_NotAllowedToInitiateGroupChat);
                     }
                     break;
 
@@ -289,6 +283,9 @@ public class TalkList extends RcsActivity {
                     startActivity(new Intent(this, AboutRI.class));
                     break;
             }
+        } catch (RcsServiceNotAvailableException e) {
+            showMessage(R.string.label_service_not_available);
+
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
         }
@@ -330,6 +327,10 @@ public class TalkList extends RcsActivity {
                         }
                         mChatService.deleteGroupChat(chatId);
                         return true;
+                    }
+                    if (!mXmsMessageListenerSet) {
+                        mCmsService.addEventListener(mXmsMessageListener);
+                        mXmsMessageListenerSet = true;
                     }
                     mCmsService.deleteXmsMessages(contact);
                     if (!mOneToOneChatListenerSet) {
@@ -576,16 +577,6 @@ public class TalkList extends RcsActivity {
         if (!isServiceConnected(RcsServiceName.CMS)) {
             return;
         }
-
-        if (!mXmsMessageListenerSet) {
-            try {
-                mCmsService.addEventListener(mXmsMessageListener);
-                mXmsMessageListenerSet = true;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-
         if (!mCmsSynchronizationListenerSet) {
             try {
                 mCmsService.addEventListener(mCmsSynchronizationListener);
@@ -600,16 +591,6 @@ public class TalkList extends RcsActivity {
         if (!isServiceConnected(RcsServiceName.CMS)) {
             return;
         }
-
-        if (mXmsMessageListenerSet) {
-            try {
-                mCmsService.removeEventListener(mXmsMessageListener);
-                mXmsMessageListenerSet = false;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-
         if (mCmsSynchronizationListenerSet) {
             try {
                 mCmsService.removeEventListener(mCmsSynchronizationListener);

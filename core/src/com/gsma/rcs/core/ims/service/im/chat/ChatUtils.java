@@ -100,14 +100,13 @@ public class ChatUtils {
     /**
      * Get supported feature tags for a group chat
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return List of tags
      */
     public static List<String> getSupportedFeatureTagsForGroupChat(RcsSettings rcsSettings) {
-        List<String> tags = new ArrayList<String>();
+        List<String> tags = new ArrayList<>();
         tags.add(FeatureTags.FEATURE_OMA_IM);
-
-        List<String> additionalRcseTags = new ArrayList<String>();
+        List<String> additionalRcseTags = new ArrayList<>();
         if (rcsSettings.isGeoLocationPushSupported()) {
             additionalRcseTags.add(FeatureTags.FEATURE_RCSE_GEOLOCATION_PUSH);
         }
@@ -124,7 +123,6 @@ public class ChatUtils {
             tags.add(FeatureTags.FEATURE_RCSE + "=\"" + TextUtils.join(",", additionalRcseTags)
                     + "\"");
         }
-
         return tags;
     }
 
@@ -134,7 +132,7 @@ public class ChatUtils {
      * @return List of tags
      */
     public static List<String> getAcceptContactTagsForGroupChat() {
-        List<String> tags = new ArrayList<String>();
+        List<String> tags = new ArrayList<>();
         tags.add(FeatureTags.FEATURE_OMA_IM);
         return tags;
     }
@@ -142,14 +140,13 @@ public class ChatUtils {
     /**
      * Get supported feature tags for a chat
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return List of tags
      */
     public static List<String> getSupportedFeatureTagsForChat(RcsSettings rcsSettings) {
-        List<String> tags = new ArrayList<String>();
+        List<String> tags = new ArrayList<>();
         tags.add(FeatureTags.FEATURE_OMA_IM);
-
-        List<String> additionalRcseTags = new ArrayList<String>();
+        List<String> additionalRcseTags = new ArrayList<>();
         if (rcsSettings.isGeoLocationPushSupported()) {
             additionalRcseTags.add(FeatureTags.FEATURE_RCSE_GEOLOCATION_PUSH);
         }
@@ -166,14 +163,13 @@ public class ChatUtils {
             tags.add(FeatureTags.FEATURE_RCSE + "=\"" + TextUtils.join(",", additionalRcseTags)
                     + "\"");
         }
-
         return tags;
     }
 
     /**
      * Get contribution ID
      * 
-     * @param request
+     * @param request the SIP request
      * @return String
      */
     public static String getContributionId(SipRequest request) {
@@ -311,8 +307,7 @@ public class ChatUtils {
      */
     public static Map<ContactId, ParticipantStatus> getParticipants(Set<ContactId> contacts,
             ParticipantStatus status) {
-        Map<ContactId, ParticipantStatus> participants = new HashMap<ContactId, ParticipantStatus>();
-
+        Map<ContactId, ParticipantStatus> participants = new HashMap<>();
         for (ContactId contact : contacts) {
             participants.put(contact, status);
         }
@@ -328,11 +323,8 @@ public class ChatUtils {
     public static boolean isImdnService(SipRequest request) {
         String content = request.getContent();
         String contentType = request.getContentType();
-        if ((content != null) && (content.contains(ImdnDocument.IMDN_NAMESPACE))
-                && (contentType != null) && (contentType.equalsIgnoreCase(CpimMessage.MIME_TYPE))) {
-            return true;
-        }
-        return false;
+        return (content != null) && (content.contains(ImdnDocument.IMDN_NAMESPACE))
+                && (contentType != null) && (contentType.equalsIgnoreCase(CpimMessage.MIME_TYPE));
     }
 
     /**
@@ -378,8 +370,7 @@ public class ChatUtils {
 
     // @FIXME: This method should have URI as parameter instead of String
     private static String addUriDelimiters(String uri) {
-        return new StringBuilder(PhoneUtils.URI_START_DELIMITER).append(uri)
-                .append(PhoneUtils.URI_END_DELIMITER).toString();
+        return PhoneUtils.URI_START_DELIMITER + uri + PhoneUtils.URI_END_DELIMITER;
     }
 
     /**
@@ -400,7 +391,8 @@ public class ChatUtils {
         if (indexPtVirgule != -1) {
             localParty = localParty.substring(0, indexPtVirgule);
             if (sLogger.isActivated()) {
-                sLogger.debug("formatCpimSipUriWithAcceptContact - Formatted Local Party = " + localParty);
+                sLogger.debug("formatCpimSipUriWithAcceptContact - Formatted Local Party = "
+                        + localParty);
             }
         }
 
@@ -410,11 +402,12 @@ public class ChatUtils {
         }
 
         String formatFrom = "<%s?Accept-Contact=%s>";
-        String acceptContactFrom = "+sip.instance="+instanceId;
+        String acceptContactFrom = "+sip.instance=" + instanceId;
 
         try {
             // Encode the Accept-Contact tag and build the From tag
-            String from = String.format(formatFrom, localParty, URLEncoder.encode(acceptContactFrom, "UTF-8"));
+            String from = String.format(formatFrom, localParty,
+                    URLEncoder.encode(acceptContactFrom, "UTF-8"));
             if (sLogger.isActivated()) {
                 sLogger.debug("formatCpimSipUriWithAcceptContact - Final From = " + from);
             }
@@ -474,9 +467,8 @@ public class ChatUtils {
      */
     public static String buildCpimMessage(SipDialogPath dialogPath, String to, String content,
             String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
-                .append(buildCpimMessage(to, content, contentType, timestampSent)).toString();
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
+                + CRLF + buildCpimMessage(to, content, contentType, timestampSent);
     }
 
     /**
@@ -490,10 +482,9 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessage(String from, String to, String content,
-                                          String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF)
-                .append(buildCpimMessage(to, content, contentType, timestampSent)).toString();
+            String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
+                + buildCpimMessage(to, content, contentType, timestampSent);
     }
 
     /**
@@ -505,14 +496,12 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTimes
      * @return String
      */
-    private static String buildCpimMessage(String to, String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_TO)
-                .append(": ").append(formatCpimSipUri(to)).append(CRLF)
-                .append(CpimMessage.HEADER_DATETIME).append(": ")
-                .append(DateUtils.encodeDate(timestampSent)).append(CRLF).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_TYPE).append(": ").append(contentType)
-                .append(";charset=").append(UTF8_STR).append(CRLF).append(CRLF).append(content)
-                .toString();
+    private static String buildCpimMessage(String to, String content, String contentType,
+            long timestampSent) {
+        return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF
+                + CpimMessage.HEADER_DATETIME + ": " + DateUtils.encodeDate(timestampSent) + CRLF
+                + CRLF + CpimMessage.HEADER_CONTENT_TYPE + ": " + contentType + ";charset="
+                + UTF8_STR + CRLF + CRLF + content;
     }
 
     /**
@@ -526,11 +515,11 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithImdn(SipDialogPath dialogPath, String to, String messageId,
-            String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
-                .append(buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent)).toString();
+    public static String buildCpimMessageWithImdn(SipDialogPath dialogPath, String to,
+            String messageId, String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
+                + CRLF
+                + buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent);
     }
 
     /**
@@ -545,10 +534,9 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessageWithImdn(String from, String to, String messageId,
-                                                  String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF)
-                .append(buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent)).toString();
+            String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
+                + buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent);
     }
 
     /**
@@ -561,21 +549,16 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    private static String buildCpimMessageWithImdn(String to, String messageId,
-                                                  String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_TO)
-                .append(": ").append(formatCpimSipUri(to)).append(CRLF)
-                .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
-                .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ").append(messageId)
-                .append(CRLF).append(CpimMessage.HEADER_DATETIME).append(": ")
-                .append(DateUtils.encodeDate(timestampSent)).append(CRLF)
-                .append(ImdnUtils.HEADER_IMDN_DISPO_NOTIF).append(": ")
-                .append(ImdnDocument.POSITIVE_DELIVERY).append(", ").append(ImdnDocument.DISPLAY)
-                .append(CRLF).append(CRLF).append(CpimMessage.HEADER_CONTENT_TYPE).append(": ")
-                .append(contentType).append(";charset=").append(UTF8_STR).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_LENGTH).append(": ")
-                .append(content.getBytes(UTF8).length).append(CRLF).append(CRLF).append(content)
-                .toString();
+    private static String buildCpimMessageWithImdn(String to, String messageId, String content,
+            String contentType, long timestampSent) {
+        return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF + CpimMessage.HEADER_NS
+                + ": " + ImdnDocument.IMDN_NAMESPACE + CRLF + ImdnUtils.HEADER_IMDN_MSG_ID + ": "
+                + messageId + CRLF + CpimMessage.HEADER_DATETIME + ": "
+                + DateUtils.encodeDate(timestampSent) + CRLF + ImdnUtils.HEADER_IMDN_DISPO_NOTIF
+                + ": " + ImdnDocument.POSITIVE_DELIVERY + ", " + ImdnDocument.DISPLAY + CRLF + CRLF
+                + CpimMessage.HEADER_CONTENT_TYPE + ": " + contentType + ";charset=" + UTF8_STR
+                + CRLF + CpimMessage.HEADER_CONTENT_LENGTH + ": " + content.getBytes(UTF8).length
+                + CRLF + CRLF + content;
     }
 
     /**
@@ -591,9 +574,12 @@ public class ChatUtils {
      */
     public static String buildCpimMessageWithoutDisplayedImdn(SipDialogPath dialogPath, String to,
             String messageId, String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
-                .append(buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType, timestampSent)).toString();
+        return CpimMessage.HEADER_FROM
+                + ": "
+                + formatCpimSipUriWithAcceptContact(dialogPath)
+                + CRLF
+                + buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType,
+                        timestampSent);
     }
 
     /**
@@ -608,10 +594,13 @@ public class ChatUtils {
      * @return String
      */
     public static String buildCpimMessageWithoutDisplayedImdn(String from, String to,
-                                                              String messageId, String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF)
-                .append(buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType, timestampSent)).toString();
+            String messageId, String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM
+                + ": "
+                + formatCpimSipUri(from)
+                + CRLF
+                + buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType,
+                        timestampSent);
     }
 
     /**
@@ -624,21 +613,16 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithoutDisplayedImdn(String to,
-                                                              String messageId, String content, String contentType, long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_TO)
-                .append(": ").append(formatCpimSipUri(to)).append(CRLF)
-                .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
-                .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ").append(messageId)
-                .append(CRLF).append(CpimMessage.HEADER_DATETIME).append(": ")
-                .append(DateUtils.encodeDate(timestampSent)).append(CRLF)
-                .append(ImdnUtils.HEADER_IMDN_DISPO_NOTIF).append(": ")
-                .append(ImdnDocument.POSITIVE_DELIVERY).append(CRLF).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_TYPE).append(": ").append(contentType)
-                .append(";charset=").append(UTF8_STR).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_LENGTH).append(": ")
-                .append(content.getBytes(UTF8).length).append(CRLF).append(CRLF).append(content)
-                .toString();
+    public static String buildCpimMessageWithoutDisplayedImdn(String to, String messageId,
+            String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF + CpimMessage.HEADER_NS
+                + ": " + ImdnDocument.IMDN_NAMESPACE + CRLF + ImdnUtils.HEADER_IMDN_MSG_ID + ": "
+                + messageId + CRLF + CpimMessage.HEADER_DATETIME + ": "
+                + DateUtils.encodeDate(timestampSent) + CRLF + ImdnUtils.HEADER_IMDN_DISPO_NOTIF
+                + ": " + ImdnDocument.POSITIVE_DELIVERY + CRLF + CRLF
+                + CpimMessage.HEADER_CONTENT_TYPE + ": " + contentType + ";charset=" + UTF8_STR
+                + CRLF + CpimMessage.HEADER_CONTENT_LENGTH + ": " + content.getBytes(UTF8).length
+                + CRLF + CRLF + content;
     }
 
     /**
@@ -651,11 +635,10 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to, String messageId, String imdn,
-            long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUriWithAcceptContact(dialogPath)).append(CRLF)
-                .append(buildCpimDeliveryReport(to, messageId, imdn, timestampSent)).toString();
+    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to,
+            String messageId, String imdn, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
+                + CRLF + buildCpimDeliveryReport(to, messageId, imdn, timestampSent);
     }
 
     /**
@@ -668,11 +651,10 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(String from, String to, String messageId, String imdn,
-                                                 long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_FROM).append(": ")
-                .append(formatCpimSipUri(from)).append(CRLF)
-                .append(buildCpimDeliveryReport(to, messageId, imdn, timestampSent)).toString();
+    public static String buildCpimDeliveryReport(String from, String to, String messageId,
+            String imdn, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
+                + buildCpimDeliveryReport(to, messageId, imdn, timestampSent);
     }
 
     /**
@@ -685,21 +667,15 @@ public class ChatUtils {
      * @return String
      */
     private static String buildCpimDeliveryReport(String to, String messageId, String imdn,
-                                                 long timestampSent) {
-        return new StringBuilder(CpimMessage.HEADER_TO)
-                .append(": ").append(formatCpimSipUri(to)).append(CRLF)
-                .append(CpimMessage.HEADER_NS).append(": ").append(ImdnDocument.IMDN_NAMESPACE)
-                .append(CRLF).append(ImdnUtils.HEADER_IMDN_MSG_ID).append(": ")
-                .append(messageId).append(CRLF)
-                .append(CpimMessage.HEADER_DATETIME).append(": ")
-                .append(DateUtils.encodeDate(timestampSent)).append(CRLF).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_TYPE).append(": ")
-                .append(ImdnDocument.MIME_TYPE).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_DISPOSITION).append(": ")
-                .append(ImdnDocument.NOTIFICATION).append(CRLF)
-                .append(CpimMessage.HEADER_CONTENT_LENGTH).append(": ")
-                .append(imdn.getBytes(UTF8).length).append(CRLF).append(CRLF).append(imdn)
-                .toString();
+            long timestampSent) {
+        return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF + CpimMessage.HEADER_NS
+                + ": " + ImdnDocument.IMDN_NAMESPACE + CRLF + ImdnUtils.HEADER_IMDN_MSG_ID + ": "
+                + messageId + CRLF + CpimMessage.HEADER_DATETIME + ": "
+                + DateUtils.encodeDate(timestampSent) + CRLF + CRLF
+                + CpimMessage.HEADER_CONTENT_TYPE + ": " + ImdnDocument.MIME_TYPE + CRLF
+                + CpimMessage.HEADER_CONTENT_DISPOSITION + ": " + ImdnDocument.NOTIFICATION + CRLF
+                + CpimMessage.HEADER_CONTENT_LENGTH + ": " + imdn.getBytes(UTF8).length + CRLF
+                + CRLF + imdn;
     }
 
     /**
@@ -754,21 +730,22 @@ public class ChatUtils {
      */
     public static String buildImdnDeliveryReport(String msgId, String status, long timestamp) {
         String method;
-        if (status.equals(ImdnDocument.DELIVERY_STATUS_DISPLAYED)) {
-            method = "display-notification";
-        } else if (status.equals(ImdnDocument.DELIVERY_STATUS_DELIVERED)) {
-            method = "delivery-notification";
-        } else {
-            method = "processing-notification";
+        switch (status) {
+            case ImdnDocument.DELIVERY_STATUS_DISPLAYED:
+                method = "display-notification";
+                break;
+            case ImdnDocument.DELIVERY_STATUS_DELIVERED:
+                method = "delivery-notification";
+                break;
+            default:
+                method = "processing-notification";
+                break;
         }
-
-        return new StringBuilder("<?xml version=\"1.0\" encoding=\"").append(UTF8_STR)
-                .append("\"?>").append(CRLF).append("<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">")
-                .append(CRLF).append("<message-id>").append(msgId).append("</message-id>")
-                .append(CRLF).append("<datetime>").append(DateUtils.encodeDate(timestamp))
-                .append("</datetime>").append(CRLF).append("<").append(method).append("><status><")
-                .append(status).append("/></status></").append(method).append(">").append(CRLF)
-                .append("</imdn>").toString();
+        return "<?xml version=\"1.0\" encoding=\"" + UTF8_STR + "\"?>" + CRLF
+                + "<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">" + CRLF + "<message-id>" + msgId
+                + "</message-id>" + CRLF + "<datetime>" + DateUtils.encodeDate(timestamp)
+                + "</datetime>" + CRLF + "<" + method + "><status><" + status + "/></status></"
+                + method + ">" + CRLF + "</imdn>";
     }
 
     /**
@@ -787,32 +764,24 @@ public class ChatUtils {
         if (label == null) {
             label = "";
         }
-        return new StringBuilder("<?xml version=\"1.0\" encoding=\"").append(UTF8_STR)
-                .append("\"?>").append(CRLF)
-                .append("<rcsenvelope xmlns=\"urn:gsma:params:xml:ns:rcs:rcs:geolocation\"")
-                .append(" xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\"")
-                .append(" xmlns:gp=\"urn:ietf:params:xml:ns:pidf:geopriv10\"")
-                .append(" xmlns:gml=\"http://www.opengis.net/gml\"")
-                .append(" xmlns:gs=\"http://www.opengis.net/pidflo/1.0\"").append(" entity=\"")
-                .append(contact).append("\">").append(CRLF).append("<rcspushlocation id=\"")
-                .append(msgId).append("\" label=\"").append(label).append("\" >")
-                .append("<rpid:place-type rpid:until=\"").append(expire).append("\">")
-                .append("</rpid:place-type>").append(CRLF)
-                .append("<rpid:time-offset rpid:until=\"").append(expire)
-                .append("\"></rpid:time-offset>").append(CRLF).append("<gp:geopriv>").append(CRLF)
-                .append("<gp:location-info>").append(CRLF)
-                .append("<gs:Circle srsName=\"urn:ogc:def:crs:EPSG::4326\">").append(CRLF)
-                .append("<gml:pos>").append(geoloc.getLatitude()).append(" ")
-                .append(geoloc.getLongitude()).append("</gml:pos>").append(CRLF)
-                .append("<gs:radius uom=\"urn:ogc:def:uom:EPSG::9001\">")
-                .append(geoloc.getAccuracy()).append("</gs:radius>").append(CRLF)
-                .append("</gs:Circle>").append(CRLF).append("</gp:location-info>").append(CRLF)
-                .append("<gp:usage-rules>").append(CRLF).append("<gp:retention-expiry>")
-                .append(expire).append("</gp:retention-expiry>").append(CRLF)
-                .append("</gp:usage-rules>").append(CRLF).append("</gp:geopriv>").append(CRLF)
-                .append("<timestamp>").append(DateUtils.encodeDate(timestamp))
-                .append("</timestamp>").append(CRLF).append("</rcspushlocation>").append(CRLF)
-                .append("</rcsenvelope>").append(CRLF).toString();
+        return "<?xml version=\"1.0\" encoding=\"" + UTF8_STR + "\"?>" + CRLF
+                + "<rcsenvelope xmlns=\"urn:gsma:params:xml:ns:rcs:rcs:geolocation\""
+                + " xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\""
+                + " xmlns:gp=\"urn:ietf:params:xml:ns:pidf:geopriv10\""
+                + " xmlns:gml=\"http://www.opengis.net/gml\""
+                + " xmlns:gs=\"http://www.opengis.net/pidflo/1.0\"" + " entity=\"" + contact
+                + "\">" + CRLF + "<rcspushlocation id=\"" + msgId + "\" label=\"" + label + "\" >"
+                + "<rpid:place-type rpid:until=\"" + expire + "\">" + "</rpid:place-type>" + CRLF
+                + "<rpid:time-offset rpid:until=\"" + expire + "\"></rpid:time-offset>" + CRLF
+                + "<gp:geopriv>" + CRLF + "<gp:location-info>" + CRLF
+                + "<gs:Circle srsName=\"urn:ogc:def:crs:EPSG::4326\">" + CRLF + "<gml:pos>"
+                + geoloc.getLatitude() + " " + geoloc.getLongitude() + "</gml:pos>" + CRLF
+                + "<gs:radius uom=\"urn:ogc:def:uom:EPSG::9001\">" + geoloc.getAccuracy()
+                + "</gs:radius>" + CRLF + "</gs:Circle>" + CRLF + "</gp:location-info>" + CRLF
+                + "<gp:usage-rules>" + CRLF + "<gp:retention-expiry>" + expire
+                + "</gp:retention-expiry>" + CRLF + "</gp:usage-rules>" + CRLF + "</gp:geopriv>"
+                + CRLF + "<timestamp>" + DateUtils.encodeDate(timestamp) + "</timestamp>" + CRLF
+                + "</rcspushlocation>" + CRLF + "</rcsenvelope>" + CRLF;
     }
 
     /**
@@ -830,18 +799,11 @@ public class ChatUtils {
             if (geolocDocument == null) {
                 throw new PayloadException("Unable to parse geoloc document!");
             }
-            Geoloc geoloc = new Geoloc(geolocDocument.getLabel(), geolocDocument.getLatitude(),
+            return new Geoloc(geolocDocument.getLabel(), geolocDocument.getLatitude(),
                     geolocDocument.getLongitude(), geolocDocument.getExpiration(),
                     geolocDocument.getRadius());
-            return geoloc;
 
-        } catch (ParserConfigurationException e) {
-            throw new PayloadException("Unable to parse geoloc document!", e);
-
-        } catch (SAXException e) {
-            throw new PayloadException("Unable to parse geoloc document!", e);
-
-        } catch (ParseFailureException e) {
+        } catch (ParserConfigurationException | ParseFailureException | SAXException e) {
             throw new PayloadException("Unable to parse geoloc document!", e);
         }
     }
@@ -927,13 +889,7 @@ public class ChatUtils {
     }
 
     public static boolean isContainingFirstMessage(SipRequest invite) {
-        if (invite.getContent() != null) {
-            return true;
-        }
-        if (invite.getSubject().length() > 0) {
-            return true;
-        }
-        return false;
+        return invite.getContent() != null || invite.getSubject().length() > 0;
     }
 
     /**
@@ -978,15 +934,17 @@ public class ChatUtils {
             return new ChatMessage(msgId, remote,
                     ChatUtils.networkGeolocContentToPersistedGeolocContent(content),
                     MimeType.GEOLOC_MESSAGE, timestamp, timestampSent, null);
+
         } else if (FileTransferUtils.isFileTransferHttpType(mime)) {
             return new ChatMessage(msgId, remote, content, FileTransferHttpInfoDocument.MIME_TYPE,
                     timestamp, timestampSent, null);
+
         } else if (isTextPlainType(mime)) {
             return new ChatMessage(msgId, remote, content, MimeType.TEXT_MESSAGE, timestamp,
                     timestampSent, null);
         }
-        sLogger.warn(new StringBuilder("Unknown MIME-type in first message; msgId=").append(msgId)
-                .append(", mime='").append(mime).append("'.").toString());
+        sLogger.warn("Unknown MIME-type in first message; msgId=" + msgId + ", mime='" + mime
+                + "'.");
         return null;
     }
 
@@ -1046,15 +1004,13 @@ public class ChatUtils {
      */
     public static Map<ContactId, ParticipantStatus> getParticipants(SipRequest request,
             ParticipantStatus status) throws PayloadException {
-        Map<ContactId, ParticipantStatus> participants = new HashMap<ContactId, ParticipantStatus>();
+        Map<ContactId, ParticipantStatus> participants = new HashMap<>();
         String content = request.getContent();
         String boundary = request.getBoundaryContentType();
         Multipart multi = new Multipart(content, boundary);
         if (multi.isMultipart()) {
-
             String listPart = multi.getPart("application/resource-lists+xml");
             if (listPart != null) {
-
                 participants = ParticipantInfoUtils.parseResourceList(listPart, status);
                 ContactId remote = getReferredIdentityAsContactId(request);
                 if (remote == null) {
@@ -1078,17 +1034,18 @@ public class ChatUtils {
      */
     public static boolean isFileTransferOverHttp(SipRequest request) {
         CpimMessage message = extractCpimMessage(request);
-        if (message != null
-                && message.getContentType().startsWith(FileTransferHttpInfoDocument.MIME_TYPE)) {
-            return true;
+        if (message == null) {
+            return false;
         }
-        return false;
+        String contentType = message.getContentType();
+        return contentType != null
+                && contentType.startsWith(FileTransferHttpInfoDocument.MIME_TYPE);
     }
 
     /**
      * Generate persisted MIME-type from network pay-load
      * 
-     * @param networkMimeType Network pay-load MIME-type
+     * @param apiMimeType Network pay-load MIME-type
      * @return API MIME-type
      */
     public static String apiMimeTypeToNetworkMimeType(String apiMimeType) {
@@ -1103,14 +1060,13 @@ public class ChatUtils {
         } else if (apiMimeType.startsWith(FileTransferHttpInfoDocument.MIME_TYPE)) {
             return FileTransferHttpInfoDocument.MIME_TYPE;
         }
-        throw new IllegalArgumentException(new StringBuilder(
-                "Unsupported input mimetype detected : ").append(apiMimeType).toString());
+        throw new IllegalArgumentException("Unsupported input mimetype detected : " + apiMimeType);
     }
 
     /**
      * Generate persisted content from network pay-load
      * 
-     * @param msg
+     * @param content the content from network payload
      * @return Persisted content
      * @throws PayloadException
      */
@@ -1122,10 +1078,10 @@ public class ChatUtils {
 
     /**
      * Generate network pay-load content from persisted content
-     * 
-     * @param content
-     * @param msgId
-     * @param timestamp
+     *
+     * @param content the persisted content
+     * @param msgId the message ID
+     * @param timestamp the timestamp
      * @return Network payload content
      */
     public static String persistedGeolocContentToNetworkGeolocContent(String content, String msgId,
@@ -1137,14 +1093,14 @@ public class ChatUtils {
 
     /**
      * Create a chat message either text or geolocation.
-     * 
-     * @param msgId
+     *
+     * @param msgId the message ID
      * @param apiMimeType The mime-type as exposed to client applications
-     * @param content
+     * @param content the content
      * @param contact The remote contact
-     * @param displayName
-     * @param timestamp
-     * @param timestampSent
+     * @param displayName the display name
+     * @param timestamp the timestamp
+     * @param timestampSent The timestamp sent in payload for the chat message
      * @return ChatMessage
      */
     public static ChatMessage createChatMessage(String msgId, String apiMimeType, String content,
@@ -1152,12 +1108,13 @@ public class ChatUtils {
         if (MimeType.TEXT_MESSAGE.equals(apiMimeType)) {
             return new ChatMessage(msgId, contact, content, MimeType.TEXT_MESSAGE, timestamp,
                     timestampSent, displayName);
+
         } else if (MimeType.GEOLOC_MESSAGE.equals(apiMimeType)) {
             return new ChatMessage(msgId, contact, content, MimeType.GEOLOC_MESSAGE, timestamp,
                     timestampSent, displayName);
         }
-        throw new IllegalArgumentException(new StringBuilder(
-                "Unable to create message, Invalid mimetype ").append(apiMimeType).toString());
+        throw new IllegalArgumentException("Unable to create message, Invalid mimetype "
+                + apiMimeType);
     }
 
 }

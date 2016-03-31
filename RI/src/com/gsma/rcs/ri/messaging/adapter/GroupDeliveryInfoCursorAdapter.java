@@ -16,7 +16,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.gsma.rcs.ri.messaging;
+package com.gsma.rcs.ri.messaging.adapter;
 
 import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.RiApplication;

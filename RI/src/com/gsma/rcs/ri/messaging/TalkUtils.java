@@ -19,6 +19,7 @@
 package com.gsma.rcs.ri.messaging;
 
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class TalkUtils {
 
@@ -26,16 +27,25 @@ public class TalkUtils {
     private final static String DAY_TIME_FORMAT = "EEE, dd MMM yyyy";
     private final static String DATE_FORMAT = "dd MMM yyyy\nkk:mm";
 
+    private final static SimpleDateFormat sSimpleDateFormatTime = new SimpleDateFormat(TIME_FORMAT,
+            Locale.getDefault());
+
+    private final static SimpleDateFormat sSimpleDateFormatDayTime = new SimpleDateFormat(
+            DAY_TIME_FORMAT, Locale.getDefault());
+
+    private final static SimpleDateFormat sSimpleDateFormatDate = new SimpleDateFormat(DATE_FORMAT,
+            Locale.getDefault());
+
     public static String formatDateAsTime(long date) {
-        return new SimpleDateFormat(TIME_FORMAT).format(date);
+        return sSimpleDateFormatTime.format(date);
     }
 
     public static String formatDateAsDaytime(long date) {
-        return new SimpleDateFormat(DAY_TIME_FORMAT).format(date);
+        return sSimpleDateFormatDayTime.format(date);
     }
 
     public static String formatDate(long date) {
-        return new SimpleDateFormat(DATE_FORMAT).format(date);
+        return sSimpleDateFormatDate.format(date);
     }
 
     public static boolean compareDaytime(long date1, long date2) {

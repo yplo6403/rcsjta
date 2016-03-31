@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ public class CpimMessage {
      * Header "Content-type"
      */
     public static final String HEADER_CONTENT_TYPE = "Content-type";
+    public static final String HEADER_CONTENT_TYPE2 = "Content-Type";
 
     /**
      * Header "From"
@@ -49,19 +50,9 @@ public class CpimMessage {
     public static final String HEADER_TO = "To";
 
     /**
-     * Header "cc"
-     */
-    public static final String HEADER_CC = "cc";
-
-    /**
      * Header "DateTime"
      */
     public static final String HEADER_DATETIME = "DateTime";
-
-    /**
-     * Header "Subject"
-     */
-    public static final String HEADER_SUBJECT = "Subject";
 
     /**
      * Header "NS"
@@ -74,11 +65,6 @@ public class CpimMessage {
     public static final String HEADER_CONTENT_LENGTH = "Content-length";
 
     /**
-     * Header "Require"
-     */
-    public static final String HEADER_REQUIRE = "Require";
-
-    /**
      * Header "Content-Disposition"
      */
     public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
@@ -86,17 +72,17 @@ public class CpimMessage {
     /**
      * Message content
      */
-    private String msgContent = null;
+    private final String mMsgContent;
 
     /**
      * MIME headers
      */
-    private Hashtable<String, String> headers = new Hashtable<String, String>();
+    private final Hashtable<String, String> mHeaders;
 
     /**
      * MIME content headers
      */
-    private Hashtable<String, String> contentHeaders = new Hashtable<String, String>();
+    private final Hashtable<String, String> mContentHeaders;
 
     /**
      * Constructor
@@ -107,9 +93,9 @@ public class CpimMessage {
      */
     public CpimMessage(Hashtable<String, String> headers, Hashtable<String, String> contentHeaders,
             String msgContent) {
-        this.headers = headers;
-        this.contentHeaders = contentHeaders;
-        this.msgContent = msgContent;
+        mHeaders = headers;
+        mContentHeaders = contentHeaders;
+        mMsgContent = msgContent;
     }
 
     /**
@@ -118,7 +104,10 @@ public class CpimMessage {
      * @return Content type
      */
     public String getContentType() {
-        String type = contentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE.toLowerCase());
+        String type = mContentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE);
+        if (type == null) {
+            return mContentHeaders.get(CpimMessage.HEADER_CONTENT_TYPE2);
+        }
         return type;
     }
 
@@ -129,7 +118,7 @@ public class CpimMessage {
      * @return Header value
      */
     public String getHeader(String name) {
-        return headers.get(name.toLowerCase());
+        return mHeaders.get(name);
     }
 
     /**
@@ -139,7 +128,7 @@ public class CpimMessage {
      * @return Header value
      */
     public String getContentHeader(String name) {
-        return contentHeaders.get(name.toLowerCase());
+        return mContentHeaders.get(name);
     }
 
     /**
@@ -148,7 +137,7 @@ public class CpimMessage {
      * @return Content
      */
     public String getMessageContent() {
-        return msgContent;
+        return mMsgContent;
     }
 
     /**

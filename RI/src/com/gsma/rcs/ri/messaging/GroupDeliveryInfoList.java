@@ -19,6 +19,7 @@
 package com.gsma.rcs.ri.messaging;
 
 import com.gsma.rcs.ri.R;
+import com.gsma.rcs.ri.messaging.adapter.GroupDeliveryInfoCursorAdapter;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfoLog;
 

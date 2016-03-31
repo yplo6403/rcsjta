@@ -24,8 +24,6 @@ import com.gsma.rcs.ri.utils.ContactListAdapter;
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
@@ -39,6 +37,8 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import java.io.File;
+
 /**
  * Display contact VCard
  * 
@@ -46,86 +46,46 @@ import android.widget.TextView;
  */
 public class ContactVCard extends RcsActivity {
 
-    private static final String ACTION_VIEW_VCARD = "com.gsma.rcs.ri.contacts.ACTION_VIEW_VCARD";
-    private static final String ACTION_SELECT_VCARD = "com.gsma.rcs.ri.contacts.ACTION_SELECT_VCARD";
-
-    public static final String EXTRA_VCARD = "vcard";
-    public static final String EXTRA_CONTACT = "contact";
-
     /**
      * Spinner for contact selection
      */
     private Spinner mSpinner;
 
-    boolean mActionView;
-    private ContactUtil mContactUtil;
-    private OnItemSelectedListener mListenerContact;
-    private OnClickListener mBtnShowListener;
-    private Button mSelectBtn;
-    private OnClickListener mBtnSelListener;
-    private String mContact;
-    private Uri mVCardUri;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Set layout
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.contacts_vcard);
 
-        initialize();
-
-        /* Set the contact selector */
+        // Set the contact selector
         mSpinner = (Spinner) findViewById(R.id.contact);
         mSpinner.setAdapter(ContactListAdapter.createContactListAdapter(this));
-        mSpinner.setOnItemSelectedListener(mListenerContact);
+        mSpinner.setOnItemSelectedListener(listenerContact);
 
-        /* Set button callback */
+        // Set button callback
         Button showBtn = (Button) findViewById(R.id.show_btn);
-        showBtn.setOnClickListener(mBtnShowListener);
-
-        mSelectBtn = (Button) findViewById(R.id.select_btn);
-        mSelectBtn.setOnClickListener(mBtnSelListener);
-        mSelectBtn.setVisibility(View.INVISIBLE);
-
-        mContactUtil = ContactUtil.getInstance(this);
-
-        processIntent(getIntent());
+        showBtn.setOnClickListener(btnShowListener);
     }
 
-    private void processIntent(Intent intent) {
-        mActionView = ACTION_VIEW_VCARD.equals(intent.getAction());
-    }
+    /**
+     * Spinner contact listener
+     */
+    private OnItemSelectedListener listenerContact = new OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            // Get selected contact
+            String contact = getSelectedContact();
 
-    private void initialize() {
-        mListenerContact = new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                mContact = getSelectedContact();
-                displayVisitCardUri(mContact);
-            }
+            // Update UI
+            displayVisitCard(contact);
+        }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> arg0) {
-            }
-        };
-        mBtnShowListener = new OnClickListener() {
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(mVCardUri, "text/plain");
-                startActivity(intent);
-            }
-        };
-        mBtnSelListener = new OnClickListener() {
-            public void onClick(View v) {
-                Intent in = new Intent();
-                in.putExtra(EXTRA_VCARD, mVCardUri);
-                in.putExtra(EXTRA_CONTACT, mContact);
-                setResult(Activity.RESULT_OK, in);
-                finish();
-            }
-        };
-    }
+        @Override
+        public void onNothingSelected(AdapterView<?> arg0) {
+        }
+    };
 
     /**
      * Returns the selected contact
@@ -138,34 +98,38 @@ public class ContactVCard extends RcsActivity {
         return adapter.getSelectedNumber(mSpinner.getSelectedView());
     }
 
-    private Uri getVisitCard(String contact) throws RcsGenericException {
-        Uri contactUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(contact));
-        return mContactUtil.getVCard(contactUri);
-    }
-
     /**
      * Display the visit card
      * 
      * @param contact Contact
      */
-    private void displayVisitCardUri(String contact) {
+    private void displayVisitCard(String contact) {
         try {
-            mVCardUri = getVisitCard(contact);
-            if (!mActionView) {
-                mSelectBtn.setVisibility(View.VISIBLE);
-            }
+            Uri contactUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+                    Uri.encode(contact));
+            Uri vcard = ContactUtil.getInstance(this).getVCard(contactUri);
             TextView vcardView = (TextView) findViewById(R.id.vcard);
-            vcardView.setText(mVCardUri.getPath());
+            vcardView.setText(vcard.getPath());
         } catch (RcsGenericException e) {
             showExceptionThenExit(e);
         }
     }
 
-    public static Intent forgeIntentViewVcard(Context ctx) {
-        Intent intent = new Intent(ctx, ContactVCard.class);
-        intent.setAction(ACTION_VIEW_VCARD);
-        return intent;
-    }
+    /**
+     * Show button listener
+     */
+    private OnClickListener btnShowListener = new OnClickListener() {
+        public void onClick(View v) {
+            // Get filename
+            TextView vcardView = (TextView) findViewById(R.id.vcard);
+            String filename = vcardView.getText().toString();
 
+            // Show the transferred vCard
+            File file = new File(filename);
+            Uri uri = Uri.fromFile(file);
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "text/plain");
+            startActivity(intent);
+        }
+    };
 }

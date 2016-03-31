@@ -81,10 +81,10 @@ public class TestContactsApi extends RcsListActivity {
                 break;
 
             case 2:
-                startActivity(ContactVCard.forgeIntentViewVcard(this));
+                startActivity(new Intent(this, ContactVCard.class));
                 break;
 
-            case 5:
+            case 3:
                 startActivity(new Intent(this, BlockingContact.class));
                 break;
         }

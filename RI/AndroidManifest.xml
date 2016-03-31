@@ -41,10 +41,10 @@
         <!-- Insert here your own key for accessing the Google Maps Android API -->
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
-            android:value="AIzaSyBzry65BIdSaSjXk3dsT1XMPyksclNCnVo"/>
+            android:value="AIzaSyBzry65BIdSaSjXk3dsT1XMPyksclNCnVo" />
         <meta-data
             android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version"/>
+            android:value="@integer/google_play_services_version" />
 
         <!-- Main -->
         <activity
@@ -68,7 +68,7 @@
 
         <service
             android:name="com.gsma.rcs.ri.RcsServiceNotifManager"
-            android:exported="false"/>
+            android:exported="false" />
 
         <!-- Intents API -->
 
@@ -124,14 +124,8 @@
 
         <!-- File transfer API -->
 
-        <activity android:name="com.gsma.rcs.ri.messaging.filetransfer.TestFileTransferApi">
-            <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
+        <activity android:name="com.gsma.rcs.ri.messaging.filetransfer.TestFileTransferApi" />
 
-                <action android:name="com.gsma.services.rcs.action.VIEW_FILE_TRANSFER" />
-            </intent-filter>
-        </activity>
         <activity
             android:name="com.gsma.rcs.ri.messaging.filetransfer.InitiateFileTransfer"
             android:icon="@drawable/ri_quick_ft_icon"
@@ -171,9 +165,6 @@
             android:label="@string/title_file_transfer"
             android:launchMode="singleTop" />
         <activity
-            android:name="com.gsma.rcs.ri.messaging.filetransfer.FileTransferList"
-            android:label="@string/menu_file_transfer_log" />
-        <activity
             android:name="com.gsma.rcs.ri.messaging.filetransfer.FileTransferServiceConfigActivity"
             android:icon="@drawable/ri_quick_ft_icon"
             android:label="@string/menu_ft_config" />
@@ -194,20 +185,7 @@
 
         <activity
             android:name="com.gsma.rcs.ri.messaging.chat.TestChatApi"
-            android:icon="@drawable/ri_quick_chat_icon">
-            <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <action android:name="com.gsma.services.rcs.action.VIEW_ONE_TO_ONE_CHAT" />
-            </intent-filter>
-            <intent-filter>
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <action android:name="com.gsma.services.rcs.action.VIEW_GROUP_CHAT" />
-            </intent-filter>
-        </activity>
+            android:icon="@drawable/ri_quick_chat_icon" />
         <activity
             android:name="com.gsma.rcs.ri.messaging.chat.single.InitiateSingleChat"
             android:icon="@drawable/ri_quick_chat_icon"
@@ -234,10 +212,6 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name="com.gsma.rcs.ri.messaging.chat.single.SingleChatList"
-            android:icon="@drawable/ri_quick_chat_icon"
-            android:label="@string/menu_chat_log" />
         <activity
             android:name="com.gsma.rcs.ri.messaging.chat.ChatServiceConfigActivity"
             android:icon="@drawable/ri_quick_chat_icon"
@@ -281,10 +255,6 @@
         <activity
             android:name="com.gsma.rcs.ri.messaging.GroupDeliveryInfoList"
             android:label="@string/title_group_delivery_info" />
-        <activity
-            android:name="com.gsma.rcs.ri.messaging.chat.group.GroupChatList"
-            android:icon="@drawable/ri_quick_chat_icon"
-            android:label="@string/menu_group_chat_log" />
         <activity
             android:name="com.gsma.rcs.ri.messaging.geoloc.EditGeoloc"
             android:label="@string/menu_send_geoloc"
@@ -342,7 +312,7 @@
         <activity
             android:name="com.gsma.rcs.ri.sharing.image.ReceiveImageSharing"
             android:label="@string/title_image_sharing"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTop" />
 
         <service
             android:name="com.gsma.rcs.ri.sharing.image.ImageSharingIntentService"
@@ -365,7 +335,7 @@
         <activity
             android:name="com.gsma.rcs.ri.sharing.geoloc.ReceiveGeolocSharing"
             android:label="@string/title_geoloc_sharing"
-            android:launchMode="singleTop"/>
+            android:launchMode="singleTop" />
 
         <service
             android:name="com.gsma.rcs.ri.sharing.geoloc.GeolocSharingIntentService"
@@ -495,7 +465,40 @@
         <activity
             android:name="com.gsma.rcs.ri.messaging.TalkList"
             android:label="@string/app_ri_messaging"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="message/*" />
+                <data android:mimeType="multipart/*" />
+                <data android:mimeType="text/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <action android:name="com.gsma.services.rcs.action.VIEW_ONE_TO_ONE_CHAT" />
+            </intent-filter>
+            <intent-filter>
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <action android:name="com.gsma.services.rcs.action.VIEW_GROUP_CHAT" />
+            </intent-filter>
+            <intent-filter>
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <action android:name="com.gsma.services.rcs.action.VIEW_FILE_TRANSFER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.gsma.rcs.ri.cms.messaging.InitiateOneToOneTalk"
             android:label="@string/menu_cms_initiate_title" />
