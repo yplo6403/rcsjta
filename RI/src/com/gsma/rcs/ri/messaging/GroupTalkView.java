@@ -19,6 +19,7 @@
 package com.gsma.rcs.ri.messaging;
 
 import com.gsma.rcs.api.connection.ConnectionManager;
+import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.api.connection.utils.RcsFragmentActivity;
 import com.gsma.rcs.ri.R;
@@ -32,6 +33,7 @@ import com.gsma.rcs.ri.messaging.chat.IsComposingManager.INotifyComposing;
 import com.gsma.rcs.ri.messaging.chat.group.SendGroupFile;
 import com.gsma.rcs.ri.messaging.geoloc.DisplayGeoloc;
 import com.gsma.rcs.ri.messaging.geoloc.EditGeoloc;
+import com.gsma.rcs.ri.settings.RiSettings;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsContactUtil;
 import com.gsma.rcs.ri.utils.Smileys;
@@ -53,6 +55,7 @@ import com.gsma.services.rcs.chat.GroupChat;
 import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.chat.GroupChatIntent;
 import com.gsma.services.rcs.chat.GroupChatListener;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.contact.RcsContact;
@@ -145,6 +148,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
     private Handler mHandler;
     private EditText mComposeText;
     private ChatService mChatService;
+    private CmsService mCmsService;
     private FileTransferService mFileTransferService;
     private Uri mUriHistoryProvider;
     private IsComposingManager mComposingManager;
@@ -180,14 +184,17 @@ public class GroupTalkView extends RcsFragmentActivity implements
         if (!isServiceConnected(ConnectionManager.RcsServiceName.CHAT,
                 ConnectionManager.RcsServiceName.CONTACT,
                 ConnectionManager.RcsServiceName.CAPABILITY,
-                ConnectionManager.RcsServiceName.FILE_TRANSFER)) {
+                ConnectionManager.RcsServiceName.FILE_TRANSFER,
+                ConnectionManager.RcsServiceName.CMS)) {
             showMessageThenExit(R.string.label_service_not_available);
             return;
         }
         startMonitorServices(ConnectionManager.RcsServiceName.CHAT,
                 ConnectionManager.RcsServiceName.CONTACT,
                 ConnectionManager.RcsServiceName.CAPABILITY,
-                ConnectionManager.RcsServiceName.FILE_TRANSFER);
+                ConnectionManager.RcsServiceName.FILE_TRANSFER,
+                ConnectionManager.RcsServiceName.CMS
+                );
         try {
             initialize();
             processIntent(getIntent());
@@ -307,6 +314,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
         };
         mChatService = getChatApi();
         mFileTransferService = getFileTransferApi();
+        mCmsService = getCmsApi();
 
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(ChatLog.Message.HISTORYLOG_MEMBER_ID);
@@ -385,6 +393,14 @@ public class GroupTalkView extends RcsFragmentActivity implements
                 case OPEN:
                     /* Open an existing session from the history log */
                     mChatId = intent.getStringExtra(GroupChatIntent.EXTRA_CHAT_ID);
+                    if (RiSettings.isSyncAutomatic(this)) {
+                        try {
+                            /* Perform CMS synchronization */
+                            mCmsService.syncGroupConversation(mChatId);
+                        } catch (RcsServiceNotAvailableException e) {
+                            Log.w(LOGTAG, "Cannot sync: service is not available!");
+                        }
+                    }
                     mGroupChat = mChatService.getGroupChat(mChatId);
                     if (mGroupChat == null) {
                         if (LogUtils.isActive) {

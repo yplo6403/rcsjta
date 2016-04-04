@@ -20,13 +20,16 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
+import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
@@ -36,7 +39,11 @@ import com.gsma.rcs.utils.logger.Logger;
 import android.content.ContentResolver;
 import android.content.Context;
 
+import org.xml.sax.SAXException;
+
 import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 public class ImapMmsMessage extends ImapCpimMessage {
 
@@ -62,7 +69,6 @@ public class ImapMmsMessage extends ImapCpimMessage {
             throw new CmsSyncMissingHeaderException(
                     Constants.HEADER_MESSAGE_ID.concat(" IMAP header is missing"));
         }
-        mSubject = getHeader(Constants.HEADER_SUBJECT);
 
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
@@ -70,6 +76,11 @@ public class ImapMmsMessage extends ImapCpimMessage {
                     Constants.HEADER_DATE.concat(" IMAP header is missing"));
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
+
+        CpimMessage cpimMessage = getCpimMessage();
+        if (!cpimMessage.getPayload().isEmpty()) {
+                mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
+        }
     }
 
     public ImapMmsMessage(Context context, String from, String to, String direction, long date,
