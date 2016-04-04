@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.ri.messaging.chat;
 
+import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.utils.Utils;
 
 import android.app.Notification;
@@ -138,8 +139,8 @@ public class ChatPendingIntentManager {
 
                             @Override
                             public boolean isConversationOnForeground(String chatId) {
-                                return ChatView.sChatIdOnForeground != null
-                                        && chatId.equals(ChatView.sChatIdOnForeground);
+                                return RI.sChatIdOnForeground != null
+                                        && chatId.equals(RI.sChatIdOnForeground);
                             }
                         });
             }

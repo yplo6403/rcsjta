@@ -31,6 +31,7 @@ import com.gsma.rcs.ri.utils.RcsSessionUtil;
 import com.gsma.rcs.ri.utils.Utils;
 import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.RcsServiceException;
+import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferIntent;
@@ -108,7 +109,10 @@ public class ReceiveFileTransfer extends RcsActivity {
     private static final String VCARD_MIME_TYPE = "text/x-vcard";
 
     private static final String BUNDLE_FTDAO_ID = "ftdao";
-    private ReceiveFileTransfer mActivity;
+    private TextView mStatusView;
+    private TextView mSizeTextView;
+    private TextView mFilenameTextView;
+    private TextView mExpirationTextView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -187,20 +191,17 @@ public class ReceiveFileTransfer extends RcsActivity {
 
         String size = getString(R.string.label_file_size,
                 FileUtils.humanReadableByteCount(mFtDao.getSize(), true));
-        TextView sizeTxt = (TextView) findViewById(R.id.image_size);
-        sizeTxt.setText(size);
-        TextView filenameTxt = (TextView) findViewById(R.id.image_filename);
-        filenameTxt.setText(getString(R.string.label_filename, mFtDao.getFilename()));
+        mSizeTextView.setText(size);
+        mFilenameTextView.setText(getString(R.string.label_filename, mFtDao.getFilename()));
 
-        TextView expirationView = (TextView) findViewById(R.id.expiration);
         long fileExpiration = mFtDao.getFileExpiration();
         if (fileExpiration != FileTransferLog.UNKNOWN_EXPIRATION) {
             CharSequence expiration = DateUtils.getRelativeTimeSpanString(
                     mFtDao.getFileExpiration(), System.currentTimeMillis(),
                     DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE);
-            expirationView.setText(getString(R.string.label_expiration_args, expiration));
+            mExpirationTextView.setText(getString(R.string.label_expiration_args, expiration));
         } else {
-            expirationView.setVisibility(View.GONE);
+            mExpirationTextView.setVisibility(View.GONE);
         }
         try {
             mFileTransfer = mFileTransferService.getFileTransfer(mTransferId);
@@ -324,8 +325,7 @@ public class ReceiveFileTransfer extends RcsActivity {
     }
 
     private void updateProgressBar(long currentSize, long totalSize) {
-        TextView statusView = (TextView) findViewById(R.id.progress_status);
-        statusView.setText(Utils.getProgressLabel(currentSize, totalSize));
+        mStatusView.setText(Utils.getProgressLabel(currentSize, totalSize));
         double position = ((double) currentSize / (double) totalSize) * 100.0;
         mProgressBar.setProgress((int) position);
     }
@@ -505,7 +505,6 @@ public class ReceiveFileTransfer extends RcsActivity {
                         showException(e);
                     }
                 }
-                TextView statusView = (TextView) findViewById(R.id.progress_status);
                 switch (state) {
                     case ABORTED:
                         showMessageThenExit(getString(R.string.label_transfer_aborted, _reasonCode));
@@ -524,21 +523,21 @@ public class ReceiveFileTransfer extends RcsActivity {
                         break;
 
                     default:
-                        statusView.setText(_state);
+                        mStatusView.setText(_state);
                 }
             }
         });
     }
 
     private void displayTransferredFile() {
-        TextView statusView = (TextView) findViewById(R.id.progress_status);
-        statusView
-                .setText(RiApplication.sFileTransferStates[FileTransfer.State.TRANSFERRED.toInt()]);
+        mStatusView.setText(RiApplication.sFileTransferStates[FileTransfer.State.TRANSFERRED
+                .toInt()]);
         /* Make sure progress bar is at the end */
         mProgressBar.setProgress(mProgressBar.getMax());
 
         try {
             mFileTransferService.markFileTransferAsRead(mTransferId);
+        } catch (RcsServiceNotAvailableException ignore) {
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
         }
@@ -552,6 +551,7 @@ public class ReceiveFileTransfer extends RcsActivity {
         } else if (Utils.isImageType(mimeType)) {
             /* Show the transferred image */
             Utils.showPicture(this, mFtDao.getFile());
+
         }
     }
 
@@ -564,7 +564,6 @@ public class ReceiveFileTransfer extends RcsActivity {
     }
 
     private void initialize() {
-        mActivity = this;
         mGroupFtListener = new GroupFileTransferListener() {
 
             @Override
@@ -631,12 +630,12 @@ public class ReceiveFileTransfer extends RcsActivity {
                         showMessage(R.string.label_pause_ft_not_allowed);
                     }
                 } catch (RcsPermissionDeniedException e) {
-                    Utils.displayToast(mActivity, getString(R.string.label_pause_failed));
+                    Utils.displayToast(ReceiveFileTransfer.this,
+                            getString(R.string.label_pause_failed));
 
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
                 }
-
             }
         };
 
@@ -651,7 +650,8 @@ public class ReceiveFileTransfer extends RcsActivity {
                         showMessage(R.string.label_resume_ft_not_allowed);
                     }
                 } catch (RcsPermissionDeniedException e) {
-                    Utils.displayToast(mActivity, getString(R.string.label_resume_failed));
+                    Utils.displayToast(ReceiveFileTransfer.this,
+                            getString(R.string.label_resume_failed));
 
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
@@ -698,6 +698,15 @@ public class ReceiveFileTransfer extends RcsActivity {
         mResumeBtn.setOnClickListener(btnResumeListener);
         mResumeBtn.setEnabled(false);
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
+
+        mStatusView = (TextView) findViewById(R.id.progress_status);
+        mStatusView.setText("");
+        mSizeTextView = (TextView) findViewById(R.id.image_size);
+        mSizeTextView.setText("");
+        mFilenameTextView = (TextView) findViewById(R.id.image_filename);
+        mFilenameTextView.setText("");
+        mExpirationTextView = (TextView) findViewById(R.id.expiration);
+        mExpirationTextView.setText("");
     }
 
     /**

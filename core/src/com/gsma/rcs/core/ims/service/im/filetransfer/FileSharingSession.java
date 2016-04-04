@@ -47,6 +47,15 @@ import java.util.Map;
  * @author jexa7410
  */
 public abstract class FileSharingSession extends ImsServiceSession {
+    /**
+     * File render disposition which means the file is player automatically
+     */
+    public final static String FILE_DISPOSITION_RENDER = "render";
+
+    /**
+     * File attachment disposition which means the file should be opened manually
+     */
+    public final static String FILE_DISPOSITION_ATTACH = "attachment";
 
     private String mContributionId;
 

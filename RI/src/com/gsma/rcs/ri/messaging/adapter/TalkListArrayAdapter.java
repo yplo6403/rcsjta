@@ -90,8 +90,7 @@ public class TalkListArrayAdapter extends ArrayAdapter<TalkListArrayItem> {
         setTimestamp(holder, item.getTimestamp());
         String content = item.getContent();
         if (ChatLog.Message.MimeType.GEOLOC_MESSAGE.equals(item.getMimeType())) {
-            content = OneToOneTalkCursorAdapter.formatGeolocation(mCtx,
-                    new Geoloc(item.getContent()));
+            content = TalkCursorAdapter.formatGeolocation(mCtx, new Geoloc(item.getContent()));
         }
         setContent(holder, content);
         setStatus(holder, item.getUnreadCount());

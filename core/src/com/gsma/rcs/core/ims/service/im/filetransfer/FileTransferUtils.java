@@ -35,8 +35,8 @@ import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
-import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoParser;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpThumbnail;
+import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferXmlParser;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.platform.file.FileDescription;
 import com.gsma.rcs.platform.file.FileFactory;
@@ -53,10 +53,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -238,14 +236,12 @@ public class FileTransferUtils {
     public static FileTransferHttpInfoDocument parseFileTransferHttpDocument(byte[] xml,
             RcsSettings rcsSettings) throws PayloadException {
         try {
-            InputSource ftHttpInput = new InputSource(new ByteArrayInputStream(xml));
-            FileTransferHttpInfoParser ftHttpParser = new FileTransferHttpInfoParser(ftHttpInput,
-                    rcsSettings).parse();
-            return ftHttpParser.getFtInfo();
+            FileTransferXmlParser ftHttpParser = new FileTransferXmlParser(xml, rcsSettings);
+            ftHttpParser.parse();
+            return ftHttpParser.getFileTransferInfo();
 
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
             throw new PayloadException("Can't parse FT HTTP document!", e);
-
         }
     }
 

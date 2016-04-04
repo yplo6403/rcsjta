@@ -20,6 +20,7 @@ package com.gsma.rcs.ri.messaging.chat.group;
 
 import com.gsma.rcs.api.connection.utils.RcsActivity;
 import com.gsma.rcs.ri.R;
+import com.gsma.rcs.ri.messaging.GroupTalkView;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.chat.ChatService;
 import com.gsma.services.rcs.contact.ContactId;
@@ -122,7 +123,7 @@ public class InitiateGroupChat extends RcsActivity implements OnItemClickListene
             // Get subject
             EditText subjectTxt = (EditText) findViewById(R.id.subject);
             String subject = subjectTxt.getText().toString();
-            GroupChatView.initiateGroupChat(InitiateGroupChat.this, subject, mParticipants);
+            GroupTalkView.initiateGroupChat(InitiateGroupChat.this, subject, mParticipants);
             // Exit activity
             finish();
         }

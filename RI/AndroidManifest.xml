@@ -16,6 +16,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The READ_SMS permission is required for app before Lollipop -->
+    <uses-permission android:name="android.permission.READ_SMS" />
     <!-- Required to show current location -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -248,7 +250,7 @@
         </receiver>
 
         <activity
-            android:name="com.gsma.rcs.ri.messaging.chat.group.GroupChatView"
+            android:name="com.gsma.rcs.ri.messaging.GroupTalkView"
             android:icon="@drawable/ri_quick_chat_icon"
             android:label="@string/title_group_chat"
             android:launchMode="singleTop" />
@@ -446,22 +448,6 @@
         <activity
             android:name="com.gsma.rcs.ri.sharing.SharingListView"
             android:label="@string/title_sharing_log" />
-
-        <activity
-            android:name="com.gsma.rcs.ri.cms.TestCmsApi"
-            android:label="@string/menu_cms_title" />
-        <activity
-            android:name="com.gsma.rcs.ri.cms.synchronization.TestSyncApi"
-            android:label="@string/menu_cms_sync_title" />
-        <activity
-            android:name="com.gsma.rcs.ri.cms.messaging.TestCmsMessagingApi"
-            android:label="@string/menu_cms_messaging_title" />
-        <activity
-            android:name="com.gsma.rcs.ri.cms.synchronization.CmsSyncContact"
-            android:label="@string/menu_cms_sync_title" />
-        <activity
-            android:name="com.gsma.rcs.ri.cms.synchronization.CmsSyncGroup"
-            android:label="@string/menu_cms_sync_title" />
         <activity
             android:name="com.gsma.rcs.ri.messaging.TalkList"
             android:label="@string/app_ri_messaging"

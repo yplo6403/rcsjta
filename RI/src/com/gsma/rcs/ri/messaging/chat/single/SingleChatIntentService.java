@@ -42,6 +42,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.media.RingtoneManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -56,7 +57,7 @@ import java.util.Set;
  */
 public class SingleChatIntentService extends IntentService {
 
-    private final static String[] PROJ_UNDELIVERED_MSG = new String[] {
+    private static final String[] PROJ_UNDELIVERED_MSG = new String[] {
         ChatLog.Message.MESSAGE_ID
     };
 
@@ -111,9 +112,7 @@ public class SingleChatIntentService extends IntentService {
                 break;
 
             default:
-                if (LogUtils.isActive) {
-                    Log.e(LOGTAG, "Unknown action ".concat(action));
-                }
+                Log.e(LOGTAG, "Unknown action ".concat(action));
                 break;
         }
     }
@@ -303,8 +302,7 @@ public class SingleChatIntentService extends IntentService {
                         contact.toString()
                     }, null);
             if (cursor == null) {
-                throw new IllegalStateException("Cannot query undelivered message for contact="
-                        + contact);
+                throw new SQLException("Cannot query undelivered message for contact=" + contact);
             }
             if (!cursor.moveToFirst()) {
                 return messageIds;

@@ -56,7 +56,7 @@ import android.widget.TextView;
  */
 public abstract class SendFile extends RcsActivity implements ISendFile {
 
-    private final static int SELECT_IMAGE = 0;
+    private final static int RC_SELECT_IMAGE = 0;
 
     /**
      * UI handler
@@ -85,6 +85,10 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
     private CheckBox mCheckThumNail;
 
     private static final String LOGTAG = LogUtils.getTag(SendFile.class.getSimpleName());
+    protected TextView mStatusView;
+    protected ProgressBar mProgressBar;
+    private TextView mUriEdit;
+    private TextView mSizeEdit;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -125,13 +129,12 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
     }
 
     private void initiateTransfer() {
-        if (transferFile(mFile, mCheckThumNail.isChecked())) {
-            /* Hide buttons */
-            mInviteBtn.setVisibility(View.INVISIBLE);
-            mSelectBtn.setVisibility(View.INVISIBLE);
-            /* Disable checkboxes */
-            mCheckThumNail.setEnabled(false);
-        }
+        transferFile(mFile, mCheckThumNail.isChecked());
+        /* Hide buttons */
+        mInviteBtn.setVisibility(View.INVISIBLE);
+        mSelectBtn.setVisibility(View.INVISIBLE);
+        /* Disable checkboxes */
+        mCheckThumNail.setEnabled(false);
     }
 
     @Override
@@ -140,7 +143,7 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
             return;
         }
         switch (requestCode) {
-            case SELECT_IMAGE:
+            case RC_SELECT_IMAGE:
                 if ((data != null) && (data.getData() != null)) {
                     displayFileInfo(data);
                     mInviteBtn.setEnabled(true);
@@ -150,15 +153,33 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
         }
     }
 
+    /**
+     * Display a alert dialog to select the kind of file to transfer
+     */
+    private void selectDocument() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.label_select_file);
+        builder.setCancelable(true);
+        builder.setItems(R.array.select_filetotransfer, new DialogInterface.OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (RC_SELECT_IMAGE == which) {
+                    FileUtils.openFile(SendFile.this, "image/*", RC_SELECT_IMAGE);
+                }
+            }
+        });
+        registerDialog(builder.show());
+    }
+
     private void displayFileInfo(Intent data) {
         mFile = data.getData();
         /* Display the selected filename attribute */
-        TextView uriEdit = (TextView) findViewById(R.id.uri);
-        TextView sizeEdit = (TextView) findViewById(R.id.size);
         mFilename = FileUtils.getFileName(this, mFile);
         mFilesize = FileUtils.getFileSize(this, mFile);
-        sizeEdit.setText(FileUtils.humanReadableByteCount(mFilesize, true));
-        uriEdit.setText(mFilename);
+        mSizeEdit.setText(FileUtils.humanReadableByteCount(mFilesize, true));
+        mUriEdit.setText(mFilename);
+        mInviteBtn.setEnabled(true);
     }
 
     /**
@@ -168,11 +189,9 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
      * @param totalSize Total size to be transferred
      */
     protected void updateProgressBar(long currentSize, long totalSize) {
-        TextView statusView = (TextView) findViewById(R.id.progress_status);
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        statusView.setText(Utils.getProgressLabel(currentSize, totalSize));
+        mStatusView.setText(Utils.getProgressLabel(currentSize, totalSize));
         double position = ((double) currentSize / (double) totalSize) * 100.0;
-        progressBar.setProgress((int) position);
+        mProgressBar.setProgress((int) position);
     }
 
     private void quitSession() {
@@ -243,6 +262,13 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
 
     @Override
     public void initialize() {
+        mUriEdit = (TextView) findViewById(R.id.uri);
+        mUriEdit.setText("");
+        mSizeEdit = (TextView) findViewById(R.id.size);
+        mSizeEdit.setText("");
+        mStatusView = (TextView) findViewById(R.id.progress_status);
+        mStatusView.setText("");
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
         OnClickListener btnInviteListener = new OnClickListener() {
             public void onClick(View v) {
                 long warnSize = 0;
@@ -278,7 +304,11 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
 
         OnClickListener btnSelectListener = new OnClickListener() {
             public void onClick(View v) {
-                FileUtils.openFile(SendFile.this, "image/*", SELECT_IMAGE);
+                /**
+                 * Display a alert dialog to select the kind of file to transfer
+                 */
+
+                selectDocument();
             }
         };
         mSelectBtn = (Button) findViewById(R.id.select_btn);

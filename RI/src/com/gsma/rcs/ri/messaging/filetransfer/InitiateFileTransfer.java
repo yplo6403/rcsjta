@@ -73,11 +73,10 @@ import java.util.Set;
  */
 public class InitiateFileTransfer extends RcsActivity {
 
-    private final static int SELECT_IMAGE = 0;
+    private final static int RC_SELECT_IMAGE = 0;
+    private final static int RC_SELECT_TEXT_FILE = 1;
 
-    private final static int SELECT_TEXT_FILE = 1;
-
-    private static final String BUNDLE_FTDAO_ID = "ftdao";
+    private final static String BUNDLE_FTDAO_ID = "ftdao";
 
     /**
      * UI handler
@@ -115,6 +114,8 @@ public class InitiateFileTransfer extends RcsActivity {
     private TextView mUriTextView;
     private TextView mSizeTextView;
     private CheckBox mIconCheckBox;
+    private TextView mStatusView;
+    private ProgressBar mProgressBar;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -123,12 +124,7 @@ public class InitiateFileTransfer extends RcsActivity {
         boolean resuming = FileTransferIntent.ACTION_RESUME.equals(intent.getAction());
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.filetransfer_initiate);
-
         intitialize();
-
-        TableRow expiration = (TableRow) findViewById(R.id.expiration);
-        expiration.setVisibility(View.GONE);
-
         if (!isServiceConnected(RcsServiceName.FILE_TRANSFER)) {
             showMessageThenExit(R.string.label_service_not_available);
             return;
@@ -205,6 +201,7 @@ public class InitiateFileTransfer extends RcsActivity {
         /* Get thumbnail option */
         boolean tryToSendFileicon = mIconCheckBox.isChecked();
         String mimeType = getContentResolver().getType(mFile);
+
         if (tryToSendFileicon && mimeType != null && !mimeType.startsWith("image")) {
             tryToSendFileicon = false;
         }
@@ -214,7 +211,6 @@ public class InitiateFileTransfer extends RcsActivity {
             /* Initiate transfer */
             mFileTransfer = mFileTransferService.transferFile(remote, mFile, tryToSendFileicon);
             mFileTransferId = mFileTransfer.getTransferId();
-
             /* Disable UI */
             mSpinner.setEnabled(false);
             /* Hide buttons */
@@ -238,13 +234,15 @@ public class InitiateFileTransfer extends RcsActivity {
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if (which == SELECT_IMAGE) {
-                    FileUtils.openFile(InitiateFileTransfer.this, "image/*", SELECT_IMAGE);
-                } else {
-                    FileUtils.openFile(InitiateFileTransfer.this, "text/plain", SELECT_TEXT_FILE);
+                if (RC_SELECT_IMAGE == which) {
+                    FileUtils.openFile(InitiateFileTransfer.this, "image/*", RC_SELECT_IMAGE);
+                } else if (RC_SELECT_TEXT_FILE == which) {
+                    FileUtils
+                            .openFile(InitiateFileTransfer.this, "text/plain", RC_SELECT_TEXT_FILE);
                 }
             }
         });
+
         registerDialog(builder.show());
     }
 
@@ -267,27 +265,27 @@ public class InitiateFileTransfer extends RcsActivity {
             return;
         }
         switch (requestCode) {
-            case SELECT_IMAGE:
-            case SELECT_TEXT_FILE:
-                mFile = data.getData();
-                if (mFile == null) {
+            case RC_SELECT_IMAGE:
+            case RC_SELECT_TEXT_FILE:
+                if (data.getData() == null) {
                     return;
                 }
+                mFile = data.getData();
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "Selected file uri:".concat(mFile.toString()));
                 }
                 displaySelectedFileInfo();
                 mInviteBtn.setEnabled(true);
+                mIconCheckBox.setEnabled(true);
                 break;
+
         }
     }
 
     private void updateProgressBar(long currentSize, long totalSize) {
-        TextView statusView = (TextView) findViewById(R.id.progress_status);
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-        statusView.setText(Utils.getProgressLabel(currentSize, totalSize));
+        mStatusView.setText(Utils.getProgressLabel(currentSize, totalSize));
         double position = ((double) currentSize / (double) totalSize) * 100.0;
-        progressBar.setProgress((int) position);
+        mProgressBar.setProgress((int) position);
     }
 
     private void quitSession() {
@@ -410,7 +408,6 @@ public class InitiateFileTransfer extends RcsActivity {
                 selectDocument();
             }
         };
-
         OnClickListener btnPauseListener = new OnClickListener() {
             public void onClick(View v) {
                 try {
@@ -425,7 +422,6 @@ public class InitiateFileTransfer extends RcsActivity {
                 }
             }
         };
-
         OnClickListener btnResumeListener = new OnClickListener() {
             public void onClick(View v) {
                 try {
@@ -461,9 +457,18 @@ public class InitiateFileTransfer extends RcsActivity {
         mResumeBtn.setEnabled(false);
 
         mUriTextView = (TextView) findViewById(R.id.uri);
+        mUriTextView.setText("");
         mSizeTextView = (TextView) findViewById(R.id.size);
+        mSizeTextView.setText("");
+
+        mStatusView = (TextView) findViewById(R.id.progress_status);
+        mStatusView.setText("");
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         mIconCheckBox = (CheckBox) findViewById(R.id.ft_thumb);
+
+        TableRow expiration = (TableRow) findViewById(R.id.expiration);
+        expiration.setVisibility(View.GONE);
 
         mFileTransferListener = new OneToOneFileTransferListener() {
 
@@ -516,11 +521,10 @@ public class InitiateFileTransfer extends RcsActivity {
                                 showException(e);
                             }
                         }
-                        TextView statusView = (TextView) findViewById(R.id.progress_status);
                         switch (state) {
                             case STARTED:
                                 /* Display session status */
-                                statusView.setText(_state);
+                                mStatusView.setText(_state);
                                 break;
 
                             case ABORTED:
@@ -540,7 +544,7 @@ public class InitiateFileTransfer extends RcsActivity {
 
                             case TRANSFERRED:
                                 /* Display transfer progress */
-                                statusView.setText(_state);
+                                mStatusView.setText(_state);
 
                                 try {
                                     displayFileExpiration(mFileTransfer.getFileExpiration());
@@ -556,7 +560,7 @@ public class InitiateFileTransfer extends RcsActivity {
                                 break;
 
                             default:
-                                statusView.setText(_state);
+                                mStatusView.setText(_state);
                                 if (LogUtils.isActive) {
                                     Log.d(LOGTAG, "onStateChanged ".concat(getString(
                                             R.string.label_ft_state_changed, _state, _reasonCode)));
@@ -593,4 +597,5 @@ public class InitiateFileTransfer extends RcsActivity {
         resume.putExtras(bundle);
         return resume;
     }
+
 }

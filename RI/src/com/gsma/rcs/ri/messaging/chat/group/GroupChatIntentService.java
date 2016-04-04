@@ -19,6 +19,7 @@
 package com.gsma.rcs.ri.messaging.chat.group;
 
 import com.gsma.rcs.ri.R;
+import com.gsma.rcs.ri.messaging.GroupTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
 import com.gsma.rcs.ri.messaging.chat.ChatMessageDAO;
 import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
@@ -146,7 +147,7 @@ public class GroupChatIntentService extends IntentService {
 
     private void forwardGCMessage2UI(Intent newGroupChatMessage, ChatMessageDAO message) {
         String chatId = message.getChatId();
-        Intent intent = GroupChatView.forgeIntentNewMessage(this, newGroupChatMessage, chatId);
+        Intent intent = GroupTalkView.forgeIntentNewMessage(this, newGroupChatMessage, chatId);
         String content = message.getContent();
         Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent, chatId);
         if (uniqueId != null) {
@@ -180,7 +181,7 @@ public class GroupChatIntentService extends IntentService {
 
     private void forwardGCInvitation2UI(Intent invitation, String chatId, GroupChatDAO groupChat) {
         /* Create pending intent */
-        Intent intent = GroupChatView.forgeIntentInvitation(this, invitation);
+        Intent intent = GroupTalkView.forgeIntentInvitation(this, invitation);
         /*
          * If the PendingIntent has the same operation, action, data, categories, components, and
          * flags it will be replaced. Invitation should be notified individually so we use a random

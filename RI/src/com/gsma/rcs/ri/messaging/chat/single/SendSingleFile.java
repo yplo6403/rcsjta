@@ -36,7 +36,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
-import android.widget.TextView;
 
 import java.util.Set;
 
@@ -154,13 +153,12 @@ public class SendSingleFile extends SendFile {
                                 showExceptionThenExit(e);
                             }
                         }
-                        TextView statusView = (TextView) findViewById(R.id.progress_status);
                         switch (state) {
                             case STARTED:
                                 //$FALL-THROUGH$
                             case TRANSFERRED:
                                 /* Display transfer state started */
-                                statusView.setText(_state);
+                                mStatusView.setText(_state);
                                 break;
 
                             case ABORTED:
@@ -179,7 +177,7 @@ public class SendSingleFile extends SendFile {
                                 break;
 
                             default:
-                                statusView.setText(_state);
+                                mStatusView.setText(_state);
                         }
                     }
                 });

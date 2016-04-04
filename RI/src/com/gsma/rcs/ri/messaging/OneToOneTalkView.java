@@ -21,17 +21,15 @@ package com.gsma.rcs.ri.messaging;
 import static com.gsma.rcs.ri.utils.FileUtils.takePersistableContentUriPermission;
 
 import com.gsma.rcs.api.connection.ConnectionManager;
-import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.api.connection.utils.RcsFragmentActivity;
 import com.gsma.rcs.ri.R;
-import com.gsma.rcs.ri.RiApplication;
+import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.cms.messaging.InitiateMmsTransfer;
 import com.gsma.rcs.ri.cms.messaging.SendMmsInBackground;
-import com.gsma.rcs.ri.messaging.adapter.OneToOneTalkCursorAdapter;
+import com.gsma.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.gsma.rcs.ri.messaging.chat.ChatCursorObserver;
 import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
-import com.gsma.rcs.ri.messaging.chat.ChatView;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager;
 import com.gsma.rcs.ri.messaging.chat.single.SendSingleFile;
 import com.gsma.rcs.ri.messaging.chat.single.SingleChatIntentService;
@@ -62,10 +60,7 @@ import com.gsma.services.rcs.chat.OneToOneChat;
 import com.gsma.services.rcs.chat.OneToOneChatIntent;
 import com.gsma.services.rcs.chat.OneToOneChatListener;
 import com.gsma.services.rcs.cms.CmsService;
-import com.gsma.services.rcs.cms.CmsSynchronizationListener;
-import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
-import com.gsma.services.rcs.cms.XmsMessageListener;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
@@ -113,7 +108,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -144,7 +138,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             HistoryLog.FILENAME,
             HistoryLog.FILESIZE,
             HistoryLog.TRANSFERRED,
-            HistoryLog.REASON_CODE };
+            HistoryLog.REASON_CODE,
+            HistoryLog.READ_STATUS};
     // @formatter:on
 
     private final static String EXTRA_CONTACT = "contact";
@@ -163,14 +158,10 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     /**
      * The adapter that binds data to the ListView
      */
-    private OneToOneTalkCursorAdapter mAdapter;
+    private TalkCursorAdapter mAdapter;
     private Uri mUriHistoryProvider;
     private ContactId mContact;
     private CmsService mCmsService;
-    private CmsSynchronizationListener mCmsSynchronizationListener;
-    private boolean mCmsSynchronizationListenerSet;
-    private XmsMessageListener mXmsMessageListener;
-    private boolean mXmsMessageListenerSet;
     private ChatCursorObserver mObserver;
     private EditText mComposeText;
     private ChatService mChatService;
@@ -197,8 +188,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private RiSettings.PreferenceResendRcs mPreferenceResendFt;
     private boolean mCanSendMms;
     private Context mCtx;
-
-    private static boolean sActivityVisible;
 
     // @formatter:off
     private static final Set<String> sAllowedIntentActions = new HashSet<>(Arrays.asList(
@@ -249,17 +238,12 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 ConnectionManager.RcsServiceName.CAPABILITY);
         try {
             initialize();
-            mChatService.addEventListener(mChatListener);
-            mCapabilityService.addCapabilitiesListener(mCapabilitiesListener);
-            addCmsServiceListeners();
-
+            processIntent(getIntent());
+            if (LogUtils.isActive) {
+                Log.d(LOGTAG, "onCreate");
+            }
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
-            return;
-        }
-        processIntent(getIntent());
-        if (LogUtils.isActive) {
-            Log.d(LOGTAG, "onCreate");
         }
     }
 
@@ -404,77 +388,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             }
         };
 
-        mXmsMessageListener = new XmsMessageListener() {
-            @Override
-            public void onStateChanged(ContactId contact, String mimeType, String messageId,
-                    XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
-                String _reasonCode = RiApplication.sXmsMessageReasonCodes[reasonCode.toInt()];
-                String _state = RiApplication.sXmsMessageStates[state.toInt()];
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onStateChanged contact=" + contact + " mime-type=" + mimeType
-                            + " msgId=" + messageId + " status=" + _state + " reason="
-                            + _reasonCode);
-                }
-            }
-
-            @Override
-            public void onDeleted(ContactId contact, Set<String> messageIds) {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onDeleted contact=" + contact + " for msg IDs=" + messageIds);
-                }
-            }
-        };
-
-        mCmsSynchronizationListener = new CmsSynchronizationListener() {
-            @Override
-            public void onAllSynchronized() {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onAllSynchronized");
-                }
-                if (!sActivityVisible) {
-                    return;
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAdapter.notifyDataSetChanged();
-                    }
-                });
-            }
-
-            @Override
-            public void onOneToOneConversationSynchronized(final ContactId contact) {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onOneToOneConversationSynchronized contact=" + contact);
-                }
-                if (!sActivityVisible) {
-                    return;
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAdapter.notifyDataSetChanged();
-                    }
-                });
-            }
-
-            @Override
-            public void onGroupConversationSynchronized(final String chatId) {
-                if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "onGroupConversationSynchronized chatId=" + chatId);
-                }
-                if (!sActivityVisible) {
-                    return;
-                }
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mAdapter.notifyDataSetChanged();
-                    }
-                });
-            }
-        };
-
         mChatListener = new OneToOneChatListener() {
 
             /* Callback called when an Is-composing event has been received */
@@ -543,6 +456,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         mChatService = getChatApi();
         mCapabilityService = getCapabilityApi();
         mFileTransferService = getFileTransferApi();
+        mChatService.addEventListener(mChatListener);
+        mCapabilityService.addCapabilitiesListener(mCapabilitiesListener);
 
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(XmsMessageLog.HISTORYLOG_MEMBER_ID);
@@ -604,46 +519,20 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         });
 
         /* Initialize the adapter. */
-        mAdapter = new OneToOneTalkCursorAdapter(this);
+        mAdapter = new TalkCursorAdapter(this, true, mChatService, mFileTransferService,
+                mCmsService);
 
         /* Associate the list adapter with the ListView. */
         ListView listView = (ListView) findViewById(android.R.id.list);
-        listView.setDivider(null);
         listView.setAdapter(mAdapter);
 
         registerForContextMenu(listView);
     }
 
-    private void markMessagesAsRead() throws RcsGenericException, RcsPersistentStorageException,
-            RcsServiceNotAvailableException {
-        /* Mark as read messages if required */
-        Map<String, Integer> msgIdUnReads = ChatView.getUnreadMessageIds(this, mUriHistoryProvider,
-                mContact.toString());
-        for (Map.Entry<String, Integer> entryMsgIdUnread : msgIdUnReads.entrySet()) {
-            int providerId = entryMsgIdUnread.getValue();
-            String id = entryMsgIdUnread.getKey();
-            switch (providerId) {
-                case XmsMessageLog.HISTORYLOG_MEMBER_ID:
-                    mCmsService.markMessageAsRead(id);
-                    break;
-
-                case ChatLog.Message.HISTORYLOG_MEMBER_ID:
-                    mChatService.markMessageAsRead(id);
-                    break;
-
-                case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                    mFileTransferService.markFileTransferAsRead(id);
-                    break;
-
-                default:
-                    throw new IllegalArgumentException("Invalid provider ID=" + providerId);
-            }
-        }
-    }
-
     private boolean processIntent(Intent intent) {
+        String action = intent.getAction();
         if (LogUtils.isActive) {
-            Log.d(LOGTAG, "processIntent ".concat(intent.getAction()));
+            Log.d(LOGTAG, "processIntent " + action);
         }
         ContactId newContact = intent.getParcelableExtra(EXTRA_CONTACT);
         if (newContact == null) {
@@ -652,7 +541,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             }
             return false;
         }
-        String action = intent.getAction();
         if (action == null) {
             if (LogUtils.isActive) {
                 Log.w(LOGTAG, "Cannot process intent: action is null");
@@ -674,7 +562,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             /* Set activity title with display name */
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
             setTitle(getString(R.string.title_chat, displayName));
-            markMessagesAsRead();
             switch (action) {
                 case OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE:
                     /*
@@ -722,7 +609,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
          */
         mChat = mChatService.getOneToOneChat(mContact);
         setCursorLoader(firstLoad);
-        ChatView.sChatIdOnForeground = mContact.toString();
+        RI.sChatIdOnForeground = mContact.toString();
         setRcsMode(mChat.isAllowedToSendMessage());
 
         if (RiSettings.isSyncAutomatic(this)) {
@@ -755,10 +642,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     public void onDestroy() {
         try {
-            if (isServiceConnected(ConnectionManager.RcsServiceName.CMS) && mCmsService != null) {
-                mCmsService.removeEventListener(mXmsMessageListener);
-                mCmsService.removeEventListener(mCmsSynchronizationListener);
-            }
             if (isServiceConnected(ConnectionManager.RcsServiceName.CHAT) && mChatService != null) {
                 mChatService.removeEventListener(mChatListener);
             }
@@ -775,9 +658,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        sActivityVisible = false;
-        ChatView.sChatIdOnForeground = null;
-        removeCmsServiceListeners();
+        RI.sChatIdOnForeground = null;
     }
 
     @Override
@@ -791,11 +672,9 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        sActivityVisible = true;
         if (mContact != null) {
-            ChatView.sChatIdOnForeground = mContact.toString();
+            RI.sChatIdOnForeground = mContact.toString();
         }
-        addCmsServiceListeners();
     }
 
     @Override
@@ -939,6 +818,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         if (FileTransferLog.HISTORYLOG_MEMBER_ID == providerId) {
             String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
             if (Utils.isImageType(mimeType)) {
+                // TODO FG case of outgoing file not transferred on secondary device
                 if (RcsService.Direction.INCOMING == direction) {
                     Long transferred = cursor.getLong(cursor
                             .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
@@ -1108,6 +988,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                             String file = cursor.getString(cursor
                                     .getColumnIndexOrThrow(HistoryLog.CONTENT));
                             Utils.showPicture(this, Uri.parse(file));
+                            markFileTransferAsRead(cursor, id);
                             break;
 
                         default:
@@ -1125,6 +1006,29 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         } catch (RcsServiceNotAvailableException e) {
             Utils.displayLongToast(this, getString(R.string.label_service_not_available));
             return true;
+        }
+    }
+
+    private void markFileTransferAsRead(Cursor cursor, String ftId) {
+        try {
+            RcsService.Direction dir = RcsService.Direction.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(HistoryLog.DIRECTION)));
+            if (RcsService.Direction.INCOMING == dir) {
+                RcsService.ReadStatus status = RcsService.ReadStatus.valueOf(cursor.getInt(cursor
+                        .getColumnIndexOrThrow(HistoryLog.READ_STATUS)));
+                if (RcsService.ReadStatus.UNREAD == status) {
+                    mFileTransferService.markFileTransferAsRead(ftId);
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "Mark file transfer " + ftId + " as read");
+                    }
+                }
+            }
+        } catch (RcsServiceNotAvailableException e) {
+            if (LogUtils.isActive) {
+                Log.d(LOGTAG, "Cannot mark message as read: service not available");
+            }
+        } catch (RcsGenericException | RcsPersistentStorageException e) {
+            Log.e(LOGTAG, ExceptionUtil.getFullStackTrace(e));
         }
     }
 
@@ -1336,49 +1240,4 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         }
     }
 
-    private void addCmsServiceListeners() {
-        if (!isServiceConnected(RcsServiceName.CMS)) {
-            return;
-        }
-        if (!mXmsMessageListenerSet) {
-            try {
-                mCmsService.addEventListener(mXmsMessageListener);
-                mXmsMessageListenerSet = true;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-
-        if (!mCmsSynchronizationListenerSet) {
-            try {
-                mCmsService.addEventListener(mCmsSynchronizationListener);
-                mCmsSynchronizationListenerSet = true;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-    }
-
-    private void removeCmsServiceListeners() {
-        if (!isServiceConnected(RcsServiceName.CMS)) {
-            return;
-        }
-        if (mXmsMessageListenerSet) {
-            try {
-                mCmsService.removeEventListener(mXmsMessageListener);
-                mXmsMessageListenerSet = false;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-
-        if (mCmsSynchronizationListenerSet) {
-            try {
-                mCmsService.removeEventListener(mCmsSynchronizationListener);
-                mCmsSynchronizationListenerSet = false;
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-            }
-        }
-    }
 }

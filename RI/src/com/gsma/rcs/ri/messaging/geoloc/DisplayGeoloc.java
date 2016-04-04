@@ -40,6 +40,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 
@@ -130,11 +131,10 @@ public class DisplayGeoloc extends FragmentActivity implements OnMapReadyCallbac
                 + "='" + Message.MimeType.GEOLOC_MESSAGE + "' AND " + Message.DIRECTION + " = "
                 + Direction.INCOMING.toInt();
         try {
-            // TODO CR025 Geoloc sharing provider
             cursor = ctx.getContentResolver().query(Message.CONTENT_URI, QUERY_PROJECTION, where,
                     null, QUERY_SORT_ORDER);
             if (cursor == null) {
-                throw new IllegalStateException("Cannot query geoloc for contact=" + contact);
+                throw new SQLException("Cannot query last geoloc for contact " + contact);
             }
             if (!cursor.moveToNext()) {
                 return null;
@@ -151,11 +151,10 @@ public class DisplayGeoloc extends FragmentActivity implements OnMapReadyCallbac
     private static Geoloc getMyLastGeoloc(Context ctx) {
         Cursor cursor = null;
         try {
-            // TODO CR025 Geoloc sharing provider
             cursor = ctx.getContentResolver().query(Message.CONTENT_URI, QUERY_PROJECTION,
                     QUERY_WHERE_CLAUSE, null, QUERY_SORT_ORDER);
             if (cursor == null) {
-                throw new IllegalStateException("Cannot query my geoloc");
+                throw new SQLException("Cannot query my last geoloc");
             }
             if (!cursor.moveToNext()) {
                 return null;

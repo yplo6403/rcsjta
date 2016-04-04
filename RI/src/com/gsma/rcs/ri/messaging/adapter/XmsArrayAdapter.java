@@ -101,11 +101,11 @@ public class XmsArrayAdapter extends ArrayAdapter<MmsPartDataObject> {
             }
             if (fileIcon == null) {
                 /* content has no thumbnail: display default thumbnail, filename and size */
-                if (OneToOneTalkCursorAdapter.sDefaultThumbnail == null) {
-                    OneToOneTalkCursorAdapter.sDefaultThumbnail = BitmapFactory.decodeResource(
+                if (TalkCursorAdapter.sDefaultThumbnail == null) {
+                    TalkCursorAdapter.sDefaultThumbnail = BitmapFactory.decodeResource(
                             mCtx.getResources(), R.drawable.video_file);
                 }
-                holder.mImageView.setImageBitmap(OneToOneTalkCursorAdapter.sDefaultThumbnail);
+                holder.mImageView.setImageBitmap(TalkCursorAdapter.sDefaultThumbnail);
             } else {
                 holder.mImageView.setImageBitmap(fileIcon);
             }
