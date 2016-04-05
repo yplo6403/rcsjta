@@ -20,8 +20,8 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.cms.event.framework.EventReportingSession;
-import com.gsma.rcs.core.cms.event.framework.TerminatingEventReportingSession;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkSession;
+import com.gsma.rcs.core.cms.event.framework.TerminatingEventFrameworkSession;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -361,7 +361,7 @@ public class CmsService extends ImsService {
             @Override
             public void run() {
                 try {
-                    EventReportingSession session = new TerminatingEventReportingSession(
+                    EventFrameworkSession session = new TerminatingEventFrameworkSession(
                             mImsModule.getInstantMessagingService(), invite, mRcsSettings, mMessagingLog, timestamp);
                     session.startSession();
 
@@ -372,20 +372,10 @@ public class CmsService extends ImsService {
                     }
                     tryToSendErrorResponse(invite, Response.BUSY_HERE);
 
-                } catch (PayloadException e) {
+                } catch (PayloadException | RuntimeException e) {
                     sLogger.error("Failed to receive o2o chat invitation!", e);
                     tryToSendErrorResponse(invite, Response.DECLINE);
 
-                } catch (RuntimeException e) {
-                    /*
-                     * Normally we are not allowed to catch runtime exceptions as these are genuine
-                     * bugs which should be handled/fixed within the code. However the cases when we
-                     * are executing operations on a thread unhandling such exceptions will
-                     * eventually lead to exit the system and thus can bring the whole system down,
-                     * which is not intended.
-                     */
-                    sLogger.error("Failed to receive o2o chat invitation!", e);
-                    tryToSendErrorResponse(invite, Response.DECLINE);
                 }
             }
         });

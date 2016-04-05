@@ -46,7 +46,6 @@ import android.os.BatteryManager;
 import android.telephony.TelephonyManager;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.util.Random;
@@ -248,37 +247,13 @@ public class ImsConnectionManager implements Runnable {
 
                     try {
                         connectionEvent(intent);
-                    } catch (ContactManagerException e) {
+                    } catch (ContactManagerException | PayloadException | RuntimeException | CertificateException e) {
                         sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
-                    } catch (PayloadException e) {
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
+                                "Unable to handle connection event for intent action : " + intent.getAction(), e);
                     } catch (NetworkException e) {
                         if (sLogger.isActivated()) {
                             sLogger.debug(e.getMessage());
                         }
-                    } catch (CertificateException e) {
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
-                    } catch (RuntimeException e) {
-                        /*
-                         * Normally we are not allowed to catch runtime exceptions as these are
-                         * genuine bugs which should be handled/fixed within the code. However the
-                         * cases when we are executing operations on a thread unhandling such
-                         * exceptions will eventually lead to exit the system and thus can bring the
-                         * whole system down, which is not intended.
-                         */
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
                     }
                 }
             });
@@ -335,7 +310,7 @@ public class ImsConnectionManager implements Runnable {
                     }
                 }
             }
-            String localIpAddr = null;
+            String localIpAddr;
             if (networkInfo.getType() != mCurrentNetworkInterface.getType()) {
                 if (sLogger.isActivated()) {
                     sLogger.info("Data connection state: NETWORK ACCESS CHANGED");
@@ -417,7 +392,7 @@ public class ImsConnectionManager implements Runnable {
                 if (mDnsResolvedFields != null) {
                     remoteAddress = mDnsResolvedFields.mIpAddress;
                 } else {
-                    remoteAddress = new String("unresolved");
+                    remoteAddress = "unresolved";
                 }
 
                 if (sLogger.isActivated()) {
@@ -457,11 +432,6 @@ public class ImsConnectionManager implements Runnable {
                 }
                 connectToIms(localIpAddr);
             }
-        } catch (SocketException e) {
-            if (sLogger.isActivated()) {
-                sLogger.debug(e.getMessage());
-            }
-            disconnectFromIms();
         } catch (IOException e) {
             if (sLogger.isActivated()) {
                 sLogger.debug(e.getMessage());
@@ -569,7 +539,6 @@ public class ImsConnectionManager implements Runnable {
             if (sLogger.isActivated()) {
                 sLogger.debug("Start polling of the IMS connection");
             }
-
             long servicePollingPeriod = mRcsSettings.getImsServicePollingPeriod();
             long regBaseTime = mRcsSettings.getRegisterRetryBaseTime();
             long regMaxTime = mRcsSettings.getRegisterRetryMaxTime();
@@ -577,10 +546,6 @@ public class ImsConnectionManager implements Runnable {
             int nbFailures = 0;
 
             while (mImsPollingThreadId == Thread.currentThread().getId()) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("Polling: check IMS connection");
-                }
-
                 // Connection management
                 try {
                     // Test IMS registration
@@ -620,9 +585,6 @@ public class ImsConnectionManager implements Runnable {
                                 mImsModule.startImsServices();
                                 mImsServicesStarted = true;
                             } else {
-                                if (sLogger.isActivated()) {
-                                    sLogger.debug("Already registered to IMS: check IMS services");
-                                }
                                 mImsModule.checkImsServices();
                             }
                         } else {
@@ -631,14 +593,7 @@ public class ImsConnectionManager implements Runnable {
                             }
                         }
                     }
-                } catch (ContactManagerException e) {
-                    sLogger.error("Can't register to the IMS!", e);
-                    mCurrentNetworkInterface.getSipManager().closeStack();
-                    /* Increment number of failures */
-                    nbFailures++;
-                    /* Force to perform a new DNS lookup */
-                    mDnsResolvedFields = null;
-                } catch (PayloadException e) {
+                } catch (ContactManagerException | PayloadException e) {
                     sLogger.error("Can't register to the IMS!", e);
                     mCurrentNetworkInterface.getSipManager().closeStack();
                     /* Increment number of failures */
@@ -679,17 +634,13 @@ public class ImsConnectionManager implements Runnable {
                                                                               // 100%
                             long retryPeriod = (long) (coeff * w);
                             if (sLogger.isActivated()) {
-                                sLogger.debug(new StringBuilder("Wait ").append(retryPeriod)
-                                        .append("ms before retry registration (failures=")
-                                        .append(nbFailures).append(", coeff=").append(coeff)
-                                        .append(')').toString());
+                                sLogger.debug("Wait " + retryPeriod + "ms before retry registration (failures=" + nbFailures + ", coeff=" + coeff + ')');
                             }
                             Thread.sleep(retryPeriod);
                         }
                     } else if (!mImsServicesStarted) {
                         if (sLogger.isActivated()) {
-                            sLogger.debug(new StringBuilder("Wait ").append(DEFAULT_RETRY_PERIOD)
-                                    .append("ms before retry to start services").toString());
+                            sLogger.debug("Wait " + DEFAULT_RETRY_PERIOD + "ms before retry to start services");
                         }
                         Thread.sleep(DEFAULT_RETRY_PERIOD);
                     } else {
@@ -736,8 +687,7 @@ public class ImsConnectionManager implements Runnable {
                         int batteryLevel = intent.getIntExtra("level", 0);
                         int batteryPlugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 1);
                         if (sLogger.isActivated()) {
-                            sLogger.info(new StringBuilder("Battery level: ").append(batteryLevel)
-                                    .append("% plugged: ").append(batteryPlugged).toString());
+                            sLogger.info("Battery level: " + batteryLevel + "% plugged: " + batteryPlugged);
                         }
                         if (batteryLevel <= batteryLimit.toInt() && batteryPlugged == 0) {
                             if (!mDisconnectedByBattery) {
@@ -753,37 +703,13 @@ public class ImsConnectionManager implements Runnable {
                                 connectionEvent(new Intent(ConnectivityManager.CONNECTIVITY_ACTION));
                             }
                         }
-                    } catch (ContactManagerException e) {
+                    } catch (ContactManagerException | PayloadException | RuntimeException | CertificateException e) {
                         sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
-                    } catch (PayloadException e) {
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
+                                "Unable to handle connection event for intent action : " + intent.getAction(), e);
                     } catch (NetworkException e) {
                         if (sLogger.isActivated()) {
                             sLogger.debug(e.getMessage());
                         }
-                    } catch (CertificateException e) {
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
-                    } catch (RuntimeException e) {
-                        /*
-                         * Normally we are not allowed to catch runtime exceptions as these are
-                         * genuine bugs which should be handled/fixed within the code. However the
-                         * cases when we are executing operations on a thread unhandling such
-                         * exceptions will eventually lead to exit the system and thus can bring the
-                         * whole system down, which is not intended.
-                         */
-                        sLogger.error(
-                                new StringBuilder(
-                                        "Unable to handle connection event for intent action : ")
-                                        .append(intent.getAction()).toString(), e);
                     }
                 }
             });
@@ -795,9 +721,6 @@ public class ImsConnectionManager implements Runnable {
      */
     public boolean isInRoaming() {
         NetworkInfo networkInfo = mCnxManager.getActiveNetworkInfo();
-        if (networkInfo != null) {
-            return networkInfo.isRoaming();
-        }
-        return false;
+        return networkInfo != null && networkInfo.isRoaming();
     }
 }

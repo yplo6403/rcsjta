@@ -46,9 +46,9 @@ import com.gsma.rcs.utils.logger.Logger;
 import java.util.Collection;
 import java.util.Vector;
 
-public class TerminatingEventReportingSession extends EventReportingSession {
+public class TerminatingEventFrameworkSession extends EventFrameworkSession {
 
-    private static final Logger sLogger = Logger.getLogger(TerminatingEventReportingSession.class
+    private static final Logger sLogger = Logger.getLogger(TerminatingEventFrameworkSession.class
             .getName());
 
     /**
@@ -60,8 +60,8 @@ public class TerminatingEventReportingSession extends EventReportingSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      */
-    public TerminatingEventReportingSession(InstantMessagingService imService, SipRequest invite,
-            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp) {
+    public TerminatingEventFrameworkSession(InstantMessagingService imService, SipRequest invite,
+                                            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp) {
         super(imService, rcsSettings, messagingLog, timestamp);
         // Create dialog path
         createTerminatingDialogPath(invite);
@@ -95,7 +95,6 @@ public class TerminatingEventReportingSession extends EventReportingSession {
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
 
-            /* Changed by Deutsche Telekom */
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
 
             /* Extract the "setup" parameter */

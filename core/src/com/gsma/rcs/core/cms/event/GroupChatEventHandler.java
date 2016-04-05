@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
@@ -55,7 +55,7 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
      * @param messagingLog the messaging accessor
      * @param settings the RCS settings accessor
      */
-    public GroupChatEventHandler(EventReportingFrameworkManager eventFrameworkManager,
+    public GroupChatEventHandler(EventFrameworkManager eventFrameworkManager,
             CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings,
             ImdnDeliveryReportListener imdnDeliveryReportListener) {
         super(eventFrameworkManager, cmsLog, messagingLog, settings, imdnDeliveryReportListener);

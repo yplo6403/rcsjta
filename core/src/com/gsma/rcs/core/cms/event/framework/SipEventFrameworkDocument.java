@@ -28,37 +28,34 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;
 
-public class SipEventReportingFrameworkDocument {
+public class SipEventFrameworkDocument {
 
-    private static final Logger sLogger = Logger.getLogger(SipEventReportingFrameworkDocument.class
+    private static final Logger sLogger = Logger.getLogger(SipEventFrameworkDocument.class
             .getSimpleName());
 
-    private final static String XML_OBJECT_WITH_UID = new StringBuilder(
-            "<object uid=\"%1$s\" folder-path=\"%2$s/\">" + "<message-id>%3$s</message-id>"
-                    + "</object>").toString();
+    private final static String XML_OBJECT_WITH_UID = "<object uid=\"%1$s\" folder-path=\"%2$s/\">"
+            + "<message-id>%3$s</message-id>" + "</object>";
 
-    private final static String XML_CHAT_MESSAGE = new StringBuilder("<object>"
+    private final static String XML_CHAT_MESSAGE = "<object>"
             + "<conversation-id>%1$s</conversation-id>" + "<contribution-id>%2$s</contribution-id>"
-            + "<other-party>%3$s</other-party>" + "<message-id>%4$s</message-id>" + "</object>")
-            .toString();
+            + "<other-party>%3$s</other-party>" + "<message-id>%4$s</message-id>" + "</object>";
 
-    private final static String XML_GCHAT_MESSAGE = new StringBuilder("<object>"
+    private final static String XML_GCHAT_MESSAGE = "<object>"
             + "<conversation-id>%1$s</conversation-id>" + "<contribution-id>%2$s</contribution-id>"
-            + "<message-id>%3$s</message-id>" + "</object>").toString();
+            + "<message-id>%3$s</message-id>" + "</object>";
 
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mSeenObject;
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mDeletedObject;
 
-    public SipEventReportingFrameworkDocument(List<CmsObject> seenObjects,
-            List<CmsObject> deletedObjects) {
+    public SipEventFrameworkDocument(List<CmsObject> seenObjects,
+                                     List<CmsObject> deletedObjects) {
         mSeenObject = seenObjects;
         mDeletedObject = deletedObjects;
     }
 
     public String toXml() {
-
         StringBuilder sb = new StringBuilder(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                         + "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
@@ -82,22 +79,18 @@ public class SipEventReportingFrameworkDocument {
     }
 
     private String toXml(CmsObject object) {
-
         Integer uid = object.getUid();
         if (uid != null) {
             return String.format(XML_OBJECT_WITH_UID, object.getUid(), object.getFolder(),
                     object.getMessageId());
         }
-
         MessageType messageType = object.getMessageType();
-
         if (MessageType.SMS == messageType || MessageType.MMS == messageType) {
             if (sLogger.isActivated()) {
                 sLogger.debug("Sip event reporting framework not implemented for XMS messages having no uid");
             }
             return "";
         }
-
         if (MessageType.CHAT_MESSAGE == messageType) {
             String folder = object.getFolder();
             ContactId contact = CmsUtils.cmsFolderToContact(folder);

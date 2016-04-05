@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -38,20 +38,21 @@ public class MmsSessionHandler implements MmsSessionListener {
     private final CmsLog mCmsLog;
     private final XmsLog mXmsLog;
     private final RcsSettings mSettings;
-    private final EventReportingFrameworkManager mImapEventFrameworkManager;
+    private final CmsSyncScheduler mCmsSyncScheduler;
 
     /**
      * Default constructor
      *
      * @param cmsLog the IMAP log accessor
      * @param settings the RCS settings accessor
+     * @param cmsSyncScheduler the CMS synchronization scheduler
      */
     public MmsSessionHandler(CmsLog cmsLog, XmsLog xmsLog, RcsSettings settings,
-            EventReportingFrameworkManager imapEventFrameworkManager) {
+                             CmsSyncScheduler cmsSyncScheduler) {
         mCmsLog = cmsLog;
         mXmsLog = xmsLog;
         mSettings = settings;
-        mImapEventFrameworkManager = imapEventFrameworkManager;
+        mCmsSyncScheduler = cmsSyncScheduler;
     }
 
     @Override
@@ -64,12 +65,10 @@ public class MmsSessionHandler implements MmsSessionListener {
                 ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
                         .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, mmsId, null));
-
-        MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
-        if (mImapEventFrameworkManager == null) {
-            return;
+        if (mCmsSyncScheduler != null) {
+            MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
+            mCmsSyncScheduler.schedulePushMessages(mms.getContact());
         }
-        mImapEventFrameworkManager.pushMmsMessage(mms.getContact());
     }
 
     @Override

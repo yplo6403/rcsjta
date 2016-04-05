@@ -19,7 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import com.gsma.rcs.core.cms.event.framework.EventReportingFrameworkManager;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
@@ -46,7 +46,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     protected final MessagingLog mMessagingLog;
     protected final CmsLog mCmsLog;
     protected final RcsSettings mSettings;
-    protected final EventReportingFrameworkManager mEventFrameworkManager;
+    protected final EventFrameworkManager mEventFrameworkManager;
     protected final ImdnDeliveryReportListener mImdnDeliveryReportListener;
 
     /**
@@ -58,7 +58,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
      * @param settings the RCS settings accessor
      * @param imdnDeliveryReportListener the listener for delivery report event
      */
-    public ChatEventHandler(EventReportingFrameworkManager eventFrameworkManager, CmsLog cmsLog,
+    public ChatEventHandler(EventFrameworkManager eventFrameworkManager, CmsLog cmsLog,
             MessagingLog messagingLog, RcsSettings settings,
             ImdnDeliveryReportListener imdnDeliveryReportListener) {
         mEventFrameworkManager = eventFrameworkManager;
@@ -81,7 +81,6 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onIsComposingEventReceived(ContactId contact, boolean status) {
-
     }
 
     @Override
@@ -97,7 +96,6 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onMessageFailedSend(String msgId, String mimeType) {
-
     }
 
     @Override
@@ -122,12 +120,10 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onSessionInvited(ContactId contact) {
-
     }
 
     @Override
     public void onSessionAutoAccepted(ContactId contact) {
-
     }
 
     @Override
@@ -137,27 +133,22 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onImError(ChatError error, String msgId, String mimeType) {
-
     }
 
     @Override
     public void onSessionStarted(ContactId contact) {
-
     }
 
     @Override
     public void onSessionAborted(ContactId contact, TerminationReason reason) {
-
     }
 
     @Override
     public void onSessionRejected(ContactId contact, TerminationReason reason) {
-
     }
 
     @Override
     public void onSessionAccepting(ContactId contact) {
-
     }
 
     @Override

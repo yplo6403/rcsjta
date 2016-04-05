@@ -48,39 +48,21 @@ import java.util.List;
 /**
  * Event Reporting session
  */
-public abstract class EventReportingSession extends ImsServiceSession implements MsrpEventListener {
+public abstract class EventFrameworkSession extends ImsServiceSession implements MsrpEventListener {
 
     private final MsrpManager mMsrpMgr;
 
-    /**
-     * Session activity manager
-     */
     private final SessionActivityManager mActivityMgr;
 
     private String mContributionId;
 
-    /**
-     * Feature tags
-     */
     private List<String> mFeatureTags = new ArrayList<>();
 
-    /**
-     * Feature tags
-     */
-    private List<String> mAcceptContactTags = new ArrayList<>();
-
-    /**
-     * Accept types
-     */
     private String mAcceptTypes = "";
 
-    /**
-     * Wrapped types
-     */
     private String mWrappedTypes = "";
 
-    private static final Logger sLogger = Logger.getLogger(EventReportingSession.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(EventFrameworkSession.class.getName());
 
     protected final MessagingLog mMessagingLog;
 
@@ -94,7 +76,7 @@ public abstract class EventReportingSession extends ImsServiceSession implements
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      */
-    public EventReportingSession(InstantMessagingService imService, RcsSettings rcsSettings,
+    public EventFrameworkSession(InstantMessagingService imService, RcsSettings rcsSettings,
             MessagingLog messagingLog, long timestamp) {
         super(imService, null, null, rcsSettings, timestamp, null);
 
@@ -102,12 +84,10 @@ public abstract class EventReportingSession extends ImsServiceSession implements
         mMessagingLog = messagingLog;
         mActivityMgr = new SessionActivityManager(this, rcsSettings);
 
-        addAcceptTypes(SipEventReportingFrameworkManager.MIME_TYPE);
+        addAcceptTypes(EventFrameworkManager.MIME_TYPE);
         addWrappedTypes(CpimMessage.MIME_TYPE);
 
         mFeatureTags.add(FeatureTags.FEATURE_3GPP + "=\""
-                + FeatureTags.FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG + "\"");
-        mAcceptContactTags.add(FeatureTags.FEATURE_3GPP + "=\""
                 + FeatureTags.FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG + "\"");
 
         // Create the MSRP manager
@@ -141,7 +121,7 @@ public abstract class EventReportingSession extends ImsServiceSession implements
     /**
      * Add types to accept types
      * 
-     * @param types
+     * @param types types
      */
     public void addAcceptTypes(String types) {
         if (mAcceptTypes.isEmpty()) {
@@ -163,7 +143,7 @@ public abstract class EventReportingSession extends ImsServiceSession implements
     /**
      * Add types to wrapped types
      * 
-     * @param types
+     * @param types types
      */
     public void addWrappedTypes(String types) {
         if (mWrappedTypes.isEmpty()) {
@@ -221,36 +201,23 @@ public abstract class EventReportingSession extends ImsServiceSession implements
         }
     }
 
-    /**
-     * Handle 480 Temporarily Unavailable
-     *
-     * @param resp 480 response
-     */
+    @Override
     public void handle480Unavailable(SipResponse resp) {
         handleError(new ChatError(ChatError.SESSION_INITIATION_DECLINED, resp.getReasonPhrase()));
     }
 
-    /**
-     * Handle 486 Busy
-     *
-     * @param resp 486 response
-     */
+    @Override
     public void handle486Busy(SipResponse resp) {
         handleError(new ChatError(ChatError.SESSION_INITIATION_DECLINED, resp.getReasonPhrase()));
     }
 
-    /**
-     * Handle 603 Decline
-     *
-     * @param resp 603 response
-     */
+    @Override
     public void handle603Declined(SipResponse resp) {
         handleDefaultError(resp);
     }
 
     @Override
     public void handleError(ImsServiceError error) {
-
     }
 
     @Override
@@ -258,165 +225,98 @@ public abstract class EventReportingSession extends ImsServiceSession implements
         return false;
     }
 
-    /**
-     * Data has been transfered
-     *
-     * @param msgId Message ID
-     */
+    @Override
     public void msrpDataTransferred(String msgId) {
         if (sLogger.isActivated()) {
-            sLogger.info("Data transfered");
+            sLogger.info("Data transferred");
         }
-
-        // Update the activity manager
         mActivityMgr.updateActivity();
     }
 
-    /**
-     * Session inactivity event
-     *
-     * @throws NetworkException
-     * @throws PayloadException
-     */
     @Override
     public void handleInactivityEvent() throws PayloadException, NetworkException {
         if (sLogger.isActivated()) {
             sLogger.debug("Session inactivity event");
         }
-
         terminateSession(TerminationReason.TERMINATION_BY_INACTIVITY);
     }
 
-    /**
-     * Data transfer has been received
-     *
-     * @param msgId Message ID
-     * @param data Received data
-     * @param mimeType Data mime-type
-     * @throws NetworkException
-     * @throws PayloadException
-     * @throws ContactManagerException
-     */
+    @Override
     public void receiveMsrpData(String msgId, byte[] data, String mimeType)
             throws PayloadException, NetworkException, ContactManagerException {
         if (sLogger.isActivated()) {
-            sLogger.info(new StringBuilder("Data received (type ").append(mimeType).append(")")
-                    .toString());
+            sLogger.info("Data received (type " + mimeType + ")");
         }
         mActivityMgr.updateActivity();
-        if ((data == null) || (data.length == 0)) {
+        // TODO check if it is necessary to test if data is empty ?
+        if (data == null || data.length == 0) {
             if (sLogger.isActivated()) {
                 sLogger.debug("By-pass received empty data");
             }
             return;
         }
-
         if (sLogger.isActivated()) {
-            sLogger.debug("EventReportingSession::receiveMsrpData : " + data);
+            sLogger.debug("EventFrameworkSession::receiveMsrpData");
         }
-        return;
-
         // TODO FGI : TO BE implemented
         /*
          * For positive AS ack, update flag report status in local storage. DELETED_REPORT_REQUESTED
          * --> DELETED READ_REPORT_REQUESTED --> READ
          */
-
     }
 
-    /**
-     * Data transfer in progress
-     *
-     * @param currentSize Current transfered size in bytes
-     * @param totalSize Total size in bytes
-     */
+    @Override
     public void msrpTransferProgress(long currentSize, long totalSize) {
         // Not used by chat
     }
 
-    /**
-     * Data transfer in progress
-     *
-     * @param currentSize Current transfered size in bytes
-     * @param totalSize Total size in bytes
-     * @param data received data chunk
-     * @return always false TODO
-     */
+    @Override
     public boolean msrpTransferProgress(long currentSize, long totalSize, byte[] data) {
         // Not used by chat
         return false;
     }
 
-    /**
-     * Data transfer has been aborted
-     */
+    @Override
     public void msrpTransferAborted() {
-        // Not used by chat
     }
 
     @Override
     public void msrpTransferError(String msgId, String error, TypeMsrpChunk typeMsrpChunk) {
-
     }
 
-    /**
-     * Send an empty data chunk
-     *
-     * @throws NetworkException
-     */
     public void sendEmptyDataChunk() throws NetworkException {
         mMsrpMgr.sendEmptyChunk();
     }
 
     @Override
     public void startSession() throws PayloadException, NetworkException {
-
     }
 
     @Override
     public void removeSession() {
     }
 
-    /**
-     * Prepare media session
-     */
+    @Override
     public void prepareMediaSession() {
-        // Changed by Deutsche Telekom
-        // Get the remote SDP part
         byte[] sdp = getDialogPath().getRemoteContent().getBytes(UTF8);
-
-        // Changed by Deutsche Telekom
-        // Create the MSRP session
         MsrpSession session = getMsrpMgr().createMsrpSession(sdp, this);
-
         session.setFailureReportOption(false);
         session.setSuccessReportOption(false);
     }
 
-    /**
-     * Open media session
-     * 
-     * @throws PayloadException
-     * @throws NetworkException
-     */
+    @Override
     public void openMediaSession() throws PayloadException, NetworkException {
         getMsrpMgr().openMsrpSession();
         sendEmptyDataChunk();
     }
 
-    /**
-     * Start media transfer
-     */
+    @Override
     public void startMediaTransfer() {
-        /* Not used here */
     }
 
     @Override
     public void closeMediaSession() {
-        // Stop the activity manager
         getActivityManager().stop();
-
-        // Close MSRP session
         closeMsrpSession();
     }
 

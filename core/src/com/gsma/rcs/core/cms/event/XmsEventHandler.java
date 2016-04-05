@@ -19,7 +19,8 @@
 package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.event.framework.EventReportingFramework;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.provider.CursorUtil;
@@ -53,7 +54,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     private final CmsLog mCmsLog;
     private final RcsSettings mSettings;
     private final CmsServiceImpl mCmsService;
-    private EventReportingFramework mEventReportingFramework;
+    private CmsSyncScheduler mCmsSyncScheduler;
+    private EventFrameworkManager mEventFrameworkManager;
 
     /**
      * Default constructor
@@ -71,8 +73,12 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mCmsService = cmsService;
     }
 
-    public void setEventFramework(EventReportingFramework eventReportingFramework) {
-        mEventReportingFramework = eventReportingFramework;
+    public void setCmsSyncScheduler(CmsSyncScheduler cmsSyncScheduler) {
+        mCmsSyncScheduler = cmsSyncScheduler;
+    }
+
+    public void setEventFrameworkManager(EventFrameworkManager eventFrameworkManager) {
+        mEventFrameworkManager = eventFrameworkManager;
     }
 
     @Override
@@ -87,8 +93,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                         .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, messageId, message.getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), messageId);
-        if (mEventReportingFramework != null) {
-            mEventReportingFramework.pushSmsMessage(message.getContact());
+        if (mCmsSyncScheduler != null) {
+            mCmsSyncScheduler.schedulePushMessages(message.getContact());
         }
     }
 
@@ -102,8 +108,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                 CmsObject.ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
                         .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.SMS, message.getMessageId(), message.getNativeProviderId()));
-        if (mEventReportingFramework != null) {
-            mEventReportingFramework.pushSmsMessage(message.getContact());
+        if (mCmsSyncScheduler != null) {
+            mCmsSyncScheduler.schedulePushMessages(message.getContact());
         }
 
     }
@@ -136,8 +142,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                         .getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
                 MessageType.MMS, msgId, message.getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), msgId);
-        if (mEventReportingFramework != null) {
-            mEventReportingFramework.pushMmsMessage(message.getContact());
+        if (mCmsSyncScheduler != null) {
+            mCmsSyncScheduler.schedulePushMessages(message.getContact());
         }
     }
 
@@ -157,8 +163,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
                             .getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED, MessageType.MMS, message.getMessageId(), message
                             .getNativeProviderId()));
-            if (mEventReportingFramework != null) {
-                mEventReportingFramework.pushMmsMessage(message.getContact());
+            if (mCmsSyncScheduler != null) {
+                mCmsSyncScheduler.schedulePushMessages(message.getContact());
             }
         }
     }
@@ -238,10 +244,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         } finally {
             CursorUtil.close(cursor);
         }
-        if (mEventReportingFramework != null) {
-            if (contact != null) {
-                mEventReportingFramework.updateFlagsForXms(contact);
-            }
+        if (mEventFrameworkManager != null && contact != null) {
+            mEventFrameworkManager.updateFlagsForXms(contact);
         }
     }
 
@@ -275,10 +279,10 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
         mCmsLog.updateReadStatus(messageType, messageId, ReadStatus.READ_REPORT_REQUESTED);
         mXmsLog.markMessageAsRead(messageId);
-        if (mEventReportingFramework != null) {
+        if (mEventFrameworkManager != null) {
             String number = mXmsLog.getContact(messageId);
             if (number != null) {
-                mEventReportingFramework.updateFlagsForXms(ContactUtil
+                mEventFrameworkManager.updateFlagsForXms(ContactUtil
                         .createContactIdFromTrustedData(number));
             }
         }
@@ -307,8 +311,8 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             CursorUtil.close(cursor);
         }
         mXmsLog.markConversationAsRead(contactId);
-        if (mEventReportingFramework != null) {
-            mEventReportingFramework.updateFlagsForXms(contactId);
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForXms(contactId);
         }
     }
 
@@ -318,11 +322,10 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             sLogger.debug("onDeleteXmsMessage :" + contact);
         }
         for (String messageId : messageIds) {
-            mCmsLog.updateXmsDeleteStatus(messageId,
-                    DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateXmsDeleteStatus(messageId, DeleteStatus.DELETED_REPORT_REQUESTED);
         }
-        if (mEventReportingFramework != null) {
-            mEventReportingFramework.updateFlagsForXms(contact);
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForXms(contact);
         }
     }
 }
