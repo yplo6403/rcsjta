@@ -561,7 +561,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
             /* Set activity title with display name */
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
-            setTitle(getString(R.string.title_chat, displayName));
+            setTitle(displayName);
             switch (action) {
                 case OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE:
                     /*

@@ -442,6 +442,10 @@ public class GroupTalkView extends RcsFragmentActivity implements
                     updateGroupChatViewTitle(mSubject);
                     mParticipants = mGroupChat.getParticipants().keySet();
                     /* Display accept/reject dialog */
+                    if (LogUtils.isActive) {
+                        Log.d(LOGTAG, "New group chat for chatId " + mChatId + " state="
+                                + mGroupChat.getState());
+                    }
                     if (GroupChat.State.INVITED == mGroupChat.getState()) {
                         displayAcceptRejectDialog(contact);
                     }
