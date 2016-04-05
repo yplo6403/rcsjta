@@ -47,11 +47,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * LocalStorage implementation Apply remote changes from CMS server Resolve the IMAP message and
- * select the correct content provider to apply changes Retrieve changes from local content
- * providers which must be applied on the CMS server
+ * LocalStorage<br>
+ * <ul>
+ * <li>Apply remote changes from CMS server</li>
+ * <li>Resolve the IMAP message and select the correct content provider to apply changes</li>
+ * <li>Retrieve changes from local content providers which must be applied on the CMS server</li>
+ * </ul>
  */
-public class LocalStorage implements SyncProcessorHandler {
+public class LocalStorage {
 
     private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
     protected final CmsLog mCmsLog;
@@ -92,9 +95,13 @@ public class LocalStorage implements SyncProcessorHandler {
         mCmsLog.addFolder(folder);
     }
 
-    @Override
-    public void applyFlagChange(List<FlagChange> flagchanges) {
-        for (FlagChange fg : flagchanges) {
+    /**
+     * Apply flag changes from a remote folder
+     *
+     * @param flagChanges the list of flag changes
+     */
+    public void applyFlagChange(List<FlagChangeOperation> flagChanges) {
+        for (FlagChangeOperation fg : flagChanges) {
             String folder = fg.getFolder();
             boolean deleteFlag = fg.isDeleted();
             boolean seenFlag = fg.isSeen();
@@ -109,6 +116,7 @@ public class LocalStorage implements SyncProcessorHandler {
                 }
                 if (deleteFlag) {
                     mCmsEventListener.onRemoteDeleteEvent(msg);
+
                 } else if (seenFlag) {
                     mCmsEventListener.onRemoteReadEvent(msg);
                 }
@@ -118,17 +126,23 @@ public class LocalStorage implements SyncProcessorHandler {
         }
     }
 
-    @Override
+    /**
+     * Delete local IMAP folder when it is no more valid by checking the UIDVALIDITY value retrieved
+     * from CMS.
+     *
+     * @param folderName the folder
+     */
     public void removeLocalFolder(String folderName) {
         mCmsLog.removeFolder(folderName, true);
     }
 
-    @Override
-    public void updateLocalFolder(CmsFolder folder) {
-        mCmsLog.addFolder(folder);
-    }
-
-    @Override
+    /**
+     * Return messages that are not already present in local storage. The content of these messages
+     * should be downloaded from CMS server
+     *
+     * @param messages the list of messages
+     * @return uids of new messages
+     */
     public Set<Integer> filterNewMessages(List<ImapMessage> messages) {
         Set<Integer> uids = new TreeSet<>();
         for (ImapMessage msg : messages) {
@@ -191,7 +205,11 @@ public class LocalStorage implements SyncProcessorHandler {
         return false;
     }
 
-    @Override
+    /**
+     * Create new messages in local storage.
+     *
+     * @param messages the set of messages
+     */
     public void createMessages(Set<ImapMessage> messages) throws FileAccessException {
         Map<MessageType, List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
         for (Entry<MessageType, List<IImapMessage>> entry : mapOfMessages.entrySet()) {
@@ -208,6 +226,7 @@ public class LocalStorage implements SyncProcessorHandler {
                                     : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
                             messageId, null);
                     mCmsLog.addMessage(cmsObject);
+
                 } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
                     /*
                      * There is a wrongly formatted IMAP message on the CMS server. Keep processing
@@ -215,6 +234,7 @@ public class LocalStorage implements SyncProcessorHandler {
                      */
                     sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]",
                             e);
+
                 } catch (CmsSyncException e) {
                     if (sLogger.isActivated()) {
                         sLogger.info(e.getMessage());
@@ -252,12 +272,14 @@ public class LocalStorage implements SyncProcessorHandler {
                     continue;
                 }
                 msgList.add(mMessageResolver.resolveMessage(messageType, msg));
+
             } catch (CmsSyncMissingHeaderException e) {
                 /*
                  * Missing mandatory header on the CMS server. Keep processing remaining IMAP
                  * messages but log error since it MUST be fixed on CMS server.
                  */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+
             } catch (CmsSyncException e) {
                 if (sLogger.isActivated()) {
                     sLogger.info(e.getMessage());
@@ -274,9 +296,14 @@ public class LocalStorage implements SyncProcessorHandler {
         return mapOfMessages;
     }
 
-    @Override
-    public Set<FlagChange> getLocalFlagChanges(String folder) {
-        Set<FlagChange> changes = new HashSet<>();
+    /**
+     * Get flag changes from local storage for a folder
+     *
+     * @param folder the folder
+     * @return flagChanges the set of flag changes
+     */
+    public Set<FlagChangeOperation> getLocalFlagChanges(String folder) {
+        Set<FlagChangeOperation> changes = new HashSet<>();
         Set<Integer> readUids = new HashSet<>();
         Set<Integer> deletedUids = new HashSet<>();
         for (CmsObject cmsObject : mCmsLog.getMessagesToSync(folder)) {
@@ -291,10 +318,10 @@ public class LocalStorage implements SyncProcessorHandler {
             }
         }
         if (!readUids.isEmpty()) {
-            changes.add(new FlagChange(folder, readUids, Flag.Seen));
+            changes.add(new FlagChangeOperation(folder, readUids, Flag.Seen));
         }
         if (!deletedUids.isEmpty()) {
-            changes.add(new FlagChange(folder, deletedUids, Flag.Deleted));
+            changes.add(new FlagChangeOperation(folder, deletedUids, Flag.Deleted));
         }
         return changes;
     }
@@ -302,8 +329,8 @@ public class LocalStorage implements SyncProcessorHandler {
     /**
      * @param flagChanges set of UIDs with changed flags
      */
-    public void finalizeLocalFlagChanges(Set<FlagChange> flagChanges) {
-        for (FlagChange fg : flagChanges) {
+    public void finalizeLocalFlagChanges(Set<FlagChangeOperation> flagChanges) {
+        for (FlagChangeOperation fg : flagChanges) {
             String folder = fg.getFolder();
             boolean seenFlag = fg.isSeen();
             boolean deleteFlag = fg.isDeleted();

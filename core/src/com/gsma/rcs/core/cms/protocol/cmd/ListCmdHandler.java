@@ -30,16 +30,13 @@ import java.util.List;
  */
 public class ListCmdHandler extends CmdHandler {
 
-    static final String sCommand = Constants.CMD_LIST;
     private static final String sPattern = "^LIST \\(.*\\) \"/\" (.*)$";
 
-    private static final int sExpectedValues = 1;
-
-    final List<String> mFolders = new ArrayList();
+    private final List<String> mFolders = new ArrayList<>();
 
     @Override
     public String buildCommand(Object... params) {
-        return sCommand;
+        return Constants.CMD_LIST;
     }
 
     @Override
@@ -49,16 +46,12 @@ public class ListCmdHandler extends CmdHandler {
 
     @Override
     public void handleLines(List<String> lines) {
-
         for (String line : lines) {
             line = line.substring(2).trim();
-
             String[] values = extractCounterValuesFromLine(sPattern, line);
-
-            if (values == null || values.length != sExpectedValues) {
+            if (values == null || values.length != 1) {
                 continue;
             }
-
             mFolders.add(values[0]);
         }
     }

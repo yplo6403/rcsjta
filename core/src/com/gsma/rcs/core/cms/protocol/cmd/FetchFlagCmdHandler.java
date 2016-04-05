@@ -20,7 +20,7 @@
 package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
+import com.gsma.rcs.core.cms.sync.process.FlagChangeOperation;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.Part;
 
@@ -87,7 +87,7 @@ public class FetchFlagCmdHandler extends CmdHandler {
     }
 
     @Override
-    public List<FlagChange> getResult() {
+    public List<FlagChangeOperation> getResult() {
         Set<Integer> readUids = new HashSet<>();
         Set<Integer> deletedUids = new HashSet<>();
         for (Map.Entry<Integer, Map<String, String>> entry : mData.entrySet()) {
@@ -101,12 +101,12 @@ public class FetchFlagCmdHandler extends CmdHandler {
                 deletedUids.add(uid);
             }
         }
-        List<FlagChange> flagChanges = new ArrayList<>();
+        List<FlagChangeOperation> flagChanges = new ArrayList<>();
         if (!deletedUids.isEmpty()) {
-            flagChanges.add(new FlagChange(mFolderName, deletedUids, Flag.Deleted));
+            flagChanges.add(new FlagChangeOperation(mFolderName, deletedUids, Flag.Deleted));
         }
         if (!readUids.isEmpty()) {
-            flagChanges.add(new FlagChange(mFolderName, readUids, Flag.Seen));
+            flagChanges.add(new FlagChangeOperation(mFolderName, readUids, Flag.Seen));
         }
         return flagChanges;
     }

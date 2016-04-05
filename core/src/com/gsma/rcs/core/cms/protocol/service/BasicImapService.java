@@ -27,7 +27,7 @@ import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.cmd.ListCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.ListStatusCmdHandler;
 import com.gsma.rcs.core.cms.protocol.cmd.UidSearchCmdHandler;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
+import com.gsma.rcs.core.cms.sync.process.FlagChangeOperation;
 import com.gsma.rcs.imaplib.imap.DefaultImapService;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapException;
@@ -36,13 +36,12 @@ import com.gsma.rcs.imaplib.imap.ImapUtil;
 import com.gsma.rcs.imaplib.imap.IoService;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class BasicImapService extends DefaultImapService {
 
     /**
-     * @param ioService
+     * @param ioService the IO sezrvice
      */
     public BasicImapService(IoService ioService) {
         super(ioService);
@@ -51,7 +50,7 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute LIST command on CMS server
      * 
-     * @return
+     * @return the list of string folders
      * @throws IOException
      * @throws ImapException
      */
@@ -66,7 +65,7 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute LIST-STATUS command on CMS server
      * 
-     * @return
+     * @return the list of IMAP folders
      * @throws IOException
      * @throws ImapException
      */
@@ -81,7 +80,7 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute SELECT CONDSTORE command on CMS server
      * 
-     * @param folderName
+     * @param folderName the folder name
      * @throws IOException
      * @throws ImapException
      */
@@ -95,14 +94,14 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute FETCH FLAGS command on CMS server
      * 
-     * @param folderName
-     * @param uid
-     * @param changedSince
-     * @return
+     * @param folderName the folder name
+     * @param uid the UID
+     * @param changedSince the changed since
+     * @return the list of FlagChangeOperation
      * @throws IOException
      * @throws ImapException
      */
-    public List<FlagChange> fetchFlags(String folderName, Integer uid, Integer changedSince)
+    public List<FlagChangeOperation> fetchFlags(String folderName, Integer uid, Integer changedSince)
             throws IOException, ImapException {
 
         FetchFlagCmdHandler handler = (FetchFlagCmdHandler) CmdHandler.getHandler(
@@ -126,8 +125,8 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute FETCH HEADERS command on CMS server
      * 
-     * @param fromUid
-     * @param toUid
+     * @param fromUid the from UID
+     * @param toUid the to UID
      * @return An ordered collection of messages (containing only headers)
      * @throws ImapException
      * @throws IOException
@@ -158,8 +157,8 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute UID SEARCH command on CMS server
      *
-     * @param headerName
-     * @param headerValue
+     * @param headerName the header name
+     * @param headerValue the header value
      * @return An ordered collection of uids
      * @throws ImapException
      * @throws IOException
@@ -190,7 +189,7 @@ public class BasicImapService extends DefaultImapService {
     /**
      * Execute FETCH MESSAGE command on CMS server (one message)
      * 
-     * @param uid
+     * @param uid the UID
      * @return ImapMessage
      * @throws IOException
      * @throws ImapException
@@ -217,36 +216,6 @@ public class BasicImapService extends DefaultImapService {
         return (ImapMessage) handler.getResult();
     }
 
-    /**
-     * Execute FETCH MESSAGES command on CMS server (fetch all messages)
-     * 
-     * @return
-     * @throws IOException
-     * @throws ImapException
-     */
-    public List<ImapMessage> fetchAllMessages() throws IOException, ImapException {
-
-        List<ImapMessage> messages = new ArrayList<ImapMessage>();
-        CmdHandler handler = CmdHandler.getHandler(CommandType.FETCH_MESSAGES_BODY,
-                getCapabilities());
-        synchronized (getIoService()) {
-            writeCommand(handler.buildCommand("1:*"));
-            String line;
-            while (true) {
-                line = ioReadLine();
-                checkResponseNotBad(line);
-                if (isTagged(line)) {
-                    break;
-                }
-                if (handler.handleLine(line)) {
-                    handler.handlePart(readPart(line));
-                    messages.add((ImapMessage) handler.getResult());
-                }
-            }
-            checkResponseOk(line);
-        }
-        return messages;
-    }
 
     public synchronized int append(String folderName, List<Flag> flags, String payload)
             throws IOException, ImapException {
@@ -254,7 +223,7 @@ public class BasicImapService extends DefaultImapService {
         int length = payload.getBytes().length;
 
         if (!folderName.startsWith("\"")) {
-            folderName = new StringBuilder("\"").append(folderName).append("\"").toString();
+            folderName = "\"" + folderName + "\"";
         }
         writeCommand("APPEND", folderName, ImapUtil.getFlagsAsString(flags), "{" + length + "}");
         String ok = ioReadLine();

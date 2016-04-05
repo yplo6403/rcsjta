@@ -62,7 +62,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final LocalStorage mLocalStorageHandler;
-    private SyncProcessor mSynchronizer;
+    private CmsSyncHandler mSynchronizer;
 
     /**
      * @param basicImapService IMAP service
@@ -96,7 +96,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             sLogger.debug(">>> BasicSyncStrategy.execute");
         }
         Map<String, CmsFolder> localFolders = mLocalStorageHandler.getLocalFolders();
-        mSynchronizer = new SyncProcessorImpl(mBasicImapService);
+        mSynchronizer = new CmsSyncHandler(mBasicImapService);
 
         try {
             for (ImapFolder remoteFolder : mBasicImapService.listStatus()) {
@@ -120,7 +120,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                     mSynchronizer.selectFolder(remoteFolderName);
                 }
                 /* sync CMS with local change */
-                Set<FlagChange> flagChanges = mLocalStorageHandler
+                Set<FlagChangeOperation> flagChanges = mLocalStorageHandler
                         .getLocalFlagChanges(remoteFolderName);
                 mSynchronizer.syncLocalFlags(remoteFolderName, flagChanges);
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
@@ -147,7 +147,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         mSynchronizer.selectFolder(folderName);
 
         if (localFolder.hasMessages()) {
-            List<FlagChange> flagChanges = mSynchronizer.syncRemoteFlags(localFolder, remoteFolder);
+            List<FlagChangeOperation> flagChanges = mSynchronizer.syncRemoteFlags(localFolder, remoteFolder);
             mLocalStorageHandler.applyFlagChange(flagChanges);
         }
         List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);

@@ -19,7 +19,7 @@
 package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.core.cms.sync.process.FlagChange;
+import com.gsma.rcs.core.cms.sync.process.FlagChangeOperation;
 
 import android.test.AndroidTestCase;
 
@@ -44,11 +44,11 @@ public class FetchFlagCmdHandlerTest extends AndroidTestCase {
         Assert.assertEquals("\\Seen \\Deleted", handler.mData.get(19).get(Constants.METADATA_FLAGS));
         Assert.assertEquals("92566", handler.mData.get(19).get(Constants.METADATA_MODSEQ));
 
-        List<FlagChange> flagChanges = handler.getResult();
+        List<FlagChangeOperation> flagChanges = handler.getResult();
         Assert.assertEquals(2, flagChanges.size());
 
         // Delete flagchange first
-        FlagChange fg = flagChanges.get(0);
+        FlagChangeOperation fg = flagChanges.get(0);
         Assert.assertEquals("myFolder", fg.getFolder());
         Assert.assertTrue(!fg.getUids().isEmpty());
         Assert.assertTrue(fg.getUids().iterator().next() == 19);

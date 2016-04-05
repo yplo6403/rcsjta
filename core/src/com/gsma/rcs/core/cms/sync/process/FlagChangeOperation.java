@@ -23,12 +23,10 @@ import com.gsma.rcs.imaplib.imap.Flag;
 
 import android.text.TextUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
-public class FlagChange {
+public class FlagChangeOperation {
 
     public enum Operation {
         ADD_FLAG, REMOVE_FLAG
@@ -47,19 +45,14 @@ public class FlagChange {
      * @param uids the set of UIDs
      * @param flag the flag
      */
-    public FlagChange(String folder, Set<Integer> uids, Flag flag) {
+    public FlagChangeOperation(String folder, Set<Integer> uids, Flag flag) {
         mFolder = folder;
         mUids = uids;
         mFlag = flag;
         mOperation = Operation.ADD_FLAG;
     }
 
-    public FlagChange(String folder, Integer uid, Flag flag, Operation operation) {
-        this(folder, new HashSet<>(Collections.singletonList(uid)), flag);
-        mOperation = operation;
-    }
-
-    public String getJoinedUids() {
+     public String getJoinedUids() {
         return TextUtils.join(",", mUids);
     }
 
@@ -94,7 +87,7 @@ public class FlagChange {
         if (o == null || getClass() != o.getClass())
             return false;
 
-        FlagChange that = (FlagChange) o;
+        FlagChangeOperation that = (FlagChangeOperation) o;
 
         return !(mFolder != null ? !mFolder.equals(that.mFolder) : that.mFolder != null)
                 && !(mUids != null ? !mUids.equals(that.mUids) : that.mUids != null)

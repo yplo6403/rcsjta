@@ -32,11 +32,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Process a sync
+ * Process a CMS synchronization
  */
-public class SyncProcessorImpl implements SyncProcessor {
+public class CmsSyncHandler {
 
-    private static Logger sLogger = Logger.getLogger(SyncProcessorImpl.class.getSimpleName());
+    private static Logger sLogger = Logger.getLogger(CmsSyncHandler.class.getSimpleName());
 
     private final BasicImapService mImapService;
 
@@ -45,18 +45,34 @@ public class SyncProcessorImpl implements SyncProcessor {
      * 
      * @param imapService the IMAP service
      */
-    public SyncProcessorImpl(BasicImapService imapService) {
+    public CmsSyncHandler(BasicImapService imapService) {
         mImapService = imapService;
     }
 
-    @Override
-    public List<FlagChange> syncRemoteFlags(CmsFolder localFolder, ImapFolder remoteFolder)
+    /**
+     * Synchronize remote flags between local and remote folders
+     *
+     * @param localFolder the local folder
+     * @param remoteFolder the the remote folder
+     * @return Set<FlagChange>
+     * @throws IOException
+     * @throws ImapException
+     */
+    public List<FlagChangeOperation> syncRemoteFlags(CmsFolder localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException {
         return mImapService.fetchFlags(remoteFolder.getName(), localFolder.getMaxUid(),
                 localFolder.getModseq());
     }
 
-    @Override
+    /**
+     * Synchronize IMAP headers between local and remote folders
+     *
+     * @param localFolder the local folder
+     * @param remoteFolder the remote folder
+     * @return List<ImapMessage>
+     * @throws IOException
+     * @throws ImapException
+     */
     public List<ImapMessage> syncRemoteHeaders(CmsFolder localFolder, ImapFolder remoteFolder)
             throws ImapException, IOException {
         List<ImapMessage> messages = mImapService.fetchHeaders(localFolder.getMaxUid() + 1,
@@ -67,7 +83,15 @@ public class SyncProcessorImpl implements SyncProcessor {
         return messages;
     }
 
-    @Override
+    /**
+     * Synchronize remote messages
+     *
+     * @param folderName the folder
+     * @param uids the set of UIDs to synchronize
+     * @return Set<ImapMessage>
+     * @throws IOException
+     * @throws ImapException
+     */
     public Set<ImapMessage> syncRemoteMessages(String folderName, Set<Integer> uids)
             throws IOException, ImapException {
         Set<ImapMessage> messages = new HashSet<>();
@@ -79,17 +103,27 @@ public class SyncProcessorImpl implements SyncProcessor {
         return messages;
     }
 
-    @Override
+    /**
+     * Select folder
+     *
+     * @param folderName the folder
+     * @throws IOException
+     * @throws ImapException
+     */
     public void selectFolder(String folderName) throws IOException, ImapException {
         mImapService.selectCondstore(folderName);
     }
 
-    @Override
-    public void syncLocalFlags(String remoteFolder, Set<FlagChange> flagChanges) {
-        Set<FlagChange> flagChangesToKeep = new HashSet<>();
+    /**
+     * Synchronize local flags
+     *
+     * @param flagChanges set of changed flags to synchronize
+     */
+    public void syncLocalFlags(String remoteFolder, Set<FlagChangeOperation> flagChanges) {
+        Set<FlagChangeOperation> flagChangesToKeep = new HashSet<>();
         boolean logActivated = sLogger.isActivated();
         try {
-            for (FlagChange flagChange : flagChanges) {
+            for (FlagChangeOperation flagChange : flagChanges) {
                 try {
                     if (logActivated) {
                         sLogger.warn(flagChange.getFolder() + "/" + flagChange.getJoinedUids());
