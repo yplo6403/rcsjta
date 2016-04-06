@@ -64,10 +64,10 @@ public class CmsSyncScheduler {
 
     /**
      * When entering in a conversation, the method markMessageAsRead (at the API level) is invoked for each unread message.
-     * We must delayed the Update Flag Task, otherwise this task will be executed before that all messages has been marked as read
+     * We must delayed the Update Flag / Push Task, otherwise this task will be executed before that all messages has been marked as read
      * from the API.
      */
-    private static final long UPDATE_FLAG_TASK_DELAY_IN_MS = 1000L;
+    private static final long TASK_DELAY_IN_MS = 1000L;
 
     /* package private */static long sEndOfLastSync = 0L;
 
@@ -173,20 +173,21 @@ public class CmsSyncScheduler {
     public boolean schedulePushMessages(ContactId contactId) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CONTACT_ID, contactId);
+        parameters.addExtraParameter(ExtraParameter.DELAY, TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.PUSH_MESSAGES, parameters);
     }
 
     public boolean scheduleUpdateFlags(ContactId contact) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CONTACT_ID, contact);
-        parameters.addExtraParameter(ExtraParameter.DELAY, UPDATE_FLAG_TASK_DELAY_IN_MS);
+        parameters.addExtraParameter(ExtraParameter.DELAY, TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 
     public boolean scheduleUpdateFlags(String chatId) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CHAT_ID, chatId);
-        parameters.addExtraParameter(ExtraParameter.DELAY, UPDATE_FLAG_TASK_DELAY_IN_MS);
+        parameters.addExtraParameter(ExtraParameter.DELAY, TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.UPDATE_FLAGS, parameters);
     }
 

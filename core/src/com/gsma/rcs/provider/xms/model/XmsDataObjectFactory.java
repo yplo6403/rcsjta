@@ -38,6 +38,8 @@ import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.cms.MmsPartLog;
+import com.gsma.services.rcs.cms.MmsPartLog.MimeType;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -100,9 +102,9 @@ public class XmsDataObjectFactory {
                 mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
                         contentType, uri, fileIcon));
 
-            } else if (Constants.CONTENT_TYPE_TEXT_PLAIN.equals(contentType)) {
+            } else if (MimeManager.isTextType(contentType)) {
                 String content = part.getContent();
-                mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, contentType, content));
+                mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, MimeType.TEXT_MESSAGE, content));
             } else {
                 if (sLogger.isActivated()) {
                     sLogger.warn("Discard part having type " + contentType);

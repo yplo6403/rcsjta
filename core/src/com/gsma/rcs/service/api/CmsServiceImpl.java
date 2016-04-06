@@ -360,7 +360,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             checkUris(files);
             String mMessageId = IdGenerator.generateMessageID();
             long timestamp = NtpTrustedTime.currentTimeMillis();
-            MmsDataObject mmsDataObject = new MmsDataObject(mCtx, null, mMessageId, contact,
+            MmsDataObject mmsDataObject = new MmsDataObject(mCtx, mMessageId, mMessageId, contact,
                     subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
                     mRcsSettings.getMaxFileIconSize());
             mmsDataObject.setReadStatus(ReadStatus.READ);

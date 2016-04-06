@@ -23,6 +23,7 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
+import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -102,6 +103,8 @@ public abstract class ChatView extends RcsFragmentActivity implements
     protected Handler mHandler = new Handler();
 
     protected ChatService mChatService;
+
+    protected CmsService mCmsService;
 
     protected Uri mUriHistoryProvider;
 
@@ -262,13 +265,14 @@ public abstract class ChatView extends RcsFragmentActivity implements
         registerForContextMenu(listView);
 
         if (!isServiceConnected(RcsServiceName.CHAT, RcsServiceName.CONTACT,
-                RcsServiceName.CAPABILITY, RcsServiceName.FILE_TRANSFER)) {
+                RcsServiceName.CAPABILITY, RcsServiceName.FILE_TRANSFER, RcsServiceName.CMS)) {
             showMessageThenExit(R.string.label_service_not_available);
             return;
         }
         startMonitorServices(RcsServiceName.CHAT, RcsServiceName.CONTACT,
-                RcsServiceName.CAPABILITY, RcsServiceName.FILE_TRANSFER);
+                RcsServiceName.CAPABILITY, RcsServiceName.FILE_TRANSFER, RcsServiceName.CMS);
         mChatService = getChatApi();
+        mCmsService = getCmsApi();
         mFileTransferService = getFileTransferApi();
         processIntent(getIntent());
     }

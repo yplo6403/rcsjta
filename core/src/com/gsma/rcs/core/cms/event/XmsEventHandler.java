@@ -318,12 +318,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             sLogger.debug("onDeleteXmsMessage :" + contact);
         }
         for (String messageId : messageIds) {
-            String mimeType = mXmsLog.getMimeType(messageId);
-            MessageType messageType = MessageType.SMS;
-            if (MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-                messageType = MessageType.MMS;
-            }
-            mCmsLog.updateDeleteStatus(messageType, messageId,
+            mCmsLog.updateXmsDeleteStatus(messageId,
                     DeleteStatus.DELETED_REPORT_REQUESTED);
         }
         if (mEventReportingFramework != null) {

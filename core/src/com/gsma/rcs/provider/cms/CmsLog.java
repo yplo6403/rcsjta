@@ -108,12 +108,6 @@ public class CmsLog {
         private static final String SELECTION_SMS_MESSAGEID = SELECTION_SMS + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_MMS_MESSAGEID = SELECTION_MMS + " AND " + SELECTION_MESSAGE_ID;
 
-        private static final String SELECTION_XMS_READ_STATUS = SELECTION_XMS + " AND " + SELECTION_READ_STATUS;
-        private static final String SELECTION_CHAT_READ_STATUS = SELECTION_CHAT + " AND " + SELECTION_READ_STATUS;
-
-        private static final String SELECTION_XMS_DELETE_STATUS = SELECTION_XMS + " AND " + SELECTION_DELETE_STATUS;
-        private static final String SELECTION_CHAT_DELETE_STATUS = SELECTION_CHAT + " AND " + SELECTION_DELETE_STATUS;
-
         private static final String SELECTION_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_XMS + " AND " + SELECTION_PUSH_STATUS + " AND " + SELECTION_DELETE_STATUS;
         private static final String SELECTION_FOLDER_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_FOLDER_NAME + " AND " + SELECTION_XMS_PUSH_STATUS_DELETE_STATUS;
 
@@ -812,6 +806,21 @@ public class CmsLog {
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
                         messageType.toString(), messageId
+                });
+    }
+
+    /**
+     * Updates delete status by messageId for XMS messages
+     *
+     * @param messageId the message ID
+     * @param deleteStatus the deleted status
+     */
+    public void updateXmsDeleteStatus(String messageId,
+                                   DeleteStatus deleteStatus) {
+        ContentValues values = new ContentValues();
+        values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
+        mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
+                Message.SELECTION_XMS_MESSAGEID, new String[] {messageId
                 });
     }
 
