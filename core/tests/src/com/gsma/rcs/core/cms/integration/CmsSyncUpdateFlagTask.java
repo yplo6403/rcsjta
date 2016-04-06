@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.sync.scheduler.task;
+package com.gsma.rcs.core.cms.integration;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.Constants;

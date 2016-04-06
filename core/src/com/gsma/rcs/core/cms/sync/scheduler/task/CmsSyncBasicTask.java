@@ -26,7 +26,9 @@ import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.Context;
@@ -44,6 +46,8 @@ public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
     private final RcsSettings mRcsSettings;
     private final LocalStorage mLocalStorageHandler;
     private final String mFolderName;
+    private final XmsLog mXmsLog;
+    private final CmsLog mCmsLog;
 
     /**
      * Constructor used to start a sync on a specific conversation
@@ -52,13 +56,17 @@ public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
      * @param rcsSettings the RCS settings accessor
      * @param localStorageHandler the local storage accessor
      * @param folderName the folder name
+     * @param xmsLog the XMS log accessor
+     * @param cmsLog the CMS log accessor
      */
     public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
-            LocalStorage localStorageHandler, String folderName) {
+            LocalStorage localStorageHandler, String folderName, XmsLog xmsLog, CmsLog cmsLog) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mLocalStorageHandler = localStorageHandler;
         mFolderName = folderName;
+        mXmsLog = xmsLog;
+        mCmsLog = cmsLog;
     }
 
     /**
@@ -67,10 +75,12 @@ public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
      * @param context the context
      * @param rcsSettings the RCS settings accessor
      * @param localStorageHandler the local storage accessor
+     * @param xmsLog the XMS log accessor
+     * @param cmsLog the CMS log accessor
      */
     public CmsSyncBasicTask(Context context, RcsSettings rcsSettings,
-            LocalStorage localStorageHandler) {
-        this(context, rcsSettings, localStorageHandler, null);
+            LocalStorage localStorageHandler, XmsLog xmsLog, CmsLog cmsLog) {
+        this(context, rcsSettings, localStorageHandler, null, xmsLog, cmsLog);
     }
 
     @Override
@@ -96,7 +106,7 @@ public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
             sLogger.info("Sync folder: ".concat(folder));
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                basicImapService, mLocalStorageHandler);
+                basicImapService, mLocalStorageHandler, mXmsLog, mCmsLog);
         strategy.execute(folder);
         return strategy.getExecutionResult();
     }
@@ -113,7 +123,7 @@ public class CmsSyncBasicTask extends CmsSyncSchedulerTask {
             sLogger.info("Sync all");
         }
         BasicSyncStrategy strategy = new BasicSyncStrategy(mContext, mRcsSettings,
-                basicImapService, mLocalStorageHandler);
+                basicImapService, mLocalStorageHandler, mXmsLog, mCmsLog);
         strategy.execute();
         return strategy.getExecutionResult();
     }

@@ -22,26 +22,22 @@ package com.gsma.rcs.core.cms.sync.process;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushRequestTask;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
-import com.gsma.rcs.imaplib.cpm.ms.impl.sync.AbstractSyncStrategy;
 import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsUtils;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.Context;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,30 +46,37 @@ import java.util.Set;
 /**
  * In charge of executing an IMAP sync with the CMS server
  */
-public class BasicSyncStrategy extends AbstractSyncStrategy {
-
-    private static final long serialVersionUID = 1L;
+public class BasicSyncStrategy {
 
     private static Logger sLogger = Logger.getLogger(BasicSyncStrategy.class.getName());
 
+    private final XmsLog mXmsLog;
+    private final CmsLog mCmsLog;
     private boolean mExecutionResult;
-
     private final BasicImapService mBasicImapService;
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final LocalStorage mLocalStorageHandler;
-    private CmsSyncHandler mSynchronizer;
+    private final CmsSyncHandler mSynchronizer;
 
     /**
+     * @param context the context
+     * @param rcsSettings the RCS settings accessor
      * @param basicImapService IMAP service
      * @param localStorageHandler local storage handler
+     * @param xmsLog the XMS log accessor
+     * @param cmsLog the CMS log accessor
      */
     public BasicSyncStrategy(Context context, RcsSettings rcsSettings,
-            BasicImapService basicImapService, LocalStorage localStorageHandler) {
+            BasicImapService basicImapService, LocalStorage localStorageHandler, XmsLog xmsLog,
+            CmsLog cmsLog) {
         mContext = context;
         mRcsSettings = rcsSettings;
         mBasicImapService = basicImapService;
         mLocalStorageHandler = localStorageHandler;
+        mXmsLog = xmsLog;
+        mCmsLog = cmsLog;
+        mSynchronizer = new CmsSyncHandler(basicImapService);
     }
 
     /**
@@ -96,8 +99,6 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
             sLogger.debug(">>> BasicSyncStrategy.execute");
         }
         Map<String, CmsFolder> localFolders = mLocalStorageHandler.getLocalFolders();
-        mSynchronizer = new CmsSyncHandler(mBasicImapService);
-
         try {
             for (ImapFolder remoteFolder : mBasicImapService.listStatus()) {
                 String remoteFolderName = remoteFolder.getName();
@@ -126,7 +127,7 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
             }
 
-            pushLocalMessages(folderName);
+            pushLocalMessages();
 
             mExecutionResult = true;
             if (logActivated) {
@@ -147,7 +148,8 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         mSynchronizer.selectFolder(folderName);
 
         if (localFolder.hasMessages()) {
-            List<FlagChangeOperation> flagChanges = mSynchronizer.syncRemoteFlags(localFolder, remoteFolder);
+            List<FlagChangeOperation> flagChanges = mSynchronizer.syncRemoteFlags(localFolder,
+                    remoteFolder);
             mLocalStorageHandler.applyFlagChange(flagChanges);
         }
         List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);
@@ -179,36 +181,28 @@ public class BasicSyncStrategy extends AbstractSyncStrategy {
         return sync;
     }
 
-    private void pushLocalMessages(String localFolderName) throws FileAccessException,
+    private void pushLocalMessages() throws FileAccessException,
             NetworkException, PayloadException {
-        XmsLog xmsLog = XmsLog.getInstance();
-        CmsLog cmsLog = CmsLog.getInstance();
-        if (xmsLog == null || cmsLog == null) {
-            return;
-        }
-        Set<CmsObject> cmsObjects;
-        if (localFolderName == null) { // get all messages
-            cmsObjects = cmsLog.getXmsMessages(PushStatus.PUSH_REQUESTED);
-        } else {
-            cmsObjects = cmsLog.getXmsMessages(localFolderName, PushStatus.PUSH_REQUESTED);
-        }
-        List<XmsDataObject> messagesToPush = new ArrayList<>();
-        for (CmsObject cmsObject : cmsObjects) {
-            XmsDataObject xms = xmsLog.getXmsDataObject(cmsObject.getMessageId());
-            if (xms != null) {
-                messagesToPush.add(xms);
-            }
-        }
-        if (!messagesToPush.isEmpty()) {
-            CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mRcsSettings,
-                    cmsObjects, xmsLog);
+            CmsSyncPushRequestTask task = new CmsSyncPushRequestTask(mContext, mRcsSettings,
+                    mXmsLog, mCmsLog, new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
+                @Override
+                public void onMessagesPushed(Map<String, Integer> uids) {
+                    for (Entry<String, Integer> entry : uids.entrySet()) {
+                        String baseId = entry.getKey();
+                        Integer uid = entry.getValue();
+                        mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                    }
+                }
+
+                @Override
+                public void onReadRequestsReported(String folder, Set<Integer> uids) {
+                }
+
+                @Override
+                public void onDeleteRequestsReported(String folder, Set<Integer> uids) {
+                }
+            });
             task.execute(mBasicImapService);
-            for (Entry<String, Integer> entry : task.getNewUids().entrySet()) {
-                String baseId = entry.getKey();
-                Integer uid = entry.getValue();
-                cmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
-            }
-        }
     }
 
     /**

@@ -31,6 +31,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 public class CmsProvider extends ContentProvider {
@@ -99,25 +100,32 @@ public class CmsProvider extends ContentProvider {
             super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
         }
 
+        // @formatter:off
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + BaseColumns._ID
-                    + " INTEGER PRIMARY KEY AUTOINCREMENT," + CmsFolder.KEY_NAME
-                    + " TEXT NOT NULL," + CmsFolder.KEY_NEXT_UID + " INTEGER,"
-                    + CmsFolder.KEY_HIGHESTMODSEQ + " INTEGER," + CmsFolder.KEY_UID_VALIDITY
-                    + " INTEGER)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + 
+                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
+                    CmsFolder.KEY_NAME + " TEXT NOT NULL," + 
+                    CmsFolder.KEY_NEXT_UID + " INTEGER," + 
+                    CmsFolder.KEY_HIGHESTMODSEQ + " INTEGER," + 
+                    CmsFolder.KEY_UID_VALIDITY + " INTEGER)");
+            
             db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + BaseColumns._ID + "_idx" + " ON "
                     + TABLE_FOLDER + '(' + BaseColumns._ID + ')');
             db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + CmsFolder.KEY_NAME + "_idx" + " ON "
                     + TABLE_FOLDER + '(' + CmsFolder.KEY_NAME + ')');
 
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + BaseColumns._ID
-                    + " INTEGER PRIMARY KEY AUTOINCREMENT," + CmsObject.KEY_FOLDER_NAME + " TEXT,"
-                    + CmsObject.KEY_UID + " INTEGER," + CmsObject.KEY_READ_STATUS
-                    + " INTEGER NOT NULL," + CmsObject.KEY_DELETE_STATUS + " INTEGER NOT NULL,"
-                    + CmsObject.KEY_PUSH_STATUS + " INTEGER NOT NULL," + CmsObject.KEY_MESSAGE_TYPE
-                    + " TEXT NOT NULL," + CmsObject.KEY_MESSAGE_ID + " TEXT NOT NULL,"
-                    + CmsObject.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + 
+                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
+                    CmsObject.KEY_FOLDER_NAME + " TEXT," + 
+                    CmsObject.KEY_UID + " INTEGER," + 
+                    CmsObject.KEY_READ_STATUS + " INTEGER NOT NULL," + 
+                    CmsObject.KEY_DELETE_STATUS + " INTEGER NOT NULL," + 
+                    CmsObject.KEY_PUSH_STATUS + " INTEGER NOT NULL," + 
+                    CmsObject.KEY_MESSAGE_TYPE + " TEXT NOT NULL," + 
+                    CmsObject.KEY_MESSAGE_ID + " TEXT NOT NULL," + 
+                    CmsObject.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
+            
             db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + BaseColumns._ID + "_idx" + " ON "
                     + TABLE_MESSAGE + '(' + BaseColumns._ID + ')');
             db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_idx"
@@ -129,6 +137,7 @@ public class CmsProvider extends ContentProvider {
             // TODO
             // define another index
         }
+        // @formatter:on
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -148,7 +157,7 @@ public class CmsProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER:
                 return CursorType.Folder.TYPE_DIRECTORY;
@@ -181,10 +190,8 @@ public class CmsProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-            String sort) {
-        Cursor cursor = null;
-
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
+            String[] selectionArgs, String sort) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER_WITH_ID:
                 String id = uri.getLastPathSegment();
@@ -193,9 +200,9 @@ public class CmsProvider extends ContentProvider {
                 /* Intentional fall through */
             case UriType.Folder.FOLDER:
                 SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-                cursor = db.query(TABLE_FOLDER, projection, selection, selectionArgs, null, null,
+                return db.query(TABLE_FOLDER, projection, selection, selectionArgs, null, null,
                         sort);
-                return cursor;
+
             case UriType.Message.MESSAGE_WITH_ID:
                 id = uri.getLastPathSegment();
                 selection = getSelectionWithId(selection);
@@ -203,18 +210,17 @@ public class CmsProvider extends ContentProvider {
                 /* Intentional fall through */
             case UriType.Message.MESSAGE:
                 db = mOpenHelper.getReadableDatabase();
-                cursor = db.query(TABLE_MESSAGE, projection, selection, selectionArgs, null, null,
+                return db.query(TABLE_MESSAGE, projection, selection, selectionArgs, null, null,
                         sort);
-                return cursor;
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
 
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection,
+            String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER_WITH_ID:
                 String id = uri.getLastPathSegment();
@@ -233,21 +239,20 @@ public class CmsProvider extends ContentProvider {
                 db = mOpenHelper.getReadableDatabase();
                 return db.update(TABLE_MESSAGE, values, selection, selectionArgs);
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues initialValues) {
+    public Uri insert(@NonNull Uri uri, ContentValues initialValues) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER_WITH_ID:
                 /* Intentional fall through */
             case UriType.Folder.FOLDER:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 if (db.insert(TABLE_FOLDER, null, initialValues) == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(new StringBuilder(
-                            "Unable to insert row for URI ").append(uri).append('!').toString());
+                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
+                            + uri + '!');
                 }
                 return uri;
             case UriType.Message.MESSAGE_WITH_ID:
@@ -255,18 +260,17 @@ public class CmsProvider extends ContentProvider {
             case UriType.Message.MESSAGE:
                 db = mOpenHelper.getWritableDatabase();
                 if (db.insert(TABLE_MESSAGE, null, initialValues) == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(new StringBuilder(
-                            "Unable to insert row for URI ").append(uri).append('!').toString());
+                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
+                            + uri + '!');
                 }
                 return uri;
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
     }
 
     @Override
-    public int delete(Uri uri, String where, String[] whereArgs) {
+    public int delete(@NonNull Uri uri, String where, String[] whereArgs) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER_WITH_ID:
                 /* Intentional fall through */
@@ -274,8 +278,8 @@ public class CmsProvider extends ContentProvider {
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 int nb = db.delete(TABLE_FOLDER, where, whereArgs);
                 if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(new StringBuilder(
-                            "Unable to insert row for URI ").append(uri).append('!').toString());
+                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
+                            + uri + '!');
                 }
                 return nb;
             case UriType.Message.MESSAGE_WITH_ID:
@@ -284,13 +288,12 @@ public class CmsProvider extends ContentProvider {
                 db = mOpenHelper.getWritableDatabase();
                 nb = db.delete(TABLE_MESSAGE, where, whereArgs);
                 if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException(new StringBuilder(
-                            "Unable to insert row for URI ").append(uri).append('!').toString());
+                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
+                            + uri + '!');
                 }
                 return nb;
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unsupported URI ")
-                        .append(uri).append("!").toString());
+                throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
     }
 }

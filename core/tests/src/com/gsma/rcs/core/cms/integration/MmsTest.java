@@ -34,8 +34,6 @@ import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask.Operation;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -113,7 +111,8 @@ public class MmsTest extends AndroidTestCase {
         LocalStorage localStorage = new LocalStorage(mCmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage);
+        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage,
+                mXmsLog, mCmsLog);
         mBasicImapService.init();
     }
 
@@ -270,7 +269,7 @@ public class MmsTest extends AndroidTestCase {
         // delete mailbox on CMS
         try {
             deleteRemoteMailbox(CmsUtils.contactToCmsFolder(Test1.contact));
-        } catch (Exception e) {
+        } catch (Exception ignore) {
         }
 
         List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(

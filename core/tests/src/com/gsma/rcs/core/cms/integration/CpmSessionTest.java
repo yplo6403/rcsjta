@@ -81,7 +81,8 @@ public class CpmSessionTest extends AndroidTestCase {
         LocalStorage localStorage = new LocalStorage(cmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(settings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, settings, mBasicImapService, localStorage);
+        mSyncStrategy = new BasicSyncStrategy(context, settings, mBasicImapService, localStorage,
+                xmsLog, cmsLog);
         mBasicImapService.init();
     }
 
@@ -92,16 +93,15 @@ public class CpmSessionTest extends AndroidTestCase {
     }
 
     /**
-     * Test1 step 0 : purge local storage and CMS server folders
-     * step 1 : create a conversation on CMS server
-     * step 2 : start a sync
+     * Test1 step 0 : purge local storage and CMS server folders step 1 : create a conversation on
+     * CMS server step 2 : start a sync
      */
     public void testSyncCpmSession() throws Exception {
 
         // create messages on CMS
         String chatId = UUID.randomUUID().toString();
         String remoteFolder = "Default/" + chatId + "/" + chatId;
-        createRemoteMessage(remoteFolder,getCpmSessionPayload(chatId));
+        createRemoteMessage(remoteFolder, getCpmSessionPayload(chatId));
 
         int initialNbMessages = mCmsLogTestIntegration.getMessages(remoteFolder).size();
         assertFalse(mMessagingLog.isGroupChatPersisted(chatId));
@@ -122,7 +122,8 @@ public class CpmSessionTest extends AndroidTestCase {
     }
 
     private void deleteRemoteMailbox(String mailbox) throws Exception {
-        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MAILBOX, mailbox, null);
+        CmsSyncDeleteTask deleteTask = new CmsSyncDeleteTask(Operation.DELETE_MAILBOX, mailbox,
+                null);
         deleteTask.delete(mBasicImapService, mailbox);
         try {
             mBasicImapService.close();
@@ -146,20 +147,35 @@ public class CpmSessionTest extends AndroidTestCase {
     public String getCpmSessionPayload(String chatId) {
 
         return new StringBuilder()
-                .append("Date: Thu, 11 Feb 2016 14:00:49 +0100").append(Constants.CRLF)
-                .append("From: tel:+33643209850").append(Constants.CRLF)
-                .append("To: sip:Conference-Factory@volteofr.com").append(Constants.CRLF)
-                .append("Message-ID: <881999583.1171.1455195649122@RCS5frontox1>").append(Constants.CRLF)
-                .append("Subject: cfff").append(Constants.CRLF)
-                .append("MIME-Version: 1.0").append(Constants.CRLF)
-                .append("Content-Type: Application/X-CPM-Session").append(Constants.CRLF)
-                .append("Content-Transfer-Encoding: 8bit").append(Constants.CRLF)
-                .append("Conversation-ID: ").append(chatId).append(Constants.CRLF)
-                .append("Contribution-ID: ").append(chatId).append(Constants.CRLF)
-                .append("IMDN-Message-ID: UFoF32nXQSy5l3d4cVGwZXn4f8YQ8rq6").append(Constants.CRLF)
-                .append("Message-Direction: sent").append(Constants.CRLF)
+                .append("Date: Thu, 11 Feb 2016 14:00:49 +0100")
                 .append(Constants.CRLF)
-                .append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append(Constants.CRLF)
+                .append("From: tel:+33643209850")
+                .append(Constants.CRLF)
+                .append("To: sip:Conference-Factory@volteofr.com")
+                .append(Constants.CRLF)
+                .append("Message-ID: <881999583.1171.1455195649122@RCS5frontox1>")
+                .append(Constants.CRLF)
+                .append("Subject: cfff")
+                .append(Constants.CRLF)
+                .append("MIME-Version: 1.0")
+                .append(Constants.CRLF)
+                .append("Content-Type: Application/X-CPM-Session")
+                .append(Constants.CRLF)
+                .append("Content-Transfer-Encoding: 8bit")
+                .append(Constants.CRLF)
+                .append("Conversation-ID: ")
+                .append(chatId)
+                .append(Constants.CRLF)
+                .append("Contribution-ID: ")
+                .append(chatId)
+                .append(Constants.CRLF)
+                .append("IMDN-Message-ID: UFoF32nXQSy5l3d4cVGwZXn4f8YQ8rq6")
+                .append(Constants.CRLF)
+                .append("Message-Direction: sent")
+                .append(Constants.CRLF)
+                .append(Constants.CRLF)
+                .append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+                .append(Constants.CRLF)
                 .append("<session>")
                 .append("<session-type>Group</session-type>")
                 .append("<sdp>o=- 3664184448 3664184448 IN IP4 sip.imsnsn.fr</sdp>")

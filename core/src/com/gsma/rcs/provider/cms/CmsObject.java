@@ -308,7 +308,7 @@ public final class CmsObject {
     }
 
     public void setUid(Integer uid) {
-        mUid = uid ;
+        mUid = uid;
     }
 
     public ReadStatus getReadStatus() {
@@ -345,17 +345,10 @@ public final class CmsObject {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("CmsObject{");
-        sb.append("mFolder='").append(mFolder).append('\'');
-        sb.append(", mUid=").append(mUid);
-        sb.append(", mReadStatus=").append(mReadStatus);
-        sb.append(", mDeleteStatus=").append(mDeleteStatus);
-        sb.append(", mPushStatus=").append(mPushStatus);
-        sb.append(", mMessageType=").append(mMessageType);
-        sb.append(", mMessageId='").append(mMessageId).append('\'');
-        sb.append(", mNativeProviderId=").append(mNativeProviderId);
-        sb.append('}');
-        return sb.toString();
+        return "CmsObject{" + "mFolder='" + mFolder + '\'' + ", mUid=" + mUid + ", mReadStatus="
+                + mReadStatus + ", mDeleteStatus=" + mDeleteStatus + ", mPushStatus=" + mPushStatus
+                + ", mMessageType=" + mMessageType + ", mMessageId='" + mMessageId + '\''
+                + ", mNativeProviderId=" + mNativeProviderId + '}';
     }
 
     @Override

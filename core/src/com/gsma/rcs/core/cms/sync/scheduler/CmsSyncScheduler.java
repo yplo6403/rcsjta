@@ -1,20 +1,19 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010-2016 Orange.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.core.cms.sync.scheduler;
@@ -25,14 +24,12 @@ import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncParams.ExtraParameter;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncBasicTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushMessageTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncUpdateFlagTask;
+import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushRequestTask;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
@@ -49,7 +46,6 @@ import android.os.Message;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -63,9 +59,9 @@ public class CmsSyncScheduler {
     private static final String MESSAGE_STORE_SYNC_OPERATIONS = "MessageStoreSyncOperations";
 
     /**
-     * When entering in a conversation, the method markMessageAsRead (at the API level) is invoked for each unread message.
-     * We must delayed the Update Flag Task, otherwise this task will be executed before that all messages has been marked as read
-     * from the API.
+     * When entering in a conversation, the method markMessageAsRead (at the API level) is invoked
+     * for each unread message. We must delayed the Update Flag Task, otherwise this task will be
+     * executed before that all messages has been marked as read from the API.
      */
     private static final long UPDATE_FLAG_TASK_DELAY_IN_MS = 1000L;
 
@@ -173,6 +169,7 @@ public class CmsSyncScheduler {
     public boolean schedulePushMessages(ContactId contactId) {
         SyncParams parameters = new SyncParams(SyncType.UNSPECIFIED);
         parameters.addExtraParameter(ExtraParameter.CONTACT_ID, contactId);
+        parameters.addExtraParameter(ExtraParameter.DELAY, UPDATE_FLAG_TASK_DELAY_IN_MS);
         return mStarted && schedule(CmsSyncSchedulerTaskType.PUSH_MESSAGES, parameters);
     }
 
@@ -279,7 +276,8 @@ public class CmsSyncScheduler {
             case PUSH_MESSAGES:
             case UPDATE_FLAGS:
                 message = mSyncRequestHandler.obtainMessage(newOperation.toInt(), parameters);
-                mSyncRequestHandler.sendMessageDelayed(message, (long)parameters.getExtraParameter(ExtraParameter.DELAY));
+                mSyncRequestHandler.sendMessageDelayed(message,
+                        (long) parameters.getExtraParameter(ExtraParameter.DELAY));
                 break;
         }
         return true;
@@ -302,14 +300,10 @@ public class CmsSyncScheduler {
             boolean result = false;
             switch (mCurrentOperation) {
                 case PUSH_MESSAGES:
-                    syncParams = (SyncParams) msg.obj;
-                    result = executePush((ContactId) syncParams
-                            .getExtraParameter(ExtraParameter.CONTACT_ID));
-                    break;
                 case UPDATE_FLAGS:
-                    syncParams = (SyncParams) msg.obj;
-                    result = executeUpdate(syncParams);
+                    result = executePushRequest();
                     break;
+
                 case SYNC_FOR_DATA_CONNECTION:
                 case SYNC_FOR_USER_ACTIVITY:
                 case SYNC_PERIODIC:
@@ -317,7 +311,6 @@ public class CmsSyncScheduler {
                     result = executeSync(syncParams);
                     break;
             }
-
             // notify listeners
             Set<CmsSyncSchedulerListener> listeners = mListeners.get(mCurrentOperation);
             if (listeners != null) {
@@ -363,10 +356,11 @@ public class CmsSyncScheduler {
         switch (syncParams.mSyncType) {
             case ONE_TO_ONE:
             case GROUP:
-                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage, remoteFolder);
+                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage, remoteFolder,
+                        mXmsLog, mCmsLog);
                 break;
             case ALL:
-                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage);
+                task = new CmsSyncBasicTask(mContext, mRcsSettings, mLocalStorage, mXmsLog, mCmsLog);
                 break;
         }
         boolean res = executeTask(task);
@@ -382,75 +376,37 @@ public class CmsSyncScheduler {
         return res;
     }
 
-    private boolean executePush(ContactId contact) {
-        String remoteFolder = CmsUtils.contactToCmsFolder(contact);
-        Set<CmsObject> objectsToPush = mCmsLog.getXmsMessages(remoteFolder,
-                PushStatus.PUSH_REQUESTED);
-        if (objectsToPush.isEmpty()) {
-            if (sLogger.isActivated()) {
-                sLogger.debug("There is no message to push on CMS for remote folder : "
-                        + remoteFolder);
+    private boolean executePushRequest() {
+        CmsSyncPushRequestTask.ICmsSyncPushRequestTask callback = new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
+            @Override
+            public void onMessagesPushed(Map<String, Integer> uids) {
+                for (Entry<String, Integer> entry : uids.entrySet()) {
+                    String baseId = entry.getKey();
+                    Integer uid = entry.getValue();
+                    mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                }
             }
-            return true;
-        }
 
-        CmsSyncPushMessageTask task = new CmsSyncPushMessageTask(mContext, mRcsSettings,
-                objectsToPush, mXmsLog);
-        boolean res = executeTask(task);
-
-        if (res) { // update local storage when no error occurred during task execution
-            if (sLogger.isActivated()) {
-                sLogger.info("PushMessage task successfully executed for remote folder :"
-                        + remoteFolder);
+            @Override
+            public void onReadRequestsReported(String folder, Set<Integer> uids) {
+                for (Integer uid : uids) {
+                    mCmsLog.updateReadStatus(folder, uid, ReadStatus.READ);
+                }
             }
-            for (Entry<String, Integer> entry : task.getNewUids().entrySet()) {
-                String baseId = entry.getKey();
-                Integer uid = entry.getValue();
-                mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+
+            @Override
+            public void onDeleteRequestsReported(String folder, Set<Integer> uids) {
+                for (Integer uid : uids) {
+                    mCmsLog.updateDeleteStatus(folder, uid, DeleteStatus.DELETED);
+                }
             }
-        }
-
-        return res;
-    }
-
-    private boolean executeUpdate(SyncParams syncParams) {
-
-        ContactId contact = (ContactId) syncParams.getExtraParameter(ExtraParameter.CONTACT_ID);
-        String chatId = (String) syncParams.getExtraParameter(ExtraParameter.CHAT_ID);
-        String remoteFolder = null;
-        if (contact != null) {
-            remoteFolder = CmsUtils.contactToCmsFolder(contact);
-        } else if (chatId != null) {
-            remoteFolder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
-        }
-
-        if (remoteFolder == null) {
-            if (sLogger.isActivated()) {
-                sLogger.info("Can not update flags with CMS because remote folder is null");
-            }
-            return false;
-        }
-
-        List<CmsObject> objectsToSync = mCmsLog.getMessagesToSync(remoteFolder);
-        if (objectsToSync.isEmpty()) {
-            if (sLogger.isActivated()) {
-                sLogger.info("There is no message to update with CMS for remote folder : "
-                        + remoteFolder);
-            }
-            return true;
-        }
-
-        CmsSyncUpdateFlagTask task = new CmsSyncUpdateFlagTask(remoteFolder, objectsToSync, mCmsLog);
+        };
+        CmsSyncPushRequestTask task = new CmsSyncPushRequestTask(mContext, mRcsSettings, mXmsLog,
+                mCmsLog, callback);
         boolean res = executeTask(task);
         if (res) { // update local storage when no error occurred during task execution
             if (sLogger.isActivated()) {
-                sLogger.info("UpdateFlag task successfully executed for folder : " + remoteFolder);
-            }
-            for (Integer uid : task.getReadRequestedUids()) {
-                mCmsLog.updateReadStatus(remoteFolder, uid, ReadStatus.READ);
-            }
-            for (Integer uid : task.getDeletedRequestedUids()) {
-                mCmsLog.updateDeleteStatus(remoteFolder, uid, DeleteStatus.DELETED);
+                sLogger.info("PushRequest task successfully executed");
             }
         }
         return res;
