@@ -24,18 +24,21 @@ package com.gsma.rcs.core;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
-import com.gsma.rcs.platform.ntp.NtpManager;
-import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
+import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.xms.XmsManager;
+import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.security.cert.KeyStoreManager;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
-import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.richcall.RichcallService;
 import com.gsma.rcs.core.ims.service.sip.SipService;
+import com.gsma.rcs.platform.ntp.NtpManager;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.history.HistoryLog;
@@ -46,7 +49,6 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.rcs.core.cms.xms.XmsManager;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -68,6 +70,8 @@ public class Core {
     private static volatile Core sInstance;
 
     private final XmsManager mXmsManager;
+
+    private final XmsObserver mXmsObserver;
 
     private CoreListener mListener;
 
@@ -194,6 +198,9 @@ public class Core {
 
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
 
+        // instantiate Xms Observer on native SMS/MMS content provider
+        mXmsObserver = new XmsObserver(ctx);
+
         /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
                 messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
@@ -208,9 +215,12 @@ public class Core {
 
     /**
      * Initializes Core
+     * 
+     * @param xmsEventHandler the XMS event handler
      */
-    public void initialize() {
-        mImsModule.initialize();
+    public void initialize(XmsEventHandler xmsEventHandler) {
+        mImsModule.initialize(xmsEventHandler);
+        mXmsObserver.registerListener(xmsEventHandler);
     }
 
     /**
@@ -259,6 +269,7 @@ public class Core {
         mXmsManager.start();
         mLocaleManager.start();
         mNtpManager.start();
+        mXmsObserver.start();
         mListener.onCoreLayerStarted();
 
         mStarted = true;
@@ -288,6 +299,7 @@ public class Core {
         mXmsManager.stop();
         mImsModule.stop();
         mNtpManager.stop();
+        mXmsObserver.stop();
 
         mStopping = false;
         mStarted = false;

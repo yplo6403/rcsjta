@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
@@ -149,8 +150,9 @@ public class ImsModule implements SipEventListener {
 
     /**
      * Initializes IMS module
+     * @param xmsEventHandler the XMS event handler
      */
-    public void initialize() {
+    public void initialize(XmsEventHandler xmsEventHandler) {
         SipManager.setTimeout(mRcsSettings.getSipTransactionTimeout());
         MsrpConnection.setMsrpTraceEnabled(mRcsSettings.isMediaTraceActivated());
         HttpTransferManager.setHttpTraceEnabled(mRcsSettings.isMediaTraceActivated());
@@ -159,6 +161,7 @@ public class ImsModule implements SipEventListener {
         getInstantMessagingService().initialize();
         getRichcallService().initialize();
         getPresenceService().initialize();
+        getCmsService().initialize(xmsEventHandler);
 
         mInitializationFinished = true;
         if (sLogger.isActivated()) {

@@ -31,7 +31,6 @@ import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTaskType;
 import com.gsma.rcs.core.cms.xms.XmsSynchronizer;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.cms.CmsLog;
@@ -54,7 +53,6 @@ public class CmsManager implements XmsMessageListener {
     private final XmsLog mXmsLog;
     private final MessagingLog mMessagingLog;
     private final RcsSettings mRcsSettings;
-    private XmsObserver mXmsObserver;
     private XmsEventHandler mXmsEventHandler;
     private ChatEventHandler mChatEventHandler;
     private GroupChatEventHandler mGroupChatEventHandler;
@@ -89,18 +87,13 @@ public class CmsManager implements XmsMessageListener {
      *
      * @param cmsService the Cms service
      * @param chatService the RCS chat service
+     * @param xmsEventHandler XMS event handler
      */
-    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService) {
+    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService,
+            XmsEventHandler xmsEventHandler) {
         // execute sync between providers in a dedicated thread
         new Thread(new XmsSynchronizer(mCtx.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
                 .start();
-
-        // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(mCtx);
-
-        // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
-        mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings, cmsService);
-        mXmsObserver.registerListener(mXmsEventHandler);
 
         // instantiate CmsEventHandler in charge of handling events from Cms
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mCmsLog, mXmsLog,
@@ -115,6 +108,7 @@ public class CmsManager implements XmsMessageListener {
                     mXmsLog);
             mSyncScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY,
                     cmsService);
+            mXmsEventHandler = xmsEventHandler;
             mXmsEventHandler.setCmsSyncScheduler(mSyncScheduler);
             mSyncScheduler.start();
             /*
@@ -145,21 +139,13 @@ public class CmsManager implements XmsMessageListener {
         mGroupChatEventHandler = new GroupChatEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
 
-        mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings,
-                mSyncScheduler);
-
-        // start content observer on native SMS/MMS content provider
-        mXmsObserver.start();
+        mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings, mSyncScheduler);
     }
 
     /**
      * Stops the CmsManager
      */
     public void stop() throws PayloadException {
-        if (mXmsObserver != null) {
-            mXmsObserver.stop();
-            mXmsObserver = null;
-        }
         if (mSyncScheduler != null) {
             mSyncScheduler.stop();
             mSyncScheduler = null;

@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.event.framework.EventFrameworkSession;
 import com.gsma.rcs.core.cms.event.framework.TerminatingEventFrameworkSession;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
@@ -71,6 +72,7 @@ public class CmsService extends ImsService {
     private final RcsSettings mRcsSettings;
     private final ImsModule mImsModule;
     private final MessagingLog mMessagingLog;
+    private XmsEventHandler mXmsEventHandler;
 
     /**
      * Constructor
@@ -94,7 +96,8 @@ public class CmsService extends ImsService {
         mCmsLog = cmsLog;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager = new CmsManager(context, mImsModule, mCmsLog, xmsLog, mMessagingLog, mRcsSettings);
+        mCmsManager = new CmsManager(context, mImsModule, mCmsLog, xmsLog, mMessagingLog,
+                mRcsSettings);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -117,13 +120,17 @@ public class CmsService extends ImsService {
         mChatServiceImpl = chatService;
     }
 
+    public void initialize(XmsEventHandler xmsEventHandler) {
+        mXmsEventHandler = xmsEventHandler;
+    }
+
     @Override
     public void start() {
         if (isServiceStarted()) {
             return;
         }
         setServiceStarted(true);
-        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl);
+        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mXmsEventHandler);
         // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
@@ -362,7 +369,8 @@ public class CmsService extends ImsService {
             public void run() {
                 try {
                     EventFrameworkSession session = new TerminatingEventFrameworkSession(
-                            mImsModule.getInstantMessagingService(), invite, mRcsSettings, mMessagingLog, timestamp);
+                            mImsModule.getInstantMessagingService(), invite, mRcsSettings,
+                            mMessagingLog, timestamp);
                     session.startSession();
 
                 } catch (NetworkException e) {

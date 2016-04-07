@@ -26,6 +26,7 @@ import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -157,6 +158,7 @@ public class RcsCoreService extends Service implements CoreListener {
     private Handler mBackgroundHandler;
 
     private final static Logger sLogger = Logger.getLogger(RcsCoreService.class.getSimpleName());
+    private XmsEventHandler mXmsEventHandler;
 
     @Override
     public void onCreate() {
@@ -311,6 +313,8 @@ public class RcsCoreService extends Service implements CoreListener {
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
             mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mXmsLog,
                     mRcsSettings, core.getXmsManager(), mLocalContentResolver);
+            // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
+            mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings, mCmsApi);
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 
@@ -318,7 +322,7 @@ public class RcsCoreService extends Service implements CoreListener {
                 sLogger.info("RCS stack release is ".concat(TerminalInfo.getProductVersion(mCtx)));
             }
 
-            core.initialize();
+            core.initialize(mXmsEventHandler);
 
             core.startCore();
 
