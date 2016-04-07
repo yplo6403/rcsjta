@@ -90,7 +90,7 @@ public class IsComposingManager {
         try {
             InputSource input = new InputSource(new ByteArrayInputStream(event));
             IsComposingParser parser = new IsComposingParser(input).parse();
-            IsComposingInfo isComposingInfo = parser.getIsComposingInfo();
+            IsComposingInfo isComposingInfo = parser.getmIsComposingInfo();
             List<ImsSessionListener> sessionListeners = mSession.getListeners();
             if ((isComposingInfo != null) && isComposingInfo.isStateActive()) {
                 for (ImsSessionListener sessionListener : sessionListeners) {

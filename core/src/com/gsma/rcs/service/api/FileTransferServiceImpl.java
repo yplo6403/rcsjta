@@ -185,7 +185,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         /* Clear list of sessions */
         mOneToOneFileTransferCache.clear();
         mGroupFileTransferCache.clear();
-
         if (sLogger.isActivated()) {
             sLogger.info("File transfer service API is closed");
         }
@@ -201,7 +200,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             sLogger.debug("Remove a file transfer from the list (size="
                     + mOneToOneFileTransferCache.size() + ")");
         }
-
         mOneToOneFileTransferCache.remove(fileTransferId);
     }
 
@@ -215,7 +213,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             sLogger.debug("Remove a file transfer from the list (size="
                     + mGroupFileTransferCache.size() + ")");
         }
-
         mGroupFileTransferCache.remove(fileTransferId);
     }
 
@@ -270,9 +267,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     @Override
     public void addEventListener(IRcsServiceRegistrationListener listener) {
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a service listener");
-        }
         synchronized (mLock) {
             mRcsServiceRegistrationEventBroadcaster.addEventListener(listener);
         }
@@ -280,9 +274,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     @Override
     public void removeEventListener(IRcsServiceRegistrationListener listener) {
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a service listener");
-        }
         synchronized (mLock) {
             mRcsServiceRegistrationEventBroadcaster.removeEventListener(listener);
         }
@@ -879,9 +870,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         if (TextUtils.isEmpty(transferId)) {
             throw new ServerApiIllegalArgumentException("transferId must not be null or empty!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Get file transfer session ".concat(transferId));
-        }
         try {
             IFileTransfer fileTransfer = mOneToOneFileTransferCache.get(transferId);
             if (fileTransfer != null) {
@@ -924,9 +912,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a OneToOne file transfer invitation listener");
-        }
         try {
             synchronized (mLock) {
                 mOneToOneFileTransferBroadcaster.addOneToOneFileTransferListener(listener);
@@ -953,9 +938,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
     public void removeEventListener2(IOneToOneFileTransferListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a OneToOne file transfer invitation listener");
         }
         try {
             synchronized (mLock) {
@@ -984,9 +966,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a group file transfer invitation listener");
-        }
         try {
             synchronized (mLock) {
                 mGroupFileTransferBroadcaster.addGroupFileTransferListener(listener);
@@ -1013,9 +992,6 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
     public void removeEventListener3(IGroupFileTransferListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a group file transfer invitation listener");
         }
         try {
             synchronized (mLock) {

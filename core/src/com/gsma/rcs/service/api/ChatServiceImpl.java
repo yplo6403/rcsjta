@@ -172,7 +172,6 @@ public class ChatServiceImpl extends IChatService.Stub {
                     ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp);
             return;
         }
-
         if (sLogger.isActivated()) {
             sLogger.info("Using the available session to send displayed for " + msgId);
         }
@@ -187,7 +186,6 @@ public class ChatServiceImpl extends IChatService.Stub {
         // Clear list of sessions
         mOneToOneChatCache.clear();
         mGroupChatCache.clear();
-
         if (sLogger.isActivated()) {
             sLogger.info("Chat service API is closed");
         }
@@ -220,9 +218,6 @@ public class ChatServiceImpl extends IChatService.Stub {
      */
     @Override
     public void addEventListener(IRcsServiceRegistrationListener listener) {
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a service listener");
-        }
         synchronized (mLock) {
             mRcsServiceRegistrationEventBroadcaster.addEventListener(listener);
         }
@@ -235,9 +230,6 @@ public class ChatServiceImpl extends IChatService.Stub {
      */
     @Override
     public void removeEventListener(IRcsServiceRegistrationListener listener) {
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a service listener");
-        }
         synchronized (mLock) {
             mRcsServiceRegistrationEventBroadcaster.removeEventListener(listener);
         }
@@ -300,7 +292,6 @@ public class ChatServiceImpl extends IChatService.Stub {
             sLogger.info("Receive message delivery status for message " + msgId + ", status "
                     + status + "notificationType=" + notificationType);
         }
-
         String mimeType = mMessagingLog.getMessageMimeType(msgId);
         if (ImdnDocument.DELIVERY_STATUS_ERROR.equals(status)
                 || ImdnDocument.DELIVERY_STATUS_FAILED.equals(status)

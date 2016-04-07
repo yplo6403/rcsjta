@@ -415,15 +415,11 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     }
 
     /**
-     * Data has been transfered
+     * Data has been transferred
      * 
      * @param msgId Message ID
      */
     public void msrpDataTransferred(String msgId) {
-        if (sLogger.isActivated()) {
-            sLogger.info("Data transfered");
-        }
-
         // Update the activity manager
         mActivityMgr.updateActivity();
     }
@@ -436,10 +432,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      */
     @Override
     public void handleInactivityEvent() throws PayloadException, NetworkException {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Session inactivity event");
-        }
-
         terminateSession(TerminationReason.TERMINATION_BY_INACTIVITY);
     }
 
@@ -459,7 +451,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             sLogger.info("Data received (type " + mimeType + ")");
         }
         mActivityMgr.updateActivity();
-        if ((data == null) || (data.length == 0)) {
+        if (data == null || data.length == 0) {
             if (sLogger.isActivated()) {
                 sLogger.debug("By-pass received empty data");
             }
@@ -569,7 +561,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     /**
      * Data transfer in progress
      * 
-     * @param currentSize Current transfered size in bytes
+     * @param currentSize Current transferred size in bytes
      * @param totalSize Total size in bytes
      */
     public void msrpTransferProgress(long currentSize, long totalSize) {
@@ -579,7 +571,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     /**
      * Data transfer in progress
      * 
-     * @param currentSize Current transfered size in bytes
+     * @param currentSize Current transferred size in bytes
      * @param totalSize Total size in bytes
      * @param data received data chunk
      * @return always false TODO
@@ -728,7 +720,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             if (!mImService.getImsModule().getInstantMessagingService()
                     .isFileTransferSessionAvailable()) {
                 if (sLogger.isActivated()) {
-                    sLogger.debug("Max number of File Tranfer reached, reject the HTTP File transfer");
+                    sLogger.debug("Max number of File Transfer reached, reject the HTTP File transfer");
                 }
                 MmContent fileIconContent = (fileTransferHttpThumbnail == null) ? null
                         : fileTransferHttpThumbnail.getLocalMmContent(msgId);

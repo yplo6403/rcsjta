@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +60,7 @@ public class SipManager {
 
     private final ImsNetworkInterface mNetworkInterface;
 
-    private SipInterface sipstack;
+    private SipInterface mSipInterface;
 
     private final RcsSettings mRcsSettings;
 
@@ -70,7 +70,7 @@ public class SipManager {
      * Constructor
      * 
      * @param parent IMS network interface
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     public SipManager(ImsNetworkInterface parent, RcsSettings rcsSettings) {
         mNetworkInterface = parent;
@@ -95,7 +95,7 @@ public class SipManager {
      * @return SIP stack
      */
     public SipInterface getSipStack() {
-        return sipstack;
+        return mSipInterface;
     }
 
     /**
@@ -105,12 +105,10 @@ public class SipManager {
         if (sLogger.isActivated()) {
             sLogger.info("Terminate the SIP manager");
         }
-
         // Close the SIP stack
-        if (sipstack != null) {
+        if (mSipInterface != null) {
             closeStack();
         }
-
         if (sLogger.isActivated()) {
             sLogger.info("SIP manager has been terminated");
         }
@@ -122,30 +120,29 @@ public class SipManager {
      * @param localAddr Local IP address
      * @param proxyAddr Outbound proxy address
      * @param proxyPort Outbound proxy port
-     * @param protocol
+     * @param protocol the protocol
      * @param tcpFallback TCP fallback according to RFC3261 chapter 18.1.1
-     * @param networkType type of network
      * @throws PayloadException
      */
     public synchronized void initStack(String localAddr, String proxyAddr, int proxyPort,
-            String protocol, boolean tcpFallback, int networkType) throws PayloadException {
+            String protocol, boolean tcpFallback) throws PayloadException {
         closeStack();
-        sipstack = new SipInterface(localAddr, proxyAddr, proxyPort, protocol, tcpFallback,
-                networkType, mRcsSettings);
-        sipstack.initialize();
+        mSipInterface = new SipInterface(localAddr, proxyAddr, proxyPort, protocol, tcpFallback,
+                mRcsSettings);
+        mSipInterface.initialize();
     }
 
     /**
      * Close the SIP stack
      */
     public synchronized void closeStack() {
-        if (sipstack == null) {
+        if (mSipInterface == null) {
             // Already closed
             return;
         }
         // Close the SIP stack
-        sipstack.close();
-        sipstack = null;
+        mSipInterface.close();
+        mSipInterface = null;
     }
 
     /**
@@ -191,7 +188,7 @@ public class SipManager {
     /**
      * Send a SIP message and wait a response
      * 
-     * @param message
+     * @param message the SIP message
      * @param timeout in milliseconds
      * @param callback callback to handle provisional response
      * @return SIP transaction context
@@ -201,7 +198,7 @@ public class SipManager {
     public SipTransactionContext sendSipMessageAndWait(SipMessage message, long timeout,
             SipTransactionContext.INotifySipProvisionalResponse callback) throws NetworkException,
             PayloadException {
-        SipTransactionContext ctx = sipstack.sendSipMessageAndWait(message, callback);
+        SipTransactionContext ctx = mSipInterface.sendSipMessageAndWait(message, callback);
         ctx.waitResponse(timeout);
 
         if (!(message instanceof SipRequest) || !ctx.isSipResponse()) {
@@ -211,7 +208,6 @@ public class SipManager {
         SipResponse response = ctx.getSipResponse();
         if (response == null) {
             return ctx;
-
         }
         /* Analyze the received response */
         if (!Request.REGISTER.equals(method)) {
@@ -224,16 +220,12 @@ public class SipManager {
         }
         if (!Request.INVITE.equals(method) && !Request.REGISTER.equals(method)) {
             return ctx;
-
         }
-
         KeepAliveManager keepAliveManager = mNetworkInterface.getSipManager().getSipStack()
                 .getKeepAliveManager();
         if (keepAliveManager == null) {
             return ctx;
-
         }
-
         /* Message is a response to INVITE or REGISTER: analyze "keep" flag of "Via" header */
         ListIterator<ViaHeader> iterator = response.getViaHeaders();
         if (!iterator.hasNext()) {
@@ -267,7 +259,7 @@ public class SipManager {
     /**
      * Send a SIP message and create a context to wait a response
      * 
-     * @param message
+     * @param message the SIP message
      * @param callback callback to handle provisional response
      * @return SIP transaction context
      * @throws PayloadException
@@ -276,8 +268,7 @@ public class SipManager {
     public SipTransactionContext sendSipMessage(SipMessage message,
             SipTransactionContext.INotifySipProvisionalResponse callback) throws NetworkException,
             PayloadException {
-        SipTransactionContext ctx = sipstack.sendSipMessageAndWait(message, callback);
-        return ctx;
+        return mSipInterface.sendSipMessageAndWait(message, callback);
     }
 
     /**
@@ -328,7 +319,6 @@ public class SipManager {
             return;
 
         }
-
         /* Message is a response to INVITE or REGISTER: analyze "keep" flag of "Via" header */
         ListIterator<ViaHeader> iterator = response.getViaHeaders();
         if (!iterator.hasNext()) {
@@ -356,7 +346,6 @@ public class SipManager {
              */
             keepAliveManager.setPeriod(mRcsSettings.getSipKeepAlivePeriod());
         }
-        return;
     }
 
     /**
@@ -366,7 +355,7 @@ public class SipManager {
      * @throws NetworkException
      */
     public void sendSipResponse(SipResponse response) throws NetworkException {
-        sipstack.sendSipResponse(response);
+        mSipInterface.sendSipResponse(response);
     }
 
     /**
@@ -377,7 +366,7 @@ public class SipManager {
      * @throws NetworkException
      */
     public void sendSipAck(SipDialogPath dialog) throws PayloadException, NetworkException {
-        sipstack.sendSipAck(dialog);
+        mSipInterface.sendSipAck(dialog);
     }
 
     /**
@@ -388,7 +377,7 @@ public class SipManager {
      * @throws NetworkException
      */
     public void sendSipBye(SipDialogPath dialog) throws PayloadException, NetworkException {
-        sipstack.sendSipBye(dialog);
+        mSipInterface.sendSipBye(dialog);
     }
 
     /**
@@ -399,8 +388,7 @@ public class SipManager {
      * @throws NetworkException
      */
     public void sendSipCancel(SipDialogPath dialog) throws PayloadException, NetworkException {
-        sipstack.sendSipCancel(dialog);
-
+        mSipInterface.sendSipCancel(dialog);
     }
 
     /**
@@ -429,18 +417,16 @@ public class SipManager {
      */
     private SipTransactionContext sendSubsequentRequest(SipDialogPath dialog, SipRequest request,
             long timeout) throws NetworkException, PayloadException {
-        SipTransactionContext ctx = sipstack.sendSubsequentRequest(dialog, request);
+        SipTransactionContext ctx = mSipInterface.sendSubsequentRequest(dialog, request);
         ctx.waitResponse(timeout);
-
         if (ctx.isSipResponse()) {
             int code = ctx.getStatusCode();
             /* Check if not registered and warning header */
             WarningHeader warn = (WarningHeader) ctx.getSipResponse().getHeader(WarningHeader.NAME);
-            if ((Response.FORBIDDEN == code) && (warn == null)) {
+            if (Response.FORBIDDEN == code && warn == null) {
                 mNetworkInterface.getRegistrationManager().restart();
-                throw new PayloadException(new StringBuilder(
-                        "Stack not properly registered with status code : ").append(code)
-                        .toString());
+                throw new PayloadException("Stack not properly registered with status code : "
+                        + code);
             }
         }
         return ctx;
@@ -458,7 +444,7 @@ public class SipManager {
     /**
      * Sets the timeout for SIP transaction (in milliseconds)
      * 
-     * @param timeout
+     * @param timeout the timeout
      */
     public static void setTimeout(long timeout) {
         sTimeout = timeout;

@@ -67,7 +67,7 @@ public class IsComposingParserTest extends AndroidTestCase {
         InputSource inputso = new InputSource(new ByteArrayInputStream(xml.getBytes()));
         IsComposingParser parser = new IsComposingParser(inputso);
         parser.parse();
-        IsComposingInfo isInfo = parser.getIsComposingInfo();
+        IsComposingInfo isInfo = parser.getmIsComposingInfo();
         assertEquals(isInfo.getContentType(), "audio");
         assertEquals(isInfo.isStateActive(), false);
         if (logger.isActivated()) {

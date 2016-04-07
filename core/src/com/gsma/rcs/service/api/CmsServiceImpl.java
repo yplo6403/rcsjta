@@ -120,9 +120,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a CMS sync event listener");
-        }
         try {
             synchronized (lock) {
                 mCmsBroadcaster.addEventListener(listener);
@@ -143,9 +140,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void removeEventListener(ICmsSynchronizationListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a CMS sync event listener");
         }
         try {
             synchronized (lock) {
@@ -275,9 +269,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public IXmsMessage getXmsMessage(String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Get XMS message ".concat(messageId));
         }
         try {
             return getOrCreateXmsMessage(messageId);
@@ -445,9 +436,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a XMS message event listener");
-        }
         try {
             synchronized (lock) {
                 mXmsMessageBroadcaster.addEventListener(listener);
@@ -468,9 +456,6 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     public void removeEventListener2(IXmsMessageListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a XMS message event listener");
         }
         try {
             synchronized (lock) {
