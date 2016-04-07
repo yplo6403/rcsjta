@@ -49,6 +49,8 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.RcsServiceNotRegisteredException;
+import com.gsma.services.rcs.RcsServiceRegistration;
+import com.gsma.services.rcs.RcsServiceRegistrationListener;
 import com.gsma.services.rcs.capability.Capabilities;
 import com.gsma.services.rcs.capability.CapabilitiesListener;
 import com.gsma.services.rcs.capability.CapabilityService;
@@ -197,6 +199,12 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             XmsMessageIntent.ACTION_NEW_XMS_MESSAGE,
             OPEN_TALK ));
     // @formatter:on
+
+    private boolean mRegistrationListenerSet;
+    private RcsServiceRegistrationListener mRegistrationListener;
+    private boolean mChatListenerSet;
+    private boolean mCapabilitiesListenerSet;
+    private boolean mRcsRegistered;
 
     /**
      * Forge intent to start XmsView activity
@@ -441,14 +449,13 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     // Execute on UI handler since callback is executed from service
                     mHandler.post(new Runnable() {
                         public void run() {
-                            setRcsMode(allowedToSendRcsMessage);
+                            setRcsMode(mRcsRegistered && allowedToSendRcsMessage);
                         }
                     });
 
                 } catch (RcsServiceException e) {
                     Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
                 }
-
             }
         };
         mCmsService = getCmsApi();
@@ -456,8 +463,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         mChatService = getChatApi();
         mCapabilityService = getCapabilityApi();
         mFileTransferService = getFileTransferApi();
-        mChatService.addEventListener(mChatListener);
-        mCapabilityService.addCapabilitiesListener(mCapabilitiesListener);
 
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(XmsMessageLog.HISTORYLOG_MEMBER_ID);
@@ -527,6 +532,40 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         listView.setAdapter(mAdapter);
 
         registerForContextMenu(listView);
+
+        mRegistrationListener = new RcsServiceRegistrationListener() {
+            @Override
+            public void onServiceRegistered() {
+                mRcsRegistered = true;
+                try {
+                    /*
+                     * We received new capabilities for current contact: re-evaluate the composer
+                     * capabilities.
+                     */
+                    final boolean allowedToSendRcsMessage = mChat.isAllowedToSendMessage();
+                    // Execute on UI handler since callback is executed from service
+                    mHandler.post(new Runnable() {
+                        public void run() {
+                            setRcsMode(allowedToSendRcsMessage);
+                        }
+                    });
+
+                } catch (RcsServiceException e) {
+                    Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+                }
+            }
+
+            @Override
+            public void onServiceUnregistered(RcsServiceRegistration.ReasonCode reasonCode) {
+                mRcsRegistered = false;
+                // Execute on UI handler since callback is executed from service
+                mHandler.post(new Runnable() {
+                    public void run() {
+                        setRcsMode(false);
+                    }
+                });
+            }
+        };
     }
 
     private boolean processIntent(Intent intent) {
@@ -610,7 +649,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         mChat = mChatService.getOneToOneChat(mContact);
         setCursorLoader(firstLoad);
         RI.sChatIdOnForeground = mContact.toString();
-        setRcsMode(mChat.isAllowedToSendMessage());
+        setRcsMode(mChat.isAllowedToSendMessage() && mRcsRegistered);
 
         if (RiSettings.isSyncAutomatic(this)) {
             try {
@@ -640,25 +679,28 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     }
 
     @Override
-    public void onDestroy() {
-        try {
-            if (isServiceConnected(ConnectionManager.RcsServiceName.CHAT) && mChatService != null) {
-                mChatService.removeEventListener(mChatListener);
-            }
-            if (isServiceConnected(ConnectionManager.RcsServiceName.CAPABILITY)
-                    && mCapabilityService != null) {
-                mCapabilityService.removeCapabilitiesListener(mCapabilitiesListener);
-            }
-        } catch (RcsServiceException e) {
-            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-        }
-        super.onDestroy();
-    }
-
-    @Override
     protected void onPause() {
         super.onPause();
         RI.sChatIdOnForeground = null;
+        try {
+            if (mChatListener != null && mChatService != null && mChatListenerSet) {
+                mChatService.removeEventListener(mChatListener);
+                mChatListenerSet = false;
+            }
+            if (mCapabilityService != null) {
+                if (mCapabilitiesListener != null && mCapabilitiesListenerSet) {
+                    mCapabilityService.removeCapabilitiesListener(mCapabilitiesListener);
+                    mCapabilitiesListenerSet = false;
+                }
+                if (mRegistrationListener != null && mRegistrationListenerSet) {
+                    mCapabilityService.removeEventListener(mRegistrationListener);
+                    mRegistrationListenerSet = false;
+                }
+            }
+        } catch (RcsServiceNotAvailableException ignore) {
+        } catch (RcsGenericException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+        }
     }
 
     @Override
@@ -674,6 +716,26 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         super.onResume();
         if (mContact != null) {
             RI.sChatIdOnForeground = mContact.toString();
+        }
+        try {
+            if (mChatListener != null && mChatService != null && !mChatListenerSet) {
+                mChatService.addEventListener(mChatListener);
+                mChatListenerSet = true;
+            }
+            if (mCapabilityService != null) {
+                mRcsRegistered = mCapabilityService.isServiceRegistered();
+                if (mCapabilitiesListener != null && !mCapabilitiesListenerSet) {
+                    mCapabilityService.addCapabilitiesListener(mCapabilitiesListener);
+                    mCapabilitiesListenerSet = true;
+                }
+                if (mRegistrationListener != null && !mRegistrationListenerSet) {
+                    mCapabilityService.addEventListener(mRegistrationListener);
+                    mRegistrationListenerSet = true;
+                }
+            }
+        } catch (RcsServiceNotAvailableException ignore) {
+        } catch (RcsGenericException e) {
+            Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
         }
     }
 
@@ -778,7 +840,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case R.id.menu_switch_to_rcs:
-                    if (mChat.isAllowedToSendMessage()) {
+                    if (mRcsRegistered && mChat.isAllowedToSendMessage()) {
                         setRcsMode(true);
                     } else {
                         requestCapabilities(mContact);

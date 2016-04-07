@@ -27,8 +27,8 @@ import java.util.Set;
 public class CmdUtils {
 
     /**
-     * @param flags
-     * @param rawValue
+     * @param flags the set of flags to fill
+     * @param rawValue the raw values
      */
     public static void fillFlags(Set<Flag> flags, String rawValue) {
         String[] sflags = rawValue.split(" ");
@@ -43,11 +43,11 @@ public class CmdUtils {
     /**
      * Parse flag from raw data
      * 
-     * @param rawValue
+     * @param rawValue the raw values
      * @return Set<Flag>
      */
     public static Set<Flag> parseFlags(String rawValue) {
-        Set<Flag> flags = new HashSet<Flag>();
+        Set<Flag> flags = new HashSet<>();
         for (String f : rawValue.split(" ")) {
             if (f.startsWith("\\")) {
                 f = f.substring(1);

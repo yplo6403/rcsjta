@@ -26,13 +26,16 @@ import java.util.Map;
 public class ImapFolder {
 
     private String mName;
+    /**
+     * The map of counter name (like UIDNEXT, MODSEQ or UIDVALIDITY) associated with its value.
+     */
     private Map<String, String> mCounters;
 
     /**
      * Default constructor
      * 
-     * @param name
-     * @param counters
+     * @param name the name
+     * @param counters the counters
      */
     public ImapFolder(String name, Map<String, String> counters) {
         super();
@@ -81,12 +84,10 @@ public class ImapFolder {
 
     @Override
     public String toString() {
-        return new StringBuilder("ImapFolder [mName=").append(mName).append(", ")
-                .append(Constants.METADATA_MESSAGES).append("=").append(getMessages()).append(", ")
-                .append(Constants.METADATA_UIDVALIDITY).append("=").append(getUidValidity())
-                .append(", ").append(Constants.METADATA_HIGHESTMODSEQ).append("=")
-                .append(getHighestModseq()).append(", ").append(Constants.METADATA_UIDNEXT)
-                .append("=").append(getUidNext()).append(", ").append("]").toString();
+        return "ImapFolder [mName=" + mName + ", " + Constants.METADATA_MESSAGES + "="
+                + getMessages() + ", " + Constants.METADATA_UIDVALIDITY + "=" + getUidValidity()
+                + ", " + Constants.METADATA_HIGHESTMODSEQ + "=" + getHighestModseq() + ", "
+                + Constants.METADATA_UIDNEXT + "=" + getUidNext() + ", " + "]";
 
     }
 

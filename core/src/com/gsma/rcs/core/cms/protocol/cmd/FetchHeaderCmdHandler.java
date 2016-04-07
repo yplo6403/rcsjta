@@ -27,7 +27,6 @@ import com.gsma.rcs.imaplib.imap.Part;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,8 +43,8 @@ public class FetchHeaderCmdHandler extends CmdHandler {
     private static final int sExpectedValuesForFlag = 3;
 
     private Integer mUid;
-    final Map<Integer, Map<String, String>> mData = new TreeMap<Integer, Map<String, String>>();
-    protected Map<Integer, Part> mPart = new HashMap<Integer, Part>();
+    final Map<Integer, Map<String, String>> mData = new TreeMap<>();
+    protected Map<Integer, Part> mPart = new HashMap<>();
 
     @Override
     public String buildCommand(Object... params) {
@@ -54,10 +53,9 @@ public class FetchHeaderCmdHandler extends CmdHandler {
 
     @Override
     public boolean handleLine(String oneLine) {
-
         String[] values = extractCounterValuesFromLine(sFlagsPattern, oneLine);
         if (values != null && values.length == sExpectedValuesForFlag) {
-            Map<String, String> data = new HashMap<String, String>();
+            Map<String, String> data = new HashMap<>();
             mUid = Integer.parseInt(values[0]);
             data.put(Constants.METADATA_UID, values[0]);
             data.put(Constants.METADATA_FLAGS, values[1]);
@@ -80,10 +78,8 @@ public class FetchHeaderCmdHandler extends CmdHandler {
     @Override
     public List<ImapMessage> getResult() {
 
-        List<ImapMessage> messages = new ArrayList<ImapMessage>();
-        Iterator<Entry<Integer, Map<String, String>>> iter = mData.entrySet().iterator();
-        while (iter.hasNext()) {
-            Entry<Integer, Map<String, String>> entry = iter.next();
+        List<ImapMessage> messages = new ArrayList<>();
+        for (Entry<Integer, Map<String, String>> entry : mData.entrySet()) {
             Integer uid = entry.getKey();
             ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
             CmdUtils.fillFlags(metadata.getFlags(), entry.getValue().get(Constants.METADATA_FLAGS));

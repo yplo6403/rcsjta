@@ -24,7 +24,6 @@ import com.gsma.rcs.imaplib.imap.Part;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,7 +38,7 @@ public class ListStatusCmdHandler extends CmdHandler {
 
     private static final int sExpectedValues = 5;
 
-    final Map<String, Map<String, String>> mData = new HashMap<String, Map<String, String>>();
+    final Map<String, Map<String, String>> mData = new HashMap<>();
 
     @Override
     public String buildCommand(Object... params) {
@@ -53,17 +52,13 @@ public class ListStatusCmdHandler extends CmdHandler {
 
     @Override
     public void handleLines(List<String> lines) {
-
         for (String line : lines) {
             line = line.substring(2).trim();
-
             String[] values = extractCounterValuesFromLine(sPattern, line);
-
             if (values == null || values.length != sExpectedValues) {
                 continue;
             }
-
-            Map<String, String> data = new HashMap<String, String>();
+            Map<String, String> data = new HashMap<>();
             data.put(Constants.METADATA_MESSAGES, values[1]);
             data.put(Constants.METADATA_UIDNEXT, values[2]);
             data.put(Constants.METADATA_UIDVALIDITY, values[3]);
@@ -78,10 +73,8 @@ public class ListStatusCmdHandler extends CmdHandler {
 
     @Override
     public List<ImapFolder> getResult() {
-        List<ImapFolder> folders = new ArrayList<ImapFolder>();
-        Iterator<Entry<String, Map<String, String>>> iter1 = mData.entrySet().iterator();
-        while (iter1.hasNext()) {
-            Entry<String, Map<String, String>> entry1 = iter1.next();
+        List<ImapFolder> folders = new ArrayList<>();
+        for (Entry<String, Map<String, String>> entry1 : mData.entrySet()) {
             String folderName = entry1.getKey();
             Map<String, String> counters = entry1.getValue();
             folders.add(new ImapFolder(folderName, counters));

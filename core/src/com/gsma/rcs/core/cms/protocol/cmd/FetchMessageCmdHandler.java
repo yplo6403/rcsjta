@@ -47,14 +47,13 @@ public class FetchMessageCmdHandler extends CmdHandler {
     }
 
     @SuppressLint("UseSparseArrays")
-    final Map<String, String> mData = new HashMap<String, String>();
+    final Map<String, String> mData = new HashMap<>();
 
     private Integer mUid;
     private Part mPart;
 
     @Override
     public boolean handleLine(String oneLine) {
-
         String[] values = extractCounterValuesFromLine(sFlagPattern, oneLine);
         if (values != null && values.length == sExpectedValuesForFlag) {
             mUid = Integer.parseInt(values[0]);
@@ -81,7 +80,7 @@ public class FetchMessageCmdHandler extends CmdHandler {
         ImapMessageMetadata metadata = new ImapMessageMetadata(mUid, Long.parseLong(mData
                 .get(Constants.METADATA_MODSEQ)));
         CmdUtils.fillFlags(metadata.getFlags(), mData.get(Constants.METADATA_FLAGS));
-        return new ImapMessage(Integer.valueOf(mUid), metadata, mPart);
+        return new ImapMessage(mUid, metadata, mPart);
     }
 
 }

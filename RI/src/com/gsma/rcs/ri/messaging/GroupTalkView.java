@@ -19,7 +19,6 @@
 package com.gsma.rcs.ri.messaging;
 
 import com.gsma.rcs.api.connection.ConnectionManager;
-import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.api.connection.utils.RcsFragmentActivity;
 import com.gsma.rcs.ri.R;
@@ -154,6 +153,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
     private IsComposingManager mComposingManager;
     private TalkCursorAdapter mAdapter;
     private ChatCursorObserver mObserver;
+    private boolean mChatListnerSet;
 
     private enum GroupChatMode {
         INCOMING, OUTGOING, OPEN
@@ -193,8 +193,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
                 ConnectionManager.RcsServiceName.CONTACT,
                 ConnectionManager.RcsServiceName.CAPABILITY,
                 ConnectionManager.RcsServiceName.FILE_TRANSFER,
-                ConnectionManager.RcsServiceName.CMS
-                );
+                ConnectionManager.RcsServiceName.CMS);
         try {
             initialize();
             processIntent(getIntent());
@@ -493,8 +492,9 @@ public class GroupTalkView extends RcsFragmentActivity implements
         super.onResume();
         RI.sChatIdOnForeground = mChatId;
         try {
-            if (mChatListener != null && mChatService != null) {
+            if (mChatListener != null && mChatService != null && !mChatListnerSet) {
                 mChatService.addEventListener(mChatListener);
+                mChatListnerSet = true;
             }
         } catch (RcsServiceNotAvailableException ignore) {
         } catch (RcsServiceException e) {
@@ -516,8 +516,9 @@ public class GroupTalkView extends RcsFragmentActivity implements
         super.onPause();
         RI.sChatIdOnForeground = null;
         try {
-            if (mChatListener != null && mChatService != null) {
+            if (mChatListener != null && mChatService != null && mChatListnerSet) {
                 mChatService.removeEventListener(mChatListener);
+                mChatListnerSet = false;
             }
         } catch (RcsServiceNotAvailableException ignore) {
         } catch (RcsServiceException e) {

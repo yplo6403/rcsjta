@@ -38,7 +38,6 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
-import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 
 import android.content.Context;
@@ -59,8 +58,6 @@ import java.util.UUID;
  * Task executed to push messages or update flags on the CMS server
  */
 public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
-
-    private static final Logger sLogger = Logger.getLogger(CmsSyncPushRequestTask.class.getName());
 
     private final RcsSettings mRcsSettings;
     private final Context mContext;

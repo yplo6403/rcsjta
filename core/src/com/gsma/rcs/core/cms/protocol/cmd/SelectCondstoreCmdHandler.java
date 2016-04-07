@@ -38,7 +38,7 @@ public class SelectCondstoreCmdHandler extends CmdHandler {
 
     private String mFolderName;
 
-    final Map<String, Map<String, String>> mData = new HashMap<String, Map<String, String>>();
+    final Map<String, Map<String, String>> mData = new HashMap<>();
 
     @Override
     public String buildCommand(Object... params) {
@@ -53,13 +53,10 @@ public class SelectCondstoreCmdHandler extends CmdHandler {
 
     @Override
     public void handleLines(List<String> lines) {
-
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         for (String line : lines) {
             line = line.substring(2).trim();
-
             String[] values = extractCounterValuesFromLine(sPattern, line);
-
             if (values == null || values.length != sExpectedValues) {
                 continue;
             }

@@ -1,20 +1,19 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010-2016 Orange.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.core.cms.xms.observer;
@@ -23,12 +22,12 @@ import static com.gsma.rcs.provider.CursorUtil.assertCursorIsNotNull;
 import static com.gsma.rcs.provider.CursorUtil.close;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Conversation;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Mms;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Mms.Part;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Sms;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -59,7 +58,6 @@ import android.provider.Telephony.TextBasedSmsColumns;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,7 +100,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Constructor
-         * 
+         *
          * @param handler background handler
          */
         public XmsContentObserver(Handler handler) {
@@ -142,7 +140,7 @@ public class XmsObserver implements XmsObserverListener {
                         sLogger.error("Check MMS events failure", e);
                     }
                     Map<Long, Boolean> currentConversations = getConversations();
-                    if (!checkDeleteConversationEvent(currentConversations)) {
+                    if (!checkDeleteConversationEvent(currentConversations.keySet())) {
                         checkReadConversationEvent(currentConversations);
                     }
                     mConversations = currentConversations;
@@ -162,7 +160,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check SMS events from content provider
-         * 
+         *
          * @param uri the URI of the SMS
          */
         private void checkSmsEvents(Uri uri) {
@@ -180,7 +178,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Notify listeners of a new SMS in the native content provider
-         * 
+         *
          * @param uri the URI of the SMS
          */
         private void handleNewSms(Uri uri) {
@@ -227,7 +225,7 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Notify listeners that the SMS status has changed
-         * 
+         *
          * @param uri the URI of the SMS
          */
         private void handleSmsUpdateStatus(Uri uri) {
@@ -310,8 +308,8 @@ public class XmsObserver implements XmsObserverListener {
                     type = Mms.Addr.TO;
                 }
                 cursor = mContentResolver.query(Uri.parse(String.format(Mms.Addr.URI, id)),
-                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[] {
-                            String.valueOf(type)
+                        Mms.Addr.PROJECTION, Mms.Addr.WHERE, new String[]{
+                                String.valueOf(type)
                         }, null);
                 assertCursorIsNotNull(cursor, Mms.Addr.URI);
                 int adressIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Addr.ADDRESS);
@@ -341,8 +339,8 @@ public class XmsObserver implements XmsObserverListener {
             Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
             try {
                 cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
-                        Mms.Part.WHERE, new String[] {
-                            String.valueOf(id)
+                        Mms.Part.WHERE, new String[]{
+                                String.valueOf(id)
                         }, null);
                 assertCursorIsNotNull(cursor, Mms.Part.URI);
                 int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
@@ -422,31 +420,24 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check if a conversation has been read
-         * 
-         * @param currentConversations
-         * @return
+         *
+         * @param currentConversations the current conversations
+         * @return ?? //TODO FG what does it return
          */
         private boolean checkReadConversationEvent(Map<Long, Boolean> currentConversations) {
-
             boolean eventChecked = false;
             Set<Long> unreadConversations = new HashSet<>();
-            Iterator<Entry<Long, Boolean>> iter = mConversations.entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry<Long, Boolean> entry = iter.next();
+            for (Entry<Long, Boolean> entry : mConversations.entrySet()) {
                 if (!entry.getValue()) {
                     unreadConversations.add(entry.getKey());
                 }
             }
-
             Set<Long> currentUnreadConversations = new HashSet<>();
-            iter = currentConversations.entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry<Long, Boolean> entry = iter.next();
+            for (Entry<Long, Boolean> entry : currentConversations.entrySet()) {
                 if (!entry.getValue()) {
                     currentUnreadConversations.add(entry.getKey());
                 }
             }
-
             // make delta between unread to get read conversation
             unreadConversations.removeAll(currentUnreadConversations);
             for (Long threadId : unreadConversations) {
@@ -458,15 +449,14 @@ public class XmsObserver implements XmsObserverListener {
 
         /**
          * Check if a conversation has been deleted
-         * 
-         * @param currentConversations
-         * @return
+         *
+         * @param currentConversations the conversations
+         * @return true if some conversations were deleted
          */
-        private boolean checkDeleteConversationEvent(Map<Long, Boolean> currentConversations) {
-
+        private boolean checkDeleteConversationEvent(Set<Long> currentConversations) {
             boolean eventChecked = false;
             Set<Long> deletedConversations = new HashSet<>(mConversations.keySet());
-            deletedConversations.removeAll(currentConversations.keySet());
+            deletedConversations.removeAll(currentConversations);
             for (Long conversation : deletedConversations) {
                 onDeleteXmsConversationFromNativeApp(conversation);
                 eventChecked = true;
@@ -478,10 +468,14 @@ public class XmsObserver implements XmsObserverListener {
             return eventChecked;
         }
 
+        /**
+         * Get conversations
+         *
+         * @return map of conversation ID with their read status
+         */
         private Map<Long, Boolean> getConversations() {
             Map<Long, Boolean> conversations = new HashMap<>();
             Cursor cursor = null;
-
             try {
                 cursor = mContentResolver.query(Conversation.URI, Conversation.PROJECTION, null,
                         null, BaseColumns._ID);
@@ -534,8 +528,8 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Constructor
-     * 
-     * @param context
+     *
+     * @param context the context
      */
     public XmsObserver(Context context) {
         mContentResolver = context.getContentResolver();
@@ -573,8 +567,8 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Register a listener which want to be notified of XMS events
-     * 
-     * @param listener
+     *
+     * @param listener the listener
      */
     public void registerListener(XmsObserverListener listener) {
         synchronized (mXmsObserverListeners) {
@@ -584,8 +578,8 @@ public class XmsObserver implements XmsObserverListener {
 
     /**
      * Unregister listener
-     * 
-     * @param listener
+     *
+     * @param listener the listener
      */
 
     public void unregisterListener(XmsObserverListener listener) {
@@ -594,7 +588,9 @@ public class XmsObserver implements XmsObserverListener {
         }
     }
 
-    /********************** XMS Events **********************/
+    /**********************
+     * XMS Events
+     **********************/
 
     @Override
     public void onDeleteSmsFromNativeApp(long nativeProviderId) {
