@@ -34,7 +34,6 @@ import com.gsma.rcs.core.ims.protocol.sip.SipDialogPath;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.protocol.sip.SipResponse;
 import com.gsma.rcs.core.ims.protocol.sip.SipTransactionContext;
-import com.gsma.rcs.core.ims.service.ImsSessionListener;
 import com.gsma.rcs.core.ims.service.SessionTimerManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
@@ -43,7 +42,6 @@ import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
-import java.util.Collection;
 import java.util.Vector;
 
 public class TerminatingEventFrameworkSession extends EventFrameworkSession {
@@ -61,7 +59,7 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
      * @param timestamp Local timestamp for the session
      */
     public TerminatingEventFrameworkSession(InstantMessagingService imService, SipRequest invite,
-                                            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp) {
+            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp) {
         super(imService, rcsSettings, messagingLog, timestamp);
         // Create dialog path
         createTerminatingDialogPath(invite);
@@ -81,7 +79,6 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
                 sLogger.info("Initiate a event reporting session as terminating");
             }
             SipDialogPath dialogPath = getDialogPath();
-            Collection<ImsSessionListener> listeners = getListeners();
 
             /* Parse the remote SDP part */
             final SipRequest invite = dialogPath.getInvite();
@@ -192,9 +189,6 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
                     session.setSuccessReportOption(false);
                     getMsrpMgr().openMsrpSession();
                     sendEmptyDataChunk();
-                }
-                for (ImsSessionListener listener : listeners) {
-                    listener.onSessionStarted(null);
                 }
                 SessionTimerManager sessionTimerManager = getSessionTimerManager();
                 if (sessionTimerManager.isSessionTimerActivated(resp)) {
