@@ -572,6 +572,10 @@ public class GroupChatView extends ChatView {
                     builder.setCancelable(true);
                     registerDialog(builder.show());
                     break;
+
+                case R.id.menu_sync_cms:
+                    mCmsService.syncGroupConversation(mChatId);
+                    break;
             }
 
         } catch (RcsServiceException e) {
