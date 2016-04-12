@@ -327,4 +327,14 @@ public interface IMessageLog {
      * @param msg Chat message
      */
     void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg);
+
+    /**
+     * Set message delivery displayed for specified message id.
+     *
+     * @param msgId Message ID
+     * @param timestampDisplayed displayed timestamp
+     * @return True if an entry was updated, otherwise false
+     */
+    boolean setChatMessageTimestampDisplayed(String msgId, long timestampDisplayed);
+
 }

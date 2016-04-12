@@ -871,6 +871,7 @@ public class ChatServiceImpl extends IChatService.Stub {
          * to avoid multiple mark as read requests.
          */
         try {
+            long now = NtpTrustedTime.currentTimeMillis();
             if (mMessagingLog.markMessageAsRead(msgId) == 0) {
                 /* no reporting towards the network if message is already marked as read */
                 if (sLogger.isActivated()) {
@@ -878,6 +879,11 @@ public class ChatServiceImpl extends IChatService.Stub {
                 }
                 return;
             }
+            /*
+             * Chat message must be marked as DISPLAY_REPORT_REQUESTED with a valid 'displayed timestamp'.
+             * The DelayedDisplayNotificationDispatcher task is reading this timestamp from the chat content provider
+             */
+            mMessagingLog.setChatMessageTimestampDisplayed(msgId, now);
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {

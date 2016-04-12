@@ -730,4 +730,15 @@ public class MessageLog implements IMessageLog {
         addGroupChatMessage(chatId, msg, Direction.INCOMING, null, Status.FAILED,
                 ReasonCode.FAILED_DELIVERY);
     }
+
+    @Override
+    public boolean setChatMessageTimestampDisplayed(String msgId, long timestampDisplayed) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Update chat message: msgId=" + msgId + ", timestampDisplayed=" + timestampDisplayed);
+        }
+        ContentValues values = new ContentValues();
+        values.put(MessageData.KEY_TIMESTAMP_DISPLAYED, timestampDisplayed);
+        return mLocalContentResolver.update(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
+                values, null, null) > 0;
+    }
 }

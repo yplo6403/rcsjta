@@ -623,6 +623,11 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
+    public boolean setChatMessageTimestampDisplayed(String msgId, long timestampDisplayed) {
+        return mMessageLog.setChatMessageTimestampDisplayed(msgId, timestampDisplayed);
+    }
+
+    @Override
     public Uri getFile(String fileTransferId) {
         return mFileTransferLog.getFile(fileTransferId);
     }
