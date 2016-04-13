@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +26,8 @@ import com.gsma.rcs.R;
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.addressbook.RcsAccountException;
 import com.gsma.rcs.addressbook.RcsAccountManager;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.AndroidFactory;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.registry.AndroidRegistryFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.UserProfilePersistedStorageUtil;
@@ -38,6 +38,7 @@ import com.gsma.rcs.provider.settings.RcsSettingsData.ConfigurationMode;
 import com.gsma.rcs.provider.settings.RcsSettingsData.TermsAndConditionsResponse;
 import com.gsma.rcs.provisioning.ProvisioningInfo.Version;
 import com.gsma.rcs.provisioning.https.HttpsProvisioningService;
+import com.gsma.rcs.service.Permissions.PermissionsManager;
 import com.gsma.rcs.utils.IntentUtils;
 import com.gsma.rcs.utils.TimerUtils;
 import com.gsma.rcs.utils.logger.Logger;
@@ -57,6 +58,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -138,8 +140,8 @@ public class StartService extends Service {
         mRcsSettings = RcsSettings.getInstance(mLocalContentResolver);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mRcsSettings);
 
-        mContactManager = ContactManager.getInstance(mCtx, contentResolver,
-                mLocalContentResolver, mRcsSettings);
+        mContactManager = ContactManager.getInstance(mCtx, contentResolver, mLocalContentResolver,
+                mRcsSettings);
         mAccountUtility = RcsAccountManager.getInstance(mCtx, mContactManager);
 
         mRcsAccountUsername = getString(R.string.rcs_core_account_username);
@@ -177,11 +179,37 @@ public class StartService extends Service {
 
     @Override
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        final boolean logActivated = sLogger.isActivated();
-        if (logActivated) {
+        if (sLogger.isActivated()) {
             sLogger.debug("Start RCS service");
         }
         mStartServiceHandler = allocateBgHandler(STARTSERVICE_OPERATIONS_THREAD_NAME);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+            mStartServiceHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    PermissionsManager pm = PermissionsManager.getInstance();
+                    Boolean allPermissionsGranted = pm.requestForPermissionsAndWaitResponse(mCtx);
+                    if (allPermissionsGranted) {
+                        startCore(intent);
+                    } else {
+                        StartService.this.stopSelf();
+                    }
+                }
+            });
+        } else {
+            startCore(intent);
+        }
+
+        /*
+         * We want this service to continue running until it is explicitly stopped, so return
+         * sticky.
+         */
+        return START_STICKY;
+    }
+
+    private void startCore(final Intent intent) {
         ConfigurationMode mode = mRcsSettings.getConfigurationMode();
         if (sLogger.isActivated()) {
             sLogger.debug("onCreate ConfigurationMode=".concat(mode.toString()));
@@ -227,7 +255,7 @@ public class StartService extends Service {
                          * Services cannot be started: IMSI cannot be read from Telephony Manager or
                          * MCC from Android Configuration or MNC from the settings provider.
                          */
-                        if (logActivated) {
+                        if (sLogger.isActivated()) {
                             sLogger.warn("Can't create current user account: pool the telephony manager");
                         }
                         mPollingTelephonyManagerReceiver = getPollingTelephonyManagerReceiver();
@@ -263,12 +291,6 @@ public class StartService extends Service {
                 }
             }
         });
-
-        /*
-         * We want this service to continue running until it is explicitly stopped, so return
-         * sticky.
-         */
-        return START_STICKY;
     }
 
     /**
@@ -599,8 +621,8 @@ public class StartService extends Service {
             sLogger.debug("Retry polling telephony manager (mcc=" + mcc + ",mnc=" + mnc + ")");
         }
         AlarmManager am = (AlarmManager) mCtx.getSystemService(Context.ALARM_SERVICE);
-        TimerUtils.setExactTimer(am, NtpTrustedTime.currentTimeMillis() + TELEPHONY_MANAGER_POOLING_PERIOD,
-                mPoolTelephonyManagerIntent);
+        TimerUtils.setExactTimer(am, NtpTrustedTime.currentTimeMillis()
+                + TELEPHONY_MANAGER_POOLING_PERIOD, mPoolTelephonyManagerIntent);
     }
 
     private BroadcastReceiver getPollingTelephonyManagerReceiver() {

@@ -15,10 +15,10 @@ android {
         }
         androidTest.setRoot('tests')
         androidTest
-        {
-            //Defaults to core/tests/java
-            java.srcDirs = ['tests/src']
-        }
+                {
+                    //Defaults to core/tests/java
+                    java.srcDirs = ['tests/src']
+                }
     }
 
     //Required to support builds although lint errors exist
@@ -45,5 +45,6 @@ dependencies {
     compile project(':nist_sip')
     compile project(':api')
     compile 'dnsjava:dnsjava:2.1.7'
-    compile 'com.android.support:support-v4:23.0.1'
+    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.3.0'
 }
