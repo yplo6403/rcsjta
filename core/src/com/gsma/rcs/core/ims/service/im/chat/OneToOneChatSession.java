@@ -96,6 +96,7 @@ public abstract class OneToOneChatSession extends ChatSession {
         addAcceptTypes(IsComposingInfo.MIME_TYPE);
 
         addWrappedTypes(MimeType.TEXT_MESSAGE);
+        addWrappedTypes(ImdnDocument.MIME_TYPE);
         if (mRcsSettings.isGeoLocationPushSupported()) {
             addWrappedTypes(GeolocInfoDocument.MIME_TYPE);
         }
