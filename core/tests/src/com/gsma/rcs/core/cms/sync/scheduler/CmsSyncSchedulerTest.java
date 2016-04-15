@@ -56,8 +56,8 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
         MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
-                messagingLog, null, null, mSettings);
-        mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
+                messagingLog, null, null, null, mSettings, null);
+        mLocalStorage = new LocalStorage(mSettings, mCmsLog, cmsEventHandler);
 
         mOperationListener = new CmsSyncSchedulerListenerMock();
     }

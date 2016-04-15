@@ -25,7 +25,9 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
+import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
 public class ImapMessageResolver {
@@ -33,10 +35,13 @@ public class ImapMessageResolver {
     private static final Logger sLogger = Logger.getLogger(ImapMessageResolver.class
             .getSimpleName());
 
+    private final RcsSettings mRcsSettings;
+
     /**
      * Constructor
      */
-    public ImapMessageResolver() {
+    public ImapMessageResolver(RcsSettings rcsSettings) {
+        mRcsSettings = rcsSettings;
     }
 
     public MessageType resolveType(com.gsma.rcs.imaplib.imap.ImapMessage imapMessage)
@@ -82,16 +87,21 @@ public class ImapMessageResolver {
             } else if (contentType.toLowerCase().contains(
                     Constants.CONTENT_TYPE_MESSAGE_IMDN_XML.toLowerCase())) {
                 return MessageType.IMDN;
+            } else if (contentType.toLowerCase().contains(
+                    FileTransferHttpInfoDocument.MIME_TYPE.toLowerCase())) {
+                return MessageType.FILE_TRANSFER;
             }
             throw new CmsSyncMessageNotSupportedException(
                     "unsupported cpim message type : ".concat(contentType));
+
         } else if (imapContentType.contains(Constants.APPLICATION_CPM_SESSION.toLowerCase())) {
             return MessageType.CPM_SESSION;
         } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
             return MessageType.GROUP_STATE;
-        } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
-            return MessageType.FILE_TRANSFER;
         }
+//        } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
+//            return MessageType.FILE_TRANSFER;
+//        }
 
         StringBuilder msg = new StringBuilder("Can not determine the type of the message").append(
                 Constants.CRLF).append(imapMessage.getPayload());
@@ -112,6 +122,8 @@ public class ImapMessageResolver {
                 return new ImapChatMessage(imapMessage);
             case IMDN:
                 return new ImapImdnMessage(imapMessage);
+            case FILE_TRANSFER:
+                return new ImapFileTransferMessage(mRcsSettings, imapMessage);
             case CPM_SESSION:
                 return new ImapCpmSessionMessage(imapMessage);
             case GROUP_STATE:

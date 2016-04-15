@@ -38,6 +38,7 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
+import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.content.Context;
@@ -71,14 +72,15 @@ public class CpmSessionTest extends AndroidTestCase {
                 settings, null, mMessagingLog, null, localContentResolver, context, null);
         ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
                 null, settings, null);
+        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(instantMessagingService,chatService,mMessagingLog, settings, null, context);
         XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
         CmsService cmsService = new CmsService(null, null, context, settings, xmsLog,
                 mMessagingLog, cmsLog);
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,fileTransferService,
                 xmsLog, settings, xmsManager, localContentResolver);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, cmsLog, xmsLog,
-                mMessagingLog, chatService, cmsServiceImpl, settings);
-        LocalStorage localStorage = new LocalStorage(cmsLog, cmsEventHandler);
+                mMessagingLog, chatService, fileTransferService, cmsServiceImpl, settings, null);
+        LocalStorage localStorage = new LocalStorage(settings, cmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(settings);
         mBasicImapService = mImapServiceHandler.openService();
         mSyncStrategy = new BasicSyncStrategy(context, settings, mBasicImapService, localStorage,

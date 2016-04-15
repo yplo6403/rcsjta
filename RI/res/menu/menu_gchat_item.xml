@@ -30,6 +30,18 @@
         android:title="@string/menu_display_content" />
 
     <item
+        android:id="@+id/menu_ft_accept"
+        android:title="@string/menu_ft_accept"/>
+
+    <item
+        android:id="@+id/menu_ft_decline"
+        android:title="@string/menu_ft_decline"/>
+
+    <item
+        android:id="@+id/menu_ft_download"
+        android:title="@string/menu_ft_download"/>
+
+    <item
         android:id="@+id/menu_view_group_delivery"
         android:title="@string/menu_view_group_delivery"/>
 </menu>

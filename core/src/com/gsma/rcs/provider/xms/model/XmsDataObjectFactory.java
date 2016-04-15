@@ -66,13 +66,7 @@ public class XmsDataObjectFactory {
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contact,
                 content, direction, imapSmsMessage.getDate(), readStatus,
                 imapSmsMessage.getCorrelator());
-        State state;
-        if (Direction.INCOMING == direction) {
-            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
-        } else {
-            state = State.SENT;
-        }
-        smsDataObject.setState(state);
+        smsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT );
         return smsDataObject;
     }
 
@@ -115,13 +109,7 @@ public class XmsDataObjectFactory {
         MmsDataObject mmsDataObject = new MmsDataObject(imapMmsMessage.getMmsId(), messageId,
                 contactId, imapMmsMessage.getSubject(), direction, readStatus,
                 imapMmsMessage.getDate(), null, null, mmsParts);
-        State state;
-        if (Direction.INCOMING == direction) {
-            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
-        } else {
-            state = State.SENT;
-        }
-        mmsDataObject.setState(state);
+        mmsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT );
         return mmsDataObject;
     }
 }

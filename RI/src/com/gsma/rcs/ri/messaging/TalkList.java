@@ -596,4 +596,8 @@ public class TalkList extends RcsActivity {
             Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
         }
     }
+
+    public static boolean isActivityVisible(){
+        return sActivityVisible;
+    }
 }

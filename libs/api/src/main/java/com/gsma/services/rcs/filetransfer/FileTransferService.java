@@ -606,4 +606,30 @@ public final class FileTransferService extends RcsService {
             throw new RcsGenericException(e);
         }
     }
+
+    /**
+     * Returns true if it is possible to download a file transfer (synchronized from CMS)t specified by the
+     * transferId parameter, else returns false.
+     *
+     * @param transferId
+     * @return boolean
+     * @throws RcsPersistentStorageException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public boolean isAllowedToDownloadFile(String transferId)
+            throws RcsPersistentStorageException, RcsServiceNotAvailableException,
+            RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            return mApi.isAllowedToDownloadFile(transferId);
+
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsPersistentStorageException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
 }

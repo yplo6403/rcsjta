@@ -122,6 +122,7 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
         for (String transferId : transferIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(transferId);
         }
+        mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onDeleteFileTransfer(contact, transferIds);
         mFileTransferService.broadcastOneToOneFileTransferDeleted(contact, transferIds);
     }
 }

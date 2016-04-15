@@ -373,4 +373,8 @@ public class FileTransferDAO implements Parcelable {
             }
         }
     }
+
+    public boolean isOneToOne(){
+        return mContact!=null && mContact.toString().equals(mChatId);
+    }
 }

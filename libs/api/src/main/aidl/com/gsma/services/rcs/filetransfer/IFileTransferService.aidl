@@ -61,4 +61,7 @@ interface IFileTransferService {
 	void clearFileTransferDeliveryExpiration(in List<String> transferIds);
 	
 	ICommonServiceConfiguration getCommonConfiguration();
+
+	boolean isAllowedToDownloadFile(in String transferId);
+
 }

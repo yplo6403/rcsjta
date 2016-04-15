@@ -26,6 +26,7 @@ import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 
 import android.net.Uri;
+import android.util.SparseArray;
 
 import com.gsma.services.rcs.RcsService.Direction;
 
@@ -35,6 +36,74 @@ import com.gsma.services.rcs.RcsService.Direction;
  * @author Jean-Marc AUFFRET
  */
 public class FileTransferData {
+
+    /**
+     * File transfer state
+     */
+    public enum DownloadState {
+
+        /**
+         * File transfer has been transferred on the content server and is ready for being downloaded fom secondary devices
+         */
+        QUEUED(1),
+
+        /**
+         * File transfer is being downloaded from content server
+         */
+        DOWNLOADING(2),
+
+        /**
+         * File transfer is downloaded from content server
+         */
+        DOWNLOADED(3),
+
+        /**
+         * File transfer is paused
+         */
+        PAUSED(4),
+
+        /**
+         * File transfer has failed
+         */
+        FAILED(5);
+
+        private final int mValue;
+
+        private static SparseArray<DownloadState> mValueToEnum = new SparseArray<>();
+        static {
+            for (DownloadState entry : DownloadState.values()) {
+                mValueToEnum.put(entry.toInt(), entry);
+            }
+        }
+
+        DownloadState(int value) {
+            mValue = value;
+        }
+
+        /**
+         * Returns the value of this State as an integer.
+         *
+         * @return integer value
+         */
+        public final int toInt() {
+            return mValue;
+        }
+
+        /**
+         * Returns a DownloadState instance representing the specified integer value.
+         *
+         * @param value the integer value
+         * @return State instance
+         */
+        public final static DownloadState valueOf(int value) {
+            DownloadState entry = mValueToEnum.get(value);
+            if (entry != null) {
+                return entry;
+            }
+            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
+                    .append(DownloadState.class.getName()).append("").append(value).append("!").toString());
+        }
+    }
 
     /**
      * Database URI
@@ -199,4 +268,8 @@ public class FileTransferData {
      * @see FileTransferLog#UNKNOWN_EXPIRATION
      */
     public static final long UNKNOWN_EXPIRATION = FileTransferLog.UNKNOWN_EXPIRATION;
+
+    public static final String KEY_DOWNLOAD_STATE = "download_state";
+
+    public static final String KEY_DOWNLOAD_REASON_CODE = "download_reason_code";
 }

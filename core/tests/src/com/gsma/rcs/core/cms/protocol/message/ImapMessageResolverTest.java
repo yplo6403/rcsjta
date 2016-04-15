@@ -20,18 +20,47 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 
+import com.gsma.rcs.core.cms.event.CmsEventHandler;
+import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.core.cms.integration.XmsLogEnvIntegration;
+import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
+import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
+import com.gsma.rcs.core.cms.sync.process.LocalStorage;
+import com.gsma.rcs.core.cms.xms.XmsManager;
+import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
+import com.gsma.rcs.platform.AndroidFactory;
+import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsLogTestIntegration;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
 import com.gsma.rcs.imaplib.imap.Part;
+import com.gsma.rcs.provider.messaging.MessagingLog;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.service.api.ChatServiceImpl;
+import com.gsma.rcs.service.api.CmsServiceImpl;
+import com.gsma.services.rcs.contact.ContactUtil;
 
+import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
 public class ImapMessageResolverTest extends AndroidTestCase {
 
+    private RcsSettings mSettings;
+
+    protected void setUp() throws Exception {
+        super.setUp();
+        Context context = getContext();
+        ContactUtil.getInstance(getContext());
+        mSettings = RcsSettingsMock.getMockSettings(context);
+        AndroidFactory.setApplicationContext(context, mSettings);
+    }
     public void testSms() {
 
         try {
@@ -60,7 +89,7 @@ public class ImapMessageResolverTest extends AndroidTestCase {
             metadata.getFlags().add(Flag.Seen);
             ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
 
-            ImapMessageResolver imapMessageResolver = new ImapMessageResolver();
+            ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
             MessageType type = imapMessageResolver.resolveType(imapMessage);
             Assert.assertEquals(MessageType.SMS, type);
 
@@ -100,7 +129,7 @@ public class ImapMessageResolverTest extends AndroidTestCase {
             metadata.getFlags().add(Flag.Seen);
             ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
 
-            ImapMessageResolver imapMessageResolver = new ImapMessageResolver();
+            ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
             MessageType type = imapMessageResolver.resolveType(imapMessage);
             Assert.assertEquals(MessageType.MMS, type);
         } catch (Exception e) {

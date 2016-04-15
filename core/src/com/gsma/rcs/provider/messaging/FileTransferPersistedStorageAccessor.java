@@ -19,6 +19,7 @@ package com.gsma.rcs.provider.messaging;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.fthttp.FtHttpResume;
+import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService.Direction;
@@ -335,6 +336,10 @@ public class FileTransferPersistedStorageAccessor {
 
     public boolean setStateAndReasonCode(State state, ReasonCode reasonCode) {
         return mMessagingLog.setFileTransferStateAndReasonCode(mFileTransferId, state, reasonCode);
+    }
+
+    public boolean setDownloadStateAndReasonCode(DownloadState state, ReasonCode reasonCode) {
+        return mMessagingLog.setFileTransferDownloadStateAndReasonCode(mFileTransferId, state, reasonCode);
     }
 
     public boolean setProgress(long currentSize) {

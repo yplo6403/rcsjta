@@ -60,6 +60,7 @@ import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.NetworkRessourceManager;
 import com.gsma.rcs.utils.logger.Logger;
@@ -878,7 +879,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
         }
         getImsService().getImsModule().getCmsService().getCmsManager()
                 .getImdnDeliveryReportListener()
-                .onDeliveryReport(mRcsSettings.getUserProfileImsUserName(), msgId, imdnMessageId);
+                .onDeliveryReport(getRemoteContact(), msgId, imdnMessageId);
     }
 
     /**

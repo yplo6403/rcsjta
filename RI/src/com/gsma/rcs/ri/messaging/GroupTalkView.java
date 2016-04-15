@@ -58,6 +58,7 @@ import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.contact.RcsContact;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
@@ -550,33 +551,48 @@ public class GroupTalkView extends RcsFragmentActivity implements
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_gchat_item, menu);
+        menu.findItem(R.id.menu_display_content).setVisible(false);
+        menu.findItem(R.id.menu_ft_download).setVisible(false);
+        menu.findItem(R.id.menu_ft_accept).setVisible(false);
+        menu.findItem(R.id.menu_ft_decline).setVisible(false);
         /* Get the list item position. */
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor) mAdapter.getItem(info.position);
         int providerId = cursor.getInt(cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID));
         Direction direction = Direction.valueOf(cursor.getInt(cursor
                 .getColumnIndexOrThrow(Message.DIRECTION)));
-        if (FileTransferLog.HISTORYLOG_MEMBER_ID == providerId) {
-            String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
-            boolean isImage = Utils.isImageType(mimeType);
-            if (isImage) {
-                Long transferred = cursor.getLong(cursor
-                        .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
-                Long size = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE));
-                if (!size.equals(transferred)) {
-                    /* file is not transferred: do no allow to display */
-                    menu.findItem(R.id.menu_display_content).setVisible(false);
+        try {
+            if (FileTransferLog.HISTORYLOG_MEMBER_ID == providerId) {
+                String id = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                FileTransfer.State state = FileTransfer.State.valueOf(cursor.getInt(cursor
+                        .getColumnIndexOrThrow(HistoryLog.STATUS)));
+                String mimeType = cursor.getString(cursor
+                        .getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
+                boolean isImage = Utils.isImageType(mimeType);
+                if (FileTransfer.State.INVITED == state) {
+                    menu.findItem(R.id.menu_ft_accept).setVisible(true);
+                    menu.findItem(R.id.menu_ft_decline).setVisible(true);
+                } else if (mFileTransferService.isAllowedToDownloadFile(id)) {
+                    menu.findItem(R.id.menu_ft_download).setVisible(true);
+                } else if (isImage) {
+                    if (Direction.OUTGOING == direction) {
+                        menu.findItem(R.id.menu_display_content).setVisible(true);
+                    } else if (RcsService.Direction.INCOMING == direction) {
+                        Long transferred = cursor.getLong(cursor
+                                .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
+                        Long size = cursor.getLong(cursor
+                                .getColumnIndexOrThrow(HistoryLog.FILESIZE));
+                        if (size.equals(transferred)) {
+                            menu.findItem(R.id.menu_display_content).setVisible(true);
+                        }
+                    }
                 }
-            } else {
-                // only image files are playable
-                menu.findItem(R.id.menu_display_content).setVisible(false);
+                if (Direction.OUTGOING != direction) {
+                    menu.findItem(R.id.menu_view_group_delivery).setVisible(false);
+                }
             }
-        } else {
-            // Only file are playable
-            menu.findItem(R.id.menu_display_content).setVisible(false);
-        }
-        if (Direction.OUTGOING != direction) {
-            menu.findItem(R.id.menu_view_group_delivery).setVisible(false);
+        } catch (RcsServiceNotAvailableException | RcsGenericException | RcsPersistentStorageException e) {
+            showException(e);
         }
     }
 
@@ -609,6 +625,41 @@ public class GroupTalkView extends RcsFragmentActivity implements
                                 .getColumnIndexOrThrow(HistoryLog.CONTENT));
                         Utils.showPicture(this, Uri.parse(file));
                         markFileTransferAsRead(cursor, id);
+                    }
+                    return true;
+
+                case R.id.menu_ft_download:
+                    switch (providerId) {
+                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            mFileTransferService.getFileTransfer(transferId).download();
+                            break;
+
+                        default:
+                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+                    }
+                    return true;
+
+                case R.id.menu_ft_accept:
+                    switch (providerId) {
+                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            mFileTransferService.getFileTransfer(transferId).acceptInvitation();
+                            break;
+
+                        default:
+                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+                    }
+
+                case R.id.menu_ft_decline:
+                    switch (providerId) {
+                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            mFileTransferService.getFileTransfer(transferId).rejectInvitation();
+                            break;
+
+                        default:
+                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
                     }
                     return true;
 
@@ -885,6 +936,10 @@ public class GroupTalkView extends RcsFragmentActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         try {
             switch (item.getItemId()) {
+                case R.id.menu_sync_cms:
+                    mCmsService.syncGroupConversation(mChatId);
+                    break;
+
                 case R.id.menu_insert_smiley:
                     AlertDialog alert = Smileys.showSmileyDialog(this, mComposeText,
                             getResources(), getString(R.string.menu_insert_smiley));
@@ -1079,5 +1134,9 @@ public class GroupTalkView extends RcsFragmentActivity implements
     private void getGeoLoc() {
         // Start a new activity to send a geolocation
         startActivityForResult(new Intent(this, EditGeoloc.class), SELECT_GEOLOCATION);
+    }
+
+    public static boolean isActivityVisible(){
+        return RI.sChatIdOnForeground!=null;
     }
 }

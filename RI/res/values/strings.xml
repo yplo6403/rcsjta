@@ -332,6 +332,10 @@
     <string name="menu_display_content">Display</string>
     <string name="menu_send_message">Send</string>
     <string name="menu_view_message">View</string>
+    <string name="menu_ft_resume_transfer">Resume transfer</string>
+    <string name="menu_ft_download">Download</string>
+    <string name="menu_ft_accept">Accept</string>
+    <string name="menu_ft_decline">Decline</string>
     <string name="hint_type_message">Enter your message ... </string>
 
     <!-- HistoryLog  menu -->

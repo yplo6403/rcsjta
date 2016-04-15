@@ -122,7 +122,7 @@ public class FileTransferProvider extends ContentProvider {
     public static final String DATABASE_NAME = "filetransfer.db";
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 16;
+        private static final int DATABASE_VERSION = 17;
 
         public DatabaseHelper(Context ctx) {
             super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
@@ -158,7 +158,9 @@ public class FileTransferProvider extends ContentProvider {
                     .append(FileTransferData.KEY_FILE_EXPIRATION).append(" INTEGER NOT NULL,")
                     .append(FileTransferData.KEY_REMOTE_SIP_ID).append(" TEXT,")
                     .append(FileTransferData.KEY_FILEICON_DOWNLOAD_URI).append(" TEXT,")
-                    .append(FileTransferData.KEY_FILEICON_SIZE).append(" INTEGER)").toString());
+                    .append(FileTransferData.KEY_FILEICON_SIZE).append(" INTEGER,")
+                    .append(FileTransferData.KEY_DOWNLOAD_STATE).append(" INTEGER,")
+                    .append(FileTransferData.KEY_DOWNLOAD_REASON_CODE).append(" INTEGER)").toString());
             db.execSQL(new StringBuilder("CREATE INDEX ")
                     .append(FileTransferData.KEY_BASECOLUMN_ID).append("_idx").append(" ON ")
                     .append(TABLE).append('(').append(FileTransferData.KEY_BASECOLUMN_ID)

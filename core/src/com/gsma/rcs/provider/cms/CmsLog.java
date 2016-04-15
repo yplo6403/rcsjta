@@ -93,16 +93,17 @@ public class CmsLog {
         private static final String SELECTION_PUSH_STATUS = CmsObject.KEY_PUSH_STATUS + "=?";
         private static final String SELECTION_CHAT = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.CHAT_MESSAGE + "'";
         private static final String SELECTION_IMDN = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.IMDN + "'";
+        private static final String SELECTION_FT = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.FILE_TRANSFER + "'";
         private static final String SELECTION_GROUP_STATE = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.GROUP_STATE + "'";
         private static final String SELECTION_CPM_SESSION = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.CPM_SESSION + "'";
         private static final String SELECTION_SMS = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.SMS + "'";
         private static final String SELECTION_MMS = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.MMS + "'";
         private static final String SELECTION_XMS = "(" + SELECTION_SMS + " OR " + SELECTION_MMS + ")";
 
-        private static final String SELECTION_CHAT_IMDN = "(" + SELECTION_CHAT + " OR " + SELECTION_IMDN + ")";
+        private static final String SELECTION_CHAT_IMDN_FT = "(" + SELECTION_CHAT + " OR " + SELECTION_IMDN + " OR " + SELECTION_FT + ")";
         private static final String SELECTION_XMS_MESSAGEID = SELECTION_XMS + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_CHAT_MESSAGEID = SELECTION_CHAT + " AND " + SELECTION_MESSAGE_ID;
-        private static final String SELECTION_CHAT_IMDN_MESSAGEID = SELECTION_CHAT_IMDN + " AND " + SELECTION_MESSAGE_ID;
+        private static final String SELECTION_CHAT_IMDN_FT_MESSAGEID = SELECTION_CHAT_IMDN_FT + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_GROUP_STATE_MESSAGEID = SELECTION_GROUP_STATE + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_CPM_SESSION_MESSAGEID = SELECTION_CPM_SESSION + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_SMS_MESSAGEID = SELECTION_SMS + " AND " + SELECTION_MESSAGE_ID;
@@ -432,8 +433,8 @@ public class CmsLog {
      * @param messageId the ID
      * @return CmsObject
      */
-    public CmsObject getChatOrImdnData(String messageId) {
-        return getData(messageId, Message.SELECTION_CHAT_IMDN_MESSAGEID);
+    public CmsObject getChatOrImdnOrFileTransferData(String messageId) {
+        return getData(messageId, Message.SELECTION_CHAT_IMDN_FT_MESSAGEID);
     }
 
     /**

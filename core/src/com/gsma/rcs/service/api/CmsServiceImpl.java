@@ -99,7 +99,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService,
+    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService,
             XmsLog xmsLog, RcsSettings rcsSettings, XmsManager xmsManager,
             LocalContentResolver localContentResolver) {
         if (sLogger.isActivated()) {
@@ -107,8 +107,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
         mCtx = ctx;
         mCmsService = cmsService;
-        mCmsService.register(this);
-        mCmsService.register(chatService);
+        mCmsService.register(this, chatService, fileTransferService);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;

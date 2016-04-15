@@ -33,6 +33,7 @@ import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
+import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -234,13 +235,15 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
         for (CmsObject cmsObject : cmsObjects) {
             Integer uid = cmsObject.getUid();
             if (uid == null) { // search uid on CMS server
-                switch (cmsObject.getMessageType()) {
+                MessageType messageType = cmsObject.getMessageType();
+                switch (messageType) {
                     case CHAT_MESSAGE:
+                    case FILE_TRANSFER:
                         uid = basicImapService.searchUidWithHeader(
                                 Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
                         if (uid != null) {
                             cmsObject.setUid(uid);
-                            mCmsLog.updateUid(CmsObject.MessageType.CHAT_MESSAGE,
+                            mCmsLog.updateUid(messageType,
                                     cmsObject.getMessageId(), uid);
                         }
                         break;

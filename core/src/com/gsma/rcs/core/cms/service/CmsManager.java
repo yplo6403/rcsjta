@@ -20,6 +20,7 @@ package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.cms.event.ChatEventHandler;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
+import com.gsma.rcs.core.cms.event.FileTransferEventHandler;
 import com.gsma.rcs.core.cms.event.GroupChatEventHandler;
 import com.gsma.rcs.core.cms.event.ImdnDeliveryReportHandler;
 import com.gsma.rcs.core.cms.event.ImdnDeliveryReportListener;
@@ -39,9 +40,12 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
+import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.HandlerThread;
 
 import java.util.Set;
 
@@ -55,6 +59,7 @@ public class CmsManager implements XmsMessageListener {
     private final RcsSettings mRcsSettings;
     private XmsEventHandler mXmsEventHandler;
     private ChatEventHandler mChatEventHandler;
+    private FileTransferEventHandler mFileTransferEventHandler;
     private GroupChatEventHandler mGroupChatEventHandler;
     private LocalStorage mLocalStorage;
     private EventFrameworkManager mEventFrameworkManager;
@@ -89,7 +94,7 @@ public class CmsManager implements XmsMessageListener {
      * @param chatService the RCS chat service
      * @param xmsEventHandler XMS event handler
      */
-    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService,
+    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService,
             XmsEventHandler xmsEventHandler) {
         // execute sync between providers in a dedicated thread
         new Thread(new XmsSynchronizer(mCtx.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
@@ -97,10 +102,10 @@ public class CmsManager implements XmsMessageListener {
 
         // instantiate CmsEventHandler in charge of handling events from Cms
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mCmsLog, mXmsLog,
-                mMessagingLog, chatService, cmsService, mRcsSettings);
+                mMessagingLog, chatService, fileTransferService, cmsService, mRcsSettings, mImsModule.getInstantMessagingService());
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
-        mLocalStorage = new LocalStorage(mCmsLog, cmsEventHandler);
+        mLocalStorage = new LocalStorage(mRcsSettings, mCmsLog, cmsEventHandler);
 
         // start scheduler for sync
         if (mRcsSettings.getMessageStoreUri() != null) {
@@ -139,7 +144,15 @@ public class CmsManager implements XmsMessageListener {
         mGroupChatEventHandler = new GroupChatEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
 
+
         mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings, mSyncScheduler);
+
+        /*
+         * instantiate FileTransferEventHandler in charge of handling events from FileSharingSession, read or
+         * deletion of file transfer.
+         */
+        mFileTransferEventHandler = new FileTransferEventHandler(mEventFrameworkManager, mCmsLog,
+                mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
     }
 
     /**
@@ -195,4 +208,7 @@ public class CmsManager implements XmsMessageListener {
         return mSyncScheduler;
     }
 
+    public FileTransferEventHandler getFileTransferEventHandler() {
+        return mFileTransferEventHandler;
+    }
 }

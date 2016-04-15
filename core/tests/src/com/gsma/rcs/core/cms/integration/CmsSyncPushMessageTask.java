@@ -155,12 +155,12 @@ public class CmsSyncPushMessageTask extends CmsSyncSchedulerTask {
                     SmsDataObject sms = (SmsDataObject) message;
                     imapMessage = new ImapSmsMessage(from, to, direction, sms.getTimestamp(),
                             sms.getBody(), UUID.randomUUID().toString(), UUID.randomUUID()
-                                    .toString(), "" + message.getTimestamp());
+                                    .toString(), message.getMessageId());
                 } else if (message instanceof MmsDataObject) {
                     MmsDataObject mms = (MmsDataObject) message;
                     imapMessage = new ImapMmsMessage(mContext, from, to, direction,
                             mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), "" + mms.getTimestamp(), mms.getMmsId(),
+                            UUID.randomUUID().toString(), mms.getMessageId(), mms.getMmsId(),
                             mms.getMmsParts());
                 }
                 String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());

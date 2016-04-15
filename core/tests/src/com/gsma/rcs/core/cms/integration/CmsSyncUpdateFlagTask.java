@@ -89,13 +89,15 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
             for (CmsObject cmsObject : cmsObjects) {
                 Integer uid = cmsObject.getUid();
                 if (uid == null) { // search uid on CMS server
-                    switch (cmsObject.getMessageType()) {
+                    MessageType messageType = cmsObject.getMessageType();
+                    switch (messageType) {
                         case CHAT_MESSAGE:
+                        case FILE_TRANSFER:
                             uid = basicImapService.searchUidWithHeader(
                                     Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
                             if (uid != null) {
                                 cmsObject.setUid(uid);
-                                mCmsLog.updateUid(MessageType.CHAT_MESSAGE,
+                                mCmsLog.updateUid(messageType,
                                         cmsObject.getMessageId(), uid);
                             }
                             break;

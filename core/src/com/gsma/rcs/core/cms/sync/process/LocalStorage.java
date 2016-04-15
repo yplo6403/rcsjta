@@ -35,6 +35,7 @@ import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
 import java.util.ArrayList;
@@ -66,10 +67,10 @@ public class LocalStorage {
      * 
      * @param cmsLog IMAP log accessor
      */
-    public LocalStorage(CmsLog cmsLog, CmsEventListener cmsEventListener) {
+    public LocalStorage(RcsSettings rcsSettings, CmsLog cmsLog, CmsEventListener cmsEventListener) {
         mCmsLog = cmsLog;
         mCmsEventListener = cmsEventListener;
-        mMessageResolver = new ImapMessageResolver();
+        mMessageResolver = new ImapMessageResolver(rcsSettings);
     }
 
     /**
@@ -257,6 +258,7 @@ public class LocalStorage {
         mapOfMessages.put(MessageType.CPM_SESSION, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.CHAT_MESSAGE, new ArrayList<IImapMessage>());
+        mapOfMessages.put(MessageType.FILE_TRANSFER, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.SMS, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.MMS, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.IMDN, new ArrayList<IImapMessage>());

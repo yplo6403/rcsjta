@@ -57,6 +57,7 @@ import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
+import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
@@ -101,14 +102,15 @@ public class SmsTest extends AndroidTestCase {
                 mSettings, null, messagingLog, null, mLocalContentResolver, context, null);
         ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, messagingLog,
                 null, mSettings, null);
+        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(instantMessagingService,chatService, messagingLog, mSettings, null, context);
         XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
         CmsService cmsService = new CmsService(null, null, context, mSettings, mXmsLog,
                 messagingLog, mCmsLog);
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService, fileTransferService,
                 mXmsLog, mSettings, xmsManager, mLocalContentResolver);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mCmsLog, mXmsLog,
-                messagingLog, chatService, cmsServiceImpl, mSettings);
-        LocalStorage localStorage = new LocalStorage(mCmsLog, cmsEventHandler);
+                messagingLog, chatService, fileTransferService, cmsServiceImpl, mSettings, null);
+        LocalStorage localStorage = new LocalStorage(mSettings, mCmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
         mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage,

@@ -311,7 +311,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mXmsLog,
+            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mFtApi, mXmsLog,
                     mRcsSettings, core.getXmsManager(), mLocalContentResolver);
             // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
             mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings, mCmsApi);

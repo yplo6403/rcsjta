@@ -657,6 +657,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             /* Always insert with State QUEUED */
             addOutgoingOneToOneFileTransfer(fileTransferId, contact, content, fileIconContent,
                     State.QUEUED, timestamp, timestampSent);
+            mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onNewFileTransfer(contact, Direction.OUTGOING, fileTransferId);
 
             OneToOneFileTransferImpl oneToOneFileTransfer = getOrCreateOneToOneFileTransfer(fileTransferId);
             mImService.tryToDequeueFileTransfers();
@@ -832,6 +833,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             /* Always insert file transfer with status QUEUED */
             addOutgoingGroupFileTransfer(fileTransferId, chatId, content, fileIconContent,
                     State.QUEUED, timestamp, timestamp);
+            mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onNewGroupFileTransfer(chatId, Direction.OUTGOING, fileTransferId);
             if (!mChatService.isGroupChatActive(chatId)) {
                 /*
                  * Set inactive group chat as active as it now has a queued entry that has to be
@@ -1215,7 +1217,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         try {
             /* No notification type corresponds currently to mark as read */
             mMessagingLog.markFileTransferAsRead(transferId);
-
+            mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onReadFileTransfer(transferId);
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {
                 sLogger.error(ExceptionUtil.getFullStackTrace(e));
@@ -1369,6 +1371,19 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
      */
     public ICommonServiceConfiguration getCommonConfiguration() {
         return new CommonServiceConfigurationImpl(mRcsSettings);
+    }
+
+    /**
+     * Returns true if it is possible to download the file transfer specified by the
+     * transferId parameter, else returns false.
+     *
+     * @param transferId the chat ID
+     * @return boolean
+     * @throws RemoteException
+     */
+    @Override
+    public boolean isAllowedToDownloadFile(String transferId) throws RemoteException {
+        return mMessagingLog.isAllowedToDownloadFileTransfer(transferId);
     }
 
     /**

@@ -30,6 +30,7 @@ import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDo
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.fthttp.FtHttpResume;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeUpload;
+import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content;
@@ -227,6 +228,13 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
+    public boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId,
+            DownloadState state, FileTransfer.ReasonCode reasonCode) {
+        return mFileTransferLog
+                .setFileTransferDownloadStateAndReasonCode(fileTransferId, state, reasonCode);
+    }
+
+    @Override
     public boolean setFileTransferDelivered(String fileTransferId, long timestampDelivered) {
         return mFileTransferLog.setFileTransferDelivered(fileTransferId, timestampDelivered);
     }
@@ -347,8 +355,19 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
+    public ContactId getFileTransferContact(String fileTransferId) {
+        return mFileTransferLog.getFileTransferContact(fileTransferId);
+    }
+
+
+    @Override
     public FileTransfer.State getFileTransferState(String fileTransferId) {
         return mFileTransferLog.getFileTransferState(fileTransferId);
+    }
+
+    @Override
+    public DownloadState getFileTransferDownloadState(String fileTransferId) {
+        return mFileTransferLog.getFileTransferDownloadState(fileTransferId);
     }
 
     @Override
@@ -585,6 +604,12 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
+    public FileTransferHttpInfoDocument getCmsFileTransferInfo(String fileTransferId)
+            throws FileAccessException {
+        return mFileTransferLog.getCmsFileTransferInfo(fileTransferId);
+    }
+
+    @Override
     public FileTransferHttpInfoDocument getFileDownloadInfo(Cursor cursor)
             throws FileAccessException {
         return mFileTransferLog.getFileDownloadInfo(cursor);
@@ -620,6 +645,16 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg) {
         mMessageLog.addGroupChatFailedDeliveryMessage(chatId, msg);
+    }
+
+    @Override
+    public boolean isAllowedToDownloadFileTransfer(String fileTransferId) {
+        return mFileTransferLog.isAllowedToDownloadFileTransfer(fileTransferId);
+    }
+
+    @Override
+    public boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration) {
+        return mFileTransferLog.setFileTransferFileExpiration(fileTransferId, fileExpiration);
     }
 
     @Override

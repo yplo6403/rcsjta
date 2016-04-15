@@ -27,6 +27,7 @@ import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.provider.fthttp.FtHttpResume;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeUpload;
+import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
@@ -117,6 +118,17 @@ public interface IFileTransferLog {
      */
     boolean setFileTransferStateAndReasonCode(String fileTransferId, State state,
             ReasonCode reasonCode);
+
+    /**
+     * Set file transfer download state and reason code.
+     *
+     * @param fileTransferId File transfer ID
+     * @param state File transfer download state
+     * @param reasonCode File transfer download state reason code
+     * @return True if an entry was updated, otherwise false
+     */
+    boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId, DownloadState state,
+                                              ReasonCode reasonCode);
 
     /**
      * Set file transfer state, reason code, timestamp and timestampSent
@@ -236,12 +248,28 @@ public interface IFileTransferLog {
     String getFileTransferChatId(String fileTransferId);
 
     /**
+     * Get the contactId for a file transfer with specific id
+     *
+     * @param fileTransferId specific id
+     * @return contactId
+     */
+    ContactId getFileTransferContact(String fileTransferId);
+
+    /**
      * Get file transfer state from its unique ID
      * 
      * @param fileTransferId Unique ID of file transfer
      * @return State
      */
     State getFileTransferState(String fileTransferId);
+
+    /**
+     * Get file transfer download state from its unique ID
+     *
+     * @param fileTransferId Unique ID of file transfer
+     * @return DownloadState
+     */
+    DownloadState getFileTransferDownloadState(String fileTransferId);
 
     /**
      * Get file transfer reason code from its unique ID
@@ -385,6 +413,16 @@ public interface IFileTransferLog {
             throws FileAccessException;
 
     /**
+     * Get file transfer download info from CMS synchronization
+     *
+     * @param fileTransferId the file transfer ID
+     * @return FileTransferHttpInfoDocument
+     * @throws FileAccessException
+     */
+    FileTransferHttpInfoDocument getCmsFileTransferInfo(String fileTransferId)
+            throws FileAccessException;
+
+    /**
      * Get file download info
      * 
      * @param cursor the cursor
@@ -418,4 +456,21 @@ public interface IFileTransferLog {
      * @return the number of transferred bytes
      */
     Long getFileTransferProgress(String fileTransferId);
+
+    /**
+     * Check if the file transfer can be downloaded
+     *
+     * @param fileTransferId File transfer ID
+     * @return True if the file transfer can be downloaded
+     */
+    boolean isAllowedToDownloadFileTransfer(String fileTransferId);
+
+    /**
+     * Set file expiration.
+     *
+     * @param fileTransferId the file transfer ID
+     * @param fileExpiration the file expiration
+     * @return True if an entry was updated, otherwise false
+     */
+    boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration);
 }

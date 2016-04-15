@@ -127,6 +127,7 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
     @Override
     protected void onCompleted(String chatId, Set<String> transferIds) {
         mFileTransferService.broadcastGroupFileTransfersDeleted(chatId, transferIds);
+        mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onDeleteGroupFileTransfer(chatId, transferIds);
     }
 
 }

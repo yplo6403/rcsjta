@@ -24,6 +24,7 @@ import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.chat.ChatLog.Message;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;
@@ -91,7 +92,7 @@ public class SipEventFrameworkDocument {
             }
             return "";
         }
-        if (MessageType.CHAT_MESSAGE == messageType) {
+        if (MessageType.CHAT_MESSAGE == messageType || MessageType.FILE_TRANSFER == messageType) {
             String folder = object.getFolder();
             ContactId contact = CmsUtils.cmsFolderToContact(folder);
             if (contact != null) { // 1-1

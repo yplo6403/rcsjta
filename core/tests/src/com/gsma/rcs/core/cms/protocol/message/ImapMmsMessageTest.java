@@ -20,10 +20,12 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.ContactUtil;
 
@@ -42,6 +44,7 @@ import java.util.List;
 
 public class ImapMmsMessageTest extends AndroidTestCase {
 
+    private static RcsSettings mSettings;
     private String mPayload;
     private String mBoundary;
     private long mDate;
@@ -52,6 +55,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
+        mSettings = RcsSettingsMock.getMockSettings(getContext());
         com.gsma.services.rcs.contact.ContactUtil.getInstance(getContext());
 
         mBoundary = "boundary_1446218793256";
@@ -191,7 +195,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                 metadata.getFlags().add(Flag.Seen);
                 ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
 
-                ImapMessageResolver imapMessageResolver = new ImapMessageResolver();
+                ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
                 MessageType type = imapMessageResolver.resolveType(imapMessage);
                 Assert.assertEquals(MessageType.SMS, type);
 
@@ -231,7 +235,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                 metadata.getFlags().add(Flag.Seen);
                 ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
 
-                ImapMessageResolver imapMessageResolver = new ImapMessageResolver();
+                ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
                 MessageType type = imapMessageResolver.resolveType(imapMessage);
                 Assert.assertEquals(MessageType.MMS, type);
             } catch (Exception e) {

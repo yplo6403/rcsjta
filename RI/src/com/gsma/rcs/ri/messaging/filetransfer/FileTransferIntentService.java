@@ -23,6 +23,7 @@ import static com.gsma.rcs.ri.utils.FileUtils.takePersistableContentUriPermissio
 import com.gsma.rcs.api.connection.ConnectionManager;
 import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.ri.R;
+import com.gsma.rcs.ri.messaging.GroupTalkView;
 import com.gsma.rcs.ri.messaging.OneToOneTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
 import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
@@ -54,6 +55,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.TableLayout;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -176,15 +178,21 @@ public class FileTransferIntentService extends IntentService {
         PendingIntent pi = PendingIntent.getActivity(this, uniqueId, intent,
                 PendingIntent.FLAG_ONE_SHOT);
 
-        String displayName = RcsContactUtil.getInstance(this).getDisplayName(contact);
-        String title = getString(R.string.title_recv_file_transfer);
-        String message = getString(R.string.label_from_args, displayName);
-
+        boolean displayNotification = true;
+        if (TalkList.isActivityVisible()) {
+            TalkList.notifyNewConversationEvent(this, FileTransferIntent.ACTION_NEW_INVITATION);
+        } else {
+            displayNotification = ftDao.isOneToOne() ? !OneToOneTalkView.isActivityVisible() : !GroupTalkView.isActivityVisible();
+        }
         /* Send notification */
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification notif = buildNotification(pi, title, message);
-        notificationManager.notify(uniqueId, notif);
-        TalkList.notifyNewConversationEvent(this, FileTransferIntent.ACTION_NEW_INVITATION);
+        if(displayNotification){
+            String displayName = RcsContactUtil.getInstance(this).getDisplayName(contact);
+            String title = getString(R.string.title_recv_file_transfer);
+            String message = getString(R.string.label_from_args, displayName);
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            Notification notif = buildNotification(pi, title, message);
+            notificationManager.notify(ftDao.getTransferId(), uniqueId, notif);
+        }
     }
 
     private void handleUndeliveredFileTransfer(Intent intent, String transferId) {

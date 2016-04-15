@@ -40,6 +40,7 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
+import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.service.api.ServerApiUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
@@ -65,6 +66,7 @@ public class CmsService extends ImsService {
     private final XmsLog mXmsLog;
     private final CmsLog mCmsLog;
     private CmsServiceImpl mCmsServiceImpl;
+    private FileTransferServiceImpl mFileTransferServiceImpl;
     private ChatServiceImpl mChatServiceImpl;
     private final Core mCore;
     private final Context mContext;
@@ -106,18 +108,15 @@ public class CmsService extends ImsService {
         return new Handler(thread.getLooper());
     }
 
-    public void register(CmsServiceImpl service) {
+    public void register(CmsServiceImpl cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService) {
         if (sLogger.isActivated()) {
-            sLogger.debug(service.getClass().getName() + " registered ok.");
-        }
-        mCmsServiceImpl = service;
-    }
-
-    public void register(ChatServiceImpl chatService) {
-        if (sLogger.isActivated()) {
+            sLogger.debug(cmsService.getClass().getName() + " registered ok.");
             sLogger.debug(chatService.getClass().getName() + " registered ok.");
+            sLogger.debug(fileTransferService.getClass().getName() + " registered ok.");
         }
+        mCmsServiceImpl = cmsService;
         mChatServiceImpl = chatService;
+        mFileTransferServiceImpl = fileTransferService;
     }
 
     public void initialize(XmsEventHandler xmsEventHandler) {
@@ -130,7 +129,7 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
-        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mXmsEventHandler);
+        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mFileTransferServiceImpl, mXmsEventHandler);
         // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }

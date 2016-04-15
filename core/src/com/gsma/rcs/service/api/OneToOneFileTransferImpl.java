@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -38,12 +38,17 @@ import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.ImsFileSharingSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.DownloadFromAcceptFileSharingSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.DownloadFromResumeFileSharingSession;
+import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferDownloadListener;
+import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferDownloadSession;
+import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.HttpFileTransferSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.ResumeUploadFileSharingSession;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.fthttp.FtHttpResume;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeDownload;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeUpload;
+import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.rcs.provider.messaging.FileTransferPersistedStorageAccessor;
 import com.gsma.rcs.provider.messaging.FileTransferStateAndReasonCode;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -66,7 +71,7 @@ import android.os.RemoteException;
  * @author Jean-Marc AUFFRET
  */
 public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
-        FileSharingSessionListener {
+        FileSharingSessionListener, FileTransferDownloadListener {
 
     private final String mFileTransferId;
 
@@ -1317,6 +1322,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                 mPersistentStorage.addOneToOneFileTransfer(contact, Direction.INCOMING, file,
                         fileIcon, State.INVITED, ReasonCode.UNSPECIFIED, timestamp, timestampSent,
                         fileExpiration, fileIconExpiration);
+                mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onNewFileTransfer(contact, Direction.INCOMING, mFileTransferId);
             }
         }
 
@@ -1335,6 +1341,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                 mPersistentStorage.addOneToOneFileTransfer(contact, Direction.INCOMING, file,
                         fileIcon, State.ACCEPTING, ReasonCode.UNSPECIFIED, timestamp,
                         timestampSent, fileExpiration, fileIconExpiration);
+                mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onNewFileTransfer(contact, Direction.INCOMING, mFileTransferId);
             }
         }
 
@@ -1401,7 +1408,80 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
     }
 
     @Override
+    public void download() throws RemoteException {
+        mImService.scheduleImOperation(new Runnable() {
+            public void run() {
+                try {
+                    if (sLogger.isActivated()) {
+                        sLogger.info("Download file transfer");
+                    }
+
+                    FileTransferHttpInfoDocument fileTransferHttpInfoDocument  = mMessagingLog.getCmsFileTransferInfo(mFileTransferId);
+                    if (fileTransferHttpInfoDocument.getExpiration() < NtpTrustedTime.currentTimeMillis()) {
+                        sLogger.error(new StringBuilder(
+                                "Cannot download transfer with fileTransferId '")
+                                .append(mFileTransferId).append("': file has expired").toString());
+                        return;
+                    }
+                    FileSharingSession session = new FileTransferDownloadSession(
+                            mImService,
+                            fileTransferHttpInfoDocument,
+                            mFileTransferId,
+                            mPersistentStorage.getChatId(),
+                            mPersistentStorage.getRemoteContact(),
+                            mRcsSettings,
+                            mMessagingLog,
+                            mPersistentStorage.getTimestamp());
+                    session.addListener(OneToOneFileTransferImpl.this);
+                    session.startSession();
+
+                } catch (FileAccessException | RuntimeException e) {
+                    /*
+                     * Intentionally catch runtime exceptions as else it will abruptly end the
+                     * thread and eventually bring the whole system down, which is not intended.
+                     */
+                    sLogger.error(
+                            new StringBuilder(
+                                    "Failed to download file transfer with fileTransferId : ")
+                                    .append(mFileTransferId).toString(), e);
+                }
+            }
+        });
+    }
+
+    @Override
     public void onHttpDownloadInfoAvailable() {
         mImService.tryToDequeueFileTransfers();
+    }
+
+    @Override
+    public void onFileTransferDownloadStarted(ContactId contact) {
+        if (sLogger.isActivated()) {
+            sLogger.info("File transfer started");
+        }
+        synchronized (mLock) {
+            mPersistentStorage.setDownloadStateAndReasonCode(DownloadState.DOWNLOADING, ReasonCode.UNSPECIFIED);
+        }
+    }
+
+    @Override
+    public void onFileTransferDownloadPausedBySystem(ContactId contact) {
+        if (sLogger.isActivated()) {
+            sLogger.info("File transfer paused by system");
+        }
+        synchronized (mLock) {
+            mPersistentStorage.setDownloadStateAndReasonCode(DownloadState.PAUSED, ReasonCode.PAUSED_BY_SYSTEM);
+        }
+    }
+
+    @Override
+    public void onFileTransferDownloaded(ContactId contact) {
+        if (sLogger.isActivated()) {
+            sLogger.info("File transfer downloaded");
+        }
+        synchronized (mLock) {
+            mFileTransferService.removeOneToOneFileTransfer(mFileTransferId);
+            mPersistentStorage.setDownloadStateAndReasonCode(DownloadState.DOWNLOADED, ReasonCode.UNSPECIFIED);
+        }
     }
 }

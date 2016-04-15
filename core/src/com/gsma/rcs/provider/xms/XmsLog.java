@@ -297,7 +297,6 @@ public class XmsLog {
         }
         ContentValues values = new ContentValues();
         values.put(XmsData.KEY_READ_STATUS, RcsService.ReadStatus.READ.toInt());
-        values.put(XmsData.KEY_STATE, State.DISPLAYED.toInt());
         if (mLocalContentResolver.update(Uri.withAppendedPath(XmsData.CONTENT_URI, messageId),
                 values, null, null) < 1) {
             if (sLogger.isActivated()) {

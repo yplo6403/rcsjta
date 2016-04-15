@@ -820,4 +820,20 @@ public class FileTransfer {
             throw new RcsGenericException(e);
         }
     }
+
+    /**
+     * Download a file transfer
+     *
+     * @throws RcsPermissionDeniedException
+     * @throws RcsGenericException
+     */
+    public void download() throws RcsPermissionDeniedException, RcsGenericException {
+        try {
+            mTransferInf.download();
+        } catch (Exception e) {
+            RcsPermissionDeniedException.assertException(e);
+            RcsUnsupportedOperationException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
 }

@@ -27,11 +27,13 @@ import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpThumbnail;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.fthttp.FtHttpResume;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeDownload;
 import com.gsma.rcs.provider.fthttp.FtHttpResumeUpload;
+import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
@@ -325,6 +327,29 @@ public class FileTransferLog implements IFileTransferLog {
                 null) > 0;
     }
 
+    /**
+     * Set file transfer download state and reason code.
+     *
+     * @param fileTransferId File transfer ID
+     * @param state File transfer download state (see restriction above)
+     * @param reasonCode File transfer download state reason code
+     */
+    @Override
+    public boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId, DownloadState state,
+                                                     ReasonCode reasonCode) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("setFileTransferDownloadStateAndReasonCode: fileTransferId=" + fileTransferId
+                    + ", downloadState=" + state + ", downloadReasonCode=" + reasonCode);
+        }
+
+        ContentValues values = new ContentValues();
+        values.put(FileTransferData.KEY_DOWNLOAD_STATE, state.toInt());
+        values.put(FileTransferData.KEY_DOWNLOAD_REASON_CODE, reasonCode.toInt());
+        return mLocalContentResolver.update(
+                Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values, null,
+                null) > 0;
+    }
+
     @Override
     public int markFileTransferAsRead(String fileTransferId) {
         if (sLogger.isActivated()) {
@@ -354,6 +379,47 @@ public class FileTransferLog implements IFileTransferLog {
             return null;
         }
         return getDataAsLong(cursor);
+    }
+
+    public boolean isAllowedToDownloadFileTransfer(String fileTransferId) {
+
+        DownloadState downloadState = getFileTransferDownloadState(fileTransferId);
+        if(downloadState == null){
+            return false;
+        }
+
+        if(DownloadState.QUEUED != downloadState && DownloadState.PAUSED != downloadState){
+            return false;
+        }
+
+        if(isFileTransferFileExpired(fileTransferId)){
+            if(sLogger.isActivated()){
+                sLogger.debug("isAllowedToDownloadFileTransfer : file transfer has expired, fileTransferId : " + fileTransferId);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("setFileTansferFileExpiration fileTransferId=".concat(fileTransferId));
+        }
+        ContentValues values = new ContentValues();
+        values.put(FileTransferData.KEY_FILE_EXPIRATION, fileExpiration);
+        return mLocalContentResolver.update(
+                Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values, null,
+                null) > 0;
+    }
+
+    private boolean isFileTransferFileExpired(String fileTransferId) {
+        Long now = NtpTrustedTime.currentTimeMillis();
+        Cursor cursor = getFileTransferData(FileTransferData.KEY_FILE_EXPIRATION, fileTransferId);
+        if (cursor == null) {
+            return true;
+        }
+        return now > getDataAsLong(cursor);
     }
 
     @Override
@@ -480,6 +546,7 @@ public class FileTransferLog implements IFileTransferLog {
                 boolean isGroup = !chatId.equals(phoneNumber);
                 MmContent content = ContentManager.createMmContentFromMime(Uri.parse(file),
                         mimeType, size, fileName);
+
                 Uri fileIconUri = fileIcon != null ? Uri.parse(fileIcon) : null;
                 if (direction == Direction.INCOMING) {
 
@@ -490,10 +557,10 @@ public class FileTransferLog implements IFileTransferLog {
                     /*
                      * File transfer is paused by system only if already accepted
                      */
-                    fileTransfers.add(new FtHttpResumeDownload(Uri.parse(downloadUri), Uri
-                            .parse(file), fileIconUri, content, contact, chatId, fileTransferId,
-                            isGroup, timestamp, timestampSent, fileExpiration, iconExpiration,
-                            true, remoteSipId));
+                    fileTransfers.add(new FtHttpResumeDownload(Uri.parse(downloadUri),
+                            Uri.parse(file), fileIconUri, content, contact, chatId, fileTransferId,
+                            isGroup, timestamp, timestampSent, fileExpiration, iconExpiration, true,
+                            remoteSipId));
                 } else {
                     String tId = cursor.getString(tIdColumnIdx);
                     fileTransfers.add(new FtHttpResumeUpload(content, fileIconUri, tId, contact,
@@ -645,6 +712,19 @@ public class FileTransferLog implements IFileTransferLog {
     }
 
     @Override
+    public DownloadState getFileTransferDownloadState(String fileTransferId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Get file transfer download state for ".concat(fileTransferId));
+        }
+        Cursor cursor = getFileTransferData(FileTransferData.KEY_DOWNLOAD_STATE, fileTransferId);
+        if (cursor == null) {
+            return null;
+        }
+        Integer value = getDataAsInteger(cursor);
+        return value == null ? null : DownloadState.valueOf(value);
+    }
+
+    @Override
     public ReasonCode getFileTransferReasonCode(String fileTransferId) {
         if (sLogger.isActivated()) {
             sLogger.debug("Get file transfer reason code for ".concat(fileTransferId));
@@ -687,6 +767,19 @@ public class FileTransferLog implements IFileTransferLog {
             return null;
         }
         return getDataAsString(cursor);
+    }
+
+    @Override
+    public ContactId getFileTransferContact(String fileTransferId) {
+        Cursor cursor = getFileTransferData(MessageData.KEY_CONTACT, fileTransferId);
+        if (cursor == null) {
+            return null;
+        }
+        String number = getDataAsString(cursor);
+        if (number == null) {
+            return null;
+        }
+        return ContactUtil.createContactIdFromTrustedData(number);
     }
 
     @Override
@@ -747,6 +840,7 @@ public class FileTransferLog implements IFileTransferLog {
                     .getColumnIndexOrThrow(FileTransferData.KEY_FILENAME));
             String fileMimetype = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferData.KEY_MIME_TYPE));
+
             boolean isGroup = !chatId.equals(phoneNumber);
             Uri file = Uri.parse(fileUri);
             MmContent content = ContentManager.createMmContentFromMime(file, fileMimetype,
@@ -954,6 +1048,38 @@ public class FileTransferLog implements IFileTransferLog {
             }
             return getFileDownloadInfo(cursor);
 
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    @Override
+    public FileTransferHttpInfoDocument getCmsFileTransferInfo(String fileTransferId)
+            throws FileAccessException {
+        Cursor cursor = null;
+        try {
+            Uri contentUri = Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId);
+            cursor = mLocalContentResolver.query(contentUri, null, null, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, FileTransferData.CONTENT_URI);
+            if (!cursor.moveToNext()) {
+                return null;
+            }
+
+            String file = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferData.KEY_DOWNLOAD_URI));
+            if (file == null) {
+                throw new FileAccessException(
+                        "File download URI not available for file transfer ID=".concat(fileTransferId));
+            }
+            String fileName = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferData.KEY_FILENAME));
+            int size = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferData.KEY_FILESIZE));
+            String mimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferData.KEY_MIME_TYPE));
+            long fileExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferData.KEY_FILE_EXPIRATION));
+            return new FileTransferHttpInfoDocument(mRcsSettings, Uri.parse(file), fileName, size,
+                    mimeType, fileExpiration, null);
         } finally {
             CursorUtil.close(cursor);
         }

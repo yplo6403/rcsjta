@@ -39,6 +39,7 @@ import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsPersistentStorageException;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatService;
@@ -349,39 +350,39 @@ public class TalkCursorAdapter extends CursorAdapter {
                     stringBuilder.append(" (")
                             .append(FileUtils.humanReadableByteCount(filesize, true)).append(")")
                             .toString());
-        }
-        final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
-        if (Utils.isImageType(mimeType)) {
-            String filePath = FileUtils.getPath(mContext, file);
-            Bitmap imageBitmap = null;
-            if (filePath != null) {
-                LruCache<String, BitmapCacheInfo> memoryCache = bitmapCache.getMemoryCache();
-                BitmapCacheInfo bitmapCacheInfo = memoryCache.get(filePath);
-                if (bitmapCacheInfo == null) {
-                    ImageBitmapLoader loader = new ImageBitmapLoader(mContext, memoryCache,
-                            MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, new BitmapLoader.SetViewCallback() {
-                                @Override
-                                public void loadView(BitmapLoader.BitmapCacheInfo cacheInfo) {
-                                    imageView.setImageBitmap(cacheInfo.getBitmap());
-                                    imageView.setLayoutParams(mImageParams);
-                                }
-                            });
-                    loader.execute(filePath);
-                } else {
-                    imageBitmap = bitmapCacheInfo.getBitmap();
-                }
-                if (imageBitmap != null) {
-                    imageView.setImageBitmap(imageBitmap);
-                    imageView.setLayoutParams(mImageParams);
-                }
-                imageView.setOnClickListener(new View.OnClickListener() {
-
-                    @Override
-                    public void onClick(View v) {
-                        // TODO FG on secondary device, file may not be transferred
-                        Utils.showPicture(mActivity, file);
+            final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
+            if (Utils.isImageType(mimeType)) {
+                String filePath = FileUtils.getPath(mContext, file);
+                Bitmap imageBitmap = null;
+                if (filePath != null) {
+                    LruCache<String, BitmapCacheInfo> memoryCache = bitmapCache.getMemoryCache();
+                    BitmapCacheInfo bitmapCacheInfo = memoryCache.get(filePath);
+                    if (bitmapCacheInfo == null) {
+                        ImageBitmapLoader loader = new ImageBitmapLoader(mContext, memoryCache,
+                                MAX_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, new BitmapLoader.SetViewCallback() {
+                            @Override
+                            public void loadView(BitmapLoader.BitmapCacheInfo cacheInfo) {
+                                imageView.setImageBitmap(cacheInfo.getBitmap());
+                                imageView.setLayoutParams(mImageParams);
+                            }
+                        });
+                        loader.execute(filePath);
+                    } else {
+                        imageBitmap = bitmapCacheInfo.getBitmap();
                     }
-                });
+                    if (imageBitmap != null) {
+                        imageView.setImageBitmap(imageBitmap);
+                        imageView.setLayoutParams(mImageParams);
+                    }
+                    imageView.setOnClickListener(new View.OnClickListener() {
+
+                        @Override
+                        public void onClick(View v) {
+                            // TODO FG on secondary device, file may not be transferred
+                            Utils.showPicture(mActivity, file);
+                        }
+                    });
+                }
             }
         }
         holder.getStatusText().setText(getRcsFileTransferStatus(cursor, holder));
@@ -397,10 +398,14 @@ public class TalkCursorAdapter extends CursorAdapter {
                 .getColumnFilenameIdx()));
         long filesize = cursor.getLong(holder.getColumnFilesizeIdx());
         long transferred = cursor.getLong(holder.getColumnTransferredIdx());
+        final String id = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+        final RcsService.ReadStatus readStatus = RcsService.ReadStatus.valueOf(cursor
+                .getInt(holder.getColumnReadStatusIdx()));
         final ImageView imageView = holder.getFileImageView();
         imageView.setOnClickListener(null);
         imageView.setLayoutParams(mImageParamsDefault);
         imageView.setImageResource(R.drawable.ri_filetransfer_off);
+        markFileTransferAsRead(id, readStatus);
         if (filesize != transferred) {
             holder.getProgressText().setText(
                     stringBuilder.append(" : ")
@@ -408,9 +413,6 @@ public class TalkCursorAdapter extends CursorAdapter {
         } else {
             imageView.setImageResource(R.drawable.ri_filetransfer_on);
             final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
-            final RcsService.ReadStatus readStatus = RcsService.ReadStatus.valueOf(cursor
-                    .getInt(holder.getColumnReadStatusIdx()));
-            final String id = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
             if (Utils.isImageType(mimeType)) {
                 final String filePath = FileUtils.getPath(mContext, file);
                 Bitmap imageBitmap = null;
@@ -440,7 +442,6 @@ public class TalkCursorAdapter extends CursorAdapter {
                         @Override
                         public void onClick(View v) {
                             Utils.showPicture(mActivity, file);
-                            markFileTransferAsRead(id, readStatus);
                         }
                     });
                 }

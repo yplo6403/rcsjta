@@ -1303,12 +1303,12 @@ public class InstantMessagingService extends ImsService {
 
                     ContactId contact = ContactUtil.createContactIdFromValidatedData(number);
                     String msgId = imdn.getMsgId();
-
+                    String imdnMessageId = ChatUtils.getMessageId(message);
                     String chatId = mMessagingLog.getMessageChatId(msgId);
                     if (chatId != null) {
-                        String imdnMessageId = ChatUtils.getMessageId(message);
-                        getImsModule().getCmsService().getCmsManager().getChatEventHandler()
-                                .onMessageDeliveryStatusReceived(contact, imdn, imdnMessageId);
+                        getImsModule().getCmsService().getCmsManager()
+                                .getImdnDeliveryReportListener()
+                                .onDeliveryReport(chatId, contact, msgId, imdnMessageId);
                         if (chatId.equals(contact.toString())) {
                             if (sLogger.isActivated()) {
                                 sLogger.debug("Handle one to one message delivery status");
@@ -1322,6 +1322,9 @@ public class InstantMessagingService extends ImsService {
                     }
                     chatId = mMessagingLog.getFileTransferChatId(msgId);
                     if (chatId != null) {
+                        getImsModule().getCmsService().getCmsManager()
+                                .getImdnDeliveryReportListener()
+                                .onDeliveryReport(chatId, contact, imdn.getMsgId(), imdnMessageId);
                         if (chatId.equals(contact.toString())) {
                             receiveOneToOneFileDeliveryStatus(contact, imdn);
                             return;
