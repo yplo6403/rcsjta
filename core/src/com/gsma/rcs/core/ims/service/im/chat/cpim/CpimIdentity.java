@@ -64,11 +64,7 @@ public class CpimIdentity {
             if (matcher.groupCount() == 2) {
                 String result = matcher.group(1).trim();
                 displayName = (result.length() == 0) ? null : result;
-                String rawUri = matcher.group(2);
-                if(rawUri.contains("?")){ // remove Accept-Contact parameter & SipInstance
-                    rawUri = rawUri.substring(0,rawUri.indexOf("?"));
-                }
-                uri = rawUri;
+                uri = matcher.group(2);
                 return;
             }
         }

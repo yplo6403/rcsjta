@@ -29,8 +29,6 @@ import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
-import com.gsma.rcs.core.ims.network.sip.FeatureTags;
-import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpEventListener;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpManager;
@@ -60,7 +58,6 @@ import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.NetworkRessourceManager;
 import com.gsma.rcs.utils.logger.Logger;
@@ -87,41 +84,14 @@ import javax.xml.parsers.ParserConfigurationException;
 public abstract class ChatSession extends ImsServiceSession implements MsrpEventListener {
 
     private String mSubject;
-
     private final MsrpManager mMsrpMgr;
-
-    /**
-     * Is composing manager
-     */
     private final IsComposingManager mIsComposingMgr = new IsComposingManager(this);
-
-    /**
-     * Session activity manager
-     */
     private final SessionActivityManager mActivityMgr;
-
     private String mContributionId;
-
-    /**
-     * Feature tags
-     */
     private List<String> mFeatureTags = new ArrayList<>();
-
-    /**
-     * Feature tags
-     */
     private List<String> mAcceptContactTags = new ArrayList<>();
-
-    /**
-     * Accept types
-     */
     private String mAcceptTypes = "";
-
-    /**
-     * Wrapped types
-     */
     private String mWrappedTypes = "";
-
     private static final Logger sLogger = Logger.getLogger(ChatSession.class.getSimpleName());
 
     protected final MessagingLog mMessagingLog;
@@ -150,10 +120,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             // Message already received
             return;
         }
-
         // Is composing event is reset
         mIsComposingMgr.receiveIsComposingEvent(msg.getRemoteContact(), false);
-
         if (msgSupportsImdnReport && mImdnManager.isDeliveryDeliveredReportsEnabled()) {
             try {
                 sendMsrpMessageDeliveryStatus(remoteId, cpimMsgId,
@@ -246,7 +214,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * 
      * @return Accept types
      */
-    public String getAcceptTypes() {
+    protected String getAcceptTypes() {
         return mAcceptTypes;
     }
 
@@ -255,9 +223,9 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * 
      * @param types Accept types
      */
-    public void addAcceptTypes(String types) {
+    protected void addAcceptTypes(String types) {
         if (mAcceptTypes.isEmpty()) {
-            mAcceptTypes += types;
+            mAcceptTypes = types;
         } else {
             mAcceptTypes += " " + types;
         }
@@ -268,7 +236,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * 
      * @return Wrapped types
      */
-    public String getWrappedTypes() {
+    protected String getWrappedTypes() {
         return mWrappedTypes;
     }
 
@@ -277,9 +245,9 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * 
      * @param types Wrapped types
      */
-    public void addWrappedTypes(String types) {
+    protected void addWrappedTypes(String types) {
         if (mWrappedTypes.isEmpty()) {
-            mWrappedTypes += types;
+            mWrappedTypes = types;
         } else {
             mWrappedTypes += " " + types;
         }
@@ -349,22 +317,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      */
     public MsrpManager getMsrpMgr() {
         return mMsrpMgr;
-    }
-
-    /**
-     * Set geolocation supported by remote
-     * 
-     * @param supported Supported
-     */
-    public void setGeolocSupportedByRemote(boolean supported) {
-    }
-
-    /**
-     * Set file transfer supported by remote
-     * 
-     * @param supported Supported
-     */
-    public void setFileTransferSupportedByRemote(boolean supported) {
     }
 
     /**
@@ -458,7 +410,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             }
             return;
         }
-
         if (ChatUtils.isApplicationIsComposingType(mimeType)) {
             receiveIsComposing(getRemoteContact(), data);
             return;
@@ -489,16 +440,13 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                 if (cpimMsgId == null) {
                     cpimMsgId = msgId;
                 }
-
                 String contentType = cpimMsg.getContentType();
                 ContactId contact = getRemoteContact();
                 /*
                  * In One to One chat, the MSRP 'from' header is '<sip:anonymous@anonymous.invalid>'
                  */
-
                 boolean imdnDisplayedRequested = false;
                 boolean msgSupportsImdnReport = true;
-
                 String dispositionNotification = cpimMsg
                         .getHeader(ImdnUtils.HEADER_IMDN_DISPO_NOTIF);
                 if (!isGroupChat()) {
@@ -508,7 +456,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                         imdnDisplayedRequested = true;
                     }
                 }
-
                 boolean isFToHTTP = FileTransferUtils.isFileTransferHttpType(contentType);
                 /**
                  * Set message's timestamp to the System.currentTimeMillis, not the session's itself
@@ -516,7 +463,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                  */
                 long timestamp = NtpTrustedTime.currentTimeMillis();
                 long timestampSent = cpimMsg.getTimestampSent();
-
                 if (isFToHTTP) {
                     FileTransferHttpInfoDocument fileInfo = FileTransferUtils
                             .parseFileTransferHttpDocument(
@@ -866,8 +812,6 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                 typeMsrpChunk = TypeMsrpChunk.MessageDeliveredReport;
             }
         }
-
-        // Send data
         sendDataChunks(IdGenerator.generateMessageID(), content, CpimMessage.MIME_TYPE,
                 typeMsrpChunk);
         if (ImdnDocument.DELIVERY_STATUS_DISPLAYED.equals(status)) {
@@ -906,14 +850,10 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * Prepare media session
      */
     public void prepareMediaSession() {
-        // Changed by Deutsche Telekom
         // Get the remote SDP part
         byte[] sdp = getDialogPath().getRemoteContent().getBytes(UTF8);
-
-        // Changed by Deutsche Telekom
         // Create the MSRP session
         MsrpSession session = getMsrpMgr().createMsrpSession(sdp, this);
-
         session.setFailureReportOption(false);
         session.setSuccessReportOption(false);
     }
@@ -942,33 +882,11 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
     public abstract void rejectSession();
 
     /**
-     * Handle 200 0K response
-     * 
-     * @param resp 200 OK response
-     * @throws PayloadException
-     * @throws NetworkException
-     * @throws FileAccessException
-     */
-    public void handle200OK(SipResponse resp) throws PayloadException, NetworkException,
-            FileAccessException {
-        super.handle200OK(resp);
-
-        // Check if geolocation push supported by remote
-        setGeolocSupportedByRemote(SipUtils.isFeatureTagPresent(resp,
-                FeatureTags.FEATURE_RCSE_GEOLOCATION_PUSH));
-
-        // Check if file transfer supported by remote
-        setFileTransferSupportedByRemote(SipUtils.isFeatureTagPresent(resp,
-                FeatureTags.FEATURE_RCSE_FT)
-                || SipUtils.isFeatureTagPresent(resp, FeatureTags.FEATURE_RCSE_FT_HTTP));
-    }
-
-    /**
      * Is media session established
      * 
      * @return true If the empty packet was sent successfully
      */
     public boolean isMediaEstablished() {
-        return (getMsrpMgr().isEstablished() && !getDialogPath().isSessionTerminated());
+        return getMsrpMgr().isEstablished() && !getDialogPath().isSessionTerminated();
     }
 }

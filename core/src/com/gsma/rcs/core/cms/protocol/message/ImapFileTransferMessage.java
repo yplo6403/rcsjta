@@ -34,8 +34,6 @@ import com.gsma.services.rcs.contact.ContactId;
 
 public class ImapFileTransferMessage extends ImapCpimMessage {
 
-    final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
-
     private final boolean isOneToOne;
     private final String mChatId;
     private String mImdnId;
@@ -63,7 +61,7 @@ public class ImapFileTransferMessage extends ImapCpimMessage {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
                     + " IMAP header is missing");
         }
-        isOneToOne = ANONYMOUS.equals(from);
+        isOneToOne = ImapChatMessage.ANONYMOUS.equals(from);
 
         CpimMessage cpim = (CpimMessage)getBodyPart();
         if (!cpim.getPayload().isEmpty()) {
@@ -95,13 +93,12 @@ public class ImapFileTransferMessage extends ImapCpimMessage {
     /**
      * For OneToOne Imdn, get contact from IMAP headers For GC Imdn, get contact from CPIM headers.
      * 
-     * @return
+     * @return contactId
      */
     public ContactId getContact() {
         if (isOneToOne) {
             return super.getContact();
         }
-
         String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
         if (from.startsWith("<") && from.endsWith(">")) {
             from = from.substring(1, from.length() - 1);

@@ -23,19 +23,16 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimIdentity;
-import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.net.Uri;
-
 public class ImapChatMessage extends ImapCpimMessage {
 
-    final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
+    /* package private */final static String ANONYMOUS = "<" + ChatUtils.ANONYMOUS_URI + ">";
 
     private final boolean mIsOneToOne;
     private final String mChatId;
@@ -44,28 +41,29 @@ public class ImapChatMessage extends ImapCpimMessage {
     public ImapChatMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
-
         mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
         if (mChatId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
                     + " IMAP header is missing");
         }
-
         String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
         if (from == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
                     + " IMAP header is missing");
         }
         mIsOneToOne = ANONYMOUS.equals(from);
-
-        if(mIsOneToOne) {
+        if (mIsOneToOne) {
             mContact = super.getContact();
-        } else if( Direction.OUTGOING == getDirection()) {
+
+        } else if (Direction.OUTGOING == getDirection()) {
             mContact = null;
-        } else{ // For incoming GC msg, retrieve contact from the "from" CPIM header
-            String uri = new CpimIdentity(getCpimMessage().getHeader(Constants.HEADER_FROM)).getUri();
+
+        } else { // For incoming GC msg, retrieve contact from the "from" CPIM header
+            String uri = new CpimIdentity(getCpimMessage().getHeader(Constants.HEADER_FROM))
+                    .getUri();
             PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(uri);
-            mContact = (phoneNumber != null) ? ContactUtil.createContactIdFromValidatedData(phoneNumber) : null;
+            mContact = (phoneNumber != null) ? ContactUtil
+                    .createContactIdFromValidatedData(phoneNumber) : null;
         }
     }
 
