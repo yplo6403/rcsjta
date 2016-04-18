@@ -52,6 +52,7 @@ import com.gsma.rcs.utils.logger.Logger;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 
@@ -88,7 +89,7 @@ public class Core {
     /**
      * Handler to process messages & runnable associated with background thread.
      */
-    private final Handler mBackgroundHandler;
+    private Handler mBackgroundHandler;
 
     /**
      * Boolean to check is the Core is stopping
@@ -192,11 +193,6 @@ public class Core {
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
         mXmsManager = new XmsManager(ctx, contentResolver);
-        final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
-        // TODO FG never start in constructor
-        backgroundThread.start();
-
-        mBackgroundHandler = new Handler(backgroundThread.getLooper());
 
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(ctx);
@@ -264,6 +260,11 @@ public class Core {
         if (mStarted) {
             return;
         }
+
+        final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
+        backgroundThread.start();
+        mBackgroundHandler = new Handler(backgroundThread.getLooper());
+
         mImsModule.start();
         mAddressBookManager.start();
         mXmsManager.start();
@@ -294,6 +295,13 @@ public class Core {
         if (logActivated) {
             sLogger.info("Stop the RCS core service");
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            mBackgroundHandler.getLooper().quitSafely();
+        } else {
+            mBackgroundHandler.getLooper().quit();
+        }
+
         mLocaleManager.stop();
         mAddressBookManager.stop();
         mXmsManager.stop();

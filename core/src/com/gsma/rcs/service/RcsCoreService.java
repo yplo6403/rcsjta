@@ -79,6 +79,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -253,6 +254,13 @@ public class RcsCoreService extends Service implements CoreListener {
                      * thread and eventually bring the whole system down, which is not intended.
                      */
                     sLogger.error("Unable to stop IMS core!", e);
+                }
+                finally {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                        mBackgroundHandler.getLooper().quitSafely();
+                    } else {
+                        mBackgroundHandler.getLooper().quit();
+                    }
                 }
             }
         });
