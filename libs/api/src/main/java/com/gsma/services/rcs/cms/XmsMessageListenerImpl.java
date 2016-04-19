@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@
 
 package com.gsma.services.rcs.cms;
 
-import android.os.RemoteException;
-
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.os.RemoteException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -36,13 +36,15 @@ public class XmsMessageListenerImpl extends IXmsMessageListener.Stub {
 
     private final XmsMessageListener mListener;
 
-    /*package private*/XmsMessageListenerImpl(XmsMessageListener listener) {
+    /* package private */XmsMessageListenerImpl(XmsMessageListener listener) {
         mListener = listener;
     }
 
     @Override
-    public void onStateChanged(ContactId contact, String mimeType, String msgId, int state, int reasonCode) throws RemoteException {
-        mListener.onStateChanged(contact, mimeType, msgId, XmsMessage.State.valueOf(state), XmsMessage.ReasonCode.valueOf(reasonCode));
+    public void onStateChanged(ContactId contact, String mimeType, String msgId, int state,
+            int reasonCode) throws RemoteException {
+        mListener.onStateChanged(contact, mimeType, msgId, XmsMessage.State.valueOf(state),
+                XmsMessage.ReasonCode.valueOf(reasonCode));
     }
 
     @Override

@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -20,16 +20,15 @@
 
 package com.gsma.services.rcs.cms;
 
-import android.util.SparseArray;
-
 import com.gsma.services.rcs.RcsGenericException;
 import com.gsma.services.rcs.RcsPersistentStorageException;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.util.SparseArray;
+
 /**
- * XMS message
- * Created by Philippe LEMORDANT on 12/11/2015.
+ * XMS message Created by Philippe LEMORDANT on 12/11/2015.
  */
 public class XmsMessage {
 
@@ -79,7 +78,7 @@ public class XmsMessage {
 
         private final int mValue;
 
-        private State(int value) {
+        State(int value) {
             mValue = value;
         }
 
@@ -94,7 +93,8 @@ public class XmsMessage {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException("No enum const class " + State.class.getName() + "" + value + "!");
+            throw new IllegalArgumentException("No enum const class " + State.class.getName() + ""
+                    + value + "!");
         }
 
         /**
@@ -108,18 +108,10 @@ public class XmsMessage {
     }
 
     public enum ReasonCode {
-        UNSPECIFIED(0),
-        FAILED_ERROR_GENERIC_FAILURE(1),
-        FAILED_ERROR_RADIO_OFF(2),
-        FAILED_ERROR_NULL_PDU(3),
-        FAILED_ERROR_NO_SERVICE(4),
-        FAILED_MMS_ERROR_PART_NOT_FOUND(5),
-        FAILED_MMS_ERROR_INVALID_APN(6),
-        FAILED_MMS_ERROR_UNABLE_CONNECT_MMS(7),
-        FAILED_MMS_ERROR_HTTP_FAILURE(8),
-        FAILED_MMS_ERROR_IO_ERROR(9),
-        FAILED_MMS_ERROR_RETRY(10),
-        FAILED_MMS_ERROR_CONFIGURATION_ERROR(11);
+        UNSPECIFIED(0), FAILED_ERROR_GENERIC_FAILURE(1), FAILED_ERROR_RADIO_OFF(2), FAILED_ERROR_NULL_PDU(
+                3), FAILED_ERROR_NO_SERVICE(4), FAILED_MMS_ERROR_PART_NOT_FOUND(5), FAILED_MMS_ERROR_INVALID_APN(
+                6), FAILED_MMS_ERROR_UNABLE_CONNECT_MMS(7), FAILED_MMS_ERROR_HTTP_FAILURE(8), FAILED_MMS_ERROR_IO_ERROR(
+                9), FAILED_MMS_ERROR_RETRY(10), FAILED_MMS_ERROR_CONFIGURATION_ERROR(11);
         private static SparseArray<ReasonCode> mValueToEnum = new SparseArray<>();
 
         static {
@@ -130,7 +122,7 @@ public class XmsMessage {
 
         private final int mValue;
 
-        private ReasonCode(int value) {
+        ReasonCode(int value) {
             mValue = value;
         }
 
@@ -145,7 +137,8 @@ public class XmsMessage {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException("No enum const class " + ReasonCode.class.getName() + "" + value + "!");
+            throw new IllegalArgumentException("No enum const class " + ReasonCode.class.getName()
+                    + "" + value + "!");
         }
 
         /**
@@ -162,9 +155,8 @@ public class XmsMessage {
      * Constructor
      *
      * @param iXmsMessage XMS message interface
-     * @hide
      */
-    /* package private */ XmsMessage(IXmsMessage iXmsMessage) {
+    /* package private */XmsMessage(IXmsMessage iXmsMessage) {
         mIXmsMessage = iXmsMessage;
     }
 
@@ -225,7 +217,8 @@ public class XmsMessage {
      * @throws RcsGenericException
      * @see RcsService.Direction
      */
-    public RcsService.Direction getDirection() throws RcsPersistentStorageException, RcsGenericException {
+    public RcsService.Direction getDirection() throws RcsPersistentStorageException,
+            RcsGenericException {
         try {
             return RcsService.Direction.valueOf(mIXmsMessage.getDirection());
 
@@ -272,8 +265,8 @@ public class XmsMessage {
     }
 
     /**
-     * Gets the local timestamp of when the XMS message was delivered for outgoing messages or 0
-     * for incoming messages or it was not yet delivered.
+     * Gets the local timestamp of when the XMS message was delivered for outgoing messages or 0 for
+     * incoming messages or it was not yet delivered.
      *
      * @return long
      * @throws RcsPersistentStorageException
@@ -342,8 +335,8 @@ public class XmsMessage {
 
     /**
      * Gets the content text message. <br>
-     * If the message is a SMS, content is set to the body text.
-     * If the message is a MMS, content is set to the subject.
+     * If the message is a SMS, content is set to the body text. If the message is a MMS, content is
+     * set to the subject.
      *
      * @return String
      * @throws RcsPersistentStorageException

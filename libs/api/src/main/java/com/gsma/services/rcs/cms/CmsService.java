@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -141,6 +141,7 @@ public final class CmsService extends RcsService {
      * Set API interface
      *
      * @param api API interface
+     * @hide
      */
     protected void setApi(IInterface api) {
         super.setApi(api);
@@ -166,6 +167,7 @@ public final class CmsService extends RcsService {
             ICmsSynchronizationListener rcsListener = new CmsSynchronizationListenerImpl(listener);
             mCmsSyncListeners.put(listener, new WeakReference<>(rcsListener));
             mApi.addEventListener(rcsListener);
+
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             throw new RcsGenericException(e);
@@ -211,6 +213,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.syncAll();
+
         } catch (Exception e) {
             RcsServiceNotAvailableException.assertException(e);
             throw new RcsGenericException(e);
@@ -253,6 +256,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.syncGroupConversation(chatId);
+
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             RcsServiceNotAvailableException.assertException(e);
@@ -300,7 +304,6 @@ public final class CmsService extends RcsService {
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
-
             throw new RcsGenericException(e);
         }
     }
@@ -426,7 +429,6 @@ public final class CmsService extends RcsService {
             if (rcsListener != null) {
                 mApi.removeEventListener2(rcsListener);
             }
-
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             throw new RcsGenericException(e);
@@ -445,6 +447,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.deleteXmsMessages();
+
         } catch (Exception e) {
             throw new RcsGenericException(e);
         }
@@ -464,6 +467,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.deleteXmsMessages2(contact);
+
         } catch (Exception e) {
             throw new RcsGenericException(e);
         }
@@ -483,6 +487,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.deleteXmsMessage(msgId);
+
         } catch (Exception e) {
             throw new RcsGenericException(e);
         }
@@ -519,6 +524,7 @@ public final class CmsService extends RcsService {
         }
         try {
             mApi.deleteImapData();
+
         } catch (Exception e) {
             throw new RcsGenericException(e);
         }

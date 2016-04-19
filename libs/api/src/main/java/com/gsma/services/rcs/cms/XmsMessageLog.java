@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 
 /**
- * Content provider for XMS message
- * Created by Philippe LEMORDANT on 12/11/2015.
+ * Content provider for XMS message Created by Philippe LEMORDANT on 12/11/2015.
  */
 public class XmsMessageLog {
 
@@ -53,9 +52,8 @@ public class XmsMessageLog {
      */
     public static final String MESSAGE_ID = "msg_id";
     /**
-     * The name of the column containing the unique ID of the chat conversation.
-     * Used for the aggregation of messaging providers and always set to the contact
-     * in case of XMS messages.
+     * The name of the column containing the unique ID of the chat conversation. Used for the
+     * aggregation of messaging providers and always set to the contact in case of XMS messages.
      * <p/>
      * Type: TEXT
      * </P>
@@ -69,9 +67,8 @@ public class XmsMessageLog {
      */
     public static final String CONTACT = "contact";
     /**
-     * The name of the column containing the XMS message content.
-     * In case of SMS, content is set to the body text message.
-     * In case of MMS, content is set to the subject.
+     * The name of the column containing the XMS message content. In case of SMS, content is set to
+     * the body text message. In case of MMS, content is set to the subject.
      * <p/>
      * Type: TEXT
      * </P>
@@ -156,6 +153,10 @@ public class XmsMessageLog {
          */
         public static final String MULTIMEDIA_MESSAGE = "application/mms";
 
+        private MimeType() {
+        }
     }
 
+    private XmsMessageLog() {
+    }
 }

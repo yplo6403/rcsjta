@@ -16,24 +16,34 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.gsma.services.rcs;
+package com.gsma.services.rcs.capability;
+
+import com.gsma.services.rcs.contact.ContactId;
+
+import android.os.RemoteException;
 
 /**
- * Service registration events listener
+ * Capabilities event listener implementation
  * 
- * @author Jean-Marc AUFFRET
+ * @author Philippe LEMORDANT
+ * @hide
  */
-public abstract class RcsServiceRegistrationListener {
+public class CapabilitiesListenerImpl extends ICapabilitiesListener.Stub {
+
+    private final CapabilitiesListener mListener;
 
     /**
-     * Callback called when service is registered to the network platform
-     */
-    public abstract void onServiceRegistered();
-
-    /**
-     * Callback called when service is unregistered from the network platform
+     * Constructor
      * 
-     * @param reasonCode the reason code
+     * @param listener Capabilities listener
      */
-    public abstract void onServiceUnregistered(RcsServiceRegistration.ReasonCode reasonCode);
+    public CapabilitiesListenerImpl(CapabilitiesListener listener) {
+        mListener = listener;
+    }
+
+    @Override
+    public void onCapabilitiesReceived(ContactId contact, Capabilities capabilities)
+            throws RemoteException {
+        mListener.onCapabilitiesReceived(contact, capabilities);
+    }
 }

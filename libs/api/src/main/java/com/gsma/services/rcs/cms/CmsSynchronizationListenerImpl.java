@@ -27,7 +27,7 @@ public class CmsSynchronizationListenerImpl extends ICmsSynchronizationListener.
 
     private final CmsSynchronizationListener mListener;
 
-    /*package private*/CmsSynchronizationListenerImpl(CmsSynchronizationListener listener) {
+    /* package private */CmsSynchronizationListenerImpl(CmsSynchronizationListener listener) {
         mListener = listener;
     }
 

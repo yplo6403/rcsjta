@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import com.gsma.services.rcs.contact.ContactId;
  * 
  * @author Jean-Marc AUFFRET
  */
-public abstract class CapabilitiesListener extends ICapabilitiesListener.Stub {
+public abstract class CapabilitiesListener {
     /**
      * Callback called when new capabilities are received for a given contact
      * 

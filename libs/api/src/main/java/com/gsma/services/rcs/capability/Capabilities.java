@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,20 @@
 
 package com.gsma.services.rcs.capability;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import android.os.Parcel;
-import android.os.Parcelable;
 
 /**
  * Capabilities of a contact. This class encapsulates the different capabilities which may be
  * supported by the local user or a remote contact.
  * 
  * @author Jean-Marc AUFFRET
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class Capabilities implements Parcelable {
     /**
@@ -62,7 +62,7 @@ public class Capabilities implements Parcelable {
     /**
      * List of supported extensions
      */
-    private Set<String> mExtensions = new HashSet<String>();
+    private Set<String> mExtensions = new HashSet<>();
 
     /**
      * Automata flag
@@ -102,7 +102,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Constructor
-     * 
+     *
      * @param source Parcelable source
      * @hide
      */
@@ -114,9 +114,9 @@ public class Capabilities implements Parcelable {
 
         boolean containsExtension = source.readInt() != 0;
         if (containsExtension) {
-            List<String> exts = new ArrayList<String>();
+            List<String> exts = new ArrayList<>();
             source.readStringList(exts);
-            mExtensions = new HashSet<String>(exts);
+            mExtensions = new HashSet<>(exts);
         } else {
             mExtensions = null;
         }
@@ -128,7 +128,7 @@ public class Capabilities implements Parcelable {
     /**
      * Describe the kinds of special objects contained in this Parcelable's marshalled
      * representation
-     * 
+     *
      * @return Integer
      * @hide
      */
@@ -138,7 +138,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Write parcelable object
-     * 
+     *
      * @param dest The Parcel in which the object should be written
      * @param flags Additional flags about how the object should be written
      * @hide
@@ -150,7 +150,7 @@ public class Capabilities implements Parcelable {
         dest.writeInt(mFileTransfer ? 1 : 0);
         if (mExtensions != null) {
             dest.writeInt(1);
-            List<String> exts = new ArrayList<String>(mExtensions);
+            List<String> exts = new ArrayList<>(mExtensions);
             dest.writeStringList(exts);
         } else {
             dest.writeInt(0);
@@ -162,7 +162,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Parcelable creator
-     * 
+     *
      * @hide
      */
     public static final Parcelable.Creator<Capabilities> CREATOR = new Parcelable.Creator<Capabilities>() {
@@ -177,7 +177,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is image sharing supported
-     * 
+     *
      * @return true if supported else returns false
      */
     public boolean isImageSharingSupported() {
@@ -186,7 +186,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is video sharing supported
-     * 
+     *
      * @return true if supported else returns false
      */
     public boolean isVideoSharingSupported() {
@@ -195,7 +195,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is IM session supported
-     * 
+     *
      * @return true if supported else returns false
      */
     public boolean isImSessionSupported() {
@@ -204,7 +204,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is file transfer supported
-     * 
+     *
      * @return true if supported else returns false
      */
     public boolean isFileTransferSupported() {
@@ -213,7 +213,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is geolocation push supported
-     * 
+     *
      * @return true if supported else returns false
      */
     public boolean isGeolocPushSupported() {
@@ -222,7 +222,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is extension supported
-     * 
+     *
      * @param tag Feature tag
      * @return true if supported else returns false
      */
@@ -231,8 +231,8 @@ public class Capabilities implements Parcelable {
     }
 
     /**
-     * Get list of supported extensions
-     * 
+     * Gets the set of supported extensions
+     *
      * @return Set of feature tags
      */
     public Set<String> getSupportedExtensions() {
@@ -241,7 +241,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Is automata
-     * 
+     *
      * @return true if it's an automata else returns false
      */
     public boolean isAutomata() {
@@ -250,7 +250,7 @@ public class Capabilities implements Parcelable {
 
     /**
      * Timestamp of the last capability response (in milliseconds)
-     * 
+     *
      * @return the timestamp of the last capability response
      */
     public long getTimestamp() {

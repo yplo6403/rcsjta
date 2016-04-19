@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,9 +47,12 @@ public abstract class RcsService {
      */
     public static final String ACTION_SERVICE_PROVISIONING_DATA_CHANGED = "com.gsma.services.rcs.action.SERVICE_PROVISIONING_DATA_CHANGED";
 
+    /**
+     * @hide
+     */
     protected final RcsServiceControl mRcsServiceControl;
 
-    private final Map<RcsServiceRegistrationListener, WeakReference<IRcsServiceRegistrationListener>> mRegistrationListeners = new WeakHashMap<RcsServiceRegistrationListener, WeakReference<IRcsServiceRegistrationListener>>();
+    private final Map<RcsServiceRegistrationListener, WeakReference<IRcsServiceRegistrationListener>> mRegistrationListeners = new WeakHashMap<>();
 
     /**
      * Information about the current build
@@ -114,14 +117,14 @@ public abstract class RcsService {
 
         private final int mValue;
 
-        private static SparseArray<Direction> mValueToEnum = new SparseArray<Direction>();
+        private static SparseArray<Direction> mValueToEnum = new SparseArray<>();
         static {
             for (Direction entry : Direction.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
             }
         }
 
-        private Direction(int value) {
+        Direction(int value) {
             mValue = value;
         }
 
@@ -137,17 +140,16 @@ public abstract class RcsService {
         /**
          * Returns a Direction instance for the specified integer value.
          * 
-         * @param value
+         * @param value the value associated to the Direction
          * @return instance
          */
-        public final static Direction valueOf(int value) {
+        public static Direction valueOf(int value) {
             Direction entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(Direction.class.getName()).append("").append(value).append("!")
-                    .toString());
+            throw new IllegalArgumentException("No enum const class " + Direction.class.getName()
+                    + "" + value + "!");
         }
     }
 
@@ -166,14 +168,14 @@ public abstract class RcsService {
 
         private final int mValue;
 
-        private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<ReadStatus>();
+        private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<>();
         static {
             for (ReadStatus entry : ReadStatus.values()) {
                 mValueToEnum.put(entry.toInt(), entry);
             }
         }
 
-        private ReadStatus(int value) {
+        ReadStatus(int value) {
             mValue = value;
         }
 
@@ -189,27 +191,30 @@ public abstract class RcsService {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          * 
-         * @param value
+         * @param value the value associated to the ReadStatus
          * @return instance
          */
-        public final static ReadStatus valueOf(int value) {
+        public static ReadStatus valueOf(int value) {
             ReadStatus entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ReadStatus.class.getName()).append("").append(value).append("!")
-                    .toString());
+            throw new IllegalArgumentException("No enum const class " + ReadStatus.class.getName()
+                    + "" + value + "!");
         }
     }
 
     /**
      * Application context
+     * 
+     * @hide
      */
     protected Context mCtx;
 
     /**
      * Service listener
+     * 
+     * @hide
      */
     protected RcsServiceListener mListener;
 
@@ -228,6 +233,7 @@ public abstract class RcsService {
      * 
      * @param ctx Application context
      * @param listener Service listener
+     * @hide
      */
     public RcsService(Context ctx, RcsServiceListener listener) {
         mCtx = ctx;
@@ -269,6 +275,7 @@ public abstract class RcsService {
      * Set API interface
      * 
      * @param api API interface
+     * @hide
      */
     protected void setApi(IInterface api) {
         mApi = api;
@@ -378,9 +385,9 @@ public abstract class RcsService {
         try {
             IRcsServiceRegistrationListener rcsListener = new RcsServiceRegistrationListenerImpl(
                     listener);
-            mRegistrationListeners.put(listener,
-                    new WeakReference<IRcsServiceRegistrationListener>(rcsListener));
+            mRegistrationListeners.put(listener, new WeakReference<>(rcsListener));
             callApiMethod("addEventListener", rcsListener, IRcsServiceRegistrationListener.class);
+
         } catch (Exception e) {
             throw new RcsGenericException(e);
         }

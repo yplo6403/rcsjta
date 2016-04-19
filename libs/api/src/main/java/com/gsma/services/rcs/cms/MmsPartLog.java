@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 
 /**
- * Content provider for MMS part
- * Created by Philippe LEMORDANT on 12/11/2015.
+ * Content provider for MMS part Created by Philippe LEMORDANT on 12/11/2015.
  */
 public class MmsPartLog {
     /**
@@ -56,24 +55,24 @@ public class MmsPartLog {
      */
     public static final String MIME_TYPE = "mime_type";
     /**
-     * The name of the column containing the filename or null
-     * if the mime-type column is "text/plain".
+     * The name of the column containing the filename or null if the mime-type column is
+     * "text/plain".
      * <p/>
      * Type: TEXT
      * </P>
      */
     public static final String FILENAME = "filename";
     /**
-     * The name of the column containing the file size or null
-     * if the mime-type column is "text/plain".
+     * The name of the column containing the file size or null if the mime-type column is
+     * "text/plain".
      * <p/>
      * Type: INTEGER
      * </P>
      */
     public static final String FILESIZE = "filesize";
     /**
-     * The name of the column containing the URI of the file or the
-     * body text depending on the mime-type column content.
+     * The name of the column containing the URI of the file or the body text depending on the
+     * mime-type column content.
      * <p/>
      * Type: TEXT
      * </P>
@@ -109,5 +108,10 @@ public class MmsPartLog {
          */
         public static final String APPLICATION_SMIL = "application/smil";
 
+        private MimeType() {
+        }
+    }
+
+    private MmsPartLog() {
     }
 }

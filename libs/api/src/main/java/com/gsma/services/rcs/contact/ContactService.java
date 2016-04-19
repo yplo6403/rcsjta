@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -107,6 +107,7 @@ public final class ContactService extends RcsService {
      * Set API interface
      * 
      * @param api API interface
+     * @hide
      */
     protected void setApi(IInterface api) {
         super.setApi(api);
@@ -167,7 +168,7 @@ public final class ContactService extends RcsService {
     }
 
     /**
-     * Returns the list of rcs contacts
+     * Returns the list of RCS contacts
      * 
      * @return Set&lt;RcsContact&gt; List of contacts
      * @throws RcsPersistentStorageException
@@ -181,7 +182,7 @@ public final class ContactService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return new HashSet<RcsContact>(mApi.getRcsContacts());
+            return new HashSet<>(mApi.getRcsContacts());
 
         } catch (Exception e) {
             RcsPersistentStorageException.assertException(e);
@@ -204,7 +205,7 @@ public final class ContactService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return new HashSet<RcsContact>(mApi.getRcsContactsOnline());
+            return new HashSet<>(mApi.getRcsContactsOnline());
 
         } catch (Exception e) {
             RcsPersistentStorageException.assertException(e);
@@ -229,7 +230,7 @@ public final class ContactService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return new HashSet<RcsContact>(mApi.getRcsContactsSupporting(serviceId));
+            return new HashSet<>(mApi.getRcsContactsSupporting(serviceId));
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);

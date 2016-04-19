@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,8 +42,10 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.os.IInterface;
 
-import java.util.Iterator;
+import java.lang.ref.WeakReference;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Capability service offers the main entry point to read capabilities of remote contacts, to
@@ -52,6 +54,7 @@ import java.util.Set;
  * MSISDN in national or international format, SIP address, SIP-URI or Tel-URI.
  * 
  * @author Jean-Marc AUFFRET
+ * @author Philippe LEMORDANT
  */
 public final class CapabilityService extends RcsService {
     /**
@@ -70,6 +73,7 @@ public final class CapabilityService extends RcsService {
      * API
      */
     private ICapabilityService mApi;
+    private final Map<CapabilitiesListener, WeakReference<ICapabilitiesListener>> mCapabilitiesListeners = new WeakHashMap<>();
 
     /**
      * Constructor
@@ -120,6 +124,7 @@ public final class CapabilityService extends RcsService {
      * Set API interface
      * 
      * @param api API interface
+     * @hide
      */
     protected void setApi(IInterface api) {
         super.setApi(api);
@@ -213,7 +218,7 @@ public final class CapabilityService extends RcsService {
      * format, SIP address, SIP-URI or Tel-URI. If the format of the contact is not supported an
      * exception is thrown. The result of the capability refresh request is provided to all the
      * clients that have registered the listener for this event.
-     * 
+     *
      * @param contact Contact Identifier
      * @throws RcsServiceNotRegisteredException
      * @throws RcsServiceNotAvailableException
@@ -251,9 +256,8 @@ public final class CapabilityService extends RcsService {
     public void requestContactCapabilities(Set<ContactId> contacts)
             throws RcsServiceNotRegisteredException, RcsServiceNotAvailableException,
             RcsGenericException {
-        Iterator<ContactId> values = contacts.iterator();
-        while (values.hasNext()) {
-            requestContactCapabilities(values.next());
+        for (ContactId contact : contacts) {
+            requestContactCapabilities(contact);
         }
     }
 
@@ -263,7 +267,7 @@ public final class CapabilityService extends RcsService {
      * sending SIP OPTIONS. The result of a capability request is sent asynchronously via callback
      * method of the capabilities listener. The result of the capability refresh request is provided
      * to all the clients that have registered the listener for this event.
-     * 
+     *
      * @throws RcsServiceNotRegisteredException
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
@@ -294,7 +298,10 @@ public final class CapabilityService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            mApi.addCapabilitiesListener(listener);
+            ICapabilitiesListener rcsListener = new CapabilitiesListenerImpl(listener);
+            mCapabilitiesListeners.put(listener, new WeakReference<>(rcsListener));
+            mApi.addCapabilitiesListener(rcsListener);
+
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             throw new RcsGenericException(e);
@@ -314,7 +321,14 @@ public final class CapabilityService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            mApi.removeCapabilitiesListener(listener);
+            WeakReference<ICapabilitiesListener> weakRef = mCapabilitiesListeners.remove(listener);
+            if (weakRef == null) {
+                return;
+            }
+            ICapabilitiesListener rcsListener = weakRef.get();
+            if (rcsListener != null) {
+                mApi.removeCapabilitiesListener(rcsListener);
+            }
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             throw new RcsGenericException(e);
@@ -338,8 +352,10 @@ public final class CapabilityService extends RcsService {
             throw new RcsIllegalArgumentException("contacts must not be null or empty!");
         }
         try {
+            ICapabilitiesListener rcsListener = new CapabilitiesListenerImpl(listener);
+            mCapabilitiesListeners.put(listener, new WeakReference<>(rcsListener));
             for (ContactId contact : contacts) {
-                mApi.addCapabilitiesListener2(contact, listener);
+                mApi.addCapabilitiesListener2(contact, rcsListener);
             }
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -364,8 +380,15 @@ public final class CapabilityService extends RcsService {
             throw new RcsIllegalArgumentException("contacts must not be null or empty!");
         }
         try {
-            for (ContactId contact : contacts) {
-                mApi.removeCapabilitiesListener2(contact, listener);
+            WeakReference<ICapabilitiesListener> weakRef = mCapabilitiesListeners.remove(listener);
+            if (weakRef == null) {
+                return;
+            }
+            ICapabilitiesListener rcsListener = weakRef.get();
+            if (rcsListener != null) {
+                for (ContactId contact : contacts) {
+                    mApi.removeCapabilitiesListener2(contact, rcsListener);
+                }
             }
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);

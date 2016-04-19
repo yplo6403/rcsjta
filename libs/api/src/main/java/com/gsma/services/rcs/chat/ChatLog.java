@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,8 +69,8 @@ public class ChatLog {
         public static final String BASECOLUMN_ID = BaseColumns._ID;
 
         /**
-         * The name of the column containing the unique ID of the group chat or
-         * the remote contact in case of one to one chat.
+         * The name of the column containing the unique ID of the group chat or the remote contact
+         * in case of one to one chat.
          * <P>
          * Type: TEXT
          * </P>
@@ -128,8 +128,6 @@ public class ChatLog {
          * <P>
          * Type: TEXT
          * </P>
-         * 
-         * @see ParticipantInfo
          */
         public static final String PARTICIPANTS = "participants";
 
@@ -146,7 +144,7 @@ public class ChatLog {
          * Utility method to get participants from its string representation in the ChatLog
          * provider.
          * 
-         * @param ctx
+         * @param ctx the context
          * @param participants Participants in string representation
          * @return Participants
          * @throws RcsPermissionDeniedException
@@ -155,7 +153,7 @@ public class ChatLog {
                 String participants) throws RcsPermissionDeniedException {
             ContactUtil contactUtils = ContactUtil.getInstance(ctx);
             String[] tokens = participants.split(",");
-            Map<ContactId, ParticipantStatus> participantResult = new HashMap<ContactId, ParticipantStatus>();
+            Map<ContactId, ParticipantStatus> participantResult = new HashMap<>();
             for (String participant : tokens) {
                 String[] keyValue = participant.split("=");
                 if (keyValue.length == 2) {
@@ -166,6 +164,9 @@ public class ChatLog {
                 }
             }
             return participantResult;
+        }
+
+        private GroupChat() {
         }
     }
 
@@ -329,6 +330,9 @@ public class ChatLog {
              * MIME-type of group chat events
              */
             public static final String GROUPCHAT_EVENT = "rcs/groupchat-event";
+
+            private MimeType() {
+            }
         }
 
         public static class Content {
@@ -384,14 +388,14 @@ public class ChatLog {
 
                 private final int mValue;
 
-                private static SparseArray<Status> mValueToEnum = new SparseArray<Status>();
+                private static SparseArray<Status> mValueToEnum = new SparseArray<>();
                 static {
                     for (Status entry : Status.values()) {
                         mValueToEnum.put(entry.toInt(), entry);
                     }
                 }
 
-                private Status(int value) {
+                Status(int value) {
                     mValue = value;
                 }
 
@@ -399,14 +403,13 @@ public class ChatLog {
                     return mValue;
                 }
 
-                public final static Status valueOf(int value) {
+                public static Status valueOf(int value) {
                     Status entry = mValueToEnum.get(value);
                     if (entry != null) {
                         return entry;
                     }
-                    throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                            .append(Status.class.getName()).append("").append(value).append("!")
-                            .toString());
+                    throw new IllegalArgumentException("No enum const class "
+                            + Status.class.getName() + "" + value + "!");
                 }
             }
 
@@ -442,14 +445,14 @@ public class ChatLog {
 
                 private final int mValue;
 
-                private static SparseArray<ReasonCode> mValueToEnum = new SparseArray<ReasonCode>();
+                private static SparseArray<ReasonCode> mValueToEnum = new SparseArray<>();
                 static {
                     for (ReasonCode entry : ReasonCode.values()) {
                         mValueToEnum.put(entry.toInt(), entry);
                     }
                 }
 
-                private ReasonCode(int value) {
+                ReasonCode(int value) {
                     mValue = value;
                 }
 
@@ -457,15 +460,17 @@ public class ChatLog {
                     return mValue;
                 }
 
-                public final static ReasonCode valueOf(int value) {
+                public static ReasonCode valueOf(int value) {
                     ReasonCode entry = mValueToEnum.get(value);
                     if (entry != null) {
                         return entry;
                     }
-                    throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                            .append(ReasonCode.class.getName()).append("").append(value)
-                            .append("!").toString());
+                    throw new IllegalArgumentException("No enum const class "
+                            + ReasonCode.class.getName() + "" + value + "!");
                 }
+            }
+
+            private Content() {
             }
         }
 
@@ -487,14 +492,14 @@ public class ChatLog {
 
                 private final int mValue;
 
-                private static SparseArray<Status> mValueToEnum = new SparseArray<Status>();
+                private static SparseArray<Status> mValueToEnum = new SparseArray<>();
                 static {
                     for (Status entry : Status.values()) {
                         mValueToEnum.put(entry.toInt(), entry);
                     }
                 }
 
-                private Status(int value) {
+                Status(int value) {
                     mValue = value;
                 }
 
@@ -502,16 +507,24 @@ public class ChatLog {
                     return mValue;
                 }
 
-                public final static Status valueOf(int value) {
+                public static Status valueOf(int value) {
                     Status entry = mValueToEnum.get(value);
                     if (entry != null) {
                         return entry;
                     }
-                    throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                            .append(Status.class.getName()).append("").append(value).append("!")
-                            .toString());
+                    throw new IllegalArgumentException("No enum const class "
+                            + Status.class.getName() + "" + value + "!");
                 }
             }
+
+            private GroupChatEvent() {
+            }
         }
+
+        private Message() {
+        }
+    }
+
+    private ChatLog() {
     }
 }

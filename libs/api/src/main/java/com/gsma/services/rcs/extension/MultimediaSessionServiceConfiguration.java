@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,9 +38,9 @@ public class MultimediaSessionServiceConfiguration {
      * Constructor
      * 
      * @param iConfig IMultimediaSessionServiceConfiguration instance
-     * @hide
      */
-    public MultimediaSessionServiceConfiguration(IMultimediaSessionServiceConfiguration iConfig) {
+    /* package private */MultimediaSessionServiceConfiguration(
+            IMultimediaSessionServiceConfiguration iConfig) {
         mIConfig = iConfig;
     }
 

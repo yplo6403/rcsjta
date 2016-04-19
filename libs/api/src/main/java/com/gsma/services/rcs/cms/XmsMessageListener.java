@@ -2,7 +2,7 @@
  * ******************************************************************************
  *  * Software Name : RCS IMS Stack
  *  *
- *  * Copyright (C) 2010 France Telecom S.A.
+ *  * Copyright (C) 2010-2016 Orange.
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -34,21 +34,21 @@ public abstract class XmsMessageListener {
     /**
      * Callback called when the XMS message state/reasonCode is changed.
      *
-     * @param contact    Contact ID
-     * @param mimeType   Mime type
-     * @param messageId  Id of XMS message
-     * @param state      State of the XMS message
+     * @param contact Contact ID
+     * @param mimeType Mime type
+     * @param messageId Id of XMS message
+     * @param state State of the XMS message
      * @param reasonCode Reason code
      */
-    public abstract void onStateChanged(ContactId contact, String mimeType, String messageId, XmsMessage.State state,
-                                        XmsMessage.ReasonCode reasonCode);
+    public abstract void onStateChanged(ContactId contact, String mimeType, String messageId,
+            XmsMessage.State state, XmsMessage.ReasonCode reasonCode);
 
     /**
      * Callback called when a delete operation completed that resulted in that one or several XMS
-     * messages were deleted specified by the message ID parameter corresponding to a
-     * specific contact.
+     * messages were deleted specified by the message ID parameter corresponding to a specific
+     * contact.
      *
-     * @param contact    Contact ID
+     * @param contact Contact ID
      * @param messageIds IDs of those deleted XMS messages
      */
     public abstract void onDeleted(ContactId contact, Set<String> messageIds);
