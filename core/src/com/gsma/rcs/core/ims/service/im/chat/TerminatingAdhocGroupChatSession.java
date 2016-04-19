@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -80,14 +81,15 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager Contact manager accessor
+     * @param cmsManager the CMS manager
      * @throws PayloadException Thrown if constructor fails to get information from payload
      */
     public TerminatingAdhocGroupChatSession(InstantMessagingService imService, SipRequest invite,
             ContactId contact, Map<ContactId, ParticipantStatus> participantsFromInvite,
             Uri remoteContact, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager) throws PayloadException {
+            ContactManager contactManager, CmsManager cmsManager) throws PayloadException {
         super(imService, contact, remoteContact, participantsFromInvite, rcsSettings, messagingLog,
-                timestamp, contactManager);
+                timestamp, contactManager, cmsManager);
 
         String subject = ChatUtils.getSubject(invite);
         setSubject(subject);
@@ -120,10 +122,8 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
          * In case the invite contains a http file transfer info the chat session should be
          * auto-accepted so that the file transfer session can be started.
          */
-        if (FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null) {
-            return true;
-        }
-        return mRcsSettings.isGroupChatAutoAccepted();
+        return FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null
+                || mRcsSettings.isGroupChatAutoAccepted();
     }
 
     private Set<ContactId> getContactToBeInvited(Map<ContactId, ParticipantStatus> participants) {
@@ -142,7 +142,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                     break;
             }
         }
-
         if (storedContacts.isEmpty()) {
             if (sLogger.isActivated()) {
                 sLogger.info("No initial Group Chat");
@@ -177,12 +176,10 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             if (logActivated) {
                 sLogger.info("Initiate a new ad-hoc group chat session as terminating");
             }
-
             Collection<ImsSessionListener> listeners = getListeners();
             ContactId contact = getRemoteContact();
             String subject = getSubject();
             Map<ContactId, ParticipantStatus> participants = getParticipants();
-
             /* Check if session should be auto-accepted once */
             long timestamp = getTimestamp();
             SipDialogPath dialogPath = getDialogPath();
@@ -198,7 +195,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                 if (logActivated) {
                     sLogger.debug("Received group chat invitation marked for manual accept");
                 }
-
                 for (ImsSessionListener listener : listeners) {
                     ((GroupChatSessionListener) listener).onSessionInvited(contact, subject,
                             participants, timestamp);
@@ -216,7 +212,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                         }
                         sendErrorResponse(dialogPath.getInvite(), dialogPath.getLocalTag(), answer);
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_USER);
@@ -227,12 +222,9 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                         if (logActivated) {
                             sLogger.debug("Session has been rejected on timeout");
                         }
-
                         /* Ringing period timeout */
                         send486Busy(dialogPath.getInvite(), dialogPath.getLocalTag());
-
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_TIMEOUT);
@@ -250,9 +242,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                         if (logActivated) {
                             sLogger.debug("Session has been rejected by remote");
                         }
-
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_REMOTE);
@@ -261,9 +251,8 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
 
                     case INVITATION_ACCEPTED:
                         setSessionAccepted();
-
                         for (ImsSessionListener listener : listeners) {
-                            ((ChatSessionListener) listener).onSessionAccepting(contact);
+                            listener.onSessionAccepting(contact);
                         }
                         break;
 
@@ -275,12 +264,10 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                         return;
 
                     default:
-                        throw new IllegalArgumentException(new StringBuilder(
-                                "Unknown invitation answer in run; answer=").append(answer)
-                                .toString());
+                        throw new IllegalArgumentException(
+                                "Unknown invitation answer in run; answer=" + answer);
                 }
             }
-
             /* Parse the remote SDP part */
             final SipRequest invite = dialogPath.getInvite();
             String remoteSdp = invite.getSdpContent();
@@ -293,7 +280,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
 
-            /* Changed by Deutsche Telekom */
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
 
             /* Extract the "setup" parameter */
@@ -305,13 +291,11 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             if (logActivated) {
                 sLogger.debug("Remote setup attribute is ".concat(remoteSetup));
             }
-
             /* Set setup mode */
             String localSetup = createSetupAnswer(remoteSetup);
             if (logActivated) {
                 sLogger.debug("Local setup attribute is ".concat(localSetup));
             }
-
             /* Set local port */
             int localMsrpPort;
             if (localSetup.equals("active")) {
@@ -319,7 +303,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             } else {
                 localMsrpPort = getMsrpMgr().getLocalMsrpPort();
             }
-
             /* Build SDP part */
             String ipAddress = dialogPath.getSipStack().getLocalIpAddress();
             String sdp = SdpUtils.buildGroupChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
@@ -336,7 +319,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                 }
                 return;
             }
-
             /* Create a 200 OK response */
             if (logActivated) {
                 sLogger.info("Send 200 OK");
@@ -347,7 +329,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             dialogPath.setSigEstablished();
             SipTransactionContext ctx = getImsService().getImsModule().getSipManager()
                     .sendSipMessage(resp);
-
             /* Create the MSRP server session */
             if (localSetup.equals("passive")) {
                 /* Passive mode: client wait a connection */
@@ -361,7 +342,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                  */
                 sendEmptyDataChunk();
             }
-
             /* wait a response */
             getImsService().getImsModule().getSipManager().waitResponse(ctx);
 
@@ -410,18 +390,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                 /* No response received: timeout */
                 handleError(new ChatError(ChatError.SEND_RESPONSE_FAILED));
             }
-
-        } catch (PayloadException e) {
-            handleError(new ChatError(ChatError.SEND_RESPONSE_FAILED, e));
-
-        } catch (NetworkException e) {
-            handleError(new ChatError(ChatError.SEND_RESPONSE_FAILED, e));
-
-        } catch (RuntimeException e) {
-            /*
-             * Intentionally catch runtime exceptions as else it will abruptly end the thread and
-             * eventually bring the whole system down, which is not intended.
-             */
+        } catch (PayloadException | RuntimeException | NetworkException e) {
             handleError(new ChatError(ChatError.SEND_RESPONSE_FAILED, e));
         }
     }
@@ -464,9 +433,8 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
              * groupchat session pending for removal which will timeout eventually
              */
             if (logActivated) {
-                sLogger.debug(new StringBuilder("Ongoing GrooupChat session detected for chatId '")
-                        .append(chatId).append("' marking that session pending for removal")
-                        .toString());
+                sLogger.debug("Ongoing GrooupChat session detected for chatId '" + chatId
+                        + "' marking that session pending for removal");
             }
             currentSession.markForPendingRemoval();
             /*
@@ -487,7 +455,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
     /**
      * Request capabilities to contact
      * 
-     * @param contact
+     * @param contact the contact
      */
     private void requestContactCapabilities(String contact) {
         PhoneNumber number = ContactUtil.getValidPhoneNumberFromUri(contact);
@@ -497,8 +465,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                     .requestContactCapabilities(remote);
         } else {
             if (sLogger.isActivated()) {
-                sLogger.debug(new StringBuilder("Failed to request capabilities: invalid contact '")
-                        .append(contact).append("'").toString());
+                sLogger.debug("Failed to request capabilities: invalid contact '" + contact + "'");
             }
         }
     }
@@ -506,7 +473,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
     @Override
     public void receiveBye(SipRequest bye) throws PayloadException, NetworkException {
         super.receiveBye(bye);
-
         requestContactCapabilities(getDialogPath().getRemoteParty());
     }
 

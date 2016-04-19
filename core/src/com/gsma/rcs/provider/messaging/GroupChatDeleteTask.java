@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,6 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -34,12 +36,12 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
 
     private static final Logger sLogger = Logger.getLogger(GroupChatDeleteTask.class.getName());
 
-    private static final String SELECTION_GROUPDELIVERY_BY_CHATID = new StringBuilder(
-            GroupDeliveryInfoData.KEY_CHAT_ID).append("=?").toString();
+    private static final String SELECTION_GROUPDELIVERY_BY_CHATID = GroupDeliveryInfoData.KEY_CHAT_ID + "=?";
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
+    private final CmsManager mCmsManager;
 
     /**
      * Deletion of all group chats.
@@ -47,13 +49,14 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
+     * @param cmsManager the CMS manager
      */
     public GroupChatDeleteTask(ChatServiceImpl chatService, InstantMessagingService imService,
-            LocalContentResolver contentResolver) {
+            LocalContentResolver contentResolver, CmsManager cmsManager) {
         super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, null);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -62,15 +65,16 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
      * @param chatId the group chat id
+     * @param cmsManager the CMS manager
      */
     public GroupChatDeleteTask(ChatServiceImpl chatService, InstantMessagingService imService,
-            LocalContentResolver contentResolver, String chatId) {
+            LocalContentResolver contentResolver, String chatId, CmsManager cmsManager) {
         super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, null,
                 chatId);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     @Override
@@ -106,7 +110,7 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
     protected void onCompleted(Set<String> deletedIds) {
         mChatService.broadcastGroupChatsDeleted(deletedIds);
         for(String deletedId : deletedIds){
-            mImService.getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler().onDeleteGroupChat(deletedId);
+            mCmsManager.getGroupChatEventHandler().onDeleteGroupChat(deletedId);
         }
     }
 

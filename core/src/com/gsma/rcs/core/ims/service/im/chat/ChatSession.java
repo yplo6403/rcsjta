@@ -27,6 +27,7 @@ import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -83,6 +84,7 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public abstract class ChatSession extends ImsServiceSession implements MsrpEventListener {
 
+    private final CmsManager mCmsManager;
     private String mSubject;
     private final MsrpManager mMsrpMgr;
     private final IsComposingManager mIsComposingMgr = new IsComposingManager(this);
@@ -151,10 +153,11 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
      * @param firstMsg First message in session
      * @param timestamp Local timestamp for the session
      * @param contactManager The contact manager accessor
+     * @param cmsManager the CMS manager
      */
     public ChatSession(InstantMessagingService imService, ContactId contact, Uri remoteContact,
             RcsSettings rcsSettings, MessagingLog messagingLog, ChatMessage firstMsg,
-            long timestamp, ContactManager contactManager) {
+            long timestamp, ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, remoteContact, rcsSettings, timestamp, contactManager);
 
         mImService = imService;
@@ -171,6 +174,7 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
             mMsrpMgr.setSecured(rcsSettings.isSecureMsrpOverWifi());
         }
         mFirstMsg = firstMsg;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -821,9 +825,8 @@ public abstract class ChatSession extends ImsServiceSession implements MsrpEvent
                 }
             }
         }
-        getImsService().getImsModule().getCmsService().getCmsManager()
-                .getImdnDeliveryReportListener()
-                .onDeliveryReport(getRemoteContact(), msgId, imdnMessageId);
+        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(getRemoteContact(), msgId,
+                imdnMessageId);
     }
 
     /**

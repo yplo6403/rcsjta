@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.standfw;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -75,16 +76,17 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
      * @param rcsSettings RCS settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager the contact Manager
+     * @param cmsManager the CMS manager
      * @throws PayloadException
      */
     public TerminatingStoreAndForwardOneToOneChatMessageSession(InstantMessagingService imService,
             SipRequest invite, ContactId contact, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp, ContactManager contactManager)
-            throws PayloadException {
+            MessagingLog messagingLog, long timestamp, ContactManager contactManager,
+            CmsManager cmsManager) throws PayloadException {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), ChatUtils
                 .getFirstMessage(invite, timestamp), rcsSettings, messagingLog, timestamp,
-                contactManager);
+                contactManager, cmsManager);
 
         // Set feature tags
         setFeatureTags(ChatUtils.getSupportedFeatureTagsForChat(rcsSettings));
@@ -112,10 +114,7 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
          * In case the invite contains a http file transfer info the chat session should be
          * auto-accepted so that the file transfer session can be started.
          */
-        if (FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null) {
-            return true;
-        }
-        return mRcsSettings.isChatAutoAccepted();
+        return FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null || mRcsSettings.isChatAutoAccepted();
     }
 
     /**
@@ -173,7 +172,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                         }
                         sendErrorResponse(dialogPath.getInvite(), dialogPath.getLocalTag(), answer);
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_USER);
@@ -187,9 +185,7 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
 
                         /* Ringing period timeout */
                         send486Busy(dialogPath.getInvite(), dialogPath.getLocalTag());
-
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_TIMEOUT);
@@ -207,9 +203,7 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                         if (logActivated) {
                             sLogger.debug("Session has been rejected by remote");
                         }
-
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_REMOTE);
@@ -218,19 +212,15 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
 
                     case INVITATION_ACCEPTED:
                         setSessionAccepted();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionAccepting(contact);
                         }
                         break;
 
                     default:
-                        throw new IllegalArgumentException(new StringBuilder(
-                                "Unknown invitation answer in run; answer=").append(answer)
-                                .toString());
+                        throw new IllegalArgumentException("Unknown invitation answer in run; answer=" + answer);
                 }
             }
-
             /* Parse the remote SDP part */
             final SipRequest invite = dialogPath.getInvite();
             String remoteSdp = invite.getSdpContent();
@@ -243,7 +233,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
 
-            /* Changed by Deutsche Telekom */
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
 
             /* Extract the "setup" parameter */
@@ -255,13 +244,11 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
             if (logActivated) {
                 sLogger.debug("Remote setup attribute is ".concat(remoteSetup));
             }
-
             /* Set setup mode */
             String localSetup = createSetupAnswer(remoteSetup);
             if (logActivated) {
                 sLogger.debug("Local setup attribute is ".concat(localSetup));
             }
-
             /* Set local port */
             int localMsrpPort;
             if (localSetup.equals("active")) {
@@ -269,7 +256,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
             } else {
                 localMsrpPort = getMsrpMgr().getLocalMsrpPort();
             }
-
             /* Build SDP part */
             String ipAddress = dialogPath.getSipStack().getLocalIpAddress();
             String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
@@ -278,7 +264,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
 
             /* Set the local SDP part in the dialog path */
             dialogPath.setLocalContent(sdp);
-
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -286,7 +271,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                 }
                 return;
             }
-
             /* Create a 200 OK response */
             if (logActivated) {
                 sLogger.info("Send 200 OK");
@@ -294,11 +278,9 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
             SipResponse resp = SipMessageFactory.create200OkInviteResponse(dialogPath,
                     getFeatureTags(), sdp);
             dialogPath.setSigEstablished();
-
             /* Send response */
             SipTransactionContext ctx = getImsService().getImsModule().getSipManager()
                     .sendSipMessage(resp);
-
             /* Create the MSRP server session */
             if (localSetup.equals("passive")) {
                 /* Passive mode: client wait a connection */
@@ -312,10 +294,8 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                  */
                 sendEmptyDataChunk();
             }
-
             /* wait a response */
             getImsService().getImsModule().getSipManager().waitResponse(ctx);
-
             // Test if the session should be interrupted
             if (isInterrupted()) {
                 if (sLogger.isActivated()) {
@@ -323,14 +303,12 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                 }
                 return;
             }
-
             /* Analyze the received response */
             if (ctx.isSipAck()) {
                 if (logActivated) {
                     sLogger.info("ACK request received");
                 }
                 dialogPath.setSessionEstablished();
-
                 /* Create the MSRP client session */
                 if (localSetup.equals("active")) {
                     /* Active mode: client should connect */
@@ -341,7 +319,6 @@ public class TerminatingStoreAndForwardOneToOneChatMessageSession extends OneToO
                     getMsrpMgr().openMsrpSession();
                     sendEmptyDataChunk();
                 }
-
                 for (ImsSessionListener listener : listeners) {
                     listener.onSessionStarted(contact);
                 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
@@ -32,6 +32,7 @@ import com.gsma.rcs.core.ims.service.im.chat.GroupChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.OneToOneChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnManager;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.ChatMessagePersistedStorageAccessor;
@@ -104,6 +105,7 @@ public class ChatServiceImpl extends IChatService.Stub {
      * Lock used for synchronization
      */
     private final Object mLock = new Object();
+    private final CmsManager mCmsManager;
 
     /**
      * Constructor
@@ -115,7 +117,8 @@ public class ChatServiceImpl extends IChatService.Stub {
      * @param contactManager ContactManager
      */
     public ChatServiceImpl(InstantMessagingService imService, MessagingLog messagingLog,
-            HistoryLog historyLog, RcsSettings rcsSettings, ContactManager contactManager) {
+            HistoryLog historyLog, RcsSettings rcsSettings, ContactManager contactManager,
+            CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("Chat service API is loaded");
         }
@@ -125,6 +128,7 @@ public class ChatServiceImpl extends IChatService.Stub {
         mHistoryLog = historyLog;
         mRcsSettings = rcsSettings;
         mContactManager = contactManager;
+        mCmsManager = cmsManager;
     }
 
     private ReasonCode imdnToFailedReasonCode(ImdnDocument imdn) {
@@ -186,6 +190,7 @@ public class ChatServiceImpl extends IChatService.Stub {
         // Clear list of sessions
         mOneToOneChatCache.clear();
         mGroupChatCache.clear();
+
         if (sLogger.isActivated()) {
             sLogger.info("Chat service API is closed");
         }
@@ -458,8 +463,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             mMessagingLog.addGroupChat(session.getContributionID(), session.getRemoteContact(),
                     session.getSubject(), session.getParticipants(), GroupChat.State.INITIATING,
                     GroupChat.ReasonCode.UNSPECIFIED, Direction.OUTGOING, timestamp);
-            mImService.getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler()
-                    .onCreateGroupChat(chatId, chatId);
+            mCmsManager.getGroupChatEventHandler().onCreateGroupChat(chatId, chatId);
             mImService.scheduleImOperation(new Runnable() {
                 public void run() {
                     try {
@@ -880,8 +884,9 @@ public class ChatServiceImpl extends IChatService.Stub {
                 return;
             }
             /*
-             * Chat message must be marked as DISPLAY_REPORT_REQUESTED with a valid 'displayed timestamp'.
-             * The DelayedDisplayNotificationDispatcher task is reading this timestamp from the chat content provider
+             * Chat message must be marked as DISPLAY_REPORT_REQUESTED with a valid 'displayed
+             * timestamp'. The DelayedDisplayNotificationDispatcher task is reading this timestamp
+             * from the chat content provider
              */
             mMessagingLog.setChatMessageTimestampDisplayed(msgId, now);
 
@@ -902,8 +907,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             @Override
             public void run() {
                 try {
-                    mImService.getImsModule().getCmsService().getCmsManager().getChatEventHandler()
-                            .onReadChatMessage(msgId);
+                    mCmsManager.getChatEventHandler().onReadChatMessage(msgId);
                     if (mRcsSettings.isImReportsActivated()
                             && mRcsSettings.isRespondToDisplayReports()) {
                         if (sLogger.isActivated()) {

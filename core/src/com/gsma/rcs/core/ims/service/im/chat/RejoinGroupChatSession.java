@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.chat;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -60,13 +61,14 @@ public class RejoinGroupChatSession extends GroupChatSession {
      * @param rcsSettings Rcs settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager the contact manager
+     * @param cmsManager the CMS manager
      */
     public RejoinGroupChatSession(InstantMessagingService imService, GroupChatInfo groupChatInfo,
             RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager) {
+            ContactManager contactManager, CmsManager cmsManager) {
         super(imService, null, groupChatInfo.getRejoinId(), groupChatInfo.getParticipants(),
-                rcsSettings, messagingLog, timestamp, contactManager);
+                rcsSettings, messagingLog, timestamp, contactManager, cmsManager);
 
         if (!TextUtils.isEmpty(groupChatInfo.getSubject())) {
             setSubject(groupChatInfo.getSubject());
@@ -112,26 +114,8 @@ public class RejoinGroupChatSession extends GroupChatSession {
 
             sendInvite(invite);
 
-        } catch (InvalidArgumentException e) {
-            handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
-
-        } catch (ParseException e) {
-            handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
-
-        } catch (FileAccessException e) {
-            handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
-
-        } catch (PayloadException e) {
-            handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
-
-        } catch (NetworkException e) {
-            handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
-
-        } catch (RuntimeException e) {
-            /*
-             * Intentionally catch runtime exceptions as else it will abruptly end the thread and
-             * eventually bring the whole system down, which is not intended.
-             */
+        } catch (InvalidArgumentException | ParseException | FileAccessException | PayloadException
+                | NetworkException | RuntimeException e) {
             handleError(new ChatError(ChatError.SESSION_REJOIN_FAILED, e));
         }
     }

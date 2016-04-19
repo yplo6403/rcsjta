@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -78,15 +79,16 @@ public class RestartGroupChatSession extends GroupChatSession {
      * @param rcsSettings RCS settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager the contact manager
+     * @param cmsManager the CMS manager
      */
     public RestartGroupChatSession(InstantMessagingService imService, Uri conferenceId,
             String subject, String contributionId,
             Map<ContactId, ParticipantStatus> storedParticipants, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp, ContactManager contactManager) {
+            MessagingLog messagingLog, long timestamp, ContactManager contactManager,
+            CmsManager cmsManager) {
         super(imService, null, conferenceId, storedParticipants, rcsSettings, messagingLog,
-                timestamp, contactManager);
-
+                timestamp, contactManager, cmsManager);
         if (!TextUtils.isEmpty(subject)) {
             setSubject(subject);
         }
@@ -118,7 +120,7 @@ public class RestartGroupChatSession extends GroupChatSession {
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
                     getMsrpMgr().getLocalMsrpPath(), SdpUtils.DIRECTION_SENDRECV);
 
-            Set<ContactId> invitees = new HashSet<ContactId>();
+            Set<ContactId> invitees = new HashSet<>();
             Map<ContactId, ParticipantStatus> participants = getParticipants();
             for (Map.Entry<ContactId, ParticipantStatus> participant : participants.entrySet()) {
                 switch (participant.getValue()) {
@@ -134,21 +136,17 @@ public class RestartGroupChatSession extends GroupChatSession {
                         break;
                 }
             }
-
             String resourceList = ChatUtils.generateChatResourceList(invitees);
 
-            String multipart = new StringBuilder(Multipart.BOUNDARY_DELIMITER).append(BOUNDARY_TAG)
-                    .append(SipUtils.CRLF).append("Content-Type: application/sdp")
-                    .append(SipUtils.CRLF).append("Content-Length: ")
-                    .append(sdp.getBytes(UTF8).length).append(SipUtils.CRLF).append(SipUtils.CRLF)
-                    .append(sdp).append(SipUtils.CRLF).append(Multipart.BOUNDARY_DELIMITER)
-                    .append(BOUNDARY_TAG).append(SipUtils.CRLF)
-                    .append("Content-Type: application/resource-lists+xml").append(SipUtils.CRLF)
-                    .append("Content-Length: ").append(resourceList.getBytes(UTF8).length)
-                    .append(SipUtils.CRLF).append("Content-Disposition: recipient-list")
-                    .append(SipUtils.CRLF).append(SipUtils.CRLF).append(resourceList)
-                    .append(SipUtils.CRLF).append(Multipart.BOUNDARY_DELIMITER)
-                    .append(BOUNDARY_TAG).append(Multipart.BOUNDARY_DELIMITER).toString();
+            String multipart = Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG + SipUtils.CRLF
+                    + "Content-Type: application/sdp" + SipUtils.CRLF + "Content-Length: "
+                    + sdp.getBytes(UTF8).length + SipUtils.CRLF + SipUtils.CRLF + sdp
+                    + SipUtils.CRLF + Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG + SipUtils.CRLF
+                    + "Content-Type: application/resource-lists+xml" + SipUtils.CRLF
+                    + "Content-Length: " + resourceList.getBytes(UTF8).length + SipUtils.CRLF
+                    + "Content-Disposition: recipient-list" + SipUtils.CRLF + SipUtils.CRLF
+                    + resourceList + SipUtils.CRLF + Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG
+                    + Multipart.BOUNDARY_DELIMITER;
 
             getDialogPath().setLocalContent(multipart);
 
@@ -163,26 +161,8 @@ public class RestartGroupChatSession extends GroupChatSession {
 
             sendInvite(invite);
 
-        } catch (InvalidArgumentException e) {
-            handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
-
-        } catch (ParseException e) {
-            handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
-
-        } catch (FileAccessException e) {
-            handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
-
-        } catch (PayloadException e) {
-            handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
-
-        } catch (NetworkException e) {
-            handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
-
-        } catch (RuntimeException e) {
-            /*
-             * Intentionally catch runtime exceptions as else it will abruptly end the thread and
-             * eventually bring the whole system down, which is not intended.
-             */
+        } catch (InvalidArgumentException | ParseException | FileAccessException | PayloadException
+                | NetworkException | RuntimeException e) {
             handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
         }
     }

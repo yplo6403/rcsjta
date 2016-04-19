@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,6 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -31,14 +33,16 @@ import java.util.Set;
 
 public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactId {
 
-    private static final Logger sLogger = Logger
-            .getLogger(OneToOneFileTransferDeleteTask.class.getName());
+    private static final Logger sLogger = Logger.getLogger(OneToOneFileTransferDeleteTask.class
+            .getName());
 
-    private static final String SELECTION_ALL_ONETOONE_FILETRANSFERS = FileTransferData.KEY_CHAT_ID + "=" + FileTransferData.KEY_CONTACT;
+    private static final String SELECTION_ALL_ONETOONE_FILETRANSFERS = FileTransferData.KEY_CHAT_ID
+            + "=" + FileTransferData.KEY_CONTACT;
 
     private final FileTransferServiceImpl mFileTransferService;
 
     private final InstantMessagingService mImService;
+    private final CmsManager mCmsManager;
 
     /**
      * Deletion of all one to one file transfers.
@@ -46,13 +50,16 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
      * @param fileTransferService the file transfer service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
+     * @param cmsManager the CMS manager
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
-            InstantMessagingService imService, LocalContentResolver contentResolver) {
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            CmsManager cmsManager) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
                 FileTransferData.KEY_CONTACT, SELECTION_ALL_ONETOONE_FILETRANSFERS);
         mFileTransferService = fileTransferService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -62,14 +69,16 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param transferId the transfer id
+     * @param cmsManager the CMS manager
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            String transferId) {
+            String transferId, CmsManager cmsManager) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
                 FileTransferData.KEY_CONTACT, null, transferId);
         mFileTransferService = fileTransferService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -79,14 +88,16 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param contact the contact id
+     * @param cmsManager the CMS manager
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            ContactId contact) {
+            ContactId contact, CmsManager cmsManager) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
                 FileTransferData.KEY_CONTACT, contact);
         mFileTransferService = fileTransferService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     @Override
@@ -122,7 +133,7 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
         for (String transferId : transferIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(transferId);
         }
-        mImService.getImsModule().getCmsService().getCmsManager().getFileTransferEventHandler().onDeleteFileTransfer(contact, transferIds);
+        mCmsManager.getFileTransferEventHandler().onDeleteFileTransfer(contact, transferIds);
         mFileTransferService.broadcastOneToOneFileTransferDeleted(contact, transferIds);
     }
 }

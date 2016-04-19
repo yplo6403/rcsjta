@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -156,7 +156,6 @@ public class FileTransferLog implements IFileTransferLog {
                     + ", filename=" + content.getName() + ", size=" + content.getSize() + ", MIME="
                     + content.getEncoding() + ", state=" + state + ", reasonCode=" + reasonCode
                     + ", timestamp=" + timestamp + ", timestampSent=" + timestampSent);
-
         }
         ContentValues values = new ContentValues();
         values.put(FileTransferData.KEY_FT_ID, fileTransferId);
@@ -335,13 +334,13 @@ public class FileTransferLog implements IFileTransferLog {
      * @param reasonCode File transfer download state reason code
      */
     @Override
-    public boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId, DownloadState state,
-                                                     ReasonCode reasonCode) {
+    public boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId,
+            DownloadState state, ReasonCode reasonCode) {
         if (sLogger.isActivated()) {
-            sLogger.debug("setFileTransferDownloadStateAndReasonCode: fileTransferId=" + fileTransferId
-                    + ", downloadState=" + state + ", downloadReasonCode=" + reasonCode);
+            sLogger.debug("setFileTransferDownloadStateAndReasonCode: fileTransferId="
+                    + fileTransferId + ", downloadState=" + state + ", downloadReasonCode="
+                    + reasonCode);
         }
-
         ContentValues values = new ContentValues();
         values.put(FileTransferData.KEY_DOWNLOAD_STATE, state.toInt());
         values.put(FileTransferData.KEY_DOWNLOAD_REASON_CODE, reasonCode.toInt());
@@ -362,7 +361,6 @@ public class FileTransferLog implements IFileTransferLog {
                 SELECTION_BY_NOT_READ, null);
     }
 
-
     @Override
     public boolean setFileTransferProgress(String fileTransferId, long currentSize) {
         ContentValues values = new ContentValues();
@@ -382,19 +380,17 @@ public class FileTransferLog implements IFileTransferLog {
     }
 
     public boolean isAllowedToDownloadFileTransfer(String fileTransferId) {
-
         DownloadState downloadState = getFileTransferDownloadState(fileTransferId);
-        if(downloadState == null){
+        if (downloadState == null) {
             return false;
         }
-
-        if(DownloadState.QUEUED != downloadState && DownloadState.PAUSED != downloadState){
+        if (DownloadState.QUEUED != downloadState && DownloadState.PAUSED != downloadState) {
             return false;
         }
-
-        if(isFileTransferFileExpired(fileTransferId)){
-            if(sLogger.isActivated()){
-                sLogger.debug("isAllowedToDownloadFileTransfer : file transfer has expired, fileTransferId : " + fileTransferId);
+        if (isFileTransferFileExpired(fileTransferId)) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("isAllowedToDownloadFileTransfer : file transfer has expired, fileTransferId : "
+                        + fileTransferId);
             }
             return false;
         }
@@ -416,10 +412,7 @@ public class FileTransferLog implements IFileTransferLog {
     private boolean isFileTransferFileExpired(String fileTransferId) {
         Long now = NtpTrustedTime.currentTimeMillis();
         Cursor cursor = getFileTransferData(FileTransferData.KEY_FILE_EXPIRATION, fileTransferId);
-        if (cursor == null) {
-            return true;
-        }
-        return now > getDataAsLong(cursor);
+        return cursor == null || now > getDataAsLong(cursor);
     }
 
     @Override
@@ -557,10 +550,10 @@ public class FileTransferLog implements IFileTransferLog {
                     /*
                      * File transfer is paused by system only if already accepted
                      */
-                    fileTransfers.add(new FtHttpResumeDownload(Uri.parse(downloadUri),
-                            Uri.parse(file), fileIconUri, content, contact, chatId, fileTransferId,
-                            isGroup, timestamp, timestampSent, fileExpiration, iconExpiration, true,
-                            remoteSipId));
+                    fileTransfers.add(new FtHttpResumeDownload(Uri.parse(downloadUri), Uri
+                            .parse(file), fileIconUri, content, contact, chatId, fileTransferId,
+                            isGroup, timestamp, timestampSent, fileExpiration, iconExpiration,
+                            true, remoteSipId));
                 } else {
                     String tId = cursor.getString(tIdColumnIdx);
                     fileTransfers.add(new FtHttpResumeUpload(content, fileIconUri, tId, contact,
@@ -713,9 +706,6 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public DownloadState getFileTransferDownloadState(String fileTransferId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get file transfer download state for ".concat(fileTransferId));
-        }
         Cursor cursor = getFileTransferData(FileTransferData.KEY_DOWNLOAD_STATE, fileTransferId);
         if (cursor == null) {
             return null;
@@ -726,9 +716,6 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public ReasonCode getFileTransferReasonCode(String fileTransferId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get file transfer reason code for ".concat(fileTransferId));
-        }
         Cursor cursor = getFileTransferData(FileTransferData.KEY_REASON_CODE, fileTransferId);
         if (cursor == null) {
             return null;
@@ -738,9 +725,6 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public Long getFileTransferTimestamp(String fileTransferId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get file transfer timestamp for ".concat(fileTransferId));
-        }
         Cursor cursor = getFileTransferData(FileTransferData.KEY_TIMESTAMP, fileTransferId);
         if (cursor == null) {
             return null;
@@ -750,9 +734,6 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public Long getFileTransferSentTimestamp(String fileTransferId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get file transfer sent timestamp for ".concat(fileTransferId));
-        }
         Cursor cursor = getFileTransferData(FileTransferData.KEY_TIMESTAMP_SENT, fileTransferId);
         if (cursor == null) {
             return null;
@@ -1064,12 +1045,12 @@ public class FileTransferLog implements IFileTransferLog {
             if (!cursor.moveToNext()) {
                 return null;
             }
-
             String file = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferData.KEY_DOWNLOAD_URI));
             if (file == null) {
                 throw new FileAccessException(
-                        "File download URI not available for file transfer ID=".concat(fileTransferId));
+                        "File download URI not available for file transfer ID="
+                                .concat(fileTransferId));
             }
             String fileName = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferData.KEY_FILENAME));

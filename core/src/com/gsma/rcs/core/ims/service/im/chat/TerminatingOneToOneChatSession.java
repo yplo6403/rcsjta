@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -71,15 +72,16 @@ public class TerminatingOneToOneChatSession extends OneToOneChatSession {
      * @param rcsSettings RCS settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager the contact manager
+     * @param cmsManager the CMS manager
      * @throws PayloadException
      */
     public TerminatingOneToOneChatSession(InstantMessagingService imService, SipRequest invite,
             ContactId contact, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager) throws PayloadException {
+            ContactManager contactManager, CmsManager cmsManager) throws PayloadException {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), ChatUtils
                 .getFirstMessage(invite, timestamp), rcsSettings, messagingLog, timestamp,
-                contactManager);
+                contactManager, cmsManager);
 
         // Create dialog path
         createTerminatingDialogPath(invite);
@@ -104,10 +106,8 @@ public class TerminatingOneToOneChatSession extends OneToOneChatSession {
          * In case the invite contains a http file transfer info the chat session should be
          * auto-accepted so that the file transfer session can be started.
          */
-        if (FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null) {
-            return true;
-        }
-        return mRcsSettings.isChatAutoAccepted();
+        return FileTransferUtils.getHttpFTInfo(getDialogPath().getInvite(), mRcsSettings) != null
+                || mRcsSettings.isChatAutoAccepted();
     }
 
     /**
@@ -393,8 +393,7 @@ public class TerminatingOneToOneChatSession extends OneToOneChatSession {
         final boolean logActivated = sLogger.isActivated();
         ContactId remote = getRemoteContact();
         if (logActivated) {
-            sLogger.debug(new StringBuilder("Start OneToOneChatSession with '").append(remote)
-                    .append("'").toString());
+            sLogger.debug("Start OneToOneChatSession with '" + remote + "'");
         }
         InstantMessagingService imService = getImsService().getImsModule()
                 .getInstantMessagingService();
@@ -409,9 +408,8 @@ public class TerminatingOneToOneChatSession extends OneToOneChatSession {
                  * that was locally originated with the same contact.
                  */
                 if (logActivated) {
-                    sLogger.warn(new StringBuilder("Rejecting OneToOneChatSession (session id '")
-                            .append(getSessionID()).append("') with '").append(remote).append("'")
-                            .toString());
+                    sLogger.warn("Rejecting OneToOneChatSession (session id '" + getSessionID()
+                            + "') with '" + remote + "'");
                 }
                 rejectSession();
                 return;
@@ -422,10 +420,8 @@ public class TerminatingOneToOneChatSession extends OneToOneChatSession {
              * CURRENT rcs chat session if there is one and replace it with the new one.
              */
             if (logActivated) {
-                sLogger.warn(new StringBuilder(
-                        "Rejecting/Aborting existing OneToOneChatSession (session id '")
-                        .append(getSessionID()).append("') with '").append(remote).append("'")
-                        .toString());
+                sLogger.warn("Rejecting/Aborting existing OneToOneChatSession (session id '"
+                        + getSessionID() + "') with '" + remote + "'");
             }
             if (currentSessionInitiatedByRemote) {
                 if (currentSessionEstablished) {

@@ -27,6 +27,8 @@ import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
+import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -159,7 +161,6 @@ public class RcsCoreService extends Service implements CoreListener {
     private Handler mBackgroundHandler;
 
     private final static Logger sLogger = Logger.getLogger(RcsCoreService.class.getSimpleName());
-    private XmsEventHandler mXmsEventHandler;
 
     @Override
     public void onCreate() {
@@ -245,17 +246,10 @@ public class RcsCoreService extends Service implements CoreListener {
                         sLogger.debug(e.getMessage());
                     }
 
-                } catch (ContactManagerException | PayloadException e) {
+                } catch (ContactManagerException | RuntimeException | PayloadException e) {
                     sLogger.error("Unable to stop IMS core!", e);
 
-                } catch (RuntimeException e) {
-                    /*
-                     * Intentionally catch runtime exceptions as else it will abruptly end the
-                     * thread and eventually bring the whole system down, which is not intended.
-                     */
-                    sLogger.error("Unable to stop IMS core!", e);
-                }
-                finally {
+                } finally {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                         mBackgroundHandler.getLooper().quitSafely();
                     } else {
@@ -305,24 +299,27 @@ public class RcsCoreService extends Service implements CoreListener {
             RichcallService richCallService = core.getRichcallService();
             SipService sipService = core.getSipService();
             CapabilityService capabilityService = core.getCapabilityService();
-
+            CmsService cmsService = core.getCmsService();
+            CmsManager cmsManager = cmsService.getCmsManager();
             mContactApi = new ContactServiceImpl(mContactManager, mRcsSettings);
             mCapabilityApi = new CapabilityServiceImpl(capabilityService, mContactManager,
                     mRcsSettings);
             mChatApi = new ChatServiceImpl(imService, mMessagingLog, mHistoryLog, mRcsSettings,
-                    mContactManager);
+                    mContactManager, cmsManager);
+
             mFtApi = new FileTransferServiceImpl(imService, mChatApi, mMessagingLog, mRcsSettings,
-                    mContactManager, mCtx);
+                    mContactManager, mCtx, cmsManager);
             mVshApi = new VideoSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mIshApi = new ImageSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mGshApi = new GeolocSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, core.getCmsService(), mChatApi, mFtApi, mXmsLog,
-                    mRcsSettings, core.getXmsManager(), mLocalContentResolver);
+            mCmsApi = new CmsServiceImpl(mCtx, cmsService, mChatApi, mFtApi, mXmsLog, mRcsSettings,
+                    core.getXmsManager(), mLocalContentResolver, cmsManager);
             // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
-            mXmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings, mCmsApi);
+            XmsEventHandler xmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings,
+                    mCmsApi);
             Logger.activationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 
@@ -330,7 +327,7 @@ public class RcsCoreService extends Service implements CoreListener {
                 sLogger.info("RCS stack release is ".concat(TerminalInfo.getProductVersion(mCtx)));
             }
 
-            core.initialize(mXmsEventHandler);
+            core.initialize(xmsEventHandler);
 
             core.startCore();
 

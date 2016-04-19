@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.service.api;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerListener;
@@ -95,13 +96,14 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             Arrays.asList(BLACK_LISTED_MODELS));
 
     private final LocalContentResolver mLocalContentResolver;
+    private final CmsManager mCmsManager;
 
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService,
-            XmsLog xmsLog, RcsSettings rcsSettings, XmsManager xmsManager,
-            LocalContentResolver localContentResolver) {
+    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService,
+            FileTransferServiceImpl fileTransferService, XmsLog xmsLog, RcsSettings rcsSettings,
+            XmsManager xmsManager, LocalContentResolver localContentResolver, CmsManager cmsManager) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
@@ -112,6 +114,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;
         mLocalContentResolver = localContentResolver;
+        mCmsManager = cmsManager;
     }
 
     @Override
@@ -567,7 +570,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         OriginatingMmsSession session = new OriginatingMmsSession(mCtx, mmsId, contact, subject,
                 parts, mRcsSettings, mXmsManager);
         session.addListener(this);
-        session.addListener(mCmsService.getCmsManager().getMmsSessionHandler());
+        session.addListener(mCmsManager.getMmsSessionHandler());
         mCmsService.scheduleImOperation(session);
     }
 

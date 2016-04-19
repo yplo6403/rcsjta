@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -70,13 +71,14 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
      * @param rcsSettings RCS settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager the contact manager
+     * @param cmsManager the CMS manager
      */
     public OriginatingOneToOneChatSession(InstantMessagingService imService, ContactId contact,
             ChatMessage msg, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager) {
+            ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), msg, rcsSettings,
-                messagingLog, timestamp, contactManager);
+                messagingLog, timestamp, contactManager, cmsManager);
         // Create dialog path
         createOriginatingDialogPath();
         // Set contribution ID
@@ -144,18 +146,14 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
                             timestampSent);
                 }
 
-                String multipart = new StringBuilder(Multipart.BOUNDARY_DELIMITER)
-                        .append(BOUNDARY_TAG).append(SipUtils.CRLF)
-                        .append("Content-Type: application/sdp").append(SipUtils.CRLF)
-                        .append("Content-Length: ").append(sdp.getBytes(UTF8).length)
-                        .append(SipUtils.CRLF).append(SipUtils.CRLF).append(sdp)
-                        .append(SipUtils.CRLF).append(Multipart.BOUNDARY_DELIMITER)
-                        .append(BOUNDARY_TAG).append(SipUtils.CRLF).append("Content-Type: ")
-                        .append(CpimMessage.MIME_TYPE).append(SipUtils.CRLF)
-                        .append("Content-Length: ").append(cpim.getBytes(UTF8).length)
-                        .append(SipUtils.CRLF).append(SipUtils.CRLF).append(cpim)
-                        .append(SipUtils.CRLF).append(Multipart.BOUNDARY_DELIMITER)
-                        .append(BOUNDARY_TAG).append(Multipart.BOUNDARY_DELIMITER).toString();
+                String multipart = Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG + SipUtils.CRLF
+                        + "Content-Type: application/sdp" + SipUtils.CRLF + "Content-Length: "
+                        + sdp.getBytes(UTF8).length + SipUtils.CRLF + SipUtils.CRLF + sdp
+                        + SipUtils.CRLF + Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG
+                        + SipUtils.CRLF + "Content-Type: " + CpimMessage.MIME_TYPE + SipUtils.CRLF
+                        + "Content-Length: " + cpim.getBytes(UTF8).length + SipUtils.CRLF
+                        + SipUtils.CRLF + cpim + SipUtils.CRLF + Multipart.BOUNDARY_DELIMITER
+                        + BOUNDARY_TAG + Multipart.BOUNDARY_DELIMITER;
 
                 // Set the local SDP part in the dialog path
                 getDialogPath().setLocalContent(multipart);
@@ -173,19 +171,12 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
 
             // Send INVITE request
             sendInvite(invite);
-        } catch (InvalidArgumentException e) {
+
+        } catch (InvalidArgumentException | ParseException e) {
             mLogger.error("Unable to set authorization header for chat invite!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
 
-        } catch (ParseException e) {
-            mLogger.error("Unable to set authorization header for chat invite!", e);
-            handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
-
-        } catch (FileAccessException e) {
-            mLogger.error("Unable to send 200OK response!", e);
-            handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
-
-        } catch (PayloadException e) {
+        } catch (FileAccessException | PayloadException e) {
             mLogger.error("Unable to send 200OK response!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
 
@@ -202,7 +193,6 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
         }
     }
 
-    // Changed by Deutsche Telekom
     @Override
     public String getSdpDirection() {
         return SdpUtils.DIRECTION_SENDRECV;

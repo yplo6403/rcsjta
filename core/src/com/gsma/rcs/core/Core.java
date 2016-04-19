@@ -215,6 +215,10 @@ public class Core {
      * @param xmsEventHandler the XMS event handler
      */
     public void initialize(XmsEventHandler xmsEventHandler) {
+        final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
+        backgroundThread.start();
+        mBackgroundHandler = new Handler(backgroundThread.getLooper());
+
         mImsModule.initialize(xmsEventHandler);
         mXmsObserver.registerListener(xmsEventHandler);
     }
@@ -260,11 +264,6 @@ public class Core {
         if (mStarted) {
             return;
         }
-
-        final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
-        backgroundThread.start();
-        mBackgroundHandler = new Handler(backgroundThread.getLooper());
-
         mImsModule.start();
         mAddressBookManager.start();
         mXmsManager.start();

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,6 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -32,16 +34,15 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
     private static final Logger sLogger = Logger.getLogger(GroupChatMessageDeleteTask.class
             .getName());
 
-    private static final String SELECTION_GROUP_CHATMESSAGES = new StringBuilder(
-            MessageData.KEY_CHAT_ID).append("<>").append(MessageData.KEY_CONTACT).append(" OR ")
-            .append(MessageData.KEY_CONTACT).append(" IS NULL").toString();
+    private static final String SELECTION_GROUP_CHATMESSAGES = MessageData.KEY_CHAT_ID + "<>"
+            + MessageData.KEY_CONTACT + " OR " + MessageData.KEY_CONTACT + " IS NULL";
 
-    private static final String SELECTION_CHATMESSAGES_BY_CHATID = new StringBuilder(
-            MessageData.KEY_CHAT_ID).append("=?").toString();
+    private static final String SELECTION_CHATMESSAGES_BY_CHATID = MessageData.KEY_CHAT_ID + "=?";
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
+    private final CmsManager mCmsManager;
 
     /**
      * Deletion of all group chat messages.
@@ -49,14 +50,16 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
+     * @param cmsManager the CMS manager
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
-            InstantMessagingService imService, LocalContentResolver contentResolver) {
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CHAT_ID, SELECTION_GROUP_CHATMESSAGES);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -65,16 +68,17 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
      * @param chatId the chat id
+     * @param cmsManager the CMS manager
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
-            InstantMessagingService imService, LocalContentResolver contentResolver,
-            String chatId) {
+            InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
+            CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CHAT_ID, SELECTION_CHATMESSAGES_BY_CHATID, chatId);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -83,17 +87,18 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
      * @param chatId the chat id (optional, can be null)
      * @param messageId the message id
+     * @param cmsManager the CMS manager
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
-            InstantMessagingService imService, LocalContentResolver contentResolver,
-            String chatId, String messageId) {
+            InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
+            String messageId, CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CHAT_ID, null, messageId);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     @Override
@@ -126,7 +131,7 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
     @Override
     protected void onCompleted(String chatId, Set<String> msgIds) {
         mChatService.broadcastGroupChatMessagesDeleted(chatId, msgIds);
-        mImService.getImsModule().getCmsService().getCmsManager().getGroupChatEventHandler().onDeleteGroupChatMessages(chatId, msgIds);
+        mCmsManager.getGroupChatEventHandler().onDeleteGroupChatMessages(chatId, msgIds);
     }
 
 }

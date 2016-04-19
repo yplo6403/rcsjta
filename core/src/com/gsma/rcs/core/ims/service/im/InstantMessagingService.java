@@ -27,6 +27,7 @@ import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.i
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.ImsModule;
@@ -152,6 +153,8 @@ public class InstantMessagingService extends ImsService {
 
     private final HistoryLog mHistoryLog;
 
+    private final CmsManager mCmsManager;
+
     /**
      * OneToOneChatSessionCache with ContactId as key
      */
@@ -238,10 +241,11 @@ public class InstantMessagingService extends ImsService {
      * @param historyLog History log accessor
      * @param localContentResolver local content resolver
      * @param core Core
+     * @param cmsManager the CMS manager
      */
     public InstantMessagingService(ImsModule parent, RcsSettings rcsSettings,
             ContactManager contactsManager, MessagingLog messagingLog, HistoryLog historyLog,
-            LocalContentResolver localContentResolver, Context ctx, Core core) {
+            LocalContentResolver localContentResolver, Context ctx, Core core, CmsManager cmsManager) {
         super(parent, true);
         mCtx = ctx;
         mCore = core;
@@ -253,9 +257,11 @@ public class InstantMessagingService extends ImsService {
         mImOperationHandler = allocateBgHandler(IM_OPERATION_THREAD_NAME);
         mImDeleteOperationHandler = allocateBgHandler(IM_DELETE_OPERATION_THREAD_NAME);
         mStoreAndFwdMgr = new StoreAndForwardManager(this, mRcsSettings, mContactManager,
-                mMessagingLog);
-        mImdnManager = new ImdnManager(this, mRcsSettings, mMessagingLog);
+                mMessagingLog, cmsManager);
+        mImdnManager = new ImdnManager(this, mRcsSettings, mMessagingLog, cmsManager);
         mDeliveryExpirationManager = new DeliveryExpirationManager(this, ctx, mMessagingLog);
+        mCmsManager = cmsManager;
+
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -392,8 +398,7 @@ public class InstantMessagingService extends ImsService {
         synchronized (getImsServiceSessionOperationLock()) {
             mOneToOneChatSessionCache.put(contact, session);
             addImsServiceSession(session);
-            session.addListener(getImsModule().getCmsService().getCmsManager()
-                    .getChatEventHandler());
+            session.addListener(mCmsManager.getChatEventHandler());
         }
     }
 
@@ -472,8 +477,7 @@ public class InstantMessagingService extends ImsService {
         synchronized (getImsServiceSessionOperationLock()) {
             mGroupChatSessionCache.put(chatId, session);
             addImsServiceSession(session);
-            session.addListener(getImsModule().getCmsService().getCmsManager()
-                    .getGroupChatEventHandler());
+            session.addListener(mCmsManager.getGroupChatEventHandler());
         }
     }
 
@@ -885,7 +889,7 @@ public class InstantMessagingService extends ImsService {
         }
         long timestamp = firstMsg.getTimestamp();
         return new OriginatingOneToOneChatSession(this, contact, firstMsg, mRcsSettings,
-                mMessagingLog, timestamp, mContactManager);
+                mMessagingLog, timestamp, mContactManager, mCmsManager);
     }
 
     /**
@@ -978,8 +982,8 @@ public class InstantMessagingService extends ImsService {
                         if (firstMsg != null
                                 && !mMessagingLog.isMessagePersisted(firstMsg.getMessageId())) {
                             mMessagingLog.addOneToOneSpamMessage(firstMsg);
-                            getImsModule().getCmsService().getCmsManager().getChatEventHandler()
-                                    .onMessageReceived(firstMsg, false, false);
+                            mCmsManager.getChatEventHandler().onMessageReceived(firstMsg, false,
+                                    false);
                         }
 
                         if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
@@ -1016,8 +1020,7 @@ public class InstantMessagingService extends ImsService {
                                 && ChatUtils.isImdnDisplayedRequested(invite);
                         mMessagingLog
                                 .addIncomingOneToOneChatMessage(firstMsg, imdnDisplayRequested);
-                        getImsModule().getCmsService().getCmsManager().getChatEventHandler()
-                                .onMessageReceived(firstMsg, false, false);
+                        mCmsManager.getChatEventHandler().onMessageReceived(firstMsg, false, false);
                     }
 
                     if (!isChatSessionAvailable()) {
@@ -1031,7 +1034,7 @@ public class InstantMessagingService extends ImsService {
 
                     TerminatingOneToOneChatSession session = new TerminatingOneToOneChatSession(
                             imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager);
+                            mContactManager, mCmsManager);
                     mChatService.receiveOneToOneChatInvitation(session);
                     session.startSession();
 
@@ -1068,7 +1071,7 @@ public class InstantMessagingService extends ImsService {
                 ParticipantStatus.INVITING);
         return new OriginatingAdhocGroupChatSession(this, ImsModule.getImsUserProfile()
                 .getImConferenceUri(), subject, participants, mRcsSettings, mMessagingLog,
-                timestamp, mContactManager);
+                timestamp, mContactManager, mCmsManager);
     }
 
     /**
@@ -1135,7 +1138,7 @@ public class InstantMessagingService extends ImsService {
 
                     TerminatingAdhocGroupChatSession session = new TerminatingAdhocGroupChatSession(
                             imService, invite, contact, inviteParticipants, Uri.parse(remoteUri),
-                            mRcsSettings, mMessagingLog, timestamp, mContactManager);
+                            mRcsSettings, mMessagingLog, timestamp, mContactManager, mCmsManager);
 
                     /*--
                      * 6.3.3.1 Leaving a Group Chat that is idle
@@ -1208,7 +1211,7 @@ public class InstantMessagingService extends ImsService {
         }
         long timestamp = groupChat.getTimestamp();
         return new RejoinGroupChatSession(this, groupChat, mRcsSettings, mMessagingLog, timestamp,
-                mContactManager);
+                mContactManager, mCmsManager);
     }
 
     /**
@@ -1246,7 +1249,8 @@ public class InstantMessagingService extends ImsService {
         long timestamp = groupChat.getTimestamp();
         return new RestartGroupChatSession(this,
                 ImsModule.getImsUserProfile().getImConferenceUri(), groupChat.getSubject(), chatId,
-                storedParticipants, mRcsSettings, mMessagingLog, timestamp, mContactManager);
+                storedParticipants, mRcsSettings, mMessagingLog, timestamp, mContactManager,
+                mCmsManager);
     }
 
     /**
@@ -1306,9 +1310,8 @@ public class InstantMessagingService extends ImsService {
                     String imdnMessageId = ChatUtils.getMessageId(message);
                     String chatId = mMessagingLog.getMessageChatId(msgId);
                     if (chatId != null) {
-                        getImsModule().getCmsService().getCmsManager()
-                                .getImdnDeliveryReportListener()
-                                .onDeliveryReport(chatId, contact, msgId, imdnMessageId);
+                        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(chatId,
+                                contact, msgId, imdnMessageId);
                         if (chatId.equals(contact.toString())) {
                             if (sLogger.isActivated()) {
                                 sLogger.debug("Handle one to one message delivery status");
@@ -1322,9 +1325,8 @@ public class InstantMessagingService extends ImsService {
                     }
                     chatId = mMessagingLog.getFileTransferChatId(msgId);
                     if (chatId != null) {
-                        getImsModule().getCmsService().getCmsManager()
-                                .getImdnDeliveryReportListener()
-                                .onDeliveryReport(chatId, contact, imdn.getMsgId(), imdnMessageId);
+                        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(chatId,
+                                contact, imdn.getMsgId(), imdnMessageId);
                         if (chatId.equals(contact.toString())) {
                             receiveOneToOneFileDeliveryStatus(contact, imdn);
                             return;
@@ -1569,7 +1571,7 @@ public class InstantMessagingService extends ImsService {
 
                     TerminatingOneToOneChatSession oneToOneChatSession = new TerminatingOneToOneChatSession(
                             imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager);
+                            mContactManager, mCmsManager);
                     receiveOneOneChatSessionInitiation(oneToOneChatSession);
                     oneToOneChatSession.startSession();
 
@@ -1768,7 +1770,7 @@ public class InstantMessagingService extends ImsService {
 
                     TerminatingStoreAndForwardOneToOneChatMessageSession oneToOneChatSession = new TerminatingStoreAndForwardOneToOneChatMessageSession(
                             imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager);
+                            mContactManager, mCmsManager);
                     receiveOneOneChatSessionInitiation(oneToOneChatSession);
                     oneToOneChatSession.startSession();
 
@@ -2087,9 +2089,9 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteOneToOneChats() {
         mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
-                this, mLocalContentResolver));
+                this, mLocalContentResolver, mCmsManager));
         mImDeleteOperationHandler.post(new OneToOneChatMessageDeleteTask(mChatService, this,
-                mLocalContentResolver));
+                mLocalContentResolver, mCmsManager));
     }
 
     /**
@@ -2098,11 +2100,11 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteGroupChats() {
         mImDeleteOperationHandler.post(new GroupFileTransferDeleteTask(mFileTransferService, this,
-                mLocalContentResolver));
+                mLocalContentResolver, mCmsManager));
         mImDeleteOperationHandler.post(new GroupChatMessageDeleteTask(mChatService, this,
-                mLocalContentResolver));
+                mLocalContentResolver, mCmsManager));
         mImDeleteOperationHandler.post(new GroupChatDeleteTask(mChatService, this,
-                mLocalContentResolver));
+                mLocalContentResolver, mCmsManager));
     }
 
     /**
@@ -2113,9 +2115,9 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteOneToOneChat(ContactId contact) {
         mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
-                this, mLocalContentResolver, contact));
+                this, mLocalContentResolver, contact, mCmsManager));
         mImDeleteOperationHandler.post(new OneToOneChatMessageDeleteTask(mChatService, this,
-                mLocalContentResolver, contact));
+                mLocalContentResolver, contact, mCmsManager));
     }
 
     /**
@@ -2126,11 +2128,11 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteGroupChat(String chatId) {
         mImDeleteOperationHandler.post(new GroupChatMessageDeleteTask(mChatService, this,
-                mLocalContentResolver, chatId));
+                mLocalContentResolver, chatId, mCmsManager));
         mImDeleteOperationHandler.post(new GroupFileTransferDeleteTask(mFileTransferService, this,
-                mLocalContentResolver, chatId));
+                mLocalContentResolver, chatId, mCmsManager));
         mImDeleteOperationHandler.post(new GroupChatDeleteTask(mChatService, this,
-                mLocalContentResolver, chatId));
+                mLocalContentResolver, chatId, mCmsManager));
     }
 
     /**
@@ -2142,10 +2144,10 @@ public class InstantMessagingService extends ImsService {
     public void tryToDeleteChatMessage(String msgId) {
         if (mMessagingLog.isOneToOneChatMessage(msgId)) {
             mImDeleteOperationHandler.post(new OneToOneChatMessageDeleteTask(mChatService, this,
-                    mLocalContentResolver, msgId));
+                    mLocalContentResolver, msgId, mCmsManager));
         } else {
             mImDeleteOperationHandler.post(new GroupChatMessageDeleteTask(mChatService, this,
-                    mLocalContentResolver, null, msgId));
+                    mLocalContentResolver, null, msgId, mCmsManager));
         }
     }
 
@@ -2159,10 +2161,10 @@ public class InstantMessagingService extends ImsService {
         if (mMessagingLog.isGroupFileTransfer(transferId)) {
             mImDeleteOperationHandler.post(new GroupFileTransferDeleteTask(mFileTransferService,
                     this, mLocalContentResolver, mMessagingLog.getFileTransferChatId(transferId),
-                    transferId));
+                    transferId, mCmsManager));
         } else {
             mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
-                    this, mLocalContentResolver, transferId));
+                    this, mLocalContentResolver, transferId, mCmsManager));
         }
     }
 
@@ -2174,7 +2176,7 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteFileTransfers(ContactId contact) {
         mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
-                this, mLocalContentResolver, contact));
+                this, mLocalContentResolver, contact, mCmsManager));
     }
 
     /**
@@ -2183,7 +2185,7 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteOneToOneFileTransfers() {
         mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
-                this, mLocalContentResolver));
+                this, mLocalContentResolver, mCmsManager));
     }
 
     /**
@@ -2192,7 +2194,7 @@ public class InstantMessagingService extends ImsService {
      */
     public void tryToDeleteGroupFileTransfers() {
         mImDeleteOperationHandler.post(new GroupFileTransferDeleteTask(mFileTransferService, this,
-                mLocalContentResolver));
+                mLocalContentResolver, mCmsManager));
     }
 
     /**

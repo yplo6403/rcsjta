@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.standfw;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -77,14 +78,14 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager The contact manager accessor
+     * @param cmsManager The CMS manager
      */
     public TerminatingStoreAndForwardOneToOneChatNotificationSession(
             InstantMessagingService imService, SipRequest invite, ContactId contact,
             RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager) {
+            ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), null, rcsSettings,
-                messagingLog, timestamp, contactManager);
-
+                messagingLog, timestamp, contactManager, cmsManager);
         // Create the MSRP manager
         int localMsrpPort = NetworkRessourceManager.generateLocalMsrpPort(rcsSettings);
         String localIpAddress = getImsService().getImsModule().getCurrentNetworkInterface()
@@ -93,7 +94,6 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
         if (imService.getImsModule().isConnectedToWifiAccess()) {
             mMsrpMgr.setSecured(rcsSettings.isSecureMsrpOverWifi());
         }
-
         // Create dialog path
         createTerminatingDialogPath(invite);
     }
@@ -105,7 +105,6 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             if (logActivated) {
                 sLogger.info("Initiate a new store & forward session for notifications");
             }
-
             /* Parse the remote SDP part */
             SdpParser parser = new SdpParser(getDialogPath().getRemoteContent().getBytes(UTF8));
             Vector<MediaDescription> media = parser.getMediaDescriptions();
@@ -115,7 +114,6 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
 
-            /* Changed by Deutsche Telekom */
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
 
             /* Extract the "setup" parameter */
@@ -127,13 +125,11 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             if (logActivated) {
                 sLogger.debug("Remote setup attribute is ".concat(remoteSetup));
             }
-
             /* Set setup mode */
             String localSetup = createSetupAnswer(remoteSetup);
             if (logActivated) {
                 sLogger.debug("Local setup attribute is ".concat(localSetup));
             }
-
             /* Set local port */
             int localMsrpPort;
             if (localSetup.equals("active")) {
@@ -141,16 +137,13 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             } else {
                 localMsrpPort = 9; /* See RFC4145, Page 4 */
             }
-
             /* Build SDP part */
             String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
             String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
                     getMsrpMgr().getLocalMsrpPath(), getSdpDirection());
-
             /* Set the local SDP part in the dialog path */
             getDialogPath().setLocalContent(sdp);
-
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -158,20 +151,16 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
                 }
                 return;
             }
-
             /* Create a 200 OK response */
             if (logActivated) {
                 sLogger.info("Send 200 OK");
             }
             SipResponse resp = SipMessageFactory.create200OkInviteResponse(getDialogPath(),
                     InstantMessagingService.CHAT_FEATURE_TAGS, sdp);
-
             getDialogPath().setSigEstablished();
-
             /* Send response */
             SipTransactionContext ctx = getImsService().getImsModule().getSipManager()
                     .sendSipMessage(resp);
-
             // Create the MSRP server session
             if (localSetup.equals("passive")) {
                 // Passive mode: client wait a connection
@@ -185,10 +174,8 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
                  */
                 sendEmptyDataChunk();
             }
-
             /* wait a response */
             getImsService().getImsModule().getSipManager().waitResponse(ctx);
-
             // Test if the session should be interrupted
             if (isInterrupted()) {
                 if (logActivated) {
@@ -196,14 +183,12 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
                 }
                 return;
             }
-
             /* Analyze the received response */
             if (ctx.isSipAck()) {
                 if (logActivated) {
                     sLogger.info("ACK request received");
                 }
                 getDialogPath().setSessionEstablished();
-
                 /* Create the MSRP client session */
                 if (localSetup.equals("active")) {
                     /* Active mode: client should connect */
@@ -259,10 +244,8 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
     @Override
     public void handleError(ImsServiceError error) {
         if (sLogger.isActivated()) {
-            sLogger.info(new StringBuilder("Session error: ").append(error.getErrorCode())
-                    .append(", reason=").append(error.getMessage()).toString());
+            sLogger.info("Session error: " + error.getErrorCode() + ", reason=" + error.getMessage());
         }
-
         closeMediaSession();
         removeSession();
     }
@@ -277,8 +260,7 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             throws PayloadException, NetworkException {
         final boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.debug(new StringBuilder("Data received (type ").append(mimeType).append(")")
-                    .toString());
+            sLogger.debug("Data received (type " + mimeType + ")");
         }
         getActivityManager().updateActivity();
         if ((data == null) || (data.length == 0)) {
@@ -307,8 +289,7 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
             }
         } else {
             if (logActivated) {
-                sLogger.debug(new StringBuilder("Not supported content ").append(mimeType)
-                        .append(" in chat session").toString());
+                sLogger.debug("Not supported content " + mimeType + " in chat session");
             }
         }
     }

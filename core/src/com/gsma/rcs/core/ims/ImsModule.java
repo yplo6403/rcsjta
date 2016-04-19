@@ -23,10 +23,11 @@
 package com.gsma.rcs.core.ims;
 
 import com.gsma.rcs.addressbook.AddressBookManager;
-import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
+import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.ims.network.ImsConnectionManager;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -41,7 +42,6 @@ import com.gsma.rcs.core.ims.service.ImsService.ImsServiceType;
 import com.gsma.rcs.core.ims.service.ImsServiceDispatcher;
 import com.gsma.rcs.core.ims.service.ImsServiceSession.TerminationReason;
 import com.gsma.rcs.core.ims.service.capability.CapabilityService;
-import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.ims.service.extension.ServiceExtensionManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.HttpTransferManager;
@@ -51,6 +51,7 @@ import com.gsma.rcs.core.ims.service.sip.SipService;
 import com.gsma.rcs.core.ims.service.terms.TermsConditionsService;
 import com.gsma.rcs.core.ims.userprofile.UserProfile;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.history.HistoryLog;
@@ -128,9 +129,13 @@ public class ImsModule implements SipEventListener {
         CapabilityService capabilityService = new CapabilityService(this, rcsSettings,
                 contactManager, addressBookManager);
         mServices.put(ImsServiceType.CAPABILITY, capabilityService);
+        CmsService cmsService = new CmsService(mCore, this, ctx, rcsSettings, xmsLog, messagingLog,
+                cmsLog);
+        mServices.put(ImsServiceType.CMS, cmsService);
+        CmsManager cmsManager = cmsService.getCmsManager();
         mServices.put(ImsServiceType.INSTANT_MESSAGING, new InstantMessagingService(this,
                 rcsSettings, contactManager, messagingLog, historyLog, localContentResolver, ctx,
-                core));
+                core, cmsManager));
         mServices
                 .put(ImsServiceType.RICHCALL, new RichcallService(this, richCallHistory,
                         contactManager, rcsSettings, mCallManager, localContentResolver,
@@ -139,8 +144,6 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager));
         mServices.put(ImsServiceType.SIP, new SipService(this, contactManager, rcsSettings));
 
-        mServices.put(ImsServiceType.CMS, new CmsService(mCore, this, ctx, rcsSettings, xmsLog,
-                messagingLog, cmsLog));
         mServiceDispatcher = new ImsServiceDispatcher(this, rcsSettings);
 
         if (sLogger.isActivated()) {
@@ -150,6 +153,7 @@ public class ImsModule implements SipEventListener {
 
     /**
      * Initializes IMS module
+     * 
      * @param xmsEventHandler the XMS event handler
      */
     public void initialize(XmsEventHandler xmsEventHandler) {

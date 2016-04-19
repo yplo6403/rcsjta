@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.chat;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -80,12 +81,13 @@ public abstract class OneToOneChatSession extends ChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager Contact manager accessor
+     * @param cmsManager The CMS manager
      */
     public OneToOneChatSession(InstantMessagingService imService, ContactId contact,
             Uri remoteContact, ChatMessage firstMsg, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp, ContactManager contactManager) {
+            MessagingLog messagingLog, long timestamp, ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, remoteContact, rcsSettings, messagingLog, firstMsg, timestamp,
-                contactManager);
+                contactManager, cmsManager);
         List<String> featureTags = ChatUtils.getSupportedFeatureTagsForChat(rcsSettings);
         setFeatureTags(featureTags);
         setAcceptContactTags(featureTags);

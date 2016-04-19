@@ -24,6 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.imdn;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -60,6 +61,7 @@ public class ImdnManager extends Thread {
 
     private final InstantMessagingService mImService;
     private final MessagingLog mMessagingLog;
+    private final CmsManager mCmsManager;
     private FifoBuffer mBuffer = new FifoBuffer();
 
     private final RcsSettings mRcsSettings;
@@ -74,10 +76,11 @@ public class ImdnManager extends Thread {
      * @param messagingLog the messaging log accessor
      */
     public ImdnManager(InstantMessagingService imService, RcsSettings rcsSettings,
-            MessagingLog messagingLog) {
+            MessagingLog messagingLog, CmsManager cmsManager) {
         mImService = imService;
         mRcsSettings = rcsSettings;
         mMessagingLog = messagingLog;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -158,11 +161,12 @@ public class ImdnManager extends Thread {
                  */
                 if (imdnDisplay) {
                     mImService.onChatMessageDisplayReportSent(delivery.getChatId(),
-                            delivery.getRemote(), delivery.getMsgId());
+                            delivery.getRemote(), msgId);
                 }
             } catch (PayloadException | RuntimeException e) {
                 sLogger.error("Failed to send delivery status for chatId: " + delivery.getChatId(),
                         e);
+
             } catch (NetworkException e) {
                 if (sLogger.isActivated()) {
                     sLogger.debug(e.getMessage());
@@ -305,13 +309,9 @@ public class ImdnManager extends Thread {
             // Analyze received message
             analyzeSipResponse(ctx, authenticationAgent, dialogPath, cpim);
 
-            mImService
-                    .getImsModule()
-                    .getCmsService()
-                    .getCmsManager()
-                    .getImdnDeliveryReportListener()
-                    .onDeliveryReport(deliveryStatus.getChatId(), deliveryStatus.getRemote(),
-                            deliveryStatus.getMsgId(), deliveryStatus.getImdnMessageId());
+            mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(
+                    deliveryStatus.getChatId(), deliveryStatus.getRemote(),
+                    deliveryStatus.getMsgId(), deliveryStatus.getImdnMessageId());
 
         } catch (InvalidArgumentException | ParseException e) {
             throw new PayloadException("Unable to set authorization header for remoteInstanceId : "

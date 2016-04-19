@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,6 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -34,12 +36,13 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
     private static final Logger sLogger = Logger.getLogger(OneToOneChatMessageDeleteTask.class
             .getName());
 
-    private static final String SELECTION_ONETOONE_CHATMESSAGES = new StringBuilder(
-            MessageData.KEY_CHAT_ID).append("=").append(MessageData.KEY_CONTACT).toString();
+    private static final String SELECTION_ONETOONE_CHATMESSAGES = MessageData.KEY_CHAT_ID + "="
+            + MessageData.KEY_CONTACT;
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
+    private final CmsManager mCmsManager;
 
     /**
      * Deletion of all one to one chat messages.
@@ -47,15 +50,17 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
+     * @param cmsManager the CMS manager
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
-            InstantMessagingService imService, LocalContentResolver contentResolver) {
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CONTACT, SELECTION_ONETOONE_CHATMESSAGES);
         mChatService = chatService;
         mImService = imService;
         setAllAtOnce(true);
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -64,16 +69,17 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
      * @param messageId the message id
+     * @param cmsManager the CMS manager
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            String messageId) {
+            String messageId, CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CONTACT, null, messageId);
         mChatService = chatService;
         mImService = imService;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -82,17 +88,18 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param imsLock the ims operation lock
      * @param contact the contact
+     * @param cmsManager the CMS manager
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            ContactId contact) {
+            ContactId contact, CmsManager cmsManager) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
                 MessageData.KEY_CONTACT, contact);
         mChatService = chatService;
         mImService = imService;
         setAllAtOnce(true);
+        mCmsManager = cmsManager;
     }
 
     @Override
@@ -128,7 +135,7 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
         for (String messageId : msgIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(messageId);
         }
-        mImService.getImsModule().getCmsService().getCmsManager().getChatEventHandler().onDeleteChatMessages(contact, msgIds);
+        mCmsManager.getChatEventHandler().onDeleteChatMessages(contact, msgIds);
         mChatService.broadcastOneToOneMessagesDeleted(contact, msgIds);
     }
 }

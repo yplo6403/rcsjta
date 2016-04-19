@@ -25,6 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -90,6 +91,7 @@ public abstract class GroupChatSession extends ChatSession {
      * times.
      */
     private final Map<ContactId, ParticipantStatus> mParticipants;
+    private final CmsManager mCmsManager;
 
     /**
      * Boolean variable indicating that the session is no longer marked as the active one for
@@ -117,16 +119,19 @@ public abstract class GroupChatSession extends ChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager the contact manager
+     * @param cmsManager the CMS manager
      */
     public GroupChatSession(InstantMessagingService imService, ContactId contact, Uri conferenceId,
             Map<ContactId, ParticipantStatus> participants, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp, ContactManager contactManager) {
+            MessagingLog messagingLog, long timestamp, ContactManager contactManager,
+            CmsManager cmsManager) {
         super(imService, contact, conferenceId, rcsSettings, messagingLog, null, timestamp,
-                contactManager);
+                contactManager, cmsManager);
         mMaxParticipants = rcsSettings.getMaxChatParticipants();
         mParticipants = participants;
         mConferenceSubscriber = new ConferenceEventSubscribeManager(this, rcsSettings, messagingLog);
         mImsModule = imService.getImsModule();
+        mCmsManager = cmsManager;
         setFeatureTags(ChatUtils.getSupportedFeatureTagsForGroupChat(rcsSettings));
         setAcceptContactTags(ChatUtils.getAcceptContactTagsForGroupChat());
         addAcceptTypes(CpimMessage.MIME_TYPE);
@@ -414,7 +419,7 @@ public abstract class GroupChatSession extends ChatSession {
                 }
             }
         }
-        getImsService().getImsModule().getCmsService().getCmsManager()
+        mCmsManager
                 .getImdnDeliveryReportListener()
                 .onDeliveryReport(getContributionID(), msgId, imdnMessageId);
 

@@ -22,6 +22,7 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
@@ -67,17 +68,21 @@ public class CpmSessionTest extends AndroidTestCase {
         LocalContentResolver localContentResolver = new LocalContentResolver(context);
         XmsLog xmsLog = XmsLog.getInstance(context, settings, localContentResolver);
         mMessagingLog = MessagingLog.getInstance(localContentResolver, settings);
-
-        InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                settings, null, mMessagingLog, null, localContentResolver, context, null);
-        ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
-                null, settings, null);
-        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(instantMessagingService,chatService,mMessagingLog, settings, null, context);
-        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
         CmsService cmsService = new CmsService(null, null, context, settings, xmsLog,
                 mMessagingLog, cmsLog);
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,fileTransferService,
-                xmsLog, settings, xmsManager, localContentResolver);
+        CmsManager cmsManager = cmsService.getCmsManager();
+        InstantMessagingService instantMessagingService = new InstantMessagingService(null,
+                settings, null, mMessagingLog, null, localContentResolver, context, null,
+                cmsManager);
+        ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
+                null, settings, null, cmsManager);
+        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(
+                instantMessagingService, chatService, mMessagingLog, settings, null, context,
+                cmsManager);
+        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
+
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+                fileTransferService, xmsLog, settings, xmsManager, localContentResolver, cmsManager);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(context, cmsLog, xmsLog,
                 mMessagingLog, chatService, fileTransferService, cmsServiceImpl, settings, null);
         LocalStorage localStorage = new LocalStorage(settings, cmsLog, cmsEventHandler);
@@ -148,41 +153,20 @@ public class CpmSessionTest extends AndroidTestCase {
 
     public String getCpmSessionPayload(String chatId) {
 
-        return new StringBuilder()
-                .append("Date: Thu, 11 Feb 2016 14:00:49 +0100")
-                .append(Constants.CRLF)
-                .append("From: tel:+33643209850")
-                .append(Constants.CRLF)
-                .append("To: sip:Conference-Factory@volteofr.com")
-                .append(Constants.CRLF)
-                .append("Message-ID: <881999583.1171.1455195649122@RCS5frontox1>")
-                .append(Constants.CRLF)
-                .append("Subject: cfff")
-                .append(Constants.CRLF)
-                .append("MIME-Version: 1.0")
-                .append(Constants.CRLF)
-                .append("Content-Type: Application/X-CPM-Session")
-                .append(Constants.CRLF)
-                .append("Content-Transfer-Encoding: 8bit")
-                .append(Constants.CRLF)
-                .append("Conversation-ID: ")
-                .append(chatId)
-                .append(Constants.CRLF)
-                .append("Contribution-ID: ")
-                .append(chatId)
-                .append(Constants.CRLF)
-                .append("IMDN-Message-ID: UFoF32nXQSy5l3d4cVGwZXn4f8YQ8rq6")
-                .append(Constants.CRLF)
-                .append("Message-Direction: sent")
-                .append(Constants.CRLF)
-                .append(Constants.CRLF)
-                .append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-                .append(Constants.CRLF)
-                .append("<session>")
-                .append("<session-type>Group</session-type>")
-                .append("<sdp>o=- 3664184448 3664184448 IN IP4 sip.imsnsn.fr</sdp>")
-                .append("<invited-participants>tel:+33642639381;tel:+33643209850</invited-participants>")
-                .append("</session>").toString();
+        return "Date: Thu, 11 Feb 2016 14:00:49 +0100" + Constants.CRLF + "From: tel:+33643209850"
+                + Constants.CRLF + "To: sip:Conference-Factory@volteofr.com" + Constants.CRLF
+                + "Message-ID: <881999583.1171.1455195649122@RCS5frontox1>" + Constants.CRLF
+                + "Subject: cfff" + Constants.CRLF + "MIME-Version: 1.0" + Constants.CRLF
+                + "Content-Type: Application/X-CPM-Session" + Constants.CRLF
+                + "Content-Transfer-Encoding: 8bit" + Constants.CRLF + "Conversation-ID: " + chatId
+                + Constants.CRLF + "Contribution-ID: " + chatId + Constants.CRLF
+                + "IMDN-Message-ID: UFoF32nXQSy5l3d4cVGwZXn4f8YQ8rq6" + Constants.CRLF
+                + "Message-Direction: sent" + Constants.CRLF + Constants.CRLF
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + Constants.CRLF + "<session>"
+                + "<session-type>Group</session-type>"
+                + "<sdp>o=- 3664184448 3664184448 IN IP4 sip.imsnsn.fr</sdp>"
+                + "<invited-participants>tel:+33642639381;tel:+33643209850</invited-participants>"
+                + "</session>";
     }
 
 }

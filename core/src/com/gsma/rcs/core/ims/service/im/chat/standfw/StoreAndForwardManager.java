@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.im.chat.standfw;
 
+import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
@@ -51,21 +52,24 @@ public class StoreAndForwardManager {
 
     private final static Logger sLogger = Logger.getLogger(StoreAndForwardManager.class
             .getSimpleName());
+    private final CmsManager mCmsManager;
 
     /**
      * Constructor
      * 
-     * @param imsService IMS service
-     * @param rcsSettings
-     * @param contactManager
-     * @param messagingLog
+     * @param imService IMS service
+     * @param rcsSettings the RCS settings accessor
+     * @param contactManager the contact manager
+     * @param messagingLog the massaging log accessor
+     * @param cmsManager the CMS manager
      */
     public StoreAndForwardManager(InstantMessagingService imService, RcsSettings rcsSettings,
-            ContactManager contactManager, MessagingLog messagingLog) {
+            ContactManager contactManager, MessagingLog messagingLog, CmsManager cmsManager) {
         mImService = imService;
         mRcsSettings = rcsSettings;
         mContactManager = contactManager;
         mMessagingLog = messagingLog;
+        mCmsManager = cmsManager;
     }
 
     /**
@@ -77,14 +81,14 @@ public class StoreAndForwardManager {
      * @throws PayloadException
      * @throws NetworkException
      */
-    public void receiveStoreAndForwardMessageInvitation(SipRequest invite, ContactId contact, long timestamp)
- throws PayloadException, NetworkException {
+    public void receiveStoreAndForwardMessageInvitation(SipRequest invite, ContactId contact,
+            long timestamp) throws PayloadException, NetworkException {
         if (sLogger.isActivated()) {
             sLogger.debug("Receive stored messages");
         }
         TerminatingStoreAndForwardOneToOneChatMessageSession session = new TerminatingStoreAndForwardOneToOneChatMessageSession(
                 mImService, invite, contact, mRcsSettings, mMessagingLog, timestamp,
-                mContactManager);
+                mContactManager, mCmsManager);
         mImService.receiveStoreAndForwardMsgSessionInvitation(session);
         session.startSession();
     }
@@ -96,13 +100,14 @@ public class StoreAndForwardManager {
      * @param contact Contact identifier
      * @param timestamp Local timestamp when got SipRequest
      */
-    public void receiveStoreAndForwardNotificationInvitation(SipRequest invite, ContactId contact, long timestamp) {
+    public void receiveStoreAndForwardNotificationInvitation(SipRequest invite, ContactId contact,
+            long timestamp) {
         if (sLogger.isActivated()) {
             sLogger.debug("Receive stored notifications");
         }
         TerminatingStoreAndForwardOneToOneChatNotificationSession session = new TerminatingStoreAndForwardOneToOneChatNotificationSession(
                 mImService, invite, contact, mRcsSettings, mMessagingLog, timestamp,
-                mContactManager);
+                mContactManager, mCmsManager);
         mImService.receiveStoreAndForwardNotificationSessionInvitation(session);
         session.startSession();
     }
