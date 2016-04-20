@@ -19,15 +19,17 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
-
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
 import com.gsma.rcs.imaplib.imap.Part;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
@@ -40,93 +42,78 @@ public class ImapSmsMessageTest extends AndroidTestCase {
     private long mDate;
     private String mImapDate;
     private String mCpimDate;
+    private ContactId mRemote;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-
         mDate = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_IMAP_DATE_FORMAT);
         mCpimDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_CPIM_DATE_FORMAT);
-
-        mPayload = new StringBuilder().append("From: +33642575779").append(Constants.CRLF)
-                .append("To: +33640332859").append(Constants.CRLF).append("Date: ")
-                .append(mImapDate).append(Constants.CRLF).append("Conversation-ID: 1443517760826")
-                .append(Constants.CRLF).append("Contribution-ID: 1443517760826")
-                .append(Constants.CRLF).append("IMDN-Message-ID: 1443517760826")
-                .append(Constants.CRLF).append("Message-Direction: received")
-                .append(Constants.CRLF).append("Message-Correlator: 1").append(Constants.CRLF)
-                .append("Message-Context: pager-message").append(Constants.CRLF)
-                .append("Content-Type: Message/CPIM").append(Constants.CRLF).append(Constants.CRLF)
-                .append("From: +33642575779").append(Constants.CRLF).append("To: +33640332859")
-                .append(Constants.CRLF).append("NS: imdn <urn:ietf:params:imdn>")
-                .append(Constants.CRLF).append("NS: rcs <http://www.gsma.com>")
-                .append(Constants.CRLF).append("imdn.Message-ID: 1443517760826")
-                .append(Constants.CRLF).append("DateTime: ").append(mCpimDate)
-                .append(Constants.CRLF).append(Constants.CRLF)
-                .append("Content-Type: text/plain; charset=utf-8").append(Constants.CRLF)
-                .append(Constants.CRLF).append("1").toString();
-
+        mRemote = ContactUtil.createContactIdFromTrustedData("+33642575779");
+        mPayload = "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
+                + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: 1443517760826"
+                + Constants.CRLF + "Contribution-ID: 1443517760826" + Constants.CRLF
+                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
+                + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
+                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: Message/CPIM"
+                + Constants.CRLF + Constants.CRLF + "From: +33642575779" + Constants.CRLF
+                + "To: +33640332859" + Constants.CRLF + "NS: imdn <urn:ietf:params:imdn>"
+                + Constants.CRLF + "NS: rcs <http://www.gsma.com>" + Constants.CRLF
+                + "imdn.Message-ID: 1443517760826" + Constants.CRLF + "DateTime: " + mCpimDate
+                + Constants.CRLF + Constants.CRLF + "Content-Type: text/plain; charset=utf-8"
+                + Constants.CRLF + Constants.CRLF + "1";
     }
 
     @SmallTest
-    public void testFromPayload() {
+    public void testFromPayload() throws CmsSyncMissingHeaderException,
+            CmsSyncHeaderFormatException {
+        String folderName = "myFolder";
+        Integer uid = 12;
+        Part part = new Part();
+        part.fromPayload(mPayload);
+        ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
+        metadata.getFlags().add(Flag.Seen);
+        ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
+        imapMessage.setFolderPath(folderName);
 
-        try {
-            String folderName = "myFolder";
+        ImapSmsMessage imapSmsMessage = new ImapSmsMessage(imapMessage);
+        Assert.assertEquals(folderName, imapSmsMessage.getFolder());
+        Assert.assertEquals(uid, imapSmsMessage.getUid());
+        Assert.assertTrue(imapSmsMessage.isSeen());
+        Assert.assertFalse(imapSmsMessage.isDeleted());
 
-            Integer uid = 12;
-            Part part = new Part();
-            part.fromPayload(mPayload);
-            ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
-            metadata.getFlags().add(Flag.Seen);
-            ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
-            imapMessage.setFolderPath(folderName);
+        Assert.assertEquals("+33642575779", imapSmsMessage.getHeader(Constants.HEADER_FROM));
+        Assert.assertEquals("+33640332859", imapSmsMessage.getHeader(Constants.HEADER_TO));
+        Assert.assertEquals(mImapDate, imapSmsMessage.getHeader(Constants.HEADER_DATE));
+        Assert.assertEquals("1443517760826",
+                imapSmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
+        Assert.assertEquals("1443517760826",
+                imapSmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
+        Assert.assertEquals("1443517760826",
+                imapSmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
+        Assert.assertEquals("received", imapSmsMessage.getHeader(Constants.HEADER_DIRECTION));
+        Assert.assertEquals("1", imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
+        Assert.assertEquals("pager-message",
+                imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
+        Assert.assertEquals("Message/CPIM", imapSmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-            ImapSmsMessage imapSmsMessage = new ImapSmsMessage(imapMessage);
-            Assert.assertEquals(folderName, imapSmsMessage.getFolder());
-            Assert.assertEquals(uid, imapSmsMessage.getUid());
-            Assert.assertTrue(imapSmsMessage.isSeen());
-            Assert.assertFalse(imapSmsMessage.isDeleted());
+        Assert.assertEquals("+33642575779",
+                imapSmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
+        Assert.assertEquals("+33640332859",
+                imapSmsMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
+        Assert.assertEquals("1443517760826",
+                imapSmsMessage.getCpimMessage().getHeader("imdn.Message-ID"));
+        Assert.assertEquals(mCpimDate, imapSmsMessage.getCpimMessage().getHeader("DateTime"));
 
-            Assert.assertEquals("+33642575779", imapSmsMessage.getHeader(Constants.HEADER_FROM));
-            Assert.assertEquals("+33640332859", imapSmsMessage.getHeader(Constants.HEADER_TO));
-            Assert.assertEquals(mImapDate, imapSmsMessage.getHeader(Constants.HEADER_DATE));
-            Assert.assertEquals("1443517760826",
-                    imapSmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
-            Assert.assertEquals("1443517760826",
-                    imapSmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
-            Assert.assertEquals("1443517760826",
-                    imapSmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
-            Assert.assertEquals("received", imapSmsMessage.getHeader(Constants.HEADER_DIRECTION));
-            Assert.assertEquals("1", imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
-            Assert.assertEquals("pager-message",
-                    imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
-            Assert.assertEquals("Message/CPIM",
-                    imapSmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
-
-            Assert.assertEquals("+33642575779",
-                    imapSmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-            Assert.assertEquals("+33640332859",
-                    imapSmsMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
-            Assert.assertEquals("1443517760826",
-                    imapSmsMessage.getCpimMessage().getHeader("imdn.Message-ID"));
-            Assert.assertEquals(mCpimDate, imapSmsMessage.getCpimMessage().getHeader("DateTime"));
-
-            Assert.assertEquals("1",
-                    ((TextCpimBody) imapSmsMessage.getCpimMessage().getBody()).getContent());
-        } catch (CmsSyncException e) {
-            e.printStackTrace();
-            Assert.fail();
-        }
+        Assert.assertEquals("1",
+                ((TextCpimBody) imapSmsMessage.getCpimMessage().getBody()).getContent());
     }
 
     @SmallTest
     public void testToPayload() {
-
-        ImapSmsMessage imapSmsMessage = new ImapSmsMessage("+33642575779", "+33640332859",
+        ImapSmsMessage imapSmsMessage = new ImapSmsMessage(mRemote, "+33642575779", "+33640332859",
                 "received", mDate, "1", "1443517760826", "1443517760826", "1443517760826");
-
         Assert.assertEquals(mPayload, imapSmsMessage.toPayload());
     }
 

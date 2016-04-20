@@ -40,6 +40,7 @@ import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 import android.text.TextUtils;
@@ -169,15 +170,16 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
         String prevSelectedFolder = "";
         for (XmsDataObject message : messages) {
             List<Flag> flags = new ArrayList<>();
+            ContactId remote = message.getContact();
             switch (message.getDirection()) {
                 case INCOMING:
-                    from = CmsUtils.contactToHeader(message.getContact());
+                    from = CmsUtils.contactToHeader(remote);
                     to = CmsUtils.contactToHeader(mRcsSettings.getUserProfileImsUserName());
                     direction = Constants.DIRECTION_RECEIVED;
                     break;
                 case OUTGOING:
                     from = CmsUtils.contactToHeader(mRcsSettings.getUserProfileImsUserName());
-                    to = CmsUtils.contactToHeader(message.getContact());
+                    to = CmsUtils.contactToHeader(remote);
                     direction = Constants.DIRECTION_SENT;
                     break;
                 default:
@@ -189,12 +191,12 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
             IImapMessage imapMessage = null;
             if (message instanceof SmsDataObject) {
                 SmsDataObject sms = (SmsDataObject) message;
-                imapMessage = new ImapSmsMessage(from, to, direction, sms.getTimestamp(),
+                imapMessage = new ImapSmsMessage(remote, from, to, direction, sms.getTimestamp(),
                         sms.getBody(), UUID.randomUUID().toString(), UUID.randomUUID().toString(),
                         sms.getMessageId());
             } else if (message instanceof MmsDataObject) {
                 MmsDataObject mms = (MmsDataObject) message;
-                imapMessage = new ImapMmsMessage(mContext, from, to, direction, mms.getTimestamp(),
+                imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction, mms.getTimestamp(),
                         mms.getSubject(), UUID.randomUUID().toString(), UUID.randomUUID()
                                 .toString(), mms.getMessageId(), mms.getMmsId(),
                         mms.getMmsParts());

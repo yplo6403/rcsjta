@@ -27,10 +27,11 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpmsession.CpmSessionDocument;
 import com.gsma.rcs.core.cms.protocol.message.cpmsession.CpmSessionParser;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.InputSource;
@@ -46,58 +47,44 @@ public class ImapCpmSessionMessage extends ImapMessage {
     private static final String SESSION_TYPE_GROUP = "Group";
 
     private final String mChatId;
-    private final Direction mDirection;
+    private final RcsService.Direction mDirection;
     private final long mTimestamp;
     private final String mSubject;
     private List<ContactId> mParticipants;
 
-    public ImapCpmSessionMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
-            throws CmsSyncException {
+    /**
+     * Constructor
+     * 
+     * @param settings the RCS settings accessor
+     * @param rawMessage the IMAP raw message
+     * @throws CmsSyncException
+     */
+    public ImapCpmSessionMessage(RcsSettings settings,
+            com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) throws CmsSyncException {
         super(rawMessage);
-
-        String from = getHeader(Constants.HEADER_FROM);
-        if (from == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
-                    + " IMAP header is missing");
-        }
-
-        String to = getHeader(Constants.HEADER_TO);
-        if (from == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_TO + " IMAP header is missing");
-        }
-
         String direction = getHeader(Constants.HEADER_DIRECTION);
         if (direction == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_DIRECTION
                     + " IMAP header is missing");
         }
-
-        // remove my number from participants list
-        ContactId myNumber;
         if (Constants.DIRECTION_SENT.equals(direction)) {
             mDirection = Direction.OUTGOING;
-            myNumber = CmsUtils.headerToContact(from);
         } else {
             mDirection = Direction.INCOMING;
-            myNumber = CmsUtils.headerToContact(to);
         }
-
         String date = getHeader(Constants.HEADER_DATE);
         if (date == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
                     + " IMAP header is missing");
         }
         mTimestamp = DateUtils.parseDate(date, DateUtils.CMS_IMAP_DATE_FORMAT);
-
         try {
             mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
             if (mChatId == null) {
                 throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
                         + " IMAP header is missing");
             }
-
             mSubject = getHeader(Constants.HEADER_SUBJECT);
-
             String xml = getBodyPart().getPayload();
             if (!xml.isEmpty()) {
                 CpmSessionParser parser = new CpmSessionParser(new InputSource(
@@ -109,9 +96,8 @@ public class ImapCpmSessionMessage extends ImapMessage {
                             "This type of cpm session is not supported : " + sessionType);
                 }
                 mParticipants = document.getParticipants();
-                mParticipants.remove(myNumber);
+                mParticipants.remove(settings.getUserProfileImsUserName());
             }
-
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
             e.printStackTrace();
             throw new CmsSyncXmlFormatException(e);

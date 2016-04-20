@@ -24,42 +24,47 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.imaplib.imap.Header;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
 public class ImapCpimMessage extends ImapMessage {
 
-    /* package private */String mRemote;
+    private final ContactId mRemote;
     private Direction mDirection;
 
-    public ImapCpimMessage() {
+    public ImapCpimMessage(ContactId remote) {
         super();
+        mRemote = remote;
     }
 
     public ImapCpimMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
         super(rawMessage);
-
         String direction = getHeader(Constants.HEADER_DIRECTION);
         if (direction == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_DIRECTION
                     + " IMAP header is missing");
         }
-
+        String remote;
         if (Constants.DIRECTION_SENT.equals(direction)) {
             mDirection = Direction.OUTGOING;
-            mRemote = getHeader(Constants.HEADER_TO);
+            remote = getHeader(Constants.HEADER_TO);
         } else {
             mDirection = Direction.INCOMING;
-            mRemote = getHeader(Constants.HEADER_FROM);
+            remote = getHeader(Constants.HEADER_FROM);
         }
-
-        if (mRemote == null) {
+        if (remote == null) {
             throw new CmsSyncMissingHeaderException(
                     mDirection == Direction.OUTGOING ? Constants.HEADER_TO : Constants.HEADER_FROM
                             + " IMAP header is missing");
+        }
+        ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(remote);
+        if (phoneNumber == null) {
+            mRemote = null;
+        } else {
+            mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
         }
     }
 
@@ -80,15 +85,11 @@ public class ImapCpimMessage extends ImapMessage {
         return (CpimMessage) super.getBodyPart();
     }
 
-    public String getRemote() {
-        return mRemote;
-    }
-
     public Direction getDirection() {
         return mDirection;
     }
 
     public ContactId getContact() {
-        return CmsUtils.headerToContact(mRemote);
+        return mRemote;
     }
 }

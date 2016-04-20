@@ -44,8 +44,6 @@ import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.HandlerThread;
 
 import java.util.Set;
 
@@ -94,15 +92,15 @@ public class CmsManager implements XmsMessageListener {
      * @param chatService the RCS chat service
      * @param xmsEventHandler XMS event handler
      */
-    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService,
-            XmsEventHandler xmsEventHandler) {
+    public void start(CmsServiceImpl cmsService, ChatServiceImpl chatService,
+            FileTransferServiceImpl fileTransferService, XmsEventHandler xmsEventHandler) {
         // execute sync between providers in a dedicated thread
         new Thread(new XmsSynchronizer(mCtx.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
                 .start();
 
         // instantiate CmsEventHandler in charge of handling events from Cms
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mCmsLog, mXmsLog,
-                mMessagingLog, chatService, fileTransferService, cmsService, mRcsSettings, mImsModule.getInstantMessagingService());
+                mMessagingLog, chatService, fileTransferService, cmsService, mRcsSettings);
 
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
         mLocalStorage = new LocalStorage(mRcsSettings, mCmsLog, cmsEventHandler);
@@ -144,12 +142,11 @@ public class CmsManager implements XmsMessageListener {
         mGroupChatEventHandler = new GroupChatEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
 
-
         mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings, mSyncScheduler);
 
         /*
-         * instantiate FileTransferEventHandler in charge of handling events from FileSharingSession, read or
-         * deletion of file transfer.
+         * instantiate FileTransferEventHandler in charge of handling events from
+         * FileSharingSession, read or deletion of file transfer.
          */
         mFileTransferEventHandler = new FileTransferEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);

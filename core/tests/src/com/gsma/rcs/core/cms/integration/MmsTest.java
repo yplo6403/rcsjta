@@ -59,6 +59,7 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
+import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
@@ -88,38 +89,36 @@ public class MmsTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Context context = getContext();
-        ContactUtil.getInstance(getContext());
-        mSettings = RcsSettingsMock.getMockSettings(context);
-        AndroidFactory.setApplicationContext(context, mSettings);
-        mCmsLog = CmsLog.getInstance(context);
-        mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
-        mLocalContentResolver = new LocalContentResolver(context);
-        mXmsLog = XmsLog.getInstance(context, mSettings, mLocalContentResolver);
-        MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(context),
+        mSettings = RcsSettingsMock.getMockSettings(getContext());
+        AndroidFactory.setApplicationContext(mContext, mSettings);
+        mCmsLog = CmsLog.getInstance(mContext);
+        mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(mContext);
+        mLocalContentResolver = new LocalContentResolver(mContext);
+        mXmsLog = XmsLog.getInstance(mContext, mSettings, mLocalContentResolver);
+        MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
-        mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(context);
-        CmsService cmsService = new CmsService(null, null, context, mSettings, mXmsLog,
+        mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(mContext);
+        CmsService cmsService = new CmsService(null, null, mContext, mSettings, mXmsLog,
                 messagingLog, mCmsLog);
         CmsManager cmsManager = cmsService.getCmsManager();
         InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                mSettings, null, messagingLog, null, mLocalContentResolver, context, null,
+                mSettings, null, messagingLog, null, mLocalContentResolver, mContext, null,
                 cmsManager);
         ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, messagingLog,
                 null, mSettings, null, cmsManager);
         FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(
-                instantMessagingService, chatService, messagingLog, mSettings, null, context,
+                instantMessagingService, chatService, messagingLog, mSettings, null, mContext,
                 cmsManager);
-        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+        XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsService, chatService,
                 fileTransferService, mXmsLog, mSettings, xmsManager, mLocalContentResolver,
                 cmsManager);
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(context, mCmsLog, mXmsLog,
-                messagingLog, chatService, fileTransferService, cmsServiceImpl, mSettings, null);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
+                messagingLog, chatService, fileTransferService, cmsServiceImpl, mSettings);
         LocalStorage localStorage = new LocalStorage(mSettings, mCmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, mSettings, mBasicImapService, localStorage,
+        mSyncStrategy = new BasicSyncStrategy(mContext, mSettings, mBasicImapService, localStorage,
                 mXmsLog, mCmsLog);
         mBasicImapService.init();
     }

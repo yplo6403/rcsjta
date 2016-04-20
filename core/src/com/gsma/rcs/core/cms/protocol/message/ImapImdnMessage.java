@@ -24,9 +24,10 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.SAXException;
@@ -37,7 +38,8 @@ public class ImapImdnMessage extends ImapCpimMessage {
 
     final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
 
-    private final boolean isOneToOne;
+    private final boolean mOneToOne;
+    private ContactId mRemote;
     private String mImdnId;
     private ImdnDocument mImdnDocument;
 
@@ -45,20 +47,32 @@ public class ImapImdnMessage extends ImapCpimMessage {
             throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
             CmsSyncImdnFormatException {
         super(rawMessage);
-
         mImdnId = getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (mImdnId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
-
         String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
         if (from == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
                     + " IMAP header is missing");
         }
-        isOneToOne = ANONYMOUS.equals(from);
+        mOneToOne = ANONYMOUS.equals(from);
+        if (mOneToOne) {
+            // For OneToOne, get contact from IMAP headers.
+            mRemote = super.getContact();
 
+        } else if (RcsService.Direction.OUTGOING == getDirection()) {
+            mRemote = null;
+
+        } else {
+            // For GC, get contact from CPIM headers.
+            ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(from);
+            if (phoneNumber == null) {
+                throw new CmsSyncMissingHeaderException("From header is invalid (" + from + ")");
+            }
+            mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
+        }
         String cpim = getBodyPart().getPayload();
         if (!cpim.isEmpty()) {
             try {
@@ -78,26 +92,10 @@ public class ImapImdnMessage extends ImapCpimMessage {
     }
 
     public boolean isOneToOne() {
-        return isOneToOne;
+        return mOneToOne;
     }
 
-    /**
-     * For OneToOne Imdn, get contact from IMAP headers For GC Imdn, get contact from CPIM headers.
-     * 
-     * @return
-     */
     public ContactId getContact() {
-        if (isOneToOne) {
-            return super.getContact();
-        }
-
-        String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
-        if (from.startsWith("<") && from.endsWith(">")) {
-            from = from.substring(1, from.length() - 1);
-        }
-        if (from.contains("?")) {
-            from = from.substring(0, from.indexOf("?"));
-        }
-        return CmsUtils.headerToContact(from);
+        return mRemote;
     }
 }

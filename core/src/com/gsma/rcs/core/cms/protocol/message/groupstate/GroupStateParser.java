@@ -20,7 +20,7 @@
 package com.gsma.rcs.core.cms.protocol.message.groupstate;
 
 import com.gsma.rcs.core.ParseFailureException;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -81,25 +81,21 @@ public class GroupStateParser extends DefaultHandler {
         }
     }
 
-    public void startDocument() {
-        if (logger.isActivated()) {
-            logger.debug("Start document");
-        }
-    }
-
     public void startElement(String namespaceURL, String localName, String qname, Attributes attr) {
         if (GroupStateDocument.GROUP_STATE_ELEMENT.equals(localName)) {
             mLastfocussessionid = attr.getValue(GroupStateDocument.LASTFOCUSSESSIONID_ATTR);
             mTimestamp = attr.getValue(GroupStateDocument.TIMESTAMP_ATTR);
-        } else if (GroupStateDocument.PARTICIPANT_ELEMENT.equals(localName)) {
-            mParticipants.add(CmsUtils.headerToContact(attr
-                    .getValue(GroupStateDocument.COMM_ADDR_ATTR)));
-        }
-    }
 
-    public void endDocument() {
-        if (logger.isActivated()) {
-            logger.debug("End document");
+        } else if (GroupStateDocument.PARTICIPANT_ELEMENT.equals(localName)) {
+            String participant = attr.getValue(GroupStateDocument.COMM_ADDR_ATTR);
+            ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(participant);
+            if (phoneNumber == null) {
+                if (logger.isActivated()) {
+                    logger.error("Invalid participant " + participant);
+                }
+            } else {
+                mParticipants.add(ContactUtil.createContactIdFromValidatedData(phoneNumber));
+            }
         }
     }
 

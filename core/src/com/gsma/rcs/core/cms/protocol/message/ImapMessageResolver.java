@@ -99,9 +99,9 @@ public class ImapMessageResolver {
         } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
             return MessageType.GROUP_STATE;
         }
-//        } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
-//            return MessageType.FILE_TRANSFER;
-//        }
+        // } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
+        // return MessageType.FILE_TRANSFER;
+        // }
 
         StringBuilder msg = new StringBuilder("Can not determine the type of the message").append(
                 Constants.CRLF).append(imapMessage.getPayload());
@@ -125,9 +125,9 @@ public class ImapMessageResolver {
             case FILE_TRANSFER:
                 return new ImapFileTransferMessage(mRcsSettings, imapMessage);
             case CPM_SESSION:
-                return new ImapCpmSessionMessage(imapMessage);
+                return new ImapCpmSessionMessage(mRcsSettings, imapMessage);
             case GROUP_STATE:
-                return new ImapGroupStateMessage(imapMessage);
+                return new ImapGroupStateMessage(mRcsSettings, imapMessage);
 
         }
         throw new CmsSyncMessageNotSupportedException(

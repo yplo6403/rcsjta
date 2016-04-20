@@ -26,6 +26,7 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.HeaderCorrelatorUtils;
+import com.gsma.services.rcs.contact.ContactId;
 
 public class ImapSmsMessage extends ImapCpimMessage {
 
@@ -50,9 +51,9 @@ public class ImapSmsMessage extends ImapCpimMessage {
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
     }
 
-    public ImapSmsMessage(String from, String to, String direction, long date, String content,
-            String conversationId, String contributionId, String imdnMessageId) {
-        super();
+    public ImapSmsMessage(ContactId remote, String from, String to, String direction, long date,
+            String content, String conversationId, String contributionId, String imdnMessageId) {
+        super(remote);
 
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);

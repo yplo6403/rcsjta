@@ -18,10 +18,10 @@
 
 package com.gsma.rcs.core.cms.utils;
 
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
-import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.ContactUtilMockContext;
+import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.contact.ContactUtil;
 
 import android.test.AndroidTestCase;
 
@@ -29,30 +29,14 @@ import junit.framework.Assert;
 
 public class CmsUtilsTest extends AndroidTestCase {
 
-    private RcsSettings mRcsSettings;
 
-    protected void setUp() throws Exception {
-        super.setUp();
-        com.gsma.services.rcs.contact.ContactUtil.getInstance(getContext());
-        mRcsSettings = RcsSettingsMock.getMockSettings(getContext());
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
-        RcsSettingsMock.restoreSettings();
-    }
-
-    public void test() {
-
-        ContactId contactId = ContactUtil.createContactIdFromTrustedData("+33600112233");
-        String header = "tel:+33600112233";
-        String cmsFolder = "Default/tel:+33600112233";
-
-        Assert.assertEquals("Default/tel:+33600112233", CmsUtils.contactToCmsFolder(contactId));
-        Assert.assertEquals("tel:+33600112233", CmsUtils.contactToHeader(contactId));
-        Assert.assertEquals("+33600112233", CmsUtils.headerToContact(header).toString());
-        Assert.assertEquals("+33600112233", CmsUtils.cmsFolderToContact(cmsFolder).toString());
+    public void test() throws RcsPermissionDeniedException {
+        ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        ContactId contact = contactUtils.formatContact("+33600112233");
+        String cmsFolder = "Default/tel:"+contact;
+        Assert.assertEquals(cmsFolder, CmsUtils.contactToCmsFolder(contact));
+        Assert.assertEquals("tel:"+contact, CmsUtils.contactToHeader(contact));
+        Assert.assertEquals(contact, CmsUtils.cmsFolderToContact(cmsFolder));
     }
 
 }

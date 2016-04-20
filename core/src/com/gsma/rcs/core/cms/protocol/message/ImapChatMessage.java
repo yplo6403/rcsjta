@@ -24,7 +24,6 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
-import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimIdentity;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
 import com.gsma.services.rcs.RcsService.Direction;
@@ -34,7 +33,7 @@ public class ImapChatMessage extends ImapCpimMessage {
 
     /* package private */final static String ANONYMOUS = "<" + ChatUtils.ANONYMOUS_URI + ">";
 
-    private final boolean mIsOneToOne;
+    private final boolean mOneToOne;
     private final String mChatId;
     private final ContactId mContact;
 
@@ -51,19 +50,19 @@ public class ImapChatMessage extends ImapCpimMessage {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
                     + " IMAP header is missing");
         }
-        mIsOneToOne = ANONYMOUS.equals(from);
-        if (mIsOneToOne) {
+        mOneToOne = ANONYMOUS.equals(from);
+        if (mOneToOne) {
             mContact = super.getContact();
 
         } else if (Direction.OUTGOING == getDirection()) {
             mContact = null;
 
         } else { // For incoming GC msg, retrieve contact from the "from" CPIM header
-            String uri = new CpimIdentity(getCpimMessage().getHeader(Constants.HEADER_FROM))
-                    .getUri();
-            PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(uri);
-            mContact = (phoneNumber != null) ? ContactUtil
-                    .createContactIdFromValidatedData(phoneNumber) : null;
+            PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(from);
+            if (phoneNumber == null) {
+                throw new CmsSyncMissingHeaderException("From header is invalid (" + from + ")");
+            }
+            mContact = ContactUtil.createContactIdFromValidatedData(phoneNumber);
         }
     }
 
@@ -72,7 +71,7 @@ public class ImapChatMessage extends ImapCpimMessage {
     }
 
     public boolean isOneToOne() {
-        return mIsOneToOne;
+        return mOneToOne;
     }
 
     public String getChatId() {

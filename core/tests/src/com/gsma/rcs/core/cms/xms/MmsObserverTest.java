@@ -19,19 +19,19 @@
 package com.gsma.rcs.core.cms.xms;
 
 import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
+import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
+import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
@@ -53,23 +53,22 @@ public class MmsObserverTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Context context = getContext();
-        ContactId contact1 = ContactUtil.getInstance(context).formatContact("+33600000001");
-
+        ContactId contact1 = ContactUtil.getInstance(new ContactUtilMockContext(mContext))
+                .formatContact("+33600000001");
         mIncomingMms1 = new MmsDataObject("mmsId1", "messageId1", contact1, "subject",
-                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
-                new ArrayList<MmsPart>());
+                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null,
+                1l, new ArrayList<MmsPart>());
         mOutgoingMms2 = new MmsDataObject("mmsId2", "messageId2", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
-                new ArrayList<MmsPart>());
+                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null,
+                1l, new ArrayList<MmsPart>());
         mIncomingMms3 = new MmsDataObject("mmsId3", "messageId3", contact1, "subject",
-                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
-                new ArrayList<MmsPart>());
+                Direction.INCOMING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null,
+                1l, new ArrayList<MmsPart>());
         mOutgoingMms4 = new MmsDataObject("mmsId4", "messageId4", contact1, "subject",
-                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null, 1l,
-                new ArrayList<MmsPart>());
+                Direction.OUTGOING, ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), null,
+                1l, new ArrayList<MmsPart>());
 
-        mXmsObserver = new XmsObserver(context);
+        mXmsObserver = new XmsObserver(mContext);
         mNativeMmsListenerMock = new NativeMmsListenerMock();
         mXmsObserver.registerListener(mNativeMmsListenerMock);
     }

@@ -37,7 +37,8 @@ import java.util.Set;
 
 public class FileTransferEventHandler implements FileTransferListener {
 
-    private static final Logger sLogger = Logger.getLogger(FileTransferEventHandler.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(FileTransferEventHandler.class
+            .getSimpleName());
     protected final MessagingLog mMessagingLog;
     protected final CmsLog mCmsLog;
     protected final RcsSettings mSettings;
@@ -54,8 +55,8 @@ public class FileTransferEventHandler implements FileTransferListener {
      * @param imdnDeliveryReportListener the listener for delivery report event
      */
     public FileTransferEventHandler(EventFrameworkManager eventFrameworkManager, CmsLog cmsLog,
-                                    MessagingLog messagingLog, RcsSettings settings,
-                                    ImdnDeliveryReportListener imdnDeliveryReportListener) {
+            MessagingLog messagingLog, RcsSettings settings,
+            ImdnDeliveryReportListener imdnDeliveryReportListener) {
         mEventFrameworkManager = eventFrameworkManager;
         mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
@@ -66,16 +67,13 @@ public class FileTransferEventHandler implements FileTransferListener {
     @Override
     public void onNewFileTransfer(ContactId contact, Direction direction, String transferId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onNewFileTransfer contact : " + contact.toString() + ", transferId : " + transferId );
+            sLogger.debug("onNewFileTransfer contact : " + contact.toString() + ", transferId : "
+                    + transferId);
         }
-        mCmsLog.addMessage(new CmsObject(
-                            CmsUtils.contactToCmsFolder(contact),
-                            direction == Direction.INCOMING ? ReadStatus.UNREAD : ReadStatus.READ,
-                            CmsObject.DeleteStatus.NOT_DELETED,
-                            PushStatus.PUSHED,
-                            MessageType.FILE_TRANSFER,
-                            transferId,
-                            null));
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact),
+                direction == Direction.INCOMING ? ReadStatus.UNREAD : ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.FILE_TRANSFER,
+                transferId, null));
     }
 
     @Override
@@ -83,14 +81,10 @@ public class FileTransferEventHandler implements FileTransferListener {
         if (sLogger.isActivated()) {
             sLogger.debug("onNewFileTransfer chatId : " + chatId + ", transferId : " + transferId);
         }
-        mCmsLog.addMessage(new CmsObject(
-                CmsUtils.groupChatToCmsFolder(chatId, chatId),
+        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 direction == Direction.INCOMING ? ReadStatus.UNREAD : ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED,
-                MessageType.FILE_TRANSFER,
-                transferId,
-                null));
+                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.FILE_TRANSFER,
+                transferId, null));
     }
 
     @Override
@@ -100,18 +94,19 @@ public class FileTransferEventHandler implements FileTransferListener {
         }
         mCmsLog.updateReadStatus(MessageType.FILE_TRANSFER, transferId,
                 ReadStatus.READ_REPORT_REQUESTED);
-
         if (mEventFrameworkManager != null) {
             if (mMessagingLog.isGroupFileTransfer(transferId)) {
-                mEventFrameworkManager.updateFlagsForGroupChat(mMessagingLog.getFileTransferChatId(transferId));
+                mEventFrameworkManager.updateFlagsForGroupChat(mMessagingLog
+                        .getFileTransferChatId(transferId));
             } else {
-                mEventFrameworkManager.updateFlagsForChat(mMessagingLog.getFileTransferContact(transferId));
+                mEventFrameworkManager.updateFlagsForChat(mMessagingLog
+                        .getFileTransferContact(transferId));
             }
         }
     }
 
     @Override
-    public void onDeleteFileTransfer(ContactId contact, Set<String> transferIds){
+    public void onDeleteFileTransfer(ContactId contact, Set<String> transferIds) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteFileTransfer for contact : " + contact.toString());
         }
@@ -125,7 +120,7 @@ public class FileTransferEventHandler implements FileTransferListener {
     }
 
     @Override
-    public void onDeleteGroupFileTransfer(String chatId, Set<String> transferIds){
+    public void onDeleteGroupFileTransfer(String chatId, Set<String> transferIds) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteGroupFileTransfer for chatId : " + chatId);
         }

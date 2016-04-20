@@ -40,9 +40,7 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
-import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import java.io.IOException;
@@ -59,36 +57,34 @@ public class CpmSessionTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Context context = getContext();
-        ContactUtil.getInstance(getContext());
-        RcsSettings settings = RcsSettingsMock.getMockSettings(context);
-        AndroidFactory.setApplicationContext(context, settings);
-        CmsLog cmsLog = CmsLog.getInstance(context);
-        mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
-        LocalContentResolver localContentResolver = new LocalContentResolver(context);
-        XmsLog xmsLog = XmsLog.getInstance(context, settings, localContentResolver);
+        RcsSettings settings = RcsSettingsMock.getMockSettings(mContext);
+        AndroidFactory.setApplicationContext(mContext, settings);
+        CmsLog cmsLog = CmsLog.getInstance(mContext);
+        mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(mContext);
+        LocalContentResolver localContentResolver = new LocalContentResolver(mContext);
+        XmsLog xmsLog = XmsLog.getInstance(mContext, settings, localContentResolver);
         mMessagingLog = MessagingLog.getInstance(localContentResolver, settings);
-        CmsService cmsService = new CmsService(null, null, context, settings, xmsLog,
+        CmsService cmsService = new CmsService(null, null, mContext, settings, xmsLog,
                 mMessagingLog, cmsLog);
         CmsManager cmsManager = cmsService.getCmsManager();
         InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                settings, null, mMessagingLog, null, localContentResolver, context, null,
+                settings, null, mMessagingLog, null, localContentResolver, mContext, null,
                 cmsManager);
         ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
                 null, settings, null, cmsManager);
         FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(
-                instantMessagingService, chatService, mMessagingLog, settings, null, context,
+                instantMessagingService, chatService, mMessagingLog, settings, null, mContext,
                 cmsManager);
-        XmsManager xmsManager = new XmsManager(context, context.getContentResolver());
+        XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
 
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(context, cmsService, chatService,
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsService, chatService,
                 fileTransferService, xmsLog, settings, xmsManager, localContentResolver, cmsManager);
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(context, cmsLog, xmsLog,
-                mMessagingLog, chatService, fileTransferService, cmsServiceImpl, settings, null);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, cmsLog, xmsLog,
+                mMessagingLog, chatService, fileTransferService, cmsServiceImpl, settings);
         LocalStorage localStorage = new LocalStorage(settings, cmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(settings);
         mBasicImapService = mImapServiceHandler.openService();
-        mSyncStrategy = new BasicSyncStrategy(context, settings, mBasicImapService, localStorage,
+        mSyncStrategy = new BasicSyncStrategy(mContext, settings, mBasicImapService, localStorage,
                 xmsLog, cmsLog);
         mBasicImapService.init();
     }
@@ -104,7 +100,6 @@ public class CpmSessionTest extends AndroidTestCase {
      * CMS server step 2 : start a sync
      */
     public void testSyncCpmSession() throws Exception {
-
         // create messages on CMS
         String chatId = UUID.randomUUID().toString();
         String remoteFolder = "Default/" + chatId + "/" + chatId;
@@ -152,7 +147,6 @@ public class CpmSessionTest extends AndroidTestCase {
     }
 
     public String getCpmSessionPayload(String chatId) {
-
         return "Date: Thu, 11 Feb 2016 14:00:49 +0100" + Constants.CRLF + "From: tel:+33643209850"
                 + Constants.CRLF + "To: sip:Conference-Factory@volteofr.com" + Constants.CRLF
                 + "Message-ID: <881999583.1171.1455195649122@RCS5frontox1>" + Constants.CRLF

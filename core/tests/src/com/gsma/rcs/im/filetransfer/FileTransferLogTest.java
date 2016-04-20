@@ -22,9 +22,9 @@
 
 package com.gsma.rcs.im.filetransfer;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.FileContent;
 import com.gsma.rcs.core.content.MmContent;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.FileTransferData;
@@ -111,6 +111,7 @@ public class FileTransferLogTest extends AndroidTestCase {
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
         Cursor cursor = mContentResolver.query(uri, null, null, null, null);
         // Check entry
+        assertNotNull(cursor);
         assertEquals(1, cursor.getCount());
         assertTrue(cursor.moveToFirst());
         String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
@@ -168,13 +169,14 @@ public class FileTransferLogTest extends AndroidTestCase {
         mLocalContentResolver.delete(
                 Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
         assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        cursor.close();
     }
 
     public void testAddOutgoingGroupFileTransfer() {
         // Add entry
-        Map<ContactId, GroupChat.ParticipantStatus> participants = new HashMap<ContactId, GroupChat.ParticipantStatus>();
+        Map<ContactId, GroupChat.ParticipantStatus> participants = new HashMap<>();
         participants.put(mContact, GroupChat.ParticipantStatus.INVITING);
-        Set<ContactId> recipients = new HashSet<ContactId>();
+        Set<ContactId> recipients = new HashSet<>();
         recipients.add(mContact);
         mMessagingLog.addGroupChat(mChatId, null, null, participants, GroupChat.State.INITIATING,
                 GroupChat.ReasonCode.UNSPECIFIED, Direction.OUTGOING, mTimestamp);
@@ -183,7 +185,9 @@ public class FileTransferLogTest extends AndroidTestCase {
                 mTimestampSent);
         // Read entry
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
+
         Cursor cursor = mContentResolver.query(uri, null, null, null, null);
+        assertNotNull(cursor);
         // Check entry
         assertEquals(1, cursor.getCount());
         assertTrue(cursor.moveToFirst());
@@ -241,6 +245,7 @@ public class FileTransferLogTest extends AndroidTestCase {
         mLocalContentResolver.delete(
                 Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
         assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        cursor.close();
     }
 
     public void testAddIncomingGroupFileTransfer() {
@@ -253,6 +258,7 @@ public class FileTransferLogTest extends AndroidTestCase {
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
         Cursor cursor = mContentResolver.query(uri, null, null, null, null);
         // Check entry
+        assertNotNull(cursor);
         assertEquals(1, cursor.getCount());
         assertTrue(cursor.moveToFirst());
         String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
@@ -309,6 +315,7 @@ public class FileTransferLogTest extends AndroidTestCase {
         mLocalContentResolver.delete(
                 Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
         assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        cursor.close();
     }
 
     public void testFileTransferDeliveryExpiration() {
@@ -332,7 +339,7 @@ public class FileTransferLogTest extends AndroidTestCase {
     }
 
     public void testClearFileTransferDeliveryExpiration() {
-        List<String> fileTransferIds = new ArrayList<String>();
+        List<String> fileTransferIds = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             fileTransferIds.add(Long.toString(mRandom.nextLong()));
         }

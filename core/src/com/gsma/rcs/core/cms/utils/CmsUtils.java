@@ -50,18 +50,6 @@ public class CmsUtils {
         return null;
     }
 
-    public static ContactId headerToContact(String header) {
-        String contact = header;
-        if (header.startsWith(Constants.TEL_PREFIX)) {
-            contact = header.substring(Constants.TEL_PREFIX.length());
-        }
-        PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(contact);
-        if (phoneNumber == null) {
-            return null;
-        }
-        return ContactUtil.createContactIdFromValidatedData(phoneNumber);
-    }
-
     public static String groupChatToCmsFolder(String conversationId,
             String contributionId) {
         return Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + conversationId

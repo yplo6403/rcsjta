@@ -18,9 +18,11 @@
 
 package com.gsma.rcs.core.cms.integration;
 
+import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
@@ -37,9 +39,9 @@ public class RcsSettingsMock {
     private static String mOriUserPwd;
     private static ContactId mOriContact;
 
-    public static RcsSettings getMockSettings(Context context) {
+    public static RcsSettings getMockSettings(Context context) throws RcsPermissionDeniedException {
         RcsSettings settings = RcsSettings.getInstance(new LocalContentResolver(context));
-
+        AndroidFactory.setApplicationContext(context, settings);
         mOriServerUri = settings.getMessageStoreUri();
         mOriUserLogin = settings.getMessageStoreUser();
         mOriUserPwd = settings.getMessageStorePwd();
@@ -48,6 +50,7 @@ public class RcsSettingsMock {
         settings.setMessageStoreUri(mServerAddress);
         settings.setMessageStoreUser(mUserLogin);
         settings.setMessageStorePwd(mUserPwd);
+
         settings.setUserProfileImsUserName(ContactUtil
                 .createContactIdFromTrustedData("+33601020304"));
         return settings;

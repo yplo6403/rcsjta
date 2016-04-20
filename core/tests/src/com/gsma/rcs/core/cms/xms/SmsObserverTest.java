@@ -23,6 +23,7 @@ import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
+import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage.State;
@@ -41,7 +42,6 @@ import java.util.Map;
 
 public class SmsObserverTest extends AndroidTestCase {
 
-    private Context mContext;
     private ContactId contact1;
     private ContactId contact2;
     private ContactId contact3;
@@ -55,12 +55,10 @@ public class SmsObserverTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        mContext = getContext();
-
-        contact1 = ContactUtil.getInstance(mContext).formatContact("+33600000001");
-        contact2 = ContactUtil.getInstance(mContext).formatContact("+33600000002");
-        contact3 = ContactUtil.getInstance(mContext).formatContact("+33600000003");
-
+        ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        contact1 = contactUtils.formatContact("+33600000001");
+        contact2 = contactUtils.formatContact("+33600000002");
+        contact3 = contactUtils.formatContact("+33600000003");
         incomingSms = new SmsDataObject("messageId1", contact1, "myContent1", Direction.INCOMING,
                 ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 1l, 1l);
         outgoingSms = new SmsDataObject("messageId2", contact2, "myContent2", Direction.OUTGOING,

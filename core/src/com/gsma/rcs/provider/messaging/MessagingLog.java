@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,7 +53,7 @@ import java.util.Set;
 
 /**
  * Class to interface the Instant Messaging tables
- * 
+ *
  * @author LEMORDANT Philippe
  */
 public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLog,
@@ -75,7 +75,7 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
 
     /**
      * Get or Create Singleton instance of MessagingLog
-     * 
+     *
      * @param localContentResolver Local content resolver
      * @param rcsSettings the RCS settings accessor
      * @return singleton instance
@@ -95,7 +95,7 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
 
     /**
      * Constructor
-     * 
+     *
      * @param localContentResolver Local content provider
      * @param rcsSettings the RCS settings accessor
      */
@@ -230,8 +230,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId,
             DownloadState state, FileTransfer.ReasonCode reasonCode) {
-        return mFileTransferLog
-                .setFileTransferDownloadStateAndReasonCode(fileTransferId, state, reasonCode);
+        return mFileTransferLog.setFileTransferDownloadStateAndReasonCode(fileTransferId, state,
+                reasonCode);
     }
 
     @Override
@@ -358,7 +358,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     public ContactId getFileTransferContact(String fileTransferId) {
         return mFileTransferLog.getFileTransferContact(fileTransferId);
     }
-
 
     @Override
     public FileTransfer.State getFileTransferState(String fileTransferId) {
@@ -653,8 +652,34 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration) {
-        return mFileTransferLog.setFileTransferFileExpiration(fileTransferId, fileExpiration);
+    public void addOneToOneFileTransferOnSecondaryDevice(String fileTransferId, ContactId contact,
+            Direction dir, Uri downloadUri, MmContent content, FileTransfer.State state,
+            FileTransfer.ReasonCode reason, long timestamp, long timestampSent,
+            long fileExpiration, boolean seen) {
+        mFileTransferLog
+                .addOneToOneFileTransferOnSecondaryDevice(fileTransferId, contact, dir,
+                        downloadUri, content, state, reason, timestamp, timestampSent,
+                        fileExpiration, seen);
+    }
+
+    @Override
+    public void addIncomingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            ContactId contact, Uri downloadUri, MmContent content, FileTransfer.State state,
+            FileTransfer.ReasonCode reasonCode, long timestamp, long timestampSent,
+            long fileExpiration, boolean seen) {
+        mFileTransferLog.addIncomingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
+                contact, downloadUri, content, state, reasonCode, timestamp, timestampSent,
+                fileExpiration, seen);
+    }
+
+    @Override
+    public void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients,
+            FileTransfer.State state, FileTransfer.ReasonCode reasonCode, long timestamp,
+            long timestampSent, long fileExpiration) {
+        mFileTransferLog.addOutgoingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
+                downloadUri, localMmContent, recipients, state, reasonCode, timestamp,
+                timestampSent, fileExpiration);
     }
 
     @Override

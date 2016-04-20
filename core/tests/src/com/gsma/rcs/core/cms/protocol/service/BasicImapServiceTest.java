@@ -46,9 +46,7 @@ public class BasicImapServiceTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Context context = getContext();
-        ContactUtil.getInstance(getContext());
-        mSettings = RcsSettingsMock.getMockSettings(context);
+        mSettings = RcsSettingsMock.getMockSettings(mContext);
     }
 
     public void testWithoutSoTimeout() throws IOException, ImapException, InterruptedException {

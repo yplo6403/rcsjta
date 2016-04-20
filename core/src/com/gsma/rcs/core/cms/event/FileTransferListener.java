@@ -57,7 +57,7 @@ public interface FileTransferListener {
     /**
      * Take into account deletion of file transfer
      *
-     * @param contact
+     * @param contact the contact ID
      * @param transferIds the messages ID
      */
     void onDeleteFileTransfer(ContactId contact, Set<String> transferIds);
@@ -65,7 +65,7 @@ public interface FileTransferListener {
     /**
      * Take into account deletion of group file transfer
      *
-     * @param chatId
+     * @param chatId the chat ID
      * @param transferIds the messages ID
      */
     void onDeleteGroupFileTransfer(String chatId, Set<String> transferIds);

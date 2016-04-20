@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,14 +41,14 @@ import java.util.Set;
 
 /**
  * Interface for the ft table
- * 
+ *
  * @author LEMORDANT Philippe
  */
 public interface IFileTransferLog {
 
     /**
-     * Add outgoing one to one file transfer
-     * 
+     * Add one to one file transfer
+     *
      * @param fileTransferId File Transfer ID
      * @param contact Contact ID
      * @param direction Direction
@@ -71,23 +71,24 @@ public interface IFileTransferLog {
 
     /**
      * Add an outgoing File Transfer supported by Group Chat
-     * 
+     *
      * @param fileTransferId the identity of the file transfer
      * @param chatId the identity of the group chat
      * @param content the File content
-     * @param fileIcon the fileIcon content
+     * @param thumbnail the fileIcon content
+     * @param recipients the recipients
      * @param state File transfer state
      * @param reasonCode Reason code
      * @param timestamp Local timestamp for outgoing file transfer for a group chat
      * @param timestampSent Timestamp sent in payload for outgoing file transfer for a group chat
      */
     void addOutgoingGroupFileTransfer(String fileTransferId, String chatId, MmContent content,
-            MmContent fileIcon, Set<ContactId> recipients, State state, ReasonCode reasonCode,
+            MmContent thumbnail, Set<ContactId> recipients, State state, ReasonCode reasonCode,
             long timestamp, long timestampSent);
 
     /**
      * Add incoming group file transfer
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param chatId Chat ID
      * @param contact Contact ID
@@ -110,7 +111,7 @@ public interface IFileTransferLog {
      * Set file transfer state and reason code. Note that this method should not be used for
      * State.DELIVERED and State.DISPLAYED. These states require timestamps and should be set
      * through setFileTransferDelivered and setFileTransferDisplayed respectively.
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param state File transfer state (see restriction above)
      * @param reasonCode File transfer state reason code
@@ -128,11 +129,11 @@ public interface IFileTransferLog {
      * @return True if an entry was updated, otherwise false
      */
     boolean setFileTransferDownloadStateAndReasonCode(String fileTransferId, DownloadState state,
-                                              ReasonCode reasonCode);
+            ReasonCode reasonCode);
 
     /**
      * Set file transfer state, reason code, timestamp and timestampSent
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param state New file transfer state
      * @param reasonCode New file transfer reason code
@@ -145,7 +146,7 @@ public interface IFileTransferLog {
 
     /**
      * Update file transfer read status
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @return the number of rows affected
      */
@@ -153,7 +154,7 @@ public interface IFileTransferLog {
 
     /**
      * Update file transfer download progress
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param currentSize Current size
      * @return True if an entry was updated, otherwise false
@@ -162,7 +163,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file transfer URI
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param content the MmContent of received file
      * @param fileExpiration the time when file on the content server is no longer valid to download
@@ -176,7 +177,7 @@ public interface IFileTransferLog {
 
     /**
      * Tells if the MessageID corresponds to that of a file transfer
-     * 
+     *
      * @param fileTransferId File Transfer Id
      * @return boolean If there is File Transfer corresponding to msgId
      */
@@ -184,7 +185,7 @@ public interface IFileTransferLog {
 
     /**
      * Returns the icon for a file transfer
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return the icon or null if there s none
      */
@@ -192,7 +193,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file upload TID
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param tId TID
      * @return True if an entry was updated, otherwise false
@@ -201,7 +202,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file download server uri
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param downloadAddress Download Address
      * @return True if an entry was updated, otherwise false
@@ -210,14 +211,14 @@ public interface IFileTransferLog {
 
     /**
      * Retrieve file transfers paused by SYSTEM on connection loss
-     * 
+     *
      * @return list of FtHttpResume
      */
     List<FtHttpResume> retrieveFileTransfersPausedBySystem();
 
     /**
      * Retrieve resumable file upload
-     * 
+     *
      * @param tId Unique Id used while uploading
      * @return instance of FtHttpResumeUpload
      */
@@ -225,7 +226,7 @@ public interface IFileTransferLog {
 
     /**
      * Get the Uri for a file transfer with specific id
-     * 
+     *
      * @param fileTransferId specific id
      * @return Uri Uri of the file
      */
@@ -233,7 +234,7 @@ public interface IFileTransferLog {
 
     /**
      * Get DIrection of file transfer with specific id
-     * 
+     *
      * @param fileTransferId specific id
      * @return Direction Direction of file transfer
      */
@@ -241,7 +242,7 @@ public interface IFileTransferLog {
 
     /**
      * Get the chat id for a file transfer with specific id
-     * 
+     *
      * @param fileTransferId specific id
      * @return chat id
      */
@@ -257,7 +258,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer state from its unique ID
-     * 
+     *
      * @param fileTransferId Unique ID of file transfer
      * @return State
      */
@@ -273,7 +274,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer reason code from its unique ID
-     * 
+     *
      * @param fileTransferId Unique ID of file transfer
      * @return reason code on the file transfer
      */
@@ -281,7 +282,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer data from its unique ID
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return Cursor or null if no data exists
      */
@@ -289,7 +290,7 @@ public interface IFileTransferLog {
 
     /**
      * Is group file transfer
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return true if it is group file transfer
      */
@@ -297,7 +298,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer timestamp from file transfer Id
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return timestamp
      */
@@ -305,7 +306,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer sent timestamp from file transfer Id
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return sent timestamp
      */
@@ -313,7 +314,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file transfer resume info from its corresponding filetransferId
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return FtHttpResume
      */
@@ -322,21 +323,21 @@ public interface IFileTransferLog {
     /**
      * Get all one-to-one and group file transfers that are queued and uploaded but not transferred
      * in ascending order of timestamp
-     * 
+     *
      * @return Cursor
      */
     Cursor getQueuedAndUploadedButNotTransferredFileTransfers();
 
     /**
      * Get interrupted file transfers
-     * 
+     *
      * @return Cursor
      */
     Cursor getInterruptedFileTransfers();
 
     /**
      * Sets remote SIP Instance identifier for download HTTP file transfer
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @param remoteInstanceId the remote instance ID
      * @return True if an entry was updated, otherwise false
@@ -345,7 +346,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file transfer delivered
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param timestampDelivered Time delivered
      * @return True if an entry was updated, otherwise false
@@ -354,7 +355,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file transfer displayed
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param timestampDisplayed Time displayed
      * @return True if an entry was updated, otherwise false
@@ -363,14 +364,14 @@ public interface IFileTransferLog {
 
     /**
      * Marks undelivered file transfers to indicate that transfers have been processed.
-     * 
+     *
      * @param fileTransferIds the file transfer IDs
      */
     void clearFileTransferDeliveryExpiration(List<String> fileTransferIds);
 
     /**
      * Set file transfer delivery expired for specified file transfer id.
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return True if an entry was updated, otherwise false
      */
@@ -378,7 +379,7 @@ public interface IFileTransferLog {
 
     /**
      * Get one-one file transfers with unexpired delivery
-     * 
+     *
      * @return Cursor
      */
     Cursor getUnDeliveredOneToOneFileTransfers();
@@ -388,7 +389,7 @@ public interface IFileTransferLog {
      * either that delivery for this file has not yet expired, delivery has been successful,
      * delivery expiration has been cleared (see clearFileTransferDeliveryExpiration) or that this
      * particular file is not eligible for delivery expiration in the first place.
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return boolean
      */
@@ -396,7 +397,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file transfer download info in DB
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @param ftHttpInfo the file transfer HTTP information
      */
@@ -404,7 +405,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file download info
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return FileTransferHttpInfoDocument
      * @throws FileAccessException
@@ -424,7 +425,7 @@ public interface IFileTransferLog {
 
     /**
      * Get file download info
-     * 
+     *
      * @param cursor the cursor
      * @return FileTransferHttpInfoDocument
      * @throws FileAccessException
@@ -433,7 +434,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file transfer timestamp and timestampSent
-     * 
+     *
      * @param fileTransferId File transfer ID
      * @param timestamp New local timestamp for the file transfer
      * @param timestampSent New timestamp sent in payload for the file transfer
@@ -442,7 +443,7 @@ public interface IFileTransferLog {
 
     /**
      * Set file info dequeued successfully.
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @param deliveryExpiration the delivery expiration
      * @return True if an entry was updated, otherwise false
@@ -451,7 +452,7 @@ public interface IFileTransferLog {
 
     /**
      * Gets the number of transferred bytes
-     * 
+     *
      * @param fileTransferId the file transfer ID
      * @return the number of transferred bytes
      */
@@ -466,11 +467,64 @@ public interface IFileTransferLog {
     boolean isAllowedToDownloadFileTransfer(String fileTransferId);
 
     /**
-     * Set file expiration.
+     * Add one to one file transfer on secondary device.
      *
-     * @param fileTransferId the file transfer ID
-     * @param fileExpiration the file expiration
-     * @return True if an entry was updated, otherwise false
+     * @param fileTransferId File Transfer ID
+     * @param contact Contact ID
+     * @param dir Direction
+     * @param downloadUri the download URI
+     * @param content File content
+     * @param state File transfer state
+     * @param reason Reason code
+     * @param timestamp Local timestamp for both incoming and outgoing file transfer for one-one
+     *            chat
+     * @param timestampSent Timestamp sent in payload for both incoming and outgoing file transfer
+     *            for one-one chat
+     * @param fileExpiration the time when file on the content server is no longer valid to
+     * @param seen true if the file is seen
      */
-    boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration);
+    void addOneToOneFileTransferOnSecondaryDevice(String fileTransferId, ContactId contact,
+            Direction dir, Uri downloadUri, MmContent content, State state, ReasonCode reason,
+            long timestamp, long timestampSent, long fileExpiration, boolean seen);
+
+    /**
+     * Add incoming group file transfer on secondary device
+     *
+     * @param fileTransferId File transfer ID
+     * @param chatId Chat ID
+     * @param contact Contact ID
+     * @param downloadUri the download URI
+     * @param localMmContent File content
+     * @param state File transfer state
+     * @param reasonCode Reason code
+     * @param timestamp Local timestamp for incoming file transfer for a group chat
+     * @param timestampSent Timestamp sent in payload for incoming file transfer for a group chat
+     * @param fileExpiration the time when file on the content server is no longer valid to
+     *            download.
+     * @param seen true if the file is seen.
+     */
+
+    void addIncomingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            ContactId contact, Uri downloadUri, MmContent localMmContent, State state,
+            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration,
+            boolean seen);
+
+    /**
+     * Add an outgoing File Transfer supported by Group Chat
+     *
+     * @param fileTransferId the identity of the file transfer
+     * @param chatId the identity of the group chat
+     * @param downloadUri the download URI
+     * @param localMmContent the File content
+     * @param recipients the recipients
+     * @param state File transfer state
+     * @param reasonCode Reason code
+     * @param timestamp Local timestamp for outgoing file transfer for a group chat
+     * @param timestampSent Timestamp sent in payload for outgoing file transfer for a group chat
+     * @param fileExpiration the time when file on the content server is no longer valid to
+     *            download.
+     */
+    void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients, State state,
+            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration);
 }

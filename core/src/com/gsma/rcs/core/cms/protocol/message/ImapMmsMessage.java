@@ -20,30 +20,24 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
-import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.content.Context;
 
-import org.xml.sax.SAXException;
-
 import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 public class ImapMmsMessage extends ImapCpimMessage {
 
@@ -79,14 +73,14 @@ public class ImapMmsMessage extends ImapCpimMessage {
 
         CpimMessage cpimMessage = getCpimMessage();
         if (!cpimMessage.getPayload().isEmpty()) {
-                mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
+            mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
         }
     }
 
-    public ImapMmsMessage(Context context, String from, String to, String direction, long date,
-            String subject, String conversationId, String contributionId, String imdnMessageId,
-            String mmsId, List<MmsPart> mmsParts) {
-        super();
+    public ImapMmsMessage(Context context, ContactId remote, String from, String to,
+            String direction, long date, String subject, String conversationId,
+            String contributionId, String imdnMessageId, String mmsId, List<MmsPart> mmsParts) {
+        super(remote);
 
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);

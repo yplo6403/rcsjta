@@ -26,16 +26,15 @@ import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
 public class CmsSyncSchedulerTest extends AndroidTestCase {
 
-    private Context mContext;
     private LocalStorage mLocalStorage;
     private RcsSettings mSettings;
     private CmsLog mCmsLog;
@@ -48,17 +47,15 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        mContext = getContext();
-        ContactUtil.getInstance(mContext);
+        ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mSettings = RcsSettingsMock.getMockSettings(mContext);
         mCmsLog = CmsLog.getInstance(mContext);
         mXmsLog = XmsLog.getInstance(mContext, mSettings, new LocalContentResolver(mContext));
         MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
-                messagingLog, null, null, null, mSettings, null);
+                messagingLog, null, null, null, mSettings);
         mLocalStorage = new LocalStorage(mSettings, mCmsLog, cmsEventHandler);
-
         mOperationListener = new CmsSyncSchedulerListenerMock();
     }
 
@@ -68,28 +65,23 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
     }
 
     public void testInitScheduler() throws InterruptedException {
-
         mSettings.setMessageStoreSyncTimer(500); // periodic sync every 200ms
         mSettings.setDataConnectionSyncTimer(200); // data connection timer 200ms
-
         mScheduler = new CmsSyncSchedulerMock(mContext, mSettings, mLocalStorage, mCmsLog, mXmsLog);
         CmsSyncScheduler.sEndOfLastSync = 0;
         mScheduler.setImapServiceHandler(new ImapServiceHandlerMock(mSettings));
         mScheduler.setExecutionDuration(executionDuration);
-        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION, mOperationListener);
+        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION,
+                mOperationListener);
         mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_PERIODIC, mOperationListener);
-        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY, mOperationListener);
-
+        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY,
+                mOperationListener);
         Assert.assertFalse(mScheduler.scheduleSync());
-
         int lastPeriodicExecution = 0;
-
         long syncTimerInterval = mSettings.getMessageStoreSyncTimer();
-
         assertEquals(0,
                 mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
         mScheduler.start();
-
         Thread.sleep(executionDuration + 100, 0);
         assertEquals(1,
                 mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
@@ -100,7 +92,8 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
 
         Thread.sleep(executionDuration + syncTimerInterval + 100, 0);
         Assert.assertTrue(mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_PERIODIC) > lastPeriodicExecution);
-        lastPeriodicExecution = mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_PERIODIC);
+        lastPeriodicExecution = mOperationListener
+                .getExecutions(CmsSyncSchedulerTaskType.SYNC_PERIODIC);
         Assert.assertTrue(mScheduler.mSyncRequestHandler
                 .hasMessages(CmsSyncSchedulerTaskType.SYNC_PERIODIC.toInt()));
 
@@ -114,7 +107,8 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
         Assert.assertFalse(mScheduler.mSyncRequestHandler
                 .hasMessages(CmsSyncSchedulerTaskType.SYNC_PERIODIC.toInt()));
         Thread.sleep(executionDuration + 200, 0);
-        assertEquals(1, mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY));
+        assertEquals(1,
+                mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY));
         Assert.assertTrue(mScheduler.mSyncRequestHandler
                 .hasMessages(CmsSyncSchedulerTaskType.SYNC_PERIODIC.toInt()));
 
@@ -133,7 +127,8 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
         CmsSyncScheduler.sEndOfLastSync = 0;
         mScheduler.setImapServiceHandler(new ImapServiceHandlerMock(mSettings));
         mScheduler.setExecutionDuration(executionDuration);
-        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION, mOperationListener);
+        mScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION,
+                mOperationListener);
 
         Assert.assertFalse(mScheduler.scheduleSync());
 
@@ -174,7 +169,6 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
         Thread.sleep(executionDuration + 100, 0);
         assertEquals(2,
                 mOperationListener.getExecutions(CmsSyncSchedulerTaskType.SYNC_FOR_DATA_CONNECTION));
-
     }
 
 }

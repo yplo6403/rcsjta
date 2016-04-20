@@ -740,9 +740,6 @@ public class ChatServiceImpl extends IChatService.Stub {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add an OneToOne chat event listener");
-        }
         try {
             synchronized (mLock) {
                 mOneToOneChatEventBroadcaster.addOneToOneChatEventListener(listener);
@@ -770,9 +767,6 @@ public class ChatServiceImpl extends IChatService.Stub {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
         }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove an OneToOne chat event listener");
-        }
         try {
             synchronized (mLock) {
                 mOneToOneChatEventBroadcaster.removeOneToOneChatEventListener(listener);
@@ -799,9 +793,6 @@ public class ChatServiceImpl extends IChatService.Stub {
     public void addEventListener3(IGroupChatListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Add a Group chat event listener");
         }
         try {
             synchronized (mLock) {

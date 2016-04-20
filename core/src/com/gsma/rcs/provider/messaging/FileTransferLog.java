@@ -218,12 +218,8 @@ public class FileTransferLog implements IFileTransferLog {
         if (thumbnail != null) {
             values.put(FileTransferData.KEY_FILEICON, thumbnail.getUri().toString());
             values.put(FileTransferData.KEY_FILEICON_MIME_TYPE, thumbnail.getEncoding());
-            values.put(FileTransferData.KEY_FILEICON_EXPIRATION,
-                    FileTransferData.UNKNOWN_EXPIRATION);
-        } else {
-            values.put(FileTransferData.KEY_FILEICON_EXPIRATION,
-                    FileTransferData.UNKNOWN_EXPIRATION);
         }
+        values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
         values.put(FileTransferData.KEY_FILE_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
         mLocalContentResolver.insert(FileTransferData.CONTENT_URI, values);
 
@@ -398,15 +394,150 @@ public class FileTransferLog implements IFileTransferLog {
     }
 
     @Override
-    public boolean setFileTransferFileExpiration(String fileTransferId, long fileExpiration) {
+    public void addOneToOneFileTransferOnSecondaryDevice(String fileTransferId, ContactId contact,
+            Direction dir, Uri downloadUri, MmContent content, State state, ReasonCode reason,
+            long timestamp, long timestampSent, long fileExpiration, boolean seen) {
+        String fileName = content.getName();
+        String mimeType = content.getEncoding();
+        long size = content.getSize();
         if (sLogger.isActivated()) {
-            sLogger.debug("setFileTansferFileExpiration fileTransferId=".concat(fileTransferId));
+            sLogger.debug("addOneToOneFileTransferOnSecondaryDevice Id=" + fileTransferId
+                    + ", contact=" + contact + ", filename=" + fileName + ", size=" + size
+                    + ", mime=" + mimeType + ", state=" + state + ", reasonCode=" + reason
+                    + ", timestamp=" + timestamp + ", timestampSent=" + timestampSent);
         }
         ContentValues values = new ContentValues();
+        values.put(FileTransferData.KEY_FT_ID, fileTransferId);
+        values.put(FileTransferData.KEY_CHAT_ID, contact.toString());
+        values.put(FileTransferData.KEY_CONTACT, contact.toString());
+        values.put(FileTransferData.KEY_DOWNLOAD_URI, downloadUri.toString());
+        values.put(FileTransferData.KEY_FILE, content.getUri().toString());
+        values.put(FileTransferData.KEY_FILENAME, fileName);
+        values.put(FileTransferData.KEY_MIME_TYPE, mimeType);
+        values.put(FileTransferData.KEY_DIRECTION, dir.toInt());
+        values.put(FileTransferData.KEY_TRANSFERRED, 0);
+        values.put(FileTransferData.KEY_FILESIZE, size);
+        values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
+        values.put(FileTransferData.KEY_STATE, state.toInt());
+        values.put(FileTransferData.KEY_REASON_CODE, reason.toInt());
+        values.put(FileTransferData.KEY_TIMESTAMP, timestamp);
+        values.put(FileTransferData.KEY_TIMESTAMP_SENT, timestampSent);
+        values.put(FileTransferData.KEY_TIMESTAMP_DELIVERED, 0);
+        values.put(FileTransferData.KEY_TIMESTAMP_DISPLAYED, 0);
+        values.put(FileTransferData.KEY_DELIVERY_EXPIRATION, 0);
+        values.put(FileTransferData.KEY_EXPIRED_DELIVERY, 0);
         values.put(FileTransferData.KEY_FILE_EXPIRATION, fileExpiration);
-        return mLocalContentResolver.update(
-                Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values, null,
-                null) > 0;
+        values.put(FileTransferData.KEY_DOWNLOAD_STATE, DownloadState.QUEUED.toInt());
+        values.put(FileTransferData.KEY_DOWNLOAD_REASON_CODE, ReasonCode.UNSPECIFIED.toInt());
+        if (Direction.INCOMING == dir && seen) {
+            values.put(FileTransferData.KEY_READ_STATUS, ReadStatus.READ.toInt());
+        } else {
+            values.put(FileTransferData.KEY_READ_STATUS, ReadStatus.UNREAD.toInt());
+        }
+        mLocalContentResolver.insert(FileTransferData.CONTENT_URI, values);
+    }
+
+    @Override
+    public void addIncomingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            ContactId contact, Uri downloadUri, MmContent localMmContent, State state,
+            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration,
+            boolean seen) {
+        String fileName = localMmContent.getName();
+        String mimeType = localMmContent.getEncoding();
+        long size = localMmContent.getSize();
+        if (sLogger.isActivated()) {
+            sLogger.debug("addIncomingGroupFileTransferOnSecondaryDevice Id=" + fileTransferId
+                    + ", chatId=" + chatId + ", contact=" + contact + ", filename=" + fileName
+                    + ", size=" + size + ", mime=" + mimeType + ", state=" + state
+                    + ", reasonCode=" + reasonCode + ", timestamp=" + timestamp
+                    + ", timestampSent=" + timestampSent + ", expiration=" + fileExpiration);
+        }
+        ContentValues values = new ContentValues();
+        values.put(FileTransferData.KEY_FT_ID, fileTransferId);
+        values.put(FileTransferData.KEY_CHAT_ID, chatId);
+        values.put(FileTransferData.KEY_FILE, localMmContent.getUri().toString());
+        values.put(FileTransferData.KEY_CONTACT, contact.toString());
+        values.put(FileTransferData.KEY_DOWNLOAD_URI, downloadUri.toString());
+        values.put(FileTransferData.KEY_FILENAME, fileName);
+        values.put(FileTransferData.KEY_MIME_TYPE, mimeType);
+        values.put(FileTransferData.KEY_DIRECTION, Direction.INCOMING.toInt());
+        values.put(FileTransferData.KEY_TRANSFERRED, 0);
+        values.put(FileTransferData.KEY_FILESIZE, size);
+        values.put(FileTransferData.KEY_STATE, state.toInt());
+        values.put(FileTransferData.KEY_REASON_CODE, reasonCode.toInt());
+        values.put(FileTransferData.KEY_TIMESTAMP, timestamp);
+        values.put(FileTransferData.KEY_TIMESTAMP_SENT, timestampSent);
+        values.put(FileTransferData.KEY_TIMESTAMP_DELIVERED, 0);
+        values.put(FileTransferData.KEY_TIMESTAMP_DISPLAYED, 0);
+        values.put(FileTransferData.KEY_DELIVERY_EXPIRATION, 0);
+        values.put(FileTransferData.KEY_EXPIRED_DELIVERY, 0);
+        values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
+        values.put(FileTransferData.KEY_FILE_EXPIRATION, fileExpiration);
+        values.put(FileTransferData.KEY_DOWNLOAD_STATE, DownloadState.QUEUED.toInt());
+        values.put(FileTransferData.KEY_DOWNLOAD_REASON_CODE, ReasonCode.UNSPECIFIED.toInt());
+        if (seen) {
+            values.put(FileTransferData.KEY_READ_STATUS, ReadStatus.READ.toInt());
+        } else {
+            values.put(FileTransferData.KEY_READ_STATUS, ReadStatus.UNREAD.toInt());
+        }
+        mLocalContentResolver.insert(FileTransferData.CONTENT_URI, values);
+    }
+
+    @Override
+    public void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
+            Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients, State state,
+            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration) {
+        String fileName = localMmContent.getName();
+        String mimeType = localMmContent.getEncoding();
+        long size = localMmContent.getSize();
+        if (sLogger.isActivated()) {
+            sLogger.debug("addOutgoingGroupFileTransferOnSecondaryDevice: Id=" + fileTransferId
+                    + ", chatId=" + chatId + " filename=" + fileName + ", size=" + size + ", mime="
+                    + mimeType);
+        }
+        ContentValues values = new ContentValues();
+        values.put(FileTransferData.KEY_FT_ID, fileTransferId);
+        values.put(FileTransferData.KEY_CHAT_ID, chatId);
+        values.put(FileTransferData.KEY_DOWNLOAD_URI, downloadUri.toString());
+        values.put(FileTransferData.KEY_FILE, localMmContent.getUri().toString());
+        values.put(FileTransferData.KEY_FILENAME, fileName);
+        values.put(FileTransferData.KEY_MIME_TYPE, mimeType);
+        values.put(FileTransferData.KEY_DIRECTION, Direction.OUTGOING.toInt());
+        values.put(FileTransferData.KEY_TRANSFERRED, 0);
+        values.put(FileTransferData.KEY_FILESIZE, size);
+        values.put(MessageData.KEY_READ_STATUS, ReadStatus.UNREAD.toInt());
+        values.put(FileTransferData.KEY_TIMESTAMP, timestamp);
+        values.put(FileTransferData.KEY_TIMESTAMP_SENT, timestampSent);
+        values.put(FileTransferData.KEY_TIMESTAMP_DELIVERED, 0);
+        values.put(FileTransferData.KEY_TIMESTAMP_DISPLAYED, 0);
+        values.put(FileTransferData.KEY_DELIVERY_EXPIRATION, 0);
+        values.put(FileTransferData.KEY_EXPIRED_DELIVERY, 0);
+        values.put(FileTransferData.KEY_STATE, state.toInt());
+        values.put(FileTransferData.KEY_REASON_CODE, reasonCode.toInt());
+        values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
+        values.put(FileTransferData.KEY_FILE_EXPIRATION, fileExpiration);
+        values.put(FileTransferData.KEY_DOWNLOAD_STATE, DownloadState.QUEUED.toInt());
+        values.put(FileTransferData.KEY_DOWNLOAD_REASON_CODE, ReasonCode.UNSPECIFIED.toInt());
+        mLocalContentResolver.insert(FileTransferData.CONTENT_URI, values);
+        try {
+            for (ContactId contact : recipients) {
+                /* Add entry with delivered and displayed timestamps set to 0. */
+                mGroupChatDeliveryInfoLog.addGroupChatDeliveryInfoEntry(chatId, contact,
+                        fileTransferId, GroupDeliveryInfo.Status.NOT_DELIVERED,
+                        GroupDeliveryInfo.ReasonCode.UNSPECIFIED, 0, 0);
+            }
+        } catch (Exception e) {
+            if (sLogger.isActivated()) {
+                sLogger.error("Group file transfer with fileTransferId '" + fileTransferId
+                        + "' could not be added to database!", e);
+            }
+            mLocalContentResolver.delete(
+                    Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), null, null);
+            mLocalContentResolver.delete(
+                    Uri.withAppendedPath(GroupDeliveryInfoData.CONTENT_URI, fileTransferId), null,
+                    null);
+            /* TODO: Throw exception */
+        }
     }
 
     private boolean isFileTransferFileExpired(String fileTransferId) {

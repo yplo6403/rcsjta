@@ -27,10 +27,12 @@ import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.services.rcs.RcsPermissionDeniedException;
+import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
@@ -40,28 +42,28 @@ import java.util.List;
 
 public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
 
+    private ContactId mContact1;
+    private ContactId mContact2;
+
     // @formatter:off
     protected void setUp() throws Exception {
         super.setUp();
-        Context context = getContext();
-        ContactUtil.getInstance(getContext());
-        RcsSettings rcsSettings = RcsSettingsMock.getMockSettings(context);
-        AndroidFactory.setApplicationContext(context, rcsSettings);
+        RcsSettings rcsSettings = RcsSettingsMock.getMockSettings(mContext);
+        AndroidFactory.setApplicationContext(mContext, rcsSettings);
+        ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        mContact1 = contactUtils.formatContact("+33601020304");
+        mContact2 = contactUtils.formatContact("+33699999999");
     }
 
-
-    public void testReportSeenObjectWithUid(){
-
+    public void testReportSeenObjectWithUid() throws RcsPermissionDeniedException {
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
-        String contact1 = "+33601020304";
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder(CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder(mContact1),
                 uid1,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -71,30 +73,23 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
-        String expectedXml;
-
-        expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+        String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
                 "<operation name=\"add\" flag=\"\\Seen\">" +
-                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + contact1 + "/\">" +
+                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + mContact1 + "/\">" +
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
-        String contact2 = "+33699999999";
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder(mContact2),
                 uid2,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -102,45 +97,37 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.SMS,
                 messageId2,
                 null);
-
         seenObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 
                 seenObjects,
                 deletedObjects
                 );
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
                 "<operation name=\"add\" flag=\"\\Seen\">" +
-                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + contact1 + "/\">" +
+                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + mContact1 + "/\">" +
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
-                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + contact2 + "/\">" +
+                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + mContact2 + "/\">" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
 
     public void testReportDeletedObjectWithUid(){
-
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
-        String contact1 = "+33601020304";
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder(mContact1),
                 uid1,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -150,30 +137,23 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
-        String expectedXml;
-
-        expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+        String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
                 "<operation name=\"add\" flag=\"\\Deleted\">" +
-                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + contact1 + "/\">" +
+                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + mContact1 + "/\">" +
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
-        String contact2 = "+33699999999";
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder(mContact2),
                 uid2,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -181,44 +161,35 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.SMS,
                 messageId2,
                 null);
-
         deletedObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
                 "<operation name=\"add\" flag=\"\\Deleted\">" +
-                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + contact1 + "/\">" +
+                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + mContact1 + "/\">" +
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
-                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + contact2 + "/\">" +
+                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + mContact2 + "/\">" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
 
     public void testReportSeenAndDeletedObjectWithUid(){
-
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
-        String contact1 = "+33601020304";
         Integer uid1 = 1;
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact1)),
+                CmsUtils.contactToCmsFolder(mContact1),
                 uid1,
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
@@ -227,12 +198,10 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         seenObjects.add(cmsObject);
-
-        String contact2 = "+33699999999";
         String messageId2 = IdGenerator.generateMessageID();
         Integer uid2 = 2;
         cmsObject = new CmsObject(
-                CmsUtils.contactToCmsFolder( CmsUtils.headerToContact(contact2)),
+                CmsUtils.contactToCmsFolder(mContact2),
                 uid2,
                 ReadStatus.READ,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
@@ -240,41 +209,33 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.SMS,
                 messageId2,
                 null);
-
         deletedObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
                 "<operation name=\"add\" flag=\"\\Seen\">" +
-                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + contact1 + "/\">" +
+                "<object uid=\"" + uid1 + "\" folder-path=\"Default/tel:" + mContact1 + "/\">" +
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "<operation name=\"add\" flag=\"\\Deleted\">" +
-                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + contact2 + "/\">" +
+                "<object uid=\"" + uid2 + "\" folder-path=\"Default/tel:" + mContact2 + "/\">" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
 
     public void testReportSeenGroupChatMessageWithoutUid(){
-
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -287,12 +248,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         String expectedXml;
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -305,9 +263,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -318,14 +274,10 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.CHAT_MESSAGE,
                 messageId2,
                 null);
-
         seenObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -343,18 +295,14 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
 
     public void testReportDeletedGroupChatMessageWithoutUid(){
-
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -367,12 +315,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         String expectedXml;
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -385,9 +330,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -398,14 +341,10 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.CHAT_MESSAGE,
                 messageId2,
                 null);
-
         deletedObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -423,18 +362,14 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
 
     public void testReportSeenAndDeletedGroupChatMessageWithoutUid(){
-
         SipEventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
-
         String chatId1 = IdGenerator.generateMessageID();
         String messageId1 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -446,7 +381,6 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         seenObjects.add(cmsObject);
-
         String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
@@ -457,14 +391,10 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 MessageType.CHAT_MESSAGE,
                 messageId2,
                 null);
-
         deletedObjects.add(cmsObject);
-
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
                 deletedObjects);
-
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -484,11 +414,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
-
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-
     }
-
 
     //TODO FGI : unit test for 1-1 message
     // @formatter:on

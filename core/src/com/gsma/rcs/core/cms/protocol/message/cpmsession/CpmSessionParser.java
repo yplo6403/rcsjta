@@ -20,7 +20,9 @@
 package com.gsma.rcs.core.cms.protocol.message.cpmsession;
 
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -88,9 +90,6 @@ public class CpmSessionParser extends DefaultHandler {
 
     @Override
     public void startDocument() {
-        if (logger.isActivated()) {
-            logger.debug("Start document");
-        }
         accumulator = new StringBuffer();
     }
 
@@ -103,17 +102,18 @@ public class CpmSessionParser extends DefaultHandler {
     public void endElement(String namespaceURL, String localName, String qname) {
         if (CpmSessionDocument.SESSION_TYPE.equals(localName)) {
             mSessionType = accumulator.toString();
+
         } else if (CpmSessionDocument.INVITED_PARTICIPANTS.equals(localName)) {
             for (String participant : accumulator.toString().split(";")) {
-                mParticipants.add(CmsUtils.headerToContact(participant));
+                ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(participant);
+                if (phoneNumber == null) {
+                    if (logger.isActivated()) {
+                        logger.error("Invalid participant " + participant);
+                    }
+                } else {
+                    mParticipants.add(ContactUtil.createContactIdFromValidatedData(phoneNumber));
+                }
             }
-        }
-    }
-
-    @Override
-    public void endDocument() {
-        if (logger.isActivated()) {
-            logger.debug("End document");
         }
     }
 
