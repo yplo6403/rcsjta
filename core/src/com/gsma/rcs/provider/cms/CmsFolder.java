@@ -64,7 +64,7 @@ public final class CmsFolder {
     public CmsFolder(String name) {
         super();
         this.mName = name;
-        mNextUid = mModseq = mUidValidity = mMaxUid = 0;
+        resetCounters();
     }
 
     /**
@@ -79,6 +79,10 @@ public final class CmsFolder {
         mNextUid = nextUid;
         mModseq = modseq;
         mUidValidity = uidValidity;
+    }
+
+    public void resetCounters(){
+        mNextUid = mModseq = mUidValidity = mMaxUid = 0;
     }
 
     /**

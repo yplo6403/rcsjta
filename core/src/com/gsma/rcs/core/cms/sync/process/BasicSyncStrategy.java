@@ -167,6 +167,7 @@ public class BasicSyncStrategy {
 
         } else if (!local.getUidValidity().equals(remote.getUidValidity())) {
             mLocalStorageHandler.removeLocalFolder(remote.getName());
+            local.resetCounters();
             sync = true;
 
         } else if (!local.getModseq().equals(remote.getHighestModseq())) {
