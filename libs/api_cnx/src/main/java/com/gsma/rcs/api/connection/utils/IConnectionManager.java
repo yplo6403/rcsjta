@@ -53,6 +53,8 @@ public interface IConnectionManager {
      */
     void stopMonitorApiCnx();
 
+    boolean isOnForeground();
+
     /**
      * Check if services are connected
      *

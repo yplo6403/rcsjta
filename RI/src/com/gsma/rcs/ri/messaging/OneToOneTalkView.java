@@ -67,7 +67,6 @@ import com.gsma.services.rcs.cms.XmsMessageIntent;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransfer;
-import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 import com.gsma.services.rcs.filetransfer.FileTransferIntent;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
@@ -75,7 +74,6 @@ import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
 
 import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -240,8 +238,18 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (LogUtils.isActive) {
+            Log.d(LOGTAG, "--> onCreate");
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_view);
+        if (!isServiceConnected(ConnectionManager.RcsServiceName.CONTACT,
+                ConnectionManager.RcsServiceName.CHAT,
+                ConnectionManager.RcsServiceName.FILE_TRANSFER,
+                ConnectionManager.RcsServiceName.CAPABILITY, ConnectionManager.RcsServiceName.CMS)) {
+            showMessageThenExit(R.string.label_service_not_available);
+            return;
+        }
         startMonitorServices(ConnectionManager.RcsServiceName.CMS,
                 ConnectionManager.RcsServiceName.CONTACT, ConnectionManager.RcsServiceName.CHAT,
                 ConnectionManager.RcsServiceName.FILE_TRANSFER,
@@ -249,9 +257,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         try {
             initialize();
             processIntent(getIntent());
-            if (LogUtils.isActive) {
-                Log.d(LOGTAG, "onCreate");
-            }
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
         }
@@ -688,6 +693,9 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     @Override
     protected void onPause() {
+        if (LogUtils.isActive) {
+            Log.d(LOGTAG, "--> onPause");
+        }
         super.onPause();
         RI.sChatIdOnForeground = null;
         try {
@@ -721,7 +729,14 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     @Override
     protected void onResume() {
+        if (LogUtils.isActive) {
+            Log.d(LOGTAG, "--> onResume");
+        }
         super.onResume();
+        if (isFinishing()) {
+            return;
+        }
+
         if (mContact != null) {
             RI.sChatIdOnForeground = mContact.toString();
         }
@@ -937,22 +952,19 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                         } else if (mCanSendMms && Utils.isImageType(mimeType)) {
                             menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
                         }
-                    }
-                    else if (FileTransfer.State.INVITED == state){
+                    } else if (FileTransfer.State.INVITED == state) {
                         menu.findItem(R.id.menu_ft_accept).setVisible(true);
                         menu.findItem(R.id.menu_ft_decline).setVisible(true);
-                    }
-                    else if (mFileTransferService.isAllowedToDownloadFile(id)){
+                    } else if (mFileTransferService.isAllowedToDownloadFile(id)) {
                         menu.findItem(R.id.menu_ft_download).setVisible(true);
-                    }
-                    else if (Utils.isImageType(mimeType)) {
+                    } else if (Utils.isImageType(mimeType)) {
                         if (Direction.OUTGOING == direction) {
                             menu.findItem(R.id.menu_display_content).setVisible(true);
-                        }
-                        else if (RcsService.Direction.INCOMING == direction) {
+                        } else if (RcsService.Direction.INCOMING == direction) {
                             Long transferred = cursor.getLong(cursor
                                     .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
-                            Long size = cursor.getLong(cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE));
+                            Long size = cursor.getLong(cursor
+                                    .getColumnIndexOrThrow(HistoryLog.FILESIZE));
                             if (size.equals(transferred)) {
                                 menu.findItem(R.id.menu_display_content).setVisible(true);
                             }
@@ -1065,7 +1077,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 case R.id.menu_ft_download:
                     switch (providerId) {
                         case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            String transferId = cursor.getString(cursor
+                                    .getColumnIndexOrThrow(HistoryLog.ID));
                             mFileTransferService.getFileTransfer(transferId).download();
                             break;
 
@@ -1077,7 +1090,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 case R.id.menu_ft_accept:
                     switch (providerId) {
                         case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            String transferId = cursor.getString(cursor
+                                    .getColumnIndexOrThrow(HistoryLog.ID));
                             mFileTransferService.getFileTransfer(transferId).acceptInvitation();
                             break;
 
@@ -1088,7 +1102,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 case R.id.menu_ft_decline:
                     switch (providerId) {
                         case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                            String transferId = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
+                            String transferId = cursor.getString(cursor
+                                    .getColumnIndexOrThrow(HistoryLog.ID));
                             mFileTransferService.getFileTransfer(transferId).rejectInvitation();
                             break;
 
@@ -1341,8 +1356,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         }
     }
 
-
-    public static boolean isActivityVisible(){
-        return RI.sChatIdOnForeground!=null;
+    public static boolean isActivityVisible() {
+        return RI.sChatIdOnForeground != null;
     }
 }

@@ -18,12 +18,10 @@
 
 package com.gsma.rcs.api.connection.utils;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.ListActivity;
-import android.app.ProgressDialog;
-import android.os.Bundle;
-
+import com.gsma.rcs.api.connection.ConnectionManager;
+import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
+import com.gsma.rcs.api.connection.IRcsActivityFinishable;
+import com.gsma.rcs.api.connection.R;
 import com.gsma.services.rcs.RcsServiceListener;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.RcsServiceNotRegisteredException;
@@ -37,10 +35,13 @@ import com.gsma.services.rcs.sharing.geoloc.GeolocSharingService;
 import com.gsma.services.rcs.sharing.image.ImageSharingService;
 import com.gsma.services.rcs.sharing.video.VideoSharingService;
 import com.gsma.services.rcs.upload.FileUploadService;
-import com.gsma.rcs.api.connection.ConnectionManager;
-import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
-import com.gsma.rcs.api.connection.IRcsActivityFinishable;
-import com.gsma.rcs.api.connection.R;
+
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.ListActivity;
+import android.app.ProgressDialog;
+import android.os.Bundle;
+import android.util.Log;
 
 /**
  * @author LEMORDANT Philippe
@@ -55,6 +56,8 @@ public abstract class RcsListActivity extends ListActivity implements
     private ConnectionManager mCnxManager;
 
     private IRcsActivityFinishable mIFinishable;
+    private boolean onForeground;
+    private static final String LOGTAG = LogUtils.getTag(RcsListActivity.class.getSimpleName());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +68,16 @@ public abstract class RcsListActivity extends ListActivity implements
 
                 @Override
                 public void showMessageThenExit(String msg) {
-                    DialogUtil.showMessageThenExit(RcsListActivity.this, msg, mLockAcces);
+                    if (!RcsListActivity.this.isOnForeground()) {
+                        if (LogUtils.isActive) {
+                            Log.w(LOGTAG,
+                                    "Exit activity " + RcsListActivity.this.getLocalClassName()
+                                            + " <" + msg + ">");
+                        }
+                        RcsListActivity.this.finish();
+                    } else {
+                        DialogUtil.showMessageThenExit(RcsListActivity.this, msg, mLockAcces);
+                    }
                 }
             };
         }
@@ -75,6 +87,23 @@ public abstract class RcsListActivity extends ListActivity implements
     protected void onDestroy() {
         super.onDestroy();
         mCnxManager.stopMonitorServices(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        onForeground = true;
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        onForeground = false;
+    }
+
+    @Override
+    public boolean isOnForeground() {
+        return onForeground;
     }
 
     @Override
