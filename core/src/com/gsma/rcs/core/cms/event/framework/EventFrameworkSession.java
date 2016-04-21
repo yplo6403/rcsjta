@@ -88,6 +88,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
         mMessagingLog = messagingLog;
         mActivityMgr = new SessionActivityManager(this, rcsSettings);
 
+        addAcceptTypes(EventFrameworkManager.MIME_TYPE);
         addAcceptTypes(CpimMessage.MIME_TYPE);
         addWrappedTypes(ImdnDocument.MIME_TYPE);
 
