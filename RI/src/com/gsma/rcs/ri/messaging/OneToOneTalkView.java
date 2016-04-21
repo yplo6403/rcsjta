@@ -733,10 +733,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             Log.d(LOGTAG, "--> onResume");
         }
         super.onResume();
-        if (isFinishing()) {
-            return;
-        }
-
         if (mContact != null) {
             RI.sChatIdOnForeground = mContact.toString();
         }
