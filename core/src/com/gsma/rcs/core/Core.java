@@ -313,7 +313,6 @@ public class Core {
         if (logActivated) {
             sLogger.info("RCS core service has been stopped with success");
         }
-        sInstance = null;
         mListener.onCoreLayerStopped();
     }
 

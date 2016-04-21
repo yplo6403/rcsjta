@@ -23,8 +23,8 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData.TermsAndConditionsResponse;
@@ -69,8 +69,10 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
 
     private RcsSettings mRcsSettings;
 
+    private static boolean sAccurateLog = false;
+
     private interface IRcsCompatibility {
-        public boolean isCompatible(String serviceName, String codename, int version, int increment);
+        boolean isCompatible(String serviceName, String codename, int version, int increment);
     }
 
     private static IRcsCompatibility sRcsCompatibility = new IRcsCompatibility() {
@@ -191,7 +193,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                         boolean activationMode = getActivationMode();
                         mResult.putBoolean(Intents.Service.EXTRA_GET_ACTIVATION_MODE,
                                 activationMode);
-                        if (sLogger.isActivated()) {
+                        if (sAccurateLog && sLogger.isActivated()) {
                             sLogger.debug("isActivated() -> " + activationMode);
                         }
                         break;
@@ -208,7 +210,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                         boolean compatible = isCompatible(serviceName, codename, version, increment);
                         mResult.putBoolean(Intents.Service.EXTRA_GET_COMPATIBILITY_RESPONSE,
                                 compatible);
-                        if (sLogger.isActivated()) {
+                        if (sAccurateLog && sLogger.isActivated()) {
                             sLogger.debug("isCompatible(" + serviceName + ") -> " + compatible);
                         }
                         break;
@@ -218,7 +220,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                         boolean started = core != null && core.isStarted();
                         mResult.putBoolean(Intents.Service.EXTRA_GET_SERVICE_STARTING_STATE,
                                 started);
-                        if (sLogger.isActivated()) {
+                        if (sAccurateLog && sLogger.isActivated()) {
                             sLogger.debug("isServiceStarted() -> " + started);
                         }
                         break;
@@ -227,7 +229,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                         boolean activationModeChangeable = getActivationModeChangeable(mCtx);
                         mResult.putBoolean(Intents.Service.EXTRA_GET_ACTIVATION_MODE_CHANGEABLE,
                                 activationModeChangeable);
-                        if (sLogger.isActivated()) {
+                        if (sAccurateLog && sLogger.isActivated()) {
                             sLogger.debug("isActivationModeChangeAble() -> "
                                     + activationModeChangeable);
                         }
@@ -239,7 +241,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                         activationMode = setActivationMode(mCtx, active);
                         mResult.putBoolean(Intents.Service.EXTRA_SET_ACTIVATION_MODE,
                                 activationMode);
-                        if (sLogger.isActivated()) {
+                        if (sAccurateLog && sLogger.isActivated()) {
                             sLogger.debug("setActivationMode(" + active + ") -> " + activationMode);
                         }
                         break;
@@ -252,10 +254,11 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
 
     }
 
+    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     @Override
     public void onReceive(Context ctx, Intent intent) {
         final String action = intent.getAction();
-        if (sLogger.isActivated()) {
+        if (sAccurateLog && sLogger.isActivated()) {
             sLogger.debug("Received: " + action);
         }
         LocalContentResolver localContentResolver = new LocalContentResolver(ctx);
@@ -265,8 +268,6 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
         IntentProcessor intentProcessor = new IntentProcessor(ctx, intent, result);
         intentProcessor.start();
         long endTime = NtpTrustedTime.currentTimeMillis() + INTENT_RESPONSE_TIMEOUT;
-        // TODO Such synchronization has little effect, since different threads usually will have
-        // different values for the local variable or parameter.
         synchronized (result) {
             while (!intentProcessor.mHaveResult) {
                 long delay = endTime - NtpTrustedTime.currentTimeMillis();
@@ -275,8 +276,10 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
                     break;
                 }
                 try {
-                    sLogger.debug("Waiting for result for " + action + " during max " + delay
-                            + "ms");
+                    if (sAccurateLog) {
+                        sLogger.debug("Waiting for result for " + action + " during max " + delay
+                                + "ms");
+                    }
                     result.wait(delay);
 
                 } catch (InterruptedException e) {

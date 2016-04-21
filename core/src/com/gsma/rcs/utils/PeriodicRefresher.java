@@ -23,10 +23,10 @@
 package com.gsma.rcs.utils;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.platform.AndroidFactory;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -67,9 +67,8 @@ public abstract class PeriodicRefresher {
     public PeriodicRefresher() {
         mContext = AndroidFactory.getApplicationContext();
         mAlarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
-        /* Create a unique pending intent */
-        mAction = new StringBuilder(getClass().getName()).append('_')
-                .append(NtpTrustedTime.currentTimeMillis()).toString(); /* Unique action ID */
+        /* Create a unique pending intent: Unique action ID */
+        mAction = getClass().getName() + '_' + NtpTrustedTime.currentTimeMillis();
         mAlarmIntent = PendingIntent.getBroadcast(mContext, 0, new Intent(mAction), 0);
     }
 
@@ -113,8 +112,8 @@ public abstract class PeriodicRefresher {
         /* Calculate the effective refresh period */
         long pollingPeriod = (long) (expirePeriod * delta);
         if (sLogger.isActivated()) {
-            sLogger.debug(new StringBuilder("Start timer at period=").append(pollingPeriod)
-                    .append("ms (expiration=").append(expirePeriod).append("ms)").toString());
+            sLogger.debug("Start timer at period=" + pollingPeriod + "ms (expiration="
+                    + expirePeriod + "ms)");
         }
         mContext.registerReceiver(mAlarmReceiver, new IntentFilter(mAction));
         TimerUtils.setExactTimer(mAlarmManager, currentTime + pollingPeriod, mAlarmIntent);
@@ -152,10 +151,10 @@ public abstract class PeriodicRefresher {
                 public void run() {
                     try {
                         periodicProcessing();
-                    } catch (ContactManagerException e) {
+
+                    } catch (ContactManagerException | PayloadException e) {
                         sLogger.error("IMS re-registration unsuccessful!", e);
-                    } catch (PayloadException e) {
-                        sLogger.error("IMS re-registration unsuccessful!", e);
+
                     } catch (NetworkException e) {
                         /* Nothing to be handled here */
                         if (sLogger.isActivated()) {

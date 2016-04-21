@@ -222,11 +222,6 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
         }
     }
 
-    @Override
-    public void startSession() throws PayloadException, NetworkException {
-        start();
-    }
-
     public String getSdpDirection() {
         return SdpUtils.DIRECTION_SENDRECV;
     }

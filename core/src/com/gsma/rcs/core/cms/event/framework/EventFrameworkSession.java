@@ -21,6 +21,7 @@ package com.gsma.rcs.core.cms.event.framework;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -36,6 +37,7 @@ import com.gsma.rcs.core.ims.service.SessionActivityManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
+import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -53,6 +55,8 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
     private final MsrpManager mMsrpMgr;
 
     private final SessionActivityManager mActivityMgr;
+
+    private final ImsModule mImsModule;
 
     private String mContributionId;
 
@@ -84,18 +88,19 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
         mMessagingLog = messagingLog;
         mActivityMgr = new SessionActivityManager(this, rcsSettings);
 
-        addAcceptTypes(EventFrameworkManager.MIME_TYPE);
-        addWrappedTypes(CpimMessage.MIME_TYPE);
+        addAcceptTypes(CpimMessage.MIME_TYPE);
+        addWrappedTypes(ImdnDocument.MIME_TYPE);
 
         mFeatureTags.add(FeatureTags.FEATURE_3GPP + "=\""
                 + FeatureTags.FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG + "\"");
 
         // Create the MSRP manager
         int localMsrpPort = NetworkRessourceManager.generateLocalMsrpPort(rcsSettings);
-        String localIpAddress = mImService.getImsModule().getCurrentNetworkInterface()
-                .getNetworkAccess().getIpAddress();
+        mImsModule = mImService.getImsModule();
+        String localIpAddress = mImsModule.getCurrentNetworkInterface().getNetworkAccess()
+                .getIpAddress();
         mMsrpMgr = new MsrpManager(localIpAddress, localMsrpPort, imService, rcsSettings);
-        if (imService.getImsModule().isConnectedToWifiAccess()) {
+        if (mImsModule.isConnectedToWifiAccess()) {
             mMsrpMgr.setSecured(rcsSettings.isSecureMsrpOverWifi());
         }
     }
@@ -105,7 +110,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @return Feature tags
      */
-    public String[] getFeatureTags() {
+    protected String[] getFeatureTags() {
         return mFeatureTags.toArray(new String[mFeatureTags.size()]);
     }
 
@@ -114,7 +119,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @return Accept types
      */
-    public String getAcceptTypes() {
+    protected String getAcceptTypes() {
         return mAcceptTypes;
     }
 
@@ -123,9 +128,9 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      * 
      * @param types types
      */
-    public void addAcceptTypes(String types) {
+    protected void addAcceptTypes(String types) {
         if (mAcceptTypes.isEmpty()) {
-            mAcceptTypes += types;
+            mAcceptTypes = types;
         } else {
             mAcceptTypes += " " + types;
         }
@@ -136,7 +141,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @return Wrapped types
      */
-    public String getWrappedTypes() {
+    protected String getWrappedTypes() {
         return mWrappedTypes;
     }
 
@@ -145,9 +150,9 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      * 
      * @param types types
      */
-    public void addWrappedTypes(String types) {
+    protected void addWrappedTypes(String types) {
         if (mWrappedTypes.isEmpty()) {
-            mWrappedTypes += types;
+            mWrappedTypes = types;
         } else {
             mWrappedTypes += " " + types;
         }
@@ -158,7 +163,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @return Activity manager
      */
-    public SessionActivityManager getActivityManager() {
+    protected SessionActivityManager getActivityManager() {
         return mActivityMgr;
     }
 
@@ -176,7 +181,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @param id Contribution ID
      */
-    public void setContributionID(String id) {
+    protected void setContributionID(String id) {
         mContributionId = id;
     }
 
@@ -185,16 +190,13 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @return MSRP manager
      */
-    public MsrpManager getMsrpMgr() {
+    protected MsrpManager getMsrpMgr() {
         return mMsrpMgr;
     }
 
-    /**
-     * Close the MSRP session
-     */
-    public void closeMsrpSession() {
-        if (getMsrpMgr() != null) {
-            getMsrpMgr().closeSession();
+    private void closeMsrpSession() {
+        if (mMsrpMgr != null) {
+            mMsrpMgr.closeSession();
             if (sLogger.isActivated()) {
                 sLogger.debug("MSRP session has been closed");
             }
@@ -244,18 +246,19 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
     @Override
     public void receiveMsrpData(String msgId, byte[] data, String mimeType)
             throws PayloadException, NetworkException, ContactManagerException {
-        if (sLogger.isActivated()) {
+        boolean logActivated = sLogger.isActivated();
+        if (logActivated) {
             sLogger.info("Data received (type " + mimeType + ")");
         }
         mActivityMgr.updateActivity();
         // TODO check if it is necessary to test if data is empty ?
         if (data == null || data.length == 0) {
-            if (sLogger.isActivated()) {
+            if (logActivated) {
                 sLogger.debug("By-pass received empty data");
             }
             return;
         }
-        if (sLogger.isActivated()) {
+        if (logActivated) {
             sLogger.debug("EventFrameworkSession::receiveMsrpData");
         }
         // TODO FGI : TO BE implemented
@@ -267,12 +270,10 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
 
     @Override
     public void msrpTransferProgress(long currentSize, long totalSize) {
-        // Not used by chat
     }
 
     @Override
     public boolean msrpTransferProgress(long currentSize, long totalSize, byte[] data) {
-        // Not used by chat
         return false;
     }
 
@@ -290,23 +291,26 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
 
     @Override
     public void startSession() throws PayloadException, NetworkException {
+        mImsModule.getInstantMessagingService().addSession(this);
+        start();
     }
 
     @Override
     public void removeSession() {
+        mImsModule.getInstantMessagingService().removeSession(this);
     }
 
     @Override
     public void prepareMediaSession() {
         byte[] sdp = getDialogPath().getRemoteContent().getBytes(UTF8);
-        MsrpSession session = getMsrpMgr().createMsrpSession(sdp, this);
+        MsrpSession session = mMsrpMgr.createMsrpSession(sdp, this);
         session.setFailureReportOption(false);
         session.setSuccessReportOption(false);
     }
 
     @Override
     public void openMediaSession() throws PayloadException, NetworkException {
-        getMsrpMgr().openMsrpSession();
+        mMsrpMgr.openMsrpSession();
         sendEmptyDataChunk();
     }
 

@@ -27,6 +27,7 @@ import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.i
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkSession;
 import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
@@ -494,6 +495,26 @@ public class InstantMessagingService extends ImsService {
                         .getCallId());
             }
             mGroupChatSessionCache.remove(chatId);
+            removeImsServiceSession(session);
+        }
+    }
+
+    public void addSession(EventFrameworkSession session) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Add EventFrameworkSession with contribution ID '"
+                    + session.getContributionID() + "'");
+        }
+        synchronized (getImsServiceSessionOperationLock()) {
+            addImsServiceSession(session);
+        }
+    }
+
+    public void removeSession(final EventFrameworkSession session) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Remove EventFrameworkSession with contribution ID '"
+                    + session.getContributionID() + "'");
+        }
+        synchronized (getImsServiceSessionOperationLock()) {
             removeImsServiceSession(session);
         }
     }

@@ -21,7 +21,6 @@ package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.core.cms.event.framework.EventFrameworkSession;
 import com.gsma.rcs.core.cms.event.framework.TerminatingEventFrameworkSession;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.ims.ImsModule;
@@ -108,7 +107,8 @@ public class CmsService extends ImsService {
         return new Handler(thread.getLooper());
     }
 
-    public void register(CmsServiceImpl cmsService, ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService) {
+    public void register(CmsServiceImpl cmsService, ChatServiceImpl chatService,
+            FileTransferServiceImpl fileTransferService) {
         if (sLogger.isActivated()) {
             sLogger.debug(cmsService.getClass().getName() + " registered ok.");
             sLogger.debug(chatService.getClass().getName() + " registered ok.");
@@ -129,7 +129,8 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
-        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mFileTransferServiceImpl, mXmsEventHandler);
+        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mFileTransferServiceImpl,
+                mXmsEventHandler);
         // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
@@ -367,7 +368,7 @@ public class CmsService extends ImsService {
             @Override
             public void run() {
                 try {
-                    EventFrameworkSession session = new TerminatingEventFrameworkSession(
+                    TerminatingEventFrameworkSession session = new TerminatingEventFrameworkSession(
                             mImsModule.getInstantMessagingService(), invite, mRcsSettings,
                             mMessagingLog, timestamp);
                     session.startSession();
