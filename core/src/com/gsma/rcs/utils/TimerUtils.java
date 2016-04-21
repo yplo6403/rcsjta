@@ -22,6 +22,8 @@
 
 package com.gsma.rcs.utils;
 
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.os.Build;
@@ -41,6 +43,15 @@ public class TimerUtils {
      */
     public static void setExactTimer(AlarmManager alarmManager, long triggerAtMillis,
             PendingIntent operation) {
+
+        /**
+         * triggerAtMillis parameter is based on the Network Time which can differ from the System
+         * Time. Android timer must be based on system time, so we have to consider the offset
+         * between system and network time
+         */
+        long timeOffset = NtpTrustedTime.currentTimeMillis() - System.currentTimeMillis();
+        triggerAtMillis -= timeOffset;
+
         /*
          * Beginning with API 19 (KITKAT), alarm delivery is inexact. The OS will shift alarms in
          * order to minimize wake ups and battery use. The new API setExact(int, long,
