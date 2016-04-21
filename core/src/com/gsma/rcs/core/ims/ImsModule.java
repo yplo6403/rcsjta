@@ -225,6 +225,7 @@ public class ImsModule implements SipEventListener {
         if (sLogger.isActivated()) {
             sLogger.info("Start the IMS module");
         }
+        mCnxManager.start();
         mExtensionManager.start();
         mServiceDispatcher.start();
         mCallManager.start();
