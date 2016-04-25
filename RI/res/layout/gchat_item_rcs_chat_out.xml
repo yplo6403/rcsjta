@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="2dp">
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="2dp">
 
     <include
         layout="@layout/talk_item_divider"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
 
     <RelativeLayout
         android:id="@+id/conv_item_chat_text_out"
@@ -23,15 +23,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/text_dummy"
-            android:textColor="@android:color/black" />
+            android:textColor="@android:color/black"/>
 
-        <TextView
-            android:id="@+id/contact_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/content_text"
-            android:singleLine="true"
-            android:text="@string/contact_dummy" />
     </RelativeLayout>
 
     <TextView
@@ -43,7 +36,7 @@
         android:layout_marginRight="12dp"
         android:drawablePadding="5dp"
         android:text="@string/label_state_unknown"
-        android:textColor="@android:color/darker_gray" />
+        android:textColor="@android:color/darker_gray"/>
 
     <TextView
         android:id="@+id/timestamp_text"
@@ -53,5 +46,5 @@
         android:layout_marginEnd="12dp"
         android:layout_marginRight="12dp"
         android:singleLine="true"
-        android:text="@string/timestamp_dummy" />
+        android:text="@string/timestamp_dummy"/>
 </LinearLayout>
