@@ -529,7 +529,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         if (!mImService.isFileTransferSessionAvailable()
                 || mImService.isMaxConcurrentOutgoingFileTransfersReached()) {
             if (sLogger.isActivated()) {
-                sLogger.debug("The max number of file transfer sessions is achieved: re-queue the file transfer with fileTransferId "
+                sLogger.debug("The max number of file transfer sessions is achieved: re-queue the file transfer with Id "
                         .concat(fileTransferId));
             }
             setOneToOneFileTransferStateAndTimestamp(fileTransferId, contact, State.QUEUED,
@@ -542,7 +542,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         FileTransferProtocol ftProtocol = getFileTransferProtocolForOneToOneFileTransfer(contact);
         if (ftProtocol == null) {
             throw new ServerApiGenericException(
-                    "No valid file transfer protocol could be determined for resending file with fileTransferId '"
+                    "No valid file transfer protocol could be determined for resending file with Id '"
                             + fileTransferId + "'!");
         }
 
@@ -1029,13 +1029,12 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
      * @param contact contact who received file
      */
     public void receiveOneToOneFileDeliveryStatus(ImdnDocument imdn, ContactId contact) {
-        String status = imdn.getStatus();
+        ImdnDocument.DeliveryStatus status = imdn.getStatus();
         long timestamp = imdn.getDateTime();
-
         /* Note: File transfer ID always corresponds to message ID in the imdn pay-load */
         String fileTransferId = imdn.getMsgId();
         switch (status) {
-            case ImdnDocument.DELIVERY_STATUS_DELIVERED:
+            case DELIVERED:
                 mImService.getDeliveryExpirationManager()
                         .cancelDeliveryTimeoutAlarm(fileTransferId);
                 if (mMessagingLog.setFileTransferDelivered(fileTransferId, timestamp)) {
@@ -1044,7 +1043,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                 }
 
                 break;
-            case ImdnDocument.DELIVERY_STATUS_DISPLAYED:
+            case DISPLAYED:
                 mImService.getDeliveryExpirationManager()
                         .cancelDeliveryTimeoutAlarm(fileTransferId);
                 if (mMessagingLog.setFileTransferDisplayed(fileTransferId, timestamp)) {
@@ -1053,9 +1052,9 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                 }
 
                 break;
-            case ImdnDocument.DELIVERY_STATUS_ERROR:
-            case ImdnDocument.DELIVERY_STATUS_FAILED:
-            case ImdnDocument.DELIVERY_STATUS_FORBIDDEN:
+            case ERROR:
+            case FAILED:
+            case FORBIDDEN:
                 ReasonCode reasonCode = imdnToFileTransferFailedReasonCode(imdn);
 
                 if (mMessagingLog.setFileTransferStateAndReasonCode(fileTransferId, State.FAILED,
@@ -1135,7 +1134,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
      * @param contact Contact ID
      */
     public void receiveGroupFileDeliveryStatus(String chatId, ImdnDocument imdn, ContactId contact) {
-        String status = imdn.getStatus();
+        ImdnDocument.DeliveryStatus status = imdn.getStatus();
         String msgId = imdn.getMsgId();
         long timestamp = imdn.getDateTime();
         if (sLogger.isActivated()) {
@@ -1144,15 +1143,15 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                     + imdn.getNotificationType());
         }
         switch (status) {
-            case ImdnDocument.DELIVERY_STATUS_DELIVERED:
+            case DELIVERED:
                 setGroupFileDeliveryStatusDelivered(chatId, msgId, contact, timestamp);
                 break;
-            case ImdnDocument.DELIVERY_STATUS_DISPLAYED:
+            case DISPLAYED:
                 setGroupFileDeliveryStatusDisplayed(chatId, msgId, contact, timestamp);
                 break;
-            case ImdnDocument.DELIVERY_STATUS_ERROR:
-            case ImdnDocument.DELIVERY_STATUS_FAILED:
-            case ImdnDocument.DELIVERY_STATUS_FORBIDDEN:
+            case ERROR:
+            case FAILED:
+            case FORBIDDEN:
                 ReasonCode reasonCode = imdnToFileTransferFailedReasonCode(imdn);
                 setGroupFileDeliveryStatusFailed(chatId, msgId, contact, reasonCode);
                 break;

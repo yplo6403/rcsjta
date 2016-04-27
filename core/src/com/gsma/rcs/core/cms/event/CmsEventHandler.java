@@ -271,9 +271,10 @@ public class CmsEventHandler implements CmsEventListener {
         String msgId = chatMessage.getMessageId();
         if (!mMessagingLog.isMessagePersisted(msgId)) {
             if (imapChatMessage.isOneToOne()) {
-                onNewOneToOneChatMessage(chatMessage, direction, isSeen);
+                onNewOneToOneChatMessage(chatMessage, null, direction, isSeen);
             } else {
-                onNewGroupChatMessage(chatMessage, imapChatMessage.getChatId(), direction, isSeen);
+                onNewGroupChatMessage(chatMessage, null, imapChatMessage.getChatId(), direction,
+                        isSeen);
             }
         }
         if (direction == Direction.INCOMING) {
@@ -286,26 +287,26 @@ public class CmsEventHandler implements CmsEventListener {
         return chatMessage.getMessageId();
     }
 
-    private String onNewOneToOneChatMessage(ChatMessage chatMessage, Direction direction,
-            boolean isSeen) {
+    private String onNewOneToOneChatMessage(ChatMessage chatMessage, String remoteSipInstance,
+            Direction direction, boolean isSeen) {
         if (direction == Direction.OUTGOING) {
             mMessagingLog.addOutgoingOneToOneChatMessage(chatMessage, Status.SENT,
                     Content.ReasonCode.UNSPECIFIED, 0);
         } else {
-            mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, !isSeen);
+            mMessagingLog.addIncomingOneToOneChatMessage(chatMessage, remoteSipInstance, !isSeen);
         }
         return chatMessage.getMessageId();
     }
 
-    private String onNewGroupChatMessage(ChatMessage chatMessage, String chatId,
-            Direction direction, boolean isSeen) {
+    private String onNewGroupChatMessage(ChatMessage chatMessage, String sipInstance,
+            String chatId, Direction direction, boolean isSeen) {
         if (direction == Direction.OUTGOING) {
             GroupChatPersistedStorageAccessor accessor = new GroupChatPersistedStorageAccessor(
                     chatId, mMessagingLog, mSettings);
             mMessagingLog.addOutgoingGroupChatMessage(chatId, chatMessage, accessor
                     .getParticipants().keySet(), Status.SENT, Content.ReasonCode.UNSPECIFIED);
         } else {
-            mMessagingLog.addIncomingGroupChatMessage(chatId, chatMessage, !isSeen);
+            mMessagingLog.addIncomingGroupChatMessage(chatId, chatMessage, sipInstance, !isSeen);
         }
         return chatMessage.getMessageId();
     }

@@ -77,18 +77,19 @@ public class StoreAndForwardManager {
      * 
      * @param invite Received invite
      * @param contact Contact identifier
+     * @param remoteInstanceId the remote instance ID
      * @param timestamp Local timestamp when got SipRequest
      * @throws PayloadException
      * @throws NetworkException
      */
     public void receiveStoreAndForwardMessageInvitation(SipRequest invite, ContactId contact,
-            long timestamp) throws PayloadException, NetworkException {
+            String remoteInstanceId, long timestamp) throws PayloadException, NetworkException {
         if (sLogger.isActivated()) {
             sLogger.debug("Receive stored messages");
         }
         TerminatingStoreAndForwardOneToOneChatMessageSession session = new TerminatingStoreAndForwardOneToOneChatMessageSession(
-                mImService, invite, contact, mRcsSettings, mMessagingLog, timestamp,
-                mContactManager, mCmsManager);
+                mImService, invite, contact, remoteInstanceId, mRcsSettings, mMessagingLog,
+                timestamp, mContactManager, mCmsManager);
         mImService.receiveStoreAndForwardMsgSessionInvitation(session);
         session.startSession();
     }
@@ -98,16 +99,17 @@ public class StoreAndForwardManager {
      *
      * @param invite Received invite
      * @param contact Contact identifier
+     * @param remoteSipInstance the remote SIP instance
      * @param timestamp Local timestamp when got SipRequest
      */
     public void receiveStoreAndForwardNotificationInvitation(SipRequest invite, ContactId contact,
-            long timestamp) {
+            String remoteSipInstance, long timestamp) {
         if (sLogger.isActivated()) {
             sLogger.debug("Receive stored notifications");
         }
         TerminatingStoreAndForwardOneToOneChatNotificationSession session = new TerminatingStoreAndForwardOneToOneChatNotificationSession(
-                mImService, invite, contact, mRcsSettings, mMessagingLog, timestamp,
-                mContactManager, mCmsManager);
+                mImService, invite, contact, remoteSipInstance, mRcsSettings, mMessagingLog,
+                timestamp, mContactManager, mCmsManager);
         mImService.receiveStoreAndForwardNotificationSessionInvitation(session);
         session.startSession();
     }

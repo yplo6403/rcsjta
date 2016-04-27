@@ -64,7 +64,6 @@ import java.util.Vector;
 public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends OneToOneChatSession {
 
     private MsrpManager mMsrpMgr;
-
     private static final Logger sLogger = Logger
             .getLogger(TerminatingStoreAndForwardOneToOneChatNotificationSession.class.getName());
 
@@ -74,6 +73,7 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
      * @param imService InstantMessagingService
      * @param invite Initial INVITE request
      * @param contact the remote ContactId
+     * @param remoteSipInstance the remote SIP instance
      * @param rcsSettings RCS settings
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
@@ -82,10 +82,10 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
      */
     public TerminatingStoreAndForwardOneToOneChatNotificationSession(
             InstantMessagingService imService, SipRequest invite, ContactId contact,
-            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager, CmsManager cmsManager) {
+            String remoteSipInstance, RcsSettings rcsSettings, MessagingLog messagingLog,
+            long timestamp, ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), null, rcsSettings,
-                messagingLog, timestamp, contactManager, cmsManager);
+                messagingLog, timestamp, contactManager, cmsManager, remoteSipInstance);
         // Create the MSRP manager
         int localMsrpPort = NetworkRessourceManager.generateLocalMsrpPort(rcsSettings);
         String localIpAddress = getImsService().getImsModule().getCurrentNetworkInterface()
@@ -244,7 +244,8 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
     @Override
     public void handleError(ImsServiceError error) {
         if (sLogger.isActivated()) {
-            sLogger.info("Session error: " + error.getErrorCode() + ", reason=" + error.getMessage());
+            sLogger.info("Session error: " + error.getErrorCode() + ", reason="
+                    + error.getMessage());
         }
         closeMediaSession();
         removeSession();
@@ -312,7 +313,7 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
      */
     public void msrpTransferError(String msgId, String error) {
         if (sLogger.isActivated()) {
-            sLogger.info("Data transfer error ".concat(error));
+            sLogger.info("Data transfer error " + error + " for message ID=" + msgId);
         }
     }
 

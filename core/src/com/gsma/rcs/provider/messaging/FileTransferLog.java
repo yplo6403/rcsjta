@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) Copyright (C) 2010-2016 Orange.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -190,7 +190,7 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public void addOutgoingGroupFileTransfer(String fileTransferId, String chatId,
-            MmContent content, MmContent thumbnail, Set<ContactId> recipients, State state,
+            MmContent content, MmContent fileIcon, Set<ContactId> recipients, State state,
             ReasonCode reasonCode, long timestamp, long timestampSent) {
         if (sLogger.isActivated()) {
             sLogger.debug("addOutgoingGroupFileTransfer: Id=" + fileTransferId + ", chatId="
@@ -215,9 +215,9 @@ public class FileTransferLog implements IFileTransferLog {
         values.put(FileTransferData.KEY_EXPIRED_DELIVERY, 0);
         values.put(FileTransferData.KEY_STATE, state.toInt());
         values.put(FileTransferData.KEY_REASON_CODE, reasonCode.toInt());
-        if (thumbnail != null) {
-            values.put(FileTransferData.KEY_FILEICON, thumbnail.getUri().toString());
-            values.put(FileTransferData.KEY_FILEICON_MIME_TYPE, thumbnail.getEncoding());
+        if (fileIcon != null) {
+            values.put(FileTransferData.KEY_FILEICON, fileIcon.getUri().toString());
+            values.put(FileTransferData.KEY_FILEICON_MIME_TYPE, fileIcon.getEncoding());
         }
         values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
         values.put(FileTransferData.KEY_FILE_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
@@ -606,13 +606,13 @@ public class FileTransferLog implements IFileTransferLog {
     }
 
     @Override
-    public boolean setRemoteSipId(String fileTransferId, String remoteInstanceId) {
+    public boolean setRemoteSipId(String fileTransferId, String sipInstanceId) {
         if (sLogger.isActivated()) {
-            sLogger.debug("setRemoteSipId (sip ID=" + fileTransferId + ") (fileTransferId="
+            sLogger.debug("setRemoteSipId (sip ID=" + sipInstanceId + ") (fileTransferId="
                     + fileTransferId + ")");
         }
         ContentValues values = new ContentValues();
-        values.put(FileTransferData.KEY_REMOTE_SIP_ID, remoteInstanceId);
+        values.put(FileTransferData.KEY_REMOTE_SIP_ID, sipInstanceId);
         return mLocalContentResolver.update(
                 Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values, null,
                 null) > 0;
@@ -835,8 +835,7 @@ public class FileTransferLog implements IFileTransferLog {
         return State.valueOf(getDataAsInteger(cursor));
     }
 
-    @Override
-    public DownloadState getFileTransferDownloadState(String fileTransferId) {
+    private DownloadState getFileTransferDownloadState(String fileTransferId) {
         Cursor cursor = getFileTransferData(FileTransferData.KEY_DOWNLOAD_STATE, fileTransferId);
         if (cursor == null) {
             return null;
@@ -1242,5 +1241,14 @@ public class FileTransferLog implements IFileTransferLog {
             return null;
         }
         return Direction.valueOf(getDataAsInteger(cursor));
+    }
+
+    @Override
+    public String getFileTransferSipInstance(String fileTransferId) {
+        Cursor cursor = getFileTransferData(FileTransferData.KEY_REMOTE_SIP_ID, fileTransferId);
+        if (cursor == null) {
+            return null;
+        }
+        return getDataAsString(cursor);
     }
 }

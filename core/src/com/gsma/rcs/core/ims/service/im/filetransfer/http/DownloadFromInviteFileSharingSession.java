@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,14 +23,13 @@
 package com.gsma.rcs.core.ims.service.im.filetransfer.http;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
-import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.service.ImsSessionListener;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingError;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSessionListener;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.messaging.FileTransferData;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -41,8 +40,6 @@ import com.gsma.services.rcs.contact.ContactId;
 import android.net.Uri;
 
 import java.util.List;
-
-import javax2.sip.header.ContactHeader;
 
 /**
  * Terminating file transfer HTTP session starting from invitation
@@ -67,18 +64,18 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
      * @param fileTransferId the File transfer Id
      * @param contact the remote contact Id
      * @param displayName the display name of the remote contact
-     * @param rcsSettings
-     * @param messagingLog
-     * @param timestamp
-     * @param timestampSent
-     * @param contactManager
+     * @param rcsSettings the RCS settings accessor
+     * @param messagingLog the messaging log accessor
+     * @param timestamp the timestamp
+     * @param timestampSent the timestamp sent
+     * @param contactManager the contact manager
+     * @param remoteSipInstance the remote SIP instance
      */
     public DownloadFromInviteFileSharingSession(InstantMessagingService imService,
             ChatSession chatSession, FileTransferHttpInfoDocument fileTransferInfo,
             String fileTransferId, ContactId contact, String displayName, RcsSettings rcsSettings,
             MessagingLog messagingLog, long timestamp, long timestampSent,
-            ContactManager contactManager) {
-
+            ContactManager contactManager, String remoteSipInstance) {
         // @formatter:off
         super(imService,
                 fileTransferInfo.getLocalMmContent(),
@@ -93,14 +90,11 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                 rcsSettings,
                 messagingLog,
                 timestamp,
-                getRemoteSipId(chatSession),
+                remoteSipInstance,
                 contactManager);
         // @formatter:on
-
         mTimestampSent = timestampSent;
-
         setRemoteDisplayName(displayName);
-
         if (fileTransferInfo.getFileThumbnail() != null) {
             mIconRemoteUri = fileTransferInfo.getFileThumbnail().getUri();
         } else {
@@ -126,7 +120,6 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
      */
     private boolean shouldBeAutoAccepted() {
         long ftWarnSize = mRcsSettings.getWarningMaxFileTransferSize();
-
         if (ftWarnSize > 0 && getContent().getSize() > ftWarnSize) {
             /*
              * User should be warned about the potential charges associated to the transfer of a
@@ -134,11 +127,9 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
              */
             return false;
         }
-
         if (getImsService().getImsModule().isInRoaming()) {
             return mRcsSettings.isFileTransferAutoAcceptedInRoaming();
         }
-
         return mRcsSettings.isFileTransferAutoAccepted();
     }
 
@@ -168,7 +159,6 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                 if (logActivated) {
                     sLogger.debug("Received HTTP file transfer invitation marked for auto-accept");
                 }
-
                 for (ImsSessionListener listener : listeners) {
                     ((FileSharingSessionListener) listener).onSessionAutoAccepted(contact,
                             getContent(), getFileicon(), getTimestamp(), mTimestampSent,
@@ -206,7 +196,6 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                                 TerminationReason.TERMINATION_BY_TIMEOUT);
                     }
                     return;
-
                 }
                 if (logActivated) {
                     sLogger.debug("Accept manually file transfer tiemout=".concat(Long
@@ -237,7 +226,6 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                             sLogger.debug("Transfer has been rejected on timeout");
                         }
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_TIMEOUT);
@@ -249,7 +237,6 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                             sLogger.debug("Http transfer has been rejected by remote.");
                         }
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_REMOTE);
@@ -259,7 +246,7 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                     case INVITATION_ACCEPTED:
                         setSessionAccepted();
                         for (ImsSessionListener listener : listeners) {
-                            ((FileSharingSessionListener) listener).onSessionAccepting(contact);
+                            (listener).onSessionAccepting(contact);
                         }
                         break;
 
@@ -271,9 +258,8 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
                         return;
 
                     default:
-                        throw new IllegalArgumentException(new StringBuilder(
-                                "Unknown invitation answer in run; answer=").append(answer)
-                                .toString());
+                        throw new IllegalArgumentException(
+                                "Unknown invitation answer in run; answer=" + answer);
 
                 }
             }
@@ -282,10 +268,8 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
-            sLogger.error(
-                    new StringBuilder("Download failed for a file sessionId : ")
-                            .append(getSessionID()).append(" with transferId : ")
-                            .append(getFileTransferId()).toString(), e);
+            sLogger.error("Download failed for a file sessionId : " + getSessionID()
+                    + " with transferId : " + getFileTransferId(), e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
             return;
 
@@ -293,12 +277,4 @@ public class DownloadFromInviteFileSharingSession extends TerminatingHttpFileSha
         super.run();
     }
 
-    private static String getRemoteSipId(ChatSession session) {
-        ContactHeader inviteContactHeader = (ContactHeader) session.getDialogPath().getInvite()
-                .getHeader(ContactHeader.NAME);
-        if (inviteContactHeader == null) {
-            return null;
-        }
-        return inviteContactHeader.getParameter(SipUtils.SIP_INSTANCE_PARAM);
-    }
 }

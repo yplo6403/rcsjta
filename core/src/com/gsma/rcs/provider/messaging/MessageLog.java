@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -80,14 +80,6 @@ public class MessageLog implements IMessageLog {
     private static final String SELECTION_QUEUED_ONETOONE_CHAT_MESSAGES = MessageData.KEY_CHAT_ID
             + "=? AND " + MessageData.KEY_STATUS + "=" + Status.QUEUED.toInt();
 
-    private static final String SELECTION_ALL_QUEUED_ONETOONE_CHAT_MESSAGES = MessageData.KEY_CHAT_ID
-            + "="
-            + MessageData.KEY_CONTACT
-            + " AND "
-            + MessageData.KEY_STATUS
-            + "="
-            + Status.QUEUED.toInt();
-
     private static final int CHAT_MESSAGE_DELIVERY_EXPIRED = 1;
 
     private static final int CHAT_MESSAGE_DELIVERY_EXPIRATION_NOT_APPLICABLE = 0;
@@ -128,14 +120,14 @@ public class MessageLog implements IMessageLog {
         mRcsSettings = rcsSettings;
     }
 
-    private void addIncomingOneToOneMessage(ChatMessage msg, Status status, ReasonCode reasonCode) {
+    private void addIncomingOneToOneMessage(ChatMessage msg, String sipInstance, Status status,
+            ReasonCode reasonCode) {
         ContactId contact = msg.getRemoteContact();
         String msgId = msg.getMessageId();
         if (sLogger.isActivated()) {
             sLogger.debug("Add incoming chat message: contact=" + contact + ", msg=" + msgId
                     + ", status=" + status + ", reasonCode=" + reasonCode + ".");
         }
-
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_CHAT_ID, contact.toString());
         values.put(MessageData.KEY_MESSAGE_ID, msgId);
@@ -144,27 +136,20 @@ public class MessageLog implements IMessageLog {
         values.put(MessageData.KEY_READ_STATUS, ReadStatus.UNREAD.toInt());
         values.put(MessageData.KEY_MIME_TYPE, msg.getMimeType());
         values.put(MessageData.KEY_CONTENT, msg.getContent());
-
         values.put(MessageData.KEY_TIMESTAMP, msg.getTimestamp());
         values.put(MessageData.KEY_TIMESTAMP_SENT, msg.getTimestampSent());
         values.put(MessageData.KEY_TIMESTAMP_DELIVERED, 0);
         values.put(MessageData.KEY_TIMESTAMP_DISPLAYED, 0);
         values.put(MessageData.KEY_DELIVERY_EXPIRATION, 0);
         values.put(MessageData.KEY_EXPIRED_DELIVERY, 0);
-
         values.put(MessageData.KEY_STATUS, status.toInt());
         values.put(MessageData.KEY_REASON_CODE, reasonCode.toInt());
+        if (sipInstance != null) {
+            values.put(MessageData.KEY_SIP_INSTANCE, sipInstance);
+        }
         mLocalContentResolver.insert(MessageData.CONTENT_URI, values);
     }
 
-    /**
-     * Add outgoing one-to-one chat message
-     * 
-     * @param msg Chat message
-     * @param status Status
-     * @param reasonCode Reason code
-     * @param deliveryExpiration the delivery expiration
-     */
     @Override
     public void addOutgoingOneToOneChatMessage(ChatMessage msg, Status status,
             ReasonCode reasonCode, long deliveryExpiration) {
@@ -182,7 +167,6 @@ public class MessageLog implements IMessageLog {
         values.put(MessageData.KEY_READ_STATUS, ReadStatus.UNREAD.toInt());
         values.put(MessageData.KEY_MIME_TYPE, msg.getMimeType());
         values.put(MessageData.KEY_CONTENT, msg.getContent());
-
         values.put(MessageData.KEY_TIMESTAMP, msg.getTimestamp());
         values.put(MessageData.KEY_TIMESTAMP_SENT, msg.getTimestampSent());
         values.put(MessageData.KEY_TIMESTAMP_DELIVERED, 0);
@@ -195,79 +179,59 @@ public class MessageLog implements IMessageLog {
     }
 
     @Override
-    public void addOneToOneSpamMessage(ChatMessage msg) {
-        addIncomingOneToOneMessage(msg, Status.REJECTED, ReasonCode.REJECTED_SPAM);
+    public void addOneToOneSpamMessage(ChatMessage msg, String sipInstance) {
+        addIncomingOneToOneMessage(msg, sipInstance, Status.REJECTED, ReasonCode.REJECTED_SPAM);
     }
 
     @Override
-    public void addOneToOneFailedDeliveryMessage(ChatMessage msg) {
-        addIncomingOneToOneMessage(msg, Status.FAILED, ReasonCode.FAILED_DELIVERY);
+    public void addOneToOneFailedDeliveryMessage(ChatMessage msg, String sipInstance) {
+        addIncomingOneToOneMessage(msg, sipInstance, Status.FAILED, ReasonCode.FAILED_DELIVERY);
     }
 
-    /**
-     * Add incoming one-to-one chat message
-     * 
-     * @param msg Chat message
-     * @param imdnDisplayedRequested Indicates whether IMDN display was requested
-     */
     @Override
-    public void addIncomingOneToOneChatMessage(ChatMessage msg, boolean imdnDisplayedRequested) {
+    public void addIncomingOneToOneChatMessage(ChatMessage msg, String sipIntance,
+            boolean imdnDisplayedRequested) {
         if (imdnDisplayedRequested) {
-            addIncomingOneToOneMessage(msg, Status.DISPLAY_REPORT_REQUESTED, ReasonCode.UNSPECIFIED);
-
+            addIncomingOneToOneMessage(msg, sipIntance, Status.DISPLAY_REPORT_REQUESTED,
+                    ReasonCode.UNSPECIFIED);
         } else {
-            addIncomingOneToOneMessage(msg, Status.RECEIVED, ReasonCode.UNSPECIFIED);
+            addIncomingOneToOneMessage(msg, sipIntance, Status.RECEIVED, ReasonCode.UNSPECIFIED);
         }
     }
 
-    /**
-     * Add incoming group chat message
-     * 
-     * @param chatId Chat ID
-     * @param msg Chat message
-     * @param imdnDisplayedRequested Indicates whether IMDN display was requested
-     */
     @Override
     public void addIncomingGroupChatMessage(String chatId, ChatMessage msg,
-            boolean imdnDisplayedRequested) {
+            String remoteSipInstance, boolean imdnDisplayedRequested) {
         Status chatMessageStatus = imdnDisplayedRequested ? Status.DISPLAY_REPORT_REQUESTED
                 : Status.RECEIVED;
-        addGroupChatMessage(chatId, msg, Direction.INCOMING, null, chatMessageStatus,
-                ReasonCode.UNSPECIFIED);
+        addGroupChatMessage(chatId, msg, remoteSipInstance, Direction.INCOMING, null,
+                chatMessageStatus, ReasonCode.UNSPECIFIED);
     }
 
-    /**
-     * Add outgoing group chat message
-     * 
-     * @param chatId Chat ID
-     * @param msg Chat message
-     * @param status Status
-     * @param reasonCode Reason code
-     */
     @Override
     public void addOutgoingGroupChatMessage(String chatId, ChatMessage msg,
             Set<ContactId> recipients, Status status, ReasonCode reasonCode) {
-        addGroupChatMessage(chatId, msg, Direction.OUTGOING, recipients, status, reasonCode);
+        addGroupChatMessage(chatId, msg, null, Direction.OUTGOING, recipients, status, reasonCode);
     }
 
     /**
      * Add group chat message
      * 
      * @param chatId Chat ID
+     * @param sipInstance the SIP instance of the sender
      * @param msg Chat message
      * @param direction Direction
      * @param status Status
      * @param reasonCode Reason code
      */
-    private void addGroupChatMessage(String chatId, ChatMessage msg, Direction direction,
-            Set<ContactId> recipients, Status status, ReasonCode reasonCode) {
+    private void addGroupChatMessage(String chatId, ChatMessage msg, String sipInstance,
+            Direction direction, Set<ContactId> recipients, Status status, ReasonCode reasonCode) {
         String msgId = msg.getMessageId();
         ContactId contact = msg.getRemoteContact();
         if (sLogger.isActivated()) {
             sLogger.debug("Add group chat message; chatId=" + chatId + ", msg=" + msgId + ", dir="
                     + direction + ", contact=" + contact + ".");
         }
-
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_CHAT_ID, chatId);
         values.put(MessageData.KEY_MESSAGE_ID, msgId);
@@ -286,9 +250,11 @@ public class MessageLog implements IMessageLog {
         values.put(MessageData.KEY_TIMESTAMP_DISPLAYED, 0);
         values.put(MessageData.KEY_DELIVERY_EXPIRATION, 0);
         values.put(MessageData.KEY_EXPIRED_DELIVERY, 0);
+        if (sipInstance != null) {
+            values.put(MessageData.KEY_SIP_INSTANCE, sipInstance);
+        }
         mLocalContentResolver.insert(MessageData.CONTENT_URI, values);
-
-        if (direction == Direction.OUTGOING) {
+        if (Direction.OUTGOING == direction) {
             try {
                 GroupDeliveryInfo.Status deliveryStatus = GroupDeliveryInfo.Status.NOT_DELIVERED;
                 if (mRcsSettings.isAlbatrosRelease()) {
@@ -352,16 +318,6 @@ public class MessageLog implements IMessageLog {
                 values, SELECTION_BY_NOT_READ, null);
     }
 
-    /**
-     * Set chat message status and reason code. Note that this method should not be used for
-     * Status.DELIVERED and Status.DISPLAYED. These states require timestamps and should be set
-     * through setChatMessageStatusDelivered and setChatMessageStatusDisplayed respectively.
-     * 
-     * @param msgId Message ID
-     * @param status Message status (See restriction above)
-     * @param reasonCode Message status reason code
-     * @return the number of updated rows
-     */
     @Override
     public boolean setChatMessageStatusAndReasonCode(String msgId, Status status,
             ReasonCode reasonCode) {
@@ -534,8 +490,8 @@ public class MessageLog implements IMessageLog {
     }
 
     @Override
-    public String getChatMessageContent(String msgId) {
-        Cursor cursor = getMessageData(MessageData.KEY_CONTENT, msgId);
+    public String getMessageSipInstance(String msgId) {
+        Cursor cursor = getMessageData(MessageData.KEY_SIP_INSTANCE, msgId);
         if (cursor == null) {
             return null;
         }
@@ -568,27 +524,6 @@ public class MessageLog implements IMessageLog {
                 SELECTION_QUEUED_ONETOONE_CHAT_MESSAGES, selectionArgs, ORDER_BY_TIMESTAMP_ASC);
         CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
         return cursor;
-    }
-
-    @Override
-    public Cursor getAllQueuedOneToOneChatMessages() {
-        Cursor cursor = mLocalContentResolver.query(MessageData.CONTENT_URI, null,
-                SELECTION_ALL_QUEUED_ONETOONE_CHAT_MESSAGES, null, ORDER_BY_TIMESTAMP_ASC);
-        CursorUtil.assertCursorIsNotNull(cursor, MessageData.CONTENT_URI);
-        return cursor;
-    }
-
-    @Override
-    public boolean setChatMessageTimestamp(String msgId, long timestamp, long timestampSent) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Set chat message timestamp msgId=" + msgId + ", timestamp=" + timestamp
-                    + ", timestampSent=" + timestampSent);
-        }
-        ContentValues values = new ContentValues();
-        values.put(MessageData.KEY_TIMESTAMP, timestamp);
-        values.put(MessageData.KEY_TIMESTAMP_SENT, timestampSent);
-        return mLocalContentResolver.update(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
-                values, null, null) > 0;
     }
 
     @Override
@@ -650,13 +585,11 @@ public class MessageLog implements IMessageLog {
             sLogger.debug("setChatMessageStatusDelivered msgId=" + msgId + ", timestampDelivered="
                     + timestampDelivered);
         }
-
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_STATUS, Status.DELIVERED.toInt());
         values.put(MessageData.KEY_REASON_CODE, ReasonCode.UNSPECIFIED.toInt());
         values.put(MessageData.KEY_TIMESTAMP_DELIVERED, timestampDelivered);
         values.put(MessageData.KEY_EXPIRED_DELIVERY, 0);
-
         return mLocalContentResolver.update(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
                 values, SELECTION_BY_NOT_DISPLAYED, null) > 0;
     }
@@ -667,7 +600,6 @@ public class MessageLog implements IMessageLog {
             sLogger.debug("setChatMessageStatusDisplayed msgId=" + msgId + ", timestampDisplayed="
                     + timestampDisplayed);
         }
-
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_STATUS, Status.DISPLAYED.toInt());
         values.put(MessageData.KEY_REASON_CODE, ReasonCode.UNSPECIFIED.toInt());
@@ -726,15 +658,16 @@ public class MessageLog implements IMessageLog {
     }
 
     @Override
-    public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg) {
-        addGroupChatMessage(chatId, msg, Direction.INCOMING, null, Status.FAILED,
+    public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg, String sipInstance) {
+        addGroupChatMessage(chatId, msg, sipInstance, Direction.INCOMING, null, Status.FAILED,
                 ReasonCode.FAILED_DELIVERY);
     }
 
     @Override
     public boolean setChatMessageTimestampDisplayed(String msgId, long timestampDisplayed) {
         if (sLogger.isActivated()) {
-            sLogger.debug("Update chat message: msgId=" + msgId + ", timestampDisplayed=" + timestampDisplayed);
+            sLogger.debug("Update chat message: msgId=" + msgId + ", timestampDisplayed="
+                    + timestampDisplayed);
         }
         ContentValues values = new ContentValues();
         values.put(MessageData.KEY_TIMESTAMP_DISPLAYED, timestampDisplayed);

@@ -55,8 +55,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
      * @param messagingLog the messaging accessor
      * @param settings the RCS settings accessor
      */
-    public GroupChatEventHandler(EventFrameworkManager eventFrameworkManager,
-            CmsLog cmsLog, MessagingLog messagingLog, RcsSettings settings,
+    public GroupChatEventHandler(EventFrameworkManager eventFrameworkManager, CmsLog cmsLog,
+            MessagingLog messagingLog, RcsSettings settings,
             ImdnDeliveryReportListener imdnDeliveryReportListener) {
         super(eventFrameworkManager, cmsLog, messagingLog, settings, imdnDeliveryReportListener);
     }
@@ -92,8 +92,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
     }
 
     @Override
-    public void onMessageReceived(ChatMessage msg, boolean imdnDisplayedRequested,
-            boolean deliverySuccess) {
+    public void onMessageReceived(ChatMessage msg, String remoteSiInstance,
+            boolean imdnDisplayedRequested, boolean deliverySuccess) {
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
@@ -124,7 +124,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mImdnDeliveryReportListener.onDeliveryReport(contributionId, imdn.getMsgId(), imdnMessageId);
+        mImdnDeliveryReportListener
+                .onDeliveryReport(contributionId, imdn.getMsgId(), imdnMessageId);
     }
 
     @Override

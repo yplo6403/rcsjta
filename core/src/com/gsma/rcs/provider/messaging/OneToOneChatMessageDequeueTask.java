@@ -17,12 +17,12 @@
 package com.gsma.rcs.provider.messaging;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.SessionUnavailableException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.DequeueTask;
@@ -113,23 +113,17 @@ public class OneToOneChatMessageDequeueTask extends DequeueTask {
                             null, timestamp, timestamp);
                     oneToOneChat.dequeueOneToOneChatMessage(msg);
 
-                } catch (SessionUnavailableException e) {
+                } catch (SessionUnavailableException | NetworkException e) {
                     if (logActivated) {
-                        mLogger.debug(new StringBuilder("Failed to dequeue one-one chat message '")
-                                .append(id).append("' message for contact '").append(mContact)
-                                .append("' due to: ").append(e.getMessage()).toString());
-                    }
-                } catch (NetworkException e) {
-                    if (logActivated) {
-                        mLogger.debug(new StringBuilder("Failed to dequeue one-one chat message '")
-                                .append(id).append("' message for contact '").append(mContact)
-                                .append("' due to: ").append(e.getMessage()).toString());
+                        mLogger.debug("Failed to dequeue one-one chat message '" + id
+                                + "' message for contact '" + mContact + "' due to: "
+                                + e.getMessage());
                     }
                 } catch (PayloadException e) {
-                    mLogger.error(new StringBuilder("Failed to dequeue one-one chat message '")
-                            .append(id).append("' message for contact '").append(mContact)
-                            .toString(), e);
+                    mLogger.error("Failed to dequeue one-one chat message '" + id
+                            + "' message for contact '" + mContact, e);
                     setOneToOneChatMessageAsFailedDequeue(mContact, id, mimeType);
+
                 } catch (RuntimeException e) {
                     /*
                      * Normally all the terminal and non-terminal cases should be handled above so
@@ -137,13 +131,11 @@ public class OneToOneChatMessageDequeueTask extends DequeueTask {
                      * so the bug can then be properly tracked down and fixed. We also mark the
                      * respective entry that failed to dequeue as FAILED.
                      */
-                    mLogger.error(new StringBuilder("Failed to dequeue one-one chat message '")
-                            .append(id).append("'for contact '").append(mContact).append("' ")
-                            .toString(), e);
+                    mLogger.error("Failed to dequeue one-one chat message '" + id
+                            + "'for contact '" + mContact + "' ", e);
                     setOneToOneChatMessageAsFailedDequeue(mContact, id, mimeType);
                 }
             }
-
         } catch (RuntimeException e) {
             /*
              * Normally all the terminal and non-terminal cases should be handled above so if we
@@ -151,10 +143,8 @@ public class OneToOneChatMessageDequeueTask extends DequeueTask {
              * can then be properly tracked down and fixed. We also mark the respective entry that
              * failed to dequeue as FAILED.
              */
-            mLogger.error(new StringBuilder(
-                    "Exception occured while dequeueing one-to-one chat message with msgId '")
-                    .append(id).append("'for contact '").append(mContact).append("' ").toString(),
-                    e);
+            mLogger.error("Exception occured while dequeueing one-to-one chat message with msgId '"
+                    + id + "'for contact '" + mContact + "' ", e);
             if (id == null) {
                 return;
             }

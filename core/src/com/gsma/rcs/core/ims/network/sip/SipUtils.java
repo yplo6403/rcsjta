@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -50,7 +50,7 @@ import javax2.sip.message.Request;
 
 /**
  * SIP utility functions
- * 
+ *
  * @author JM. Auffret
  */
 public class SipUtils {
@@ -150,11 +150,6 @@ public class SipUtils {
     public static final String HEADER_SESSION_EXPIRES = "Session-Expires";
 
     /**
-     * Session-Replaces header
-     */
-    public static final String HEADER_SESSION_REPLACES = "Session-Replaces";
-
-    /**
      * Min-SE header
      */
     public static final String HEADER_MIN_SE = "Min-SE";
@@ -185,7 +180,7 @@ public class SipUtils {
 
     /**
      * Extract the URI part of a SIP address
-     * 
+     *
      * @param addr SIP address
      * @return URI
      */
@@ -200,7 +195,7 @@ public class SipUtils {
 
     /**
      * Construct an NTP time from a date in milliseconds
-     * 
+     *
      * @param date Date in milliseconds
      * @return NTP time in string format
      */
@@ -216,48 +211,44 @@ public class SipUtils {
      * UA Format : IM-client/OMA1.0 [terminal_vendor/terminal_model-terminal_SW_version]
      * [client_vendor/client_version]
      * </p>
-     * 
+     *
      * @return UA value
      */
     public static String userAgentString() {
         if (sUserAgentString == null) {
-            sUserAgentString = new StringBuilder(UA_HEADER_EXT_TO_EXT_CLIENT)
-                    .append(UA_HEADER_OMA_SIMPLE_IM).append(TerminalInfo.getBuildInfo())
-                    .append(WHITESPACE).append(TerminalInfo.getClientInfo()).toString();
+            sUserAgentString = UA_HEADER_EXT_TO_EXT_CLIENT + UA_HEADER_OMA_SIMPLE_IM
+                    + TerminalInfo.getBuildInfo() + WHITESPACE + TerminalInfo.getClientInfo();
         }
         return sUserAgentString;
     }
 
     /**
      * Build User-Agent header
-     * 
+     *
      * @return header
      * @throws ParseException
      */
     public static Header buildUserAgentHeader() throws ParseException {
-        Header userAgentHeader = HEADER_FACTORY.createHeader(UserAgentHeader.NAME,
-                userAgentString());
-        return userAgentHeader;
+        return HEADER_FACTORY.createHeader(UserAgentHeader.NAME, userAgentString());
     }
 
     /**
      * Build Server header
-     * 
+     *
      * @return header
      * @throws ParseException
      */
     public static Header buildServerHeader() throws ParseException {
         if (sServerHeaderValue == null) {
-            sServerHeaderValue = new StringBuilder(HEADER_EXT_TO_EXT_SERVER)
-                    .append(UA_HEADER_OMA_SIMPLE_IM).append(TerminalInfo.getClientInfo())
-                    .toString();
+            sServerHeaderValue = HEADER_EXT_TO_EXT_SERVER + UA_HEADER_OMA_SIMPLE_IM
+                    + TerminalInfo.getClientInfo();
         }
         return HEADER_FACTORY.createHeader(ServerHeader.NAME, sServerHeaderValue);
     }
 
     /**
      * Build Allow header
-     * 
+     *
      * @param msg SIP message
      * @throws ParseException
      */
@@ -275,7 +266,7 @@ public class SipUtils {
 
     /**
      * Build Max-Forwards header
-     * 
+     *
      * @return Header
      * @throws InvalidArgumentException
      */
@@ -285,20 +276,18 @@ public class SipUtils {
 
     /**
      * Build P-Access-Network-info
-     * 
+     *
      * @param info Access info
      * @return Header
      * @throws ParseException
      */
     public static Header buildAccessNetworkInfo(String info) throws ParseException {
-        Header accessInfo = HEADER_FACTORY
-                .createHeader(SipUtils.HEADER_P_ACCESS_NETWORK_INFO, info);
-        return accessInfo;
+        return HEADER_FACTORY.createHeader(SipUtils.HEADER_P_ACCESS_NETWORK_INFO, info);
     }
 
     /**
      * Extract a parameter from an input text
-     * 
+     *
      * @param input Input text
      * @param param Parameter name
      * @param defaultValue Default value
@@ -308,7 +297,7 @@ public class SipUtils {
         int begin = input.indexOf(param) + param.length();
         if (begin != -1) {
             int end = input.indexOf(" ", begin); // The end is by default the next space
-                                                 // encountered
+            // encountered
             if (input.charAt(begin) == '\"') {
                 // The exception is when the first character of the param is a "
                 // In this case, the end is the next " character, not the blank one
@@ -325,7 +314,7 @@ public class SipUtils {
 
     /**
      * Get Min-Expires period from message
-     * 
+     *
      * @param message SIP message
      * @return Expire period in milliseconds or -1 in case of error
      * @throws PayloadException
@@ -341,7 +330,7 @@ public class SipUtils {
 
     /**
      * Get Min-SE period from message
-     * 
+     *
      * @param message SIP message
      * @return Expire period in milliseconds or -1 in case of error
      */
@@ -356,7 +345,7 @@ public class SipUtils {
 
     /**
      * Get asserted identity header
-     * 
+     *
      * @param request SIP request
      * @return Asserted Identity Header
      */
@@ -365,7 +354,7 @@ public class SipUtils {
         if (list != null) {
             // There is at most 2 P-Asserted-Identity headers, one with tel uri and one with sip uri
             // We give preference to the tel uri if both are present, if not we return the first one
-            String assertedHeader1 = null;
+            String assertedHeader1;
             if (list.hasNext()) {
                 // Get value of the first header
                 assertedHeader1 = ((ExtensionHeader) list.next()).getValue();
@@ -389,7 +378,7 @@ public class SipUtils {
 
     /**
      * Get asserted identity
-     * 
+     *
      * @param request SIP request
      * @return SIP URI
      */
@@ -405,19 +394,18 @@ public class SipUtils {
     /**
      * Generate a list of route headers. The record route of the incoming message is used to
      * generate the corresponding route header.
-     * 
+     *
      * @param msg SIP message
      * @param invert Invert or not the route list
      * @return List of route headers as string
      */
     public static Vector<String> routeProcessing(SipMessage msg, boolean invert) {
-        Vector<String> result = new Vector<String>();
+        Vector<String> result = new Vector<>();
         ListIterator<Header> list = msg.getHeaders(RecordRouteHeader.NAME);
         if (list == null) {
             // No route available
             return null;
         }
-
         while (list.hasNext()) {
             RecordRouteHeader record = (RecordRouteHeader) list.next();
             RouteHeader route = SipUtils.HEADER_FACTORY.createRouteHeader(record.getAddress());
@@ -433,7 +421,7 @@ public class SipUtils {
 
     /**
      * Is a feature tag present or not in SIP message
-     * 
+     *
      * @param msg SIP message
      * @param featureTag Feature tag to be checked
      * @return Boolean
@@ -450,7 +438,7 @@ public class SipUtils {
 
     /**
      * Set feature tags to a message
-     * 
+     *
      * @param message SIP stack message
      * @param tags Table of tags
      * @throws ParseException
@@ -461,7 +449,7 @@ public class SipUtils {
 
     /**
      * Set feature tags to a message
-     * 
+     *
      * @param message SIP stack message
      * @param contactTags List of tags for Contact header
      * @param acceptContactTags List of tags for Accept-Contact header
@@ -479,7 +467,7 @@ public class SipUtils {
 
     /**
      * Set feature tags to Accept-Contact header
-     * 
+     *
      * @param message SIP stack message
      * @param tags List of tags
      * @throws ParseException
@@ -493,12 +481,9 @@ public class SipUtils {
              * feature-param.
              */
             for (int i = 0; i < tags.length - 1; i++) {
-                StringBuilder acceptTags = new StringBuilder("*;");
-                acceptTags.append(tags[i]);
-                acceptTags.append(';');
-                acceptTags.append(SipUtils.EXPLICIT_REQUIRE);
                 Header header = SipUtils.HEADER_FACTORY.createHeader(
-                        SipUtils.HEADER_ACCEPT_CONTACT, acceptTags.toString());
+                        SipUtils.HEADER_ACCEPT_CONTACT, "*;" + tags[i] + ';'
+                                + SipUtils.EXPLICIT_REQUIRE);
                 message.addHeader(header);
             }
         } else {
@@ -515,7 +500,7 @@ public class SipUtils {
 
     /**
      * Set feature tags to Contact header
-     * 
+     *
      * @param message SIP stack message
      * @param tags List of tags
      * @throws ParseException
@@ -532,7 +517,7 @@ public class SipUtils {
 
     /**
      * Get the Referred-By header
-     * 
+     *
      * @param message SIP message
      * @return String value or null if not exist
      */
@@ -555,7 +540,6 @@ public class SipUtils {
         if (index == -1) {
             return null;
         }
-
         int begin = index + 4;
         int end = msg.indexOf(SipUtils.CRLF, index + 2);
         return msg.substring(begin, end).trim();
@@ -563,11 +547,11 @@ public class SipUtils {
 
     /**
      * Get remote SIP instance ID
-     * 
+     *
      * @param message SIP message
      * @return ID or null
      */
-    public static String getRemoteInstanceID(SipMessage message) {
+    public static String getRemoteInstanceId(SipMessage message) {
         ContactHeader contactHeader = (ContactHeader) message.getHeader(ContactHeader.NAME);
         if (contactHeader != null) {
             return contactHeader.getParameter(SIP_INSTANCE_PARAM);
@@ -603,7 +587,7 @@ public class SipUtils {
 
     /**
      * Get SIP instance ID of an incoming message
-     * 
+     *
      * @param message SIP message
      * @return ID or null
      */
@@ -613,7 +597,7 @@ public class SipUtils {
 
     /**
      * Get public GRUU
-     * 
+     *
      * @param message SIP message
      * @return GRUU or null
      */
@@ -623,7 +607,7 @@ public class SipUtils {
 
     /**
      * Set remote SIP instance ID of a message
-     * 
+     *
      * @param message SIP message
      * @param instanceId SIP instance ID
      * @throws ParseException
@@ -649,7 +633,7 @@ public class SipUtils {
 
     /**
      * Get display name from URI
-     * 
+     *
      * @param uri URI
      * @return Display name or null
      */
@@ -667,9 +651,8 @@ public class SipUtils {
     public static void assertContentIsNotNull(String content, SipRequest invite)
             throws PayloadException {
         if (content == null) {
-            throw new PayloadException(
-                    new StringBuilder("Unable to extract content from invite : ").append(invite)
-                            .toString());
+            throw new PayloadException("Unable to extract content from invite: " + invite);
         }
     }
+
 }

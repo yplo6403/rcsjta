@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,6 @@ import com.gsma.rcs.core.ims.network.sip.FeatureTags;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
-import com.gsma.rcs.core.ims.protocol.sip.SipDialogPath;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimParser;
@@ -57,6 +56,7 @@ import com.gsma.services.rcs.chat.ChatLog.Message.MimeType;
 import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.net.Uri;
 import android.text.TextUtils;
 
 import org.xml.sax.InputSource;
@@ -376,45 +376,19 @@ public class ChatUtils {
     /**
      * Format to a SIP-URI for CPIM message with Accept-Contact information
      *
-     * @param dialogPath sip dialog path
      * @return SIP-URI
      */
-    private static String formatCpimSipUriWithAcceptContact(SipDialogPath dialogPath) {
-
-        String localParty = PhoneUtils.extractUriFromSipHeader(dialogPath.getLocalParty());
-
-        if (sLogger.isActivated()) {
-            sLogger.debug("formatCpimSipUriWithAcceptContact - Local Party = " + localParty);
-        }
-        // There might be something after the number, (";no-term-im" for example)
-        final int indexPtVirgule = localParty.indexOf(";");
-        if (indexPtVirgule != -1) {
-            localParty = localParty.substring(0, indexPtVirgule);
-            if (sLogger.isActivated()) {
-                sLogger.debug("formatCpimSipUriWithAcceptContact - Formatted Local Party = "
-                        + localParty);
-            }
-        }
-
-        String instanceId = dialogPath.getSipStack().getInstanceId();
-        if (sLogger.isActivated()) {
-            sLogger.debug("formatCpimSipUriWithAcceptContact - Instance ID = " + instanceId);
-        }
-
-        String formatFrom = "<%s?Accept-Contact=%s>";
-        String acceptContactFrom = "+sip.instance=" + instanceId;
-
+    private static String formatCpimSipUriWithAcceptContact(ContactId contact, String sipInstance) {
+        Uri contactUri = PhoneUtils.formatContactIdToUri(contact);
+        String acceptContact = "+sip.instance=\"" + sipInstance + "\"";
         try {
             // Encode the Accept-Contact tag and build the From tag
-            String from = String.format(formatFrom, localParty,
-                    URLEncoder.encode(acceptContactFrom, "UTF-8"));
-            if (sLogger.isActivated()) {
-                sLogger.debug("formatCpimSipUriWithAcceptContact - Final From = " + from);
-            }
-            return from;
+            return addUriDelimiters(contactUri + "?Accept-Contact="
+                    + URLEncoder.encode(acceptContact, "UTF-8"));
+
         } catch (UnsupportedEncodingException e) {
             // Should never happen
-            return localParty;
+            return addUriDelimiters(contactUri.toString());
         }
     }
 
@@ -426,29 +400,24 @@ public class ChatUtils {
      */
     private static String formatCpimSipUri(String input) {
         input = input.trim();
-
         if (input.startsWith(PhoneUtils.URI_START_DELIMITER)) {
             /* Already a SIP-URI format */
             return input;
         }
-
         /* It's already a SIP address with display name */
         if (input.startsWith("\"")) {
             return input;
         }
-
         if (input.startsWith(PhoneUtils.SIP_URI_HEADER)
                 || input.startsWith(PhoneUtils.TEL_URI_HEADER)) {
             /* It is already a SIP or TEL URI: just add URI delimiters */
             return addUriDelimiters(input);
         }
-
         PhoneNumber validatedNumber = ContactUtil.getValidPhoneNumberFromUri(input);
         if (validatedNumber == null) {
             /* It's not a valid phone number: just add URI delimiters */
             return addUriDelimiters(input);
         }
-
         /* It's a valid phone number, format it to URI and add delimiters */
         ContactId contact = ContactUtil.createContactIdFromValidatedData(validatedNumber);
         // @FIXME: This method should have URI as parameter instead of String
@@ -456,35 +425,37 @@ public class ChatUtils {
     }
 
     /**
-     * Build a CPIM message
+     * Build a CPIM message for a group chat
      * 
-     * @param dialogPath SipDialogPath
-     * @param to To
+     * @param from the sender contact
+     * @param fromSipInstance the sip instance of the sender
+     * @param to the to URI
      * @param content Content
      * @param contentType Content type
      * @param timestampSent Timestamp sent in payload for CPIM DateTimes
      * @return String
      */
-    public static String buildCpimMessage(SipDialogPath dialogPath, String to, String content,
-            String contentType, long timestampSent) {
-        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
-                + CRLF + buildCpimMessage(to, content, contentType, timestampSent);
+    public static String buildGroupChatCpimMessage(ContactId from, String fromSipInstance,
+            String to, String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": "
+                + formatCpimSipUriWithAcceptContact(from, fromSipInstance) + CRLF
+                + buildChatCpimMessage(to, content, contentType, timestampSent);
     }
 
     /**
-     * Build a CPIM message
+     * Build a CPIM message for a one to one chat
      *
-     * @param from From
-     * @param to To
+     * @param from the From URI
+     * @param to the To URI
      * @param content Content
      * @param contentType Content type
      * @param timestampSent Timestamp sent in payload for CPIM DateTimes
      * @return String
      */
-    public static String buildCpimMessage(String from, String to, String content,
+    public static String buildOneToOneChatCpimMessage(String from, String to, String content,
             String contentType, long timestampSent) {
         return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
-                + buildCpimMessage(to, content, contentType, timestampSent);
+                + buildChatCpimMessage(to, content, contentType, timestampSent);
     }
 
     /**
@@ -496,7 +467,7 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTimes
      * @return String
      */
-    private static String buildCpimMessage(String to, String content, String contentType,
+    private static String buildChatCpimMessage(String to, String content, String contentType,
             long timestampSent) {
         return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF
                 + CpimMessage.HEADER_DATETIME + ": " + DateUtils.encodeDate(timestampSent) + CRLF
@@ -505,36 +476,37 @@ public class ChatUtils {
     }
 
     /**
-     * Build a CPIM message with full IMDN headers
+     * Build a CPIM message with full IMDN headers for a group chat
      * 
-     * @param dialogPath SipDialogPath
-     * @param to To URI
+     * @param from the contact ID of the sender
+     * @param fromSipInstance the SIP instance of the sender
+     * @param to the To URI
      * @param messageId Message ID
      * @param content Content
      * @param contentType Content type
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithImdn(SipDialogPath dialogPath, String to,
-            String messageId, String content, String contentType, long timestampSent) {
-        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
-                + CRLF
+    public static String buildGroupChatCpimMessageWithImdn(ContactId from, String fromSipInstance,
+            String to, String messageId, String content, String contentType, long timestampSent) {
+        return CpimMessage.HEADER_FROM + ": "
+                + formatCpimSipUriWithAcceptContact(from, fromSipInstance) + CRLF
                 + buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent);
     }
 
     /**
-     * Build a CPIM message with full IMDN headers
+     * Build a CPIM message with full IMDN headers for a one to one chat
      *
-     * @param from From
-     * @param to To URI
+     * @param from the From URI
+     * @param to the To URI
      * @param messageId Message ID
      * @param content Content
      * @param contentType Content type
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithImdn(String from, String to, String messageId,
-            String content, String contentType, long timestampSent) {
+    public static String buildOneToOneChatCpimMessageWithImdn(String from, String to,
+            String messageId, String content, String contentType, long timestampSent) {
         return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
                 + buildCpimMessageWithImdn(to, messageId, content, contentType, timestampSent);
     }
@@ -564,7 +536,8 @@ public class ChatUtils {
     /**
      * Build a CPIM message with IMDN delivered header
      * 
-     * @param dialogPath SipDialogPath
+     * @param from the contact ID of the sender
+     * @param fromSipInstance the SIP instance of the sender
      * @param to To URI
      * @param messageId Message ID
      * @param content Content
@@ -572,18 +545,19 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithoutDisplayedImdn(SipDialogPath dialogPath, String to,
-            String messageId, String content, String contentType, long timestampSent) {
+    public static String buildGroupChatCpimMessageWithoutDisplayedImdn(ContactId from,
+            String fromSipInstance, String to, String messageId, String content,
+            String contentType, long timestampSent) {
         return CpimMessage.HEADER_FROM
                 + ": "
-                + formatCpimSipUriWithAcceptContact(dialogPath)
+                + formatCpimSipUriWithAcceptContact(from, fromSipInstance)
                 + CRLF
                 + buildCpimMessageWithoutDisplayedImdn(to, messageId, content, contentType,
                         timestampSent);
     }
 
     /**
-     * Build a CPIM message with IMDN delivered header
+     * Build a CPIM message with IMDN delivered header for a one to one chat
      *
      * @param from From
      * @param to To URI
@@ -593,7 +567,7 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithoutDisplayedImdn(String from, String to,
+    public static String buildOneToOneChatCpimMessageWithoutDisplayedImdn(String from, String to,
             String messageId, String content, String contentType, long timestampSent) {
         return CpimMessage.HEADER_FROM
                 + ": "
@@ -613,7 +587,7 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimMessageWithoutDisplayedImdn(String to, String messageId,
+    private static String buildCpimMessageWithoutDisplayedImdn(String to, String messageId,
             String content, String contentType, long timestampSent) {
         return CpimMessage.HEADER_TO + ": " + formatCpimSipUri(to) + CRLF + CpimMessage.HEADER_NS
                 + ": " + ImdnDocument.IMDN_NAMESPACE + CRLF + ImdnUtils.HEADER_IMDN_MSG_ID + ": "
@@ -626,23 +600,32 @@ public class ChatUtils {
     }
 
     /**
-     * Build a CPIM delivery report
+     * Build a CPIM delivery report for a group chat
      * 
-     * @param dialogPath SipDialogPath
-     * @param to To
+     * @param from the from contact ID
+     * @param fromSipInstance the from SIP instance
+     * @param to the to contact ID
+     * @param toSipInstance the to SIP instance
      * @param messageId Message ID
      * @param imdn IMDN report
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(SipDialogPath dialogPath, String to,
-            String messageId, String imdn, long timestampSent) {
-        return CpimMessage.HEADER_FROM + ": " + formatCpimSipUriWithAcceptContact(dialogPath)
-                + CRLF + buildCpimDeliveryReport(to, messageId, imdn, timestampSent);
+    public static String buildGroupChatCpimDeliveryReport(ContactId from, String fromSipInstance,
+            ContactId to, String toSipInstance, String messageId, String imdn, long timestampSent) {
+        if (toSipInstance != null) {
+            return CpimMessage.HEADER_FROM + ": "
+                    + formatCpimSipUriWithAcceptContact(from, fromSipInstance) + CRLF
+                    + buildCpimDeliveryReport(to, toSipInstance, messageId, imdn, timestampSent);
+        } else {
+            return CpimMessage.HEADER_FROM + ": "
+                    + formatCpimSipUriWithAcceptContact(from, fromSipInstance) + CRLF
+                    + buildCpimDeliveryReport(to.toString(), messageId, imdn, timestampSent);
+        }
     }
 
     /**
-     * Build a CPIM delivery report
+     * Build a CPIM delivery report for a one to one chat
      *
      * @param from From
      * @param to To
@@ -651,8 +634,8 @@ public class ChatUtils {
      * @param timestampSent Timestamp sent in payload for CPIM DateTime
      * @return String
      */
-    public static String buildCpimDeliveryReport(String from, String to, String messageId,
-            String imdn, long timestampSent) {
+    public static String buildOneToOneChatCpimDeliveryReport(String from, String to,
+            String messageId, String imdn, long timestampSent) {
         return CpimMessage.HEADER_FROM + ": " + formatCpimSipUri(from) + CRLF
                 + buildCpimDeliveryReport(to, messageId, imdn, timestampSent);
     }
@@ -673,6 +656,27 @@ public class ChatUtils {
                 + messageId + CRLF + CpimMessage.HEADER_DATETIME + ": "
                 + DateUtils.encodeDate(timestampSent) + CRLF + CRLF
                 + CpimMessage.HEADER_CONTENT_TYPE + ": " + ImdnDocument.MIME_TYPE + CRLF
+                + CpimMessage.HEADER_CONTENT_DISPOSITION + ": " + ImdnDocument.NOTIFICATION + CRLF
+                + CpimMessage.HEADER_CONTENT_LENGTH + ": " + imdn.getBytes(UTF8).length + CRLF
+                + CRLF + imdn;
+    }
+
+    /**
+     * Build a CPIM delivery report
+     *
+     * @param to To
+     * @param messageId Message ID
+     * @param imdn IMDN report
+     * @param timestampSent Timestamp sent in payload for CPIM DateTime
+     * @return String
+     */
+    private static String buildCpimDeliveryReport(ContactId to, String toSipInstance,
+            String messageId, String imdn, long timestampSent) {
+        return CpimMessage.HEADER_TO + ": " + formatCpimSipUriWithAcceptContact(to, toSipInstance)
+                + CRLF + CpimMessage.HEADER_NS + ": " + ImdnDocument.IMDN_NAMESPACE + CRLF
+                + ImdnUtils.HEADER_IMDN_MSG_ID + ": " + messageId + CRLF
+                + CpimMessage.HEADER_DATETIME + ": " + DateUtils.encodeDate(timestampSent) + CRLF
+                + CRLF + CpimMessage.HEADER_CONTENT_TYPE + ": " + ImdnDocument.MIME_TYPE + CRLF
                 + CpimMessage.HEADER_CONTENT_DISPOSITION + ": " + ImdnDocument.NOTIFICATION + CRLF
                 + CpimMessage.HEADER_CONTENT_LENGTH + ": " + imdn.getBytes(UTF8).length + CRLF
                 + CRLF + imdn;
@@ -728,13 +732,14 @@ public class ChatUtils {
      * @param timestamp Timestamp sent in payload for IMDN datetime
      * @return XML document
      */
-    public static String buildImdnDeliveryReport(String msgId, String status, long timestamp) {
+    public static String buildImdnDeliveryReport(String msgId, ImdnDocument.DeliveryStatus status,
+            long timestamp) {
         String method;
         switch (status) {
-            case ImdnDocument.DELIVERY_STATUS_DISPLAYED:
+            case DISPLAYED:
                 method = "display-notification";
                 break;
-            case ImdnDocument.DELIVERY_STATUS_DELIVERED:
+            case DELIVERED:
                 method = "delivery-notification";
                 break;
             default:

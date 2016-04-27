@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,11 +39,11 @@ import java.util.UUID;
  */
 public class DeviceUtils {
 
-    private static final String URN_IMEI = "\"<urn:gsma:imei:";
+    private static final String URN_IMEI = "<urn:gsma:imei:";
 
-    private static final String URN_UUID = "\"<urn:uuid:";
+    private static final String URN_UUID = "<urn:uuid:";
 
-    private static final String GREATER_THAN = ">\"";
+    private static final String GREATER_THAN = ">";
 
     private static final char HYPHEN = '-';
 
@@ -107,8 +107,7 @@ public class DeviceUtils {
             final String snr = sImei.substring(tac.length(), sImei.length() - LAST_INDEX);
             final char spare = sImei.charAt(sImei.length() - LAST_INDEX);
 
-            sImei = new StringBuilder(tac).append(HYPHEN).append(snr).append(HYPHEN).append(spare)
-                    .toString();
+            sImei = tac + HYPHEN + snr + HYPHEN + spare;
         }
         return sImei;
     }
@@ -117,7 +116,7 @@ public class DeviceUtils {
      * Get instance ID for populating SIP Instance
      * 
      * @param ctx application context
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return instance Id
      */
     public static String getInstanceId(Context ctx, RcsSettings rcsSettings) {
@@ -129,9 +128,8 @@ public class DeviceUtils {
          */
         final String imei = getImei(ctx);
         if (imei != null) {
-            return new StringBuilder(URN_IMEI).append(imei).append(GREATER_THAN).toString();
+            return URN_IMEI + imei + GREATER_THAN;
         }
-        return new StringBuilder(URN_UUID).append(rcsSettings.getUUID()).append(GREATER_THAN)
-                .toString();
+        return URN_UUID + rcsSettings.getUUID() + GREATER_THAN;
     }
 }

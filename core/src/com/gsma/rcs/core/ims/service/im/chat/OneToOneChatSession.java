@@ -22,10 +22,13 @@
 
 package com.gsma.rcs.core.ims.service.im.chat;
 
+import static com.gsma.rcs.utils.StringUtils.UTF8;
+
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.service.CmsManager;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
+import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
@@ -35,12 +38,16 @@ import com.gsma.rcs.core.ims.service.ImsServiceError;
 import com.gsma.rcs.core.ims.service.ImsSessionListener;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
+import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimParser;
 import com.gsma.rcs.core.ims.service.im.chat.geoloc.GeolocInfoDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnUtils;
 import com.gsma.rcs.core.ims.service.im.chat.iscomposing.IsComposingInfo;
+import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
+import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.api.OneToOneFileTransferImpl;
@@ -69,6 +76,9 @@ public abstract class OneToOneChatSession extends ChatSession {
 
     private static final Logger sLogger = Logger.getLogger(OneToOneChatSession.class
             .getSimpleName());
+    private final CmsManager mCmsManager;
+
+    private String mRemoteSipInstance;
 
     /**
      * Constructor
@@ -85,9 +95,12 @@ public abstract class OneToOneChatSession extends ChatSession {
      */
     public OneToOneChatSession(InstantMessagingService imService, ContactId contact,
             Uri remoteContact, ChatMessage firstMsg, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp, ContactManager contactManager, CmsManager cmsManager) {
+            MessagingLog messagingLog, long timestamp, ContactManager contactManager,
+            CmsManager cmsManager, String remoteSipInstance) {
         super(imService, contact, remoteContact, rcsSettings, messagingLog, firstMsg, timestamp,
-                contactManager, cmsManager);
+                contactManager);
+        mCmsManager = cmsManager;
+        mRemoteSipInstance = remoteSipInstance;
         List<String> featureTags = ChatUtils.getSupportedFeatureTagsForChat(rcsSettings);
         setFeatureTags(featureTags);
         setAcceptContactTags(featureTags);
@@ -141,14 +154,14 @@ public abstract class OneToOneChatSession extends ChatSession {
                     msgId, timestampSent);
         }
         if (mImdnManager.isRequestOneToOneDeliveryDisplayedReportsEnabled()) {
-            data = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, networkContent,
+            data = ChatUtils.buildOneToOneChatCpimMessageWithImdn(from, to, msgId, networkContent,
                     networkMimeType, timestampSent);
         } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-            data = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId, networkContent,
-                    networkMimeType, timestampSent);
+            data = ChatUtils.buildOneToOneChatCpimMessageWithoutDisplayedImdn(from, to, msgId,
+                    networkContent, networkMimeType, timestampSent);
         } else {
-            data = ChatUtils.buildCpimMessage(from, to, networkContent, networkMimeType,
-                    timestampSent);
+            data = ChatUtils.buildOneToOneChatCpimMessage(from, to, networkContent,
+                    networkMimeType, timestampSent);
         }
         if (ChatUtils.isGeolocType(networkMimeType)) {
             sendDataChunks(IdGenerator.generateMessageID(), data, CpimMessage.MIME_TYPE,
@@ -181,15 +194,15 @@ public abstract class OneToOneChatSession extends ChatSession {
         long timestampSent = timestamp;
         mMessagingLog.setFileTransferTimestamps(fileTransferId, timestamp, timestampSent);
         if (displayedReportEnabled) {
-            networkContent = ChatUtils.buildCpimMessageWithImdn(ChatUtils.ANONYMOUS_URI,
-                    ChatUtils.ANONYMOUS_URI, fileTransferId, fileInfo,
+            networkContent = ChatUtils.buildOneToOneChatCpimMessageWithImdn(
+                    ChatUtils.ANONYMOUS_URI, ChatUtils.ANONYMOUS_URI, fileTransferId, fileInfo,
                     FileTransferHttpInfoDocument.MIME_TYPE, timestampSent);
         } else if (deliveredReportEnabled) {
-            networkContent = ChatUtils.buildCpimMessageWithoutDisplayedImdn(
+            networkContent = ChatUtils.buildOneToOneChatCpimMessageWithoutDisplayedImdn(
                     ChatUtils.ANONYMOUS_URI, ChatUtils.ANONYMOUS_URI, fileTransferId, fileInfo,
                     FileTransferHttpInfoDocument.MIME_TYPE, timestampSent);
         } else {
-            networkContent = ChatUtils.buildCpimMessage(ChatUtils.ANONYMOUS_URI,
+            networkContent = ChatUtils.buildOneToOneChatCpimMessage(ChatUtils.ANONYMOUS_URI,
                     ChatUtils.ANONYMOUS_URI, fileInfo, FileTransferHttpInfoDocument.MIME_TYPE,
                     timestampSent);
         }
@@ -281,6 +294,12 @@ public abstract class OneToOneChatSession extends ChatSession {
     public void handle200OK(SipResponse resp) throws PayloadException, NetworkException,
             FileAccessException {
         super.handle200OK(resp);
+        /*
+         * If session is initiated locally, the remote SIP instance is only known upon acceptance.
+         */
+        if (mRemoteSipInstance == null) {
+            mRemoteSipInstance = SipUtils.getRemoteInstanceId(resp);
+        }
         getActivityManager().start();
     }
 
@@ -293,6 +312,154 @@ public abstract class OneToOneChatSession extends ChatSession {
      * @see com.gsma.rcs.core.ims.protocol.sdp.SdpUtils#DIRECTION_SENDRECV
      */
     public abstract String getSdpDirection();
+
+    @Override
+    public void sendMsrpMessageDeliveryStatus(ContactId remote, String remoteSipInstance,
+            String msgId, ImdnDocument.DeliveryStatus status, long timestamp)
+            throws NetworkException {
+        String fromUri = ChatUtils.ANONYMOUS_URI;
+        String toUri = ChatUtils.ANONYMOUS_URI;
+        if (sLogger.isActivated()) {
+            sLogger.debug("Send delivery status " + status + " for message " + msgId);
+        }
+        // Send status in CPIM + IMDN headers
+        /* Timestamp fo IMDN datetime */
+        String imdn = ChatUtils.buildImdnDeliveryReport(msgId, status, timestamp);
+        /* Timestamp for CPIM DateTime */
+        String imdnMessageId = IdGenerator.generateMessageID();
+        String content = ChatUtils.buildOneToOneChatCpimDeliveryReport(fromUri, toUri,
+                imdnMessageId, imdn, NtpTrustedTime.currentTimeMillis());
+
+        TypeMsrpChunk typeMsrpChunk = TypeMsrpChunk.OtherMessageDeliveredReportStatus;
+        if (ImdnDocument.DeliveryStatus.DISPLAYED == status) {
+            typeMsrpChunk = TypeMsrpChunk.MessageDisplayedReport;
+        } else {
+            if (ImdnDocument.DeliveryStatus.DELIVERED == status) {
+                typeMsrpChunk = TypeMsrpChunk.MessageDeliveredReport;
+            }
+        }
+        sendDataChunks(IdGenerator.generateMessageID(), content, CpimMessage.MIME_TYPE,
+                typeMsrpChunk);
+        if (ImdnDocument.DeliveryStatus.DISPLAYED == status) {
+            if (mMessagingLog.getMessageChatId(msgId) != null) {
+                for (ImsSessionListener listener : getListeners()) {
+                    ((ChatSessionListener) listener).onChatMessageDisplayReportSent(msgId);
+                }
+            }
+        }
+        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(getRemoteContact(), msgId,
+                imdnMessageId);
+    }
+
+    @Override
+    public void receiveMsrpData(String msgId, byte[] data, String mimeType)
+            throws PayloadException, NetworkException, ContactManagerException {
+        boolean logActivated = sLogger.isActivated();
+        if (logActivated) {
+            sLogger.info("MSRP data received (type " + mimeType + ")");
+        }
+        getActivityManager().updateActivity();
+        if (data == null || data.length == 0) {
+            if (logActivated) {
+                sLogger.debug("By-pass received empty data");
+            }
+            return;
+        }
+        if (ChatUtils.isApplicationIsComposingType(mimeType)) {
+            receiveIsComposing(getRemoteContact(), data);
+            return;
+        }
+        if (ChatUtils.isTextPlainType(mimeType)) {
+            /**
+             * Set message's timestamp to the System.currentTimeMillis, not the session's itself
+             * timestamp
+             */
+            long timestamp = NtpTrustedTime.currentTimeMillis();
+            /**
+             * Since legacy server can send non CPIM data (like plain text without timestamp) in the
+             * payload, we need to fake timestampSent by using the local timestamp even if this is
+             * not the real proper timestamp from the remote side in this case.
+             */
+            ChatMessage msg = new ChatMessage(msgId, getRemoteContact(), new String(data, UTF8),
+                    MimeType.TEXT_MESSAGE, timestamp, timestamp, null);
+            boolean imdnDisplayedRequested = false;
+            boolean msgSupportsImdnReport = false;
+            receive(msg, null, null, msgSupportsImdnReport, imdnDisplayedRequested, null, timestamp);
+            return;
+        }
+        if (ChatUtils.isMessageCpimType(mimeType)) {
+            CpimParser cpimParser = new CpimParser(data);
+            CpimMessage cpimMsg = cpimParser.getCpimMessage();
+            if (cpimMsg != null) {
+                String cpimMsgId = cpimMsg.getHeader(ImdnUtils.HEADER_IMDN_MSG_ID);
+                if (cpimMsgId == null) {
+                    cpimMsgId = msgId;
+                }
+                String contentType = cpimMsg.getContentType();
+                ContactId contact = getRemoteContact();
+                /*
+                 * In One to One chat, the MSRP 'from' header is '<sip:anonymous@anonymous.invalid>'
+                 */
+                boolean imdnDisplayedRequested = false;
+                boolean msgSupportsImdnReport = true;
+                String dispositionNotification = cpimMsg
+                        .getHeader(ImdnUtils.HEADER_IMDN_DISPO_NOTIF);
+                if (dispositionNotification != null
+                        && dispositionNotification.contains(ImdnDocument.DISPLAY)
+                        && mImdnManager.isSendOneToOneDeliveryDisplayedReportsEnabled()) {
+                    imdnDisplayedRequested = true;
+                }
+                boolean isFToHTTP = FileTransferUtils.isFileTransferHttpType(contentType);
+                /**
+                 * Set message's timestamp to the System.currentTimeMillis, not the session's itself
+                 * timestamp
+                 */
+                long timestamp = NtpTrustedTime.currentTimeMillis();
+                long timestampSent = cpimMsg.getTimestampSent();
+                if (isFToHTTP) {
+                    FileTransferHttpInfoDocument fileInfo = FileTransferUtils
+                            .parseFileTransferHttpDocument(
+                                    cpimMsg.getMessageContent().getBytes(UTF8), mRcsSettings);
+                    if (fileInfo != null) {
+                        receiveHttpFileTransfer(contact, mRemoteSipInstance,
+                                getRemoteDisplayName(), fileInfo, cpimMsgId, timestamp,
+                                timestampSent);
+                        if (imdnDisplayedRequested) {
+                            // TODO set File Transfer status to DISPLAY_REPORT_REQUESTED ??
+                        }
+                    } else {
+                        // TODO : else return error to Originating side
+                    }
+                } else {
+                    if (ChatUtils.isTextPlainType(contentType)) {
+                        ChatMessage msg = new ChatMessage(cpimMsgId, contact,
+                                cpimMsg.getMessageContent(), MimeType.TEXT_MESSAGE, timestamp,
+                                timestampSent, null);
+                        receive(msg, contact, mRemoteSipInstance, msgSupportsImdnReport,
+                                imdnDisplayedRequested, cpimMsgId, timestamp);
+
+                    } else if (ChatUtils.isApplicationIsComposingType(contentType)) {
+                        receiveIsComposing(contact, cpimMsg.getMessageContent().getBytes(UTF8));
+
+                    } else if (ChatUtils.isMessageImdnType(contentType)) {
+                        onDeliveryStatusReceived(contact, cpimMsg);
+
+                    } else if (ChatUtils.isGeolocType(contentType)) {
+                        ChatMessage msg = new ChatMessage(cpimMsgId, contact,
+                                ChatUtils.networkGeolocContentToPersistedGeolocContent(cpimMsg
+                                        .getMessageContent()), MimeType.GEOLOC_MESSAGE, timestamp,
+                                timestampSent, null);
+                        receive(msg, contact, mRemoteSipInstance, msgSupportsImdnReport,
+                                imdnDisplayedRequested, cpimMsgId, timestamp);
+                    }
+                }
+            }
+        } else {
+            if (logActivated) {
+                sLogger.debug("Not supported content " + mimeType + " in chat session");
+            }
+        }
+    }
 
     @Override
     public void msrpTransferError(String msgId, String error,
@@ -309,13 +476,14 @@ public abstract class OneToOneChatSession extends ChatSession {
                 || TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
             for (ImsSessionListener listener : getListeners()) {
                 ((OneToOneChatSessionListener) listener).onDeliveryReportSendViaMsrpFailure(msgId,
-                        remote, typeMsrpChunk);
+                        remote, mRemoteSipInstance, typeMsrpChunk);
             }
         } else if (msgId != null && TypeMsrpChunk.TextMessage.equals(typeMsrpChunk)) {
             for (ImsSessionListener listener : getListeners()) {
                 ImdnDocument imdn = new ImdnDocument(msgId, ImdnDocument.DELIVERY_NOTIFICATION,
-                        ImdnDocument.DELIVERY_STATUS_FAILED, ImdnDocument.IMDN_DATETIME_NOT_SET);
-                ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(null, imdn, msgId);
+                        ImdnDocument.DeliveryStatus.FAILED, ImdnDocument.IMDN_DATETIME_NOT_SET);
+                ((ChatSessionListener) listener).onMessageDeliveryStatusReceived(remote, imdn,
+                        msgId);
             }
         } else {
             // do nothing
@@ -336,7 +504,6 @@ public abstract class OneToOneChatSession extends ChatSession {
              * process of sending a chunk, and the chunk is interruptible, the sender MUST interrupt
              * it.
              */
-
             errorCode = ChatError.MEDIA_SESSION_BROKEN;
         } else {
             /*
@@ -344,14 +511,12 @@ public abstract class OneToOneChatSession extends ChatSession {
              * indicates that the indicated session does not exist. The sender should terminate the
              * session.
              */
-
             errorCode = ChatError.MEDIA_SESSION_FAILED;
         }
         handleError(getFirstMessage(), new ChatError(errorCode, error));
         /* Request capabilities to the remote */
         getImsService().getImsModule().getCapabilityService()
                 .requestContactCapabilities(getRemoteContact());
-
     }
 
     @Override
@@ -401,5 +566,9 @@ public abstract class OneToOneChatSession extends ChatSession {
         for (ImsSessionListener listener : getListeners()) {
             ((OneToOneChatSessionListener) listener).onImError(error, msgId, msg.getMimeType());
         }
+    }
+
+    protected String getRemoteSipInstance() {
+        return mRemoteSipInstance;
     }
 }

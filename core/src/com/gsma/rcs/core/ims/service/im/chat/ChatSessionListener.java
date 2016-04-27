@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,10 +36,11 @@ public interface ChatSessionListener extends ImsSessionListener {
      * New message received
      * 
      * @param msg Chat message
+     * @param remoteSipInstance the SIP instance of the sender
      * @param imdnDisplayedRequested Indicates whether display notification is requested
      * @param deliverySuccess True is delivery report succeeded
      */
-    public void onMessageReceived(ChatMessage msg, boolean imdnDisplayedRequested,
+    void onMessageReceived(ChatMessage msg, String remoteSipInstance, boolean imdnDisplayedRequested,
             boolean deliverySuccess);
 
     /**
@@ -48,7 +49,7 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param contact Contact identifier
      * @param status Status
      */
-    public void onIsComposingEventReceived(ContactId contact, boolean status);
+    void onIsComposingEventReceived(ContactId contact, boolean status);
 
     /**
      * Notifying that a message has been sent
@@ -56,7 +57,7 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param msgId Message ID
      * @param mimeType MIME type
      */
-    public void onMessageSent(String msgId, String mimeType);
+    void onMessageSent(String msgId, String mimeType);
 
     /**
      * Notifying failure of sending message
@@ -64,16 +65,16 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param msgId Message ID
      * @param mimeType MIME type
      */
-    public void onMessageFailedSend(String msgId, String mimeType);
+    void onMessageFailedSend(String msgId, String mimeType);
 
     /**
      * New message delivery status that are received as part of imdn notification
      * 
      * @param contact the remote contact identifier
-     * @param ImdnDocument imdn Imdn document
+     * @param imdn the Imdn document
      * @param imdnMessageId the IMDN-Message-ID
      */
-    public void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnMessageId);
+    void onMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn, String imdnMessageId);
 
     /**
      * New message or file transfer delivery status that are received as part of imdn notification
@@ -83,13 +84,14 @@ public interface ChatSessionListener extends ImsSessionListener {
      * @param imdn Imdn Document
      * @param imdnMessageId the IMDN-Message-ID
      */
-    public void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn, String imdnMessageId);
+    void onDeliveryStatusReceived(String contributionId, ContactId contact, ImdnDocument imdn,
+            String imdnMessageId);
 
     /**
      * Handle imdn DISPLAY report sent for message
      * 
-     * @param msgId
+     * @param msgId Message ID
      */
-    public void onChatMessageDisplayReportSent(String msgId);
+    void onChatMessageDisplayReportSent(String msgId);
 
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -75,7 +75,7 @@ public interface IFileTransferLog {
      * @param fileTransferId the identity of the file transfer
      * @param chatId the identity of the group chat
      * @param content the File content
-     * @param thumbnail the fileIcon content
+     * @param fileIcon the fileIcon content
      * @param recipients the recipients
      * @param state File transfer state
      * @param reasonCode Reason code
@@ -83,7 +83,7 @@ public interface IFileTransferLog {
      * @param timestampSent Timestamp sent in payload for outgoing file transfer for a group chat
      */
     void addOutgoingGroupFileTransfer(String fileTransferId, String chatId, MmContent content,
-            MmContent thumbnail, Set<ContactId> recipients, State state, ReasonCode reasonCode,
+            MmContent fileIcon, Set<ContactId> recipients, State state, ReasonCode reasonCode,
             long timestamp, long timestampSent);
 
     /**
@@ -263,14 +263,6 @@ public interface IFileTransferLog {
      * @return State
      */
     State getFileTransferState(String fileTransferId);
-
-    /**
-     * Get file transfer download state from its unique ID
-     *
-     * @param fileTransferId Unique ID of file transfer
-     * @return DownloadState
-     */
-    DownloadState getFileTransferDownloadState(String fileTransferId);
 
     /**
      * Get file transfer reason code from its unique ID
@@ -527,4 +519,12 @@ public interface IFileTransferLog {
     void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
             Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients, State state,
             ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration);
+
+    /**
+     * Get file transfer SIP instance
+     *
+     * @param fileTransferId the identity of the file transfer
+     * @return SIP instance or null
+     */
+    String getFileTransferSipInstance(String fileTransferId);
 }

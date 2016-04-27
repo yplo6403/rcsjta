@@ -73,38 +73,11 @@ public class FileTransferPersistedStorageAccessor {
     /**
      * Constructor
      * 
-     * @param fileTransferId
-     * @param messagingLog
+     * @param fileTransferId the file transfer ID
+     * @param messagingLog the messaging log accessor
      */
     public FileTransferPersistedStorageAccessor(String fileTransferId, MessagingLog messagingLog) {
         mFileTransferId = fileTransferId;
-        mMessagingLog = messagingLog;
-    }
-
-    /**
-     * Constructor
-     * 
-     * @param fileTransferId
-     * @param contact
-     * @param direction
-     * @param chatId
-     * @param file
-     * @param fileIcon
-     * @param messagingLog
-     */
-    public FileTransferPersistedStorageAccessor(String fileTransferId, ContactId contact,
-            Direction direction, String chatId, MmContent file, MmContent fileIcon,
-            MessagingLog messagingLog) {
-        mFileTransferId = fileTransferId;
-        mContact = contact;
-        mDirection = direction;
-        mChatId = chatId;
-        mFile = file.getUri();
-        mFileIcon = fileIcon != null ? fileIcon.getUri() : null;
-        mFileIconMimeType = fileIcon != null ? fileIcon.getEncoding() : null;
-        mFileName = file.getName();
-        mMimeType = file.getEncoding();
-        mFileSize = file.getSize();
         mMessagingLog = messagingLog;
     }
 
@@ -113,10 +86,9 @@ public class FileTransferPersistedStorageAccessor {
         try {
             cursor = mMessagingLog.getFileTransferData(mFileTransferId);
             if (!cursor.moveToNext()) {
-                throw new ServerApiPersistentStorageException(new StringBuilder(
-                        "Data not found for file transfer ").append(mFileTransferId).toString());
+                throw new ServerApiPersistentStorageException("Data not found for file transfer "
+                        + mFileTransferId);
             }
-
             String contact = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferData.KEY_CONTACT));
             if (contact != null) {
@@ -255,8 +227,8 @@ public class FileTransferPersistedStorageAccessor {
     public long getTimestamp() {
         Long timestamp = mMessagingLog.getFileTransferTimestamp(mFileTransferId);
         if (timestamp == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "Timestamp not found for file transfer ").append(mFileTransferId).toString());
+            throw new ServerApiPersistentStorageException("Timestamp not found for file transfer "
+                    + mFileTransferId);
         }
         return timestamp;
     }
@@ -264,9 +236,8 @@ public class FileTransferPersistedStorageAccessor {
     public long getTimestampSent() {
         Long timestamp = mMessagingLog.getFileTransferSentTimestamp(mFileTransferId);
         if (timestamp == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "TimestampSent not found for file transfer ").append(mFileTransferId)
-                    .toString());
+            throw new ServerApiPersistentStorageException(
+                    "TimestampSent not found for file transfer " + mFileTransferId);
         }
         return timestamp;
     }
@@ -298,8 +269,8 @@ public class FileTransferPersistedStorageAccessor {
     public State getState() {
         State state = mMessagingLog.getFileTransferState(mFileTransferId);
         if (state == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "State not found for file transfer ").append(mFileTransferId).toString());
+            throw new ServerApiPersistentStorageException("State not found for file transfer "
+                    + mFileTransferId);
         }
         return state;
     }
@@ -307,8 +278,8 @@ public class FileTransferPersistedStorageAccessor {
     public ReasonCode getReasonCode() {
         ReasonCode reasonCode = mMessagingLog.getFileTransferReasonCode(mFileTransferId);
         if (reasonCode == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "Reason code not found for file transfer ").append(mFileTransferId).toString());
+            throw new ServerApiPersistentStorageException(
+                    "Reason code not found for file transfer " + mFileTransferId);
         }
         return reasonCode;
     }
@@ -339,7 +310,8 @@ public class FileTransferPersistedStorageAccessor {
     }
 
     public boolean setDownloadStateAndReasonCode(DownloadState state, ReasonCode reasonCode) {
-        return mMessagingLog.setFileTransferDownloadStateAndReasonCode(mFileTransferId, state, reasonCode);
+        return mMessagingLog.setFileTransferDownloadStateAndReasonCode(mFileTransferId, state,
+                reasonCode);
     }
 
     public boolean setProgress(long currentSize) {
@@ -415,9 +387,8 @@ public class FileTransferPersistedStorageAccessor {
     public boolean isExpiredDelivery() {
         Boolean expiredDelivery = mMessagingLog.isFileTransferExpiredDelivery(mFileTransferId);
         if (expiredDelivery == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "Expired Delivery not found for file transfer ").append(mFileTransferId)
-                    .toString());
+            throw new ServerApiPersistentStorageException(
+                    "Expired Delivery not found for file transfer " + mFileTransferId);
         }
         return expiredDelivery;
     }
@@ -440,8 +411,8 @@ public class FileTransferPersistedStorageAccessor {
     public long getFileTransferProgress() {
         Long transferred = mMessagingLog.getFileTransferProgress(mFileTransferId);
         if (transferred == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "Transferred not found for file transfer ").append(mFileTransferId).toString());
+            throw new ServerApiPersistentStorageException(
+                    "Transferred not found for file transfer " + mFileTransferId);
         }
         return transferred;
     }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -41,42 +42,41 @@ public class HistoryLog {
             HistoryLogData.CONTENT_URI).appendProvider(MessageData.HISTORYLOG_MEMBER_ID)
             .appendProvider(FileTransferData.HISTORYLOG_MEMBER_ID).build();
 
-    private static final String SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS = new StringBuilder(
-            "(").append(HistoryLogData.KEY_STATUS).append("=").append(Status.QUEUED.toInt())
-            .append(" AND ").append(HistoryLogData.KEY_MIME_TYPE).append("<>'")
-            .append(MimeType.GROUPCHAT_EVENT).append("' AND ")
-            .append(HistoryLogData.KEY_PROVIDER_ID).append("=")
-            .append(MessageData.HISTORYLOG_MEMBER_ID).append(") OR (")
-            .append(HistoryLogData.KEY_STATUS).append("=")
-            .append(FileTransfer.State.QUEUED.toInt()).append(" AND ")
-            .append(HistoryLogData.KEY_PROVIDER_ID).append("=")
-            .append(FileTransferData.HISTORYLOG_MEMBER_ID).append(')').toString();
+    private static final String SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS = "("
+            + HistoryLogData.KEY_STATUS + "=" + Status.QUEUED.toInt() + " AND "
+            + HistoryLogData.KEY_MIME_TYPE + "<>'" + MimeType.GROUPCHAT_EVENT + "' AND "
+            + HistoryLogData.KEY_PROVIDER_ID + "=" + MessageData.HISTORYLOG_MEMBER_ID + ") OR ("
+            + HistoryLogData.KEY_STATUS + "=" + FileTransfer.State.QUEUED.toInt() + " AND "
+            + HistoryLogData.KEY_PROVIDER_ID + "=" + FileTransferData.HISTORYLOG_MEMBER_ID + ')';
 
-    private static final String SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS = new StringBuilder(
-            "(").append(HistoryLogData.KEY_PROVIDER_ID).append("=")
-            .append(FileTransferData.HISTORYLOG_MEMBER_ID).append(" AND ")
-            .append(HistoryLogData.KEY_STATUS).append("=")
-            .append(FileTransfer.State.STARTED.toInt()).append(" AND ")
-            .append(HistoryLogData.KEY_DIRECTION).append("=").append(Direction.OUTGOING.toInt())
-            .append(" AND ").append(HistoryLogData.KEY_FILESIZE).append("=")
-            .append(HistoryLogData.KEY_TRANSFERRED).append(")").toString();
+    private static final String SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS = "("
+            + HistoryLogData.KEY_PROVIDER_ID + "=" + FileTransferData.HISTORYLOG_MEMBER_ID
+            + " AND " + HistoryLogData.KEY_STATUS + "=" + FileTransfer.State.STARTED.toInt()
+            + " AND " + HistoryLogData.KEY_DIRECTION + "=" + Direction.OUTGOING.toInt() + " AND "
+            + HistoryLogData.KEY_FILESIZE + "=" + HistoryLogData.KEY_TRANSFERRED + ")";
 
-    private static final String SELECTION_QUEUED_GROUPCHATMESSAGES_AND_GROUPFILETRANSFERS = new StringBuilder(
-            HistoryLogData.KEY_CHAT_ID).append("=? AND (")
-            .append(SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS).append(" OR ")
-            .append(SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS).append(')').toString();
+    private static final String SELECTION_QUEUED_GROUPCHATMESSAGES_AND_GROUPFILETRANSFERS = HistoryLogData.KEY_CHAT_ID
+            + "=? AND ("
+            + SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS
+            + " OR "
+            + SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS + ')';
 
-    private static final String SELECTION_QUEUED_ONETOONECHATMESSAGES_AND_ONETOONE_FILETRANSFERS = new StringBuilder(
-            HistoryLogData.KEY_CHAT_ID).append("=").append(HistoryLogData.KEY_CONTACT)
-            .append(" AND (").append(SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS)
-            .append(" OR ").append(SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS)
-            .append(')').toString();
+    private static final String SELECTION_QUEUED_ONETOONECHATMESSAGES_AND_ONETOONE_FILETRANSFERS = HistoryLogData.KEY_CHAT_ID
+            + "="
+            + HistoryLogData.KEY_CONTACT
+            + " AND ("
+            + SELECTION_QUEUED_CHATMESSAGES_AND_FILETRANSFERS
+            + " OR "
+            + SELECTION_UPLOADED_BUT_NOT_TRANSFERRED_FILETRANSFERS + ')';
 
-    private static final String SELECTION_ID = new StringBuilder(HistoryLogData.KEY_ID)
-            .append("=?").toString();
+    private static final String SELECTION_ID = HistoryLogData.KEY_ID + "=?";
 
     private static final String[] PROJECTION_REMOTE_CONTACT = new String[] {
         HistoryLogData.KEY_CONTACT
+    };
+
+    private static final String[] PROJECTION_PROVIDER_ID = new String[] {
+        HistoryLogData.KEY_PROVIDER_ID
     };
 
     private static final int FIRST_COLUMN_IDX = 0;
@@ -90,7 +90,7 @@ public class HistoryLog {
 
     /**
      * Get or Create Singleton instance of HistoryLog
-     * 
+     *
      * @param localContentResolver Local content resolver
      * @return HistoryLog instance
      */
@@ -127,7 +127,7 @@ public class HistoryLog {
 
     /**
      * Get remote contact corresponding to the unique ID of message/ FT entry
-     * 
+     *
      * @param id Unique ID of message/ FT entry
      * @return ContactId
      */
@@ -146,6 +146,33 @@ public class HistoryLog {
                 return null;
             }
             return ContactUtil.createContactIdFromTrustedData(cursor.getString(FIRST_COLUMN_IDX));
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    /**
+     * Gets the provider ID which can be either chat or file transfer
+     *
+     * @param id the message ID
+     * @return the provider ID or -1 if id is not found
+     */
+    public int getProviderId(String id) {
+        String[] selectionArgs = new String[] {
+            id
+        };
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(CHATMESSAGE_AND_FILETRANSFER_CONTENT_URI,
+                    PROJECTION_PROVIDER_ID, SELECTION_ID, selectionArgs, null);
+            if (!cursor.moveToNext()) {
+                return -1;
+            }
+            if (cursor.isNull(FIRST_COLUMN_IDX)) {
+                return -1;
+            }
+            return cursor.getInt(FIRST_COLUMN_IDX);
 
         } finally {
             CursorUtil.close(cursor);

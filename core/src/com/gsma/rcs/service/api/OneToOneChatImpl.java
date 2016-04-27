@@ -558,7 +558,8 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
      * @throws NetworkException
      */
     /* package private */void sendDisplayedDeliveryReport(final ContactId remote,
-            final String msgId, final long timestamp) throws NetworkException {
+            final String remoteSipInstance, final String msgId, final long timestamp)
+            throws NetworkException {
         if (sLogger.isActivated()) {
             sLogger.debug("Set displayed delivery report for " + msgId);
         }
@@ -571,14 +572,14 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
                 sLogger.info("Use the original session to send the delivery display status for "
                         + msgId);
             }
-            session.sendMsrpMessageDeliveryStatus(remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp);
+            session.sendMsrpMessageDeliveryStatus(remote, null, msgId,
+                    ImdnDocument.DeliveryStatus.DISPLAYED, timestamp);
         } else {
             if (sLogger.isActivated()) {
                 sLogger.info("Use SIP message to send the delivery display status for " + msgId);
             }
-            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp);
+            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote,
+                    remoteSipInstance, msgId, ImdnDocument.DeliveryStatus.DISPLAYED, timestamp);
         }
     }
 
@@ -832,8 +833,8 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
     }
 
     @Override
-    public void onMessageReceived(final ChatMessage msg, final boolean imdnDisplayedRequested,
-            final boolean deliverySuccess) {
+    public void onMessageReceived(final ChatMessage msg, final String remoteSipInstance,
+            final boolean imdnDisplayedRequested, final boolean deliverySuccess) {
         mImService.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
@@ -855,15 +856,15 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
                             if (session != null) {
                                 session.terminateSession(TerminationReason.TERMINATION_BY_USER);
                             }
-                            mMessagingLog.addOneToOneSpamMessage(msg);
+                            mMessagingLog.addOneToOneSpamMessage(msg, remoteSipInstance);
                             mBroadcaster.broadcastMessageReceived(msg.getMimeType(), msgId);
                             return;
                         }
                         if (deliverySuccess) {
-                            mMessagingLog.addIncomingOneToOneChatMessage(msg,
+                            mMessagingLog.addIncomingOneToOneChatMessage(msg, remoteSipInstance,
                                     imdnDisplayedRequested);
                         } else {
-                            mMessagingLog.addOneToOneFailedDeliveryMessage(msg);
+                            mMessagingLog.addOneToOneFailedDeliveryMessage(msg, remoteSipInstance);
                         }
                         mBroadcaster.broadcastMessageReceived(msg.getMimeType(), msgId);
                     }
@@ -1034,7 +1035,7 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
 
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact,
-            TypeMsrpChunk typeMsrpChunk) {
+            String remoteSipInstance, TypeMsrpChunk typeMsrpChunk) {
         if (TypeMsrpChunk.MessageDeliveredReport.equals(typeMsrpChunk)) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to send delivered message via MSRP, so try to send via SIP message to "
@@ -1042,8 +1043,10 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
             }
             /* Send the delivered notification by SIP */
             ContactId remote = getRemoteContact();
-            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DELIVERED, NtpTrustedTime.currentTimeMillis());
+            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote,
+                    remoteSipInstance, msgId, ImdnDocument.DeliveryStatus.DELIVERED,
+                    NtpTrustedTime.currentTimeMillis());
+
         } else if (TypeMsrpChunk.MessageDisplayedReport.equals(typeMsrpChunk)) {
             if (sLogger.isActivated()) {
                 sLogger.info("Failed to send displayed message via MSRP, so try to send via SIP message to "
@@ -1051,8 +1054,9 @@ public class OneToOneChatImpl extends IOneToOneChat.Stub implements OneToOneChat
             }
             /* Send the displayed notification by SIP */
             ContactId remote = getRemoteContact();
-            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, NtpTrustedTime.currentTimeMillis());
+            mImService.getImdnManager().sendMessageDeliveryStatus(remote.toString(), remote,
+                    remoteSipInstance, msgId, ImdnDocument.DeliveryStatus.DISPLAYED,
+                    NtpTrustedTime.currentTimeMillis());
         }
     }
 

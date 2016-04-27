@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,6 @@
 package com.gsma.rcs.core.ims.network.registration;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
@@ -37,6 +36,7 @@ import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.protocol.sip.SipResponse;
 import com.gsma.rcs.core.ims.protocol.sip.SipTransactionContext;
 import com.gsma.rcs.platform.AndroidFactory;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PeriodicRefresher;
@@ -44,6 +44,8 @@ import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsServiceRegistration;
 import com.gsma.services.rcs.RcsServiceRegistration.ReasonCode;
+
+import android.content.Context;
 
 import java.util.ListIterator;
 
@@ -130,8 +132,8 @@ public class RegistrationManager extends PeriodicRefresher {
         mRcsSettings = rcsSettings;
         mExpirePeriod = mRcsSettings.getRegisterExpirePeriod();
         if (mRcsSettings.isGruuSupported()) {
-            mInstanceId = DeviceUtils.getInstanceId(AndroidFactory.getApplicationContext(),
-                    rcsSettings);
+            Context ctx = AndroidFactory.getApplicationContext();
+            mInstanceId = "\"" + DeviceUtils.getInstanceId(ctx, rcsSettings) + "\"";
         }
     }
 
@@ -191,9 +193,9 @@ public class RegistrationManager extends PeriodicRefresher {
                 // Stop the current registration
                 stopRegistration();
                 mFeatureTags = RegistrationUtils.getSupportedFeatureTags(mRcsSettings);
-
                 try {
                     register();
+
                 } catch (PayloadException e) {
                     sLogger.error("Registration has failed!", e);
                 } catch (NetworkException e) {
@@ -249,10 +251,8 @@ public class RegistrationManager extends PeriodicRefresher {
                     getExpiryValue(), mInstanceId);
 
             sendRegister(register);
-        } catch (PayloadException e) {
-            handleError(new ImsError(ImsError.REGISTRATION_FAILED, e));
-            throw e;
-        } catch (NetworkException e) {
+
+        } catch (PayloadException | NetworkException e) {
             handleError(new ImsError(ImsError.REGISTRATION_FAILED, e));
             throw e;
         }
@@ -331,17 +331,13 @@ public class RegistrationManager extends PeriodicRefresher {
      */
     private void sendRegister(SipRequest register) throws PayloadException, NetworkException {
         if (sLogger.isActivated()) {
-            sLogger.info(new StringBuilder("Send REGISTER, expire=").append(register.getExpires())
-                    .append("ms").toString());
+            sLogger.info("Send REGISTER, expire=" + register.getExpires() + "ms");
         }
-
         // Set the security header
         mRegistrationProcedure.writeSecurityHeader(register);
-
         // Send REGISTER request
         SipTransactionContext ctx = mNetworkInterface.getSipManager().sendSipMessageAndWait(
                 register);
-
         // Analyze the received response
         if (ctx.isSipResponse()) {
             // A response has been received
@@ -407,19 +403,15 @@ public class RegistrationManager extends PeriodicRefresher {
      * @throws PayloadException
      * @throws NetworkException
      */
-    private void handle200OK(SipTransactionContext ctx) throws PayloadException,
-            NetworkException {
+    private void handle200OK(SipTransactionContext ctx) throws PayloadException, NetworkException {
         // 200 OK response received
         if (sLogger.isActivated()) {
             sLogger.info("200 OK response received");
         }
-
         SipResponse resp = ctx.getSipResponse();
-
         // Set the associated URIs
         ListIterator<Header> associatedHeader = resp.getHeaders(SipUtils.HEADER_P_ASSOCIATED_URI);
         ImsModule.getImsUserProfile().setAssociatedUri(associatedHeader);
-
         // Set the GRUU
         SipInterface sipInterface = mNetworkInterface.getSipManager().getSipStack();
         sipInterface.setInstanceId(mInstanceId);
@@ -435,11 +427,9 @@ public class RegistrationManager extends PeriodicRefresher {
                 sipInterface.setTemporaryGruu(tempGruu);
             }
         }
-
         // Set the service route path
         ListIterator<Header> routes = resp.getHeaders(SipUtils.HEADER_SERVICE_ROUTE);
         sipInterface.setServiceRoutePath(routes);
-
         // If the IP address of the Via header in the 200 OK response to the initial
         // SIP REGISTER request is different than the local IP address then there is a NAT
         String localIpAddr = mNetworkInterface.getNetworkAccess().getIpAddress();
@@ -472,15 +462,12 @@ public class RegistrationManager extends PeriodicRefresher {
         if (sLogger.isActivated()) {
             sLogger.debug("NAT traversal detection: " + mNetworkInterface.isBehindNat());
         }
-
         // Read the security header
         mRegistrationProcedure.readSecurityHeader(resp);
-
         // Retrieve the expire value in the response
         retrieveExpirePeriod(resp);
         mRegistered = true;
         mReasonCode = ReasonCode.UNSPECIFIED;
-
         // Start the periodic registration
         long currentTime = NtpTrustedTime.currentTimeMillis();
         if (mExpirePeriod <= DEFAULT_EXPIRE_PERIOD) {
@@ -488,10 +475,8 @@ public class RegistrationManager extends PeriodicRefresher {
         } else {
             startTimer(currentTime, mExpirePeriod - SUBSTRACT_EXPIRE_PERIOD);
         }
-
         // Notify event listener
         mCore.getListener().onRegistrationSuccessful();
-
         /* Start deregister procedure if necessary */
         if (mPendingUnRegister) {
             deRegister();
@@ -503,7 +488,6 @@ public class RegistrationManager extends PeriodicRefresher {
         if (sLogger.isActivated()) {
             sLogger.info("200 OK response received");
         }
-
         // Reset the NAT parameters as we are not expecting any more messages
         // for this registration
         mNetworkInterface.setNatPublicAddress(null);
@@ -523,17 +507,14 @@ public class RegistrationManager extends PeriodicRefresher {
         if (sLogger.isActivated()) {
             sLogger.info("302 Moved Temporarily response received");
         }
-
         // Extract new target URI from Contact header of the received response
         SipResponse resp = ctx.getSipResponse();
         ContactHeader contactHeader = (ContactHeader) resp.getStackMessage().getHeader(
                 ContactHeader.NAME);
         String newUri = contactHeader.getAddress().getURI().toString();
         mDialogPath.setTarget(newUri);
-
         // Increment the Cseq number of the dialog path
         mDialogPath.incrementCseq();
-
         // Create REGISTER request with security token
         if (sLogger.isActivated()) {
             sLogger.info("Send REGISTER to new address");
@@ -541,7 +522,6 @@ public class RegistrationManager extends PeriodicRefresher {
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, ctx
                 .getTransaction().getRequest().getExpires().getExpires()
                 * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId);
-
         // Send REGISTER request
         sendRegister(register);
     }
@@ -559,12 +539,10 @@ public class RegistrationManager extends PeriodicRefresher {
          * Increment the number of 401 failures
          */
         mNb401Failures++;
-
         // 401 response received
         if (sLogger.isActivated()) {
             sLogger.info("401 response received, nbFailures=" + mNb401Failures);
         }
-
         if (mNb401Failures >= MAX_REGISTRATION_FAILURES) {
             /**
              * We reached MAX_REGISTRATION_FAILURES, stop registration retries
@@ -572,15 +550,11 @@ public class RegistrationManager extends PeriodicRefresher {
             handleError(new ImsError(ImsError.REGISTRATION_FAILED, "too many 401"));
             return;
         }
-
         SipResponse resp = ctx.getSipResponse();
-
         // Read the security header
         mRegistrationProcedure.readSecurityHeader(resp);
-
         // Increment the Cseq number of the dialog path
         mDialogPath.incrementCseq();
-
         // Create REGISTER request with security token
         if (sLogger.isActivated()) {
             sLogger.info("Send REGISTER with security token");
@@ -588,7 +562,6 @@ public class RegistrationManager extends PeriodicRefresher {
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, ctx
                 .getTransaction().getRequest().getExpires().getExpires()
                 * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId);
-
         // Send REGISTER request
         sendRegister(register);
     }
@@ -606,25 +579,17 @@ public class RegistrationManager extends PeriodicRefresher {
         if (sLogger.isActivated()) {
             sLogger.info("423 response received");
         }
-
         SipResponse resp = ctx.getSipResponse();
-
         // Increment the Cseq number of the dialog path
         mDialogPath.incrementCseq();
-
-        // Extract the Min-Expire value
-        long minExpire = SipUtils.getMinExpiresPeriod(resp);
-
         // Set the expire value
-        mExpirePeriod = minExpire;
-
+        mExpirePeriod = SipUtils.getMinExpiresPeriod(resp);
         // Create a new REGISTER with the right expire period
         if (sLogger.isActivated()) {
             sLogger.info("Send new REGISTER");
         }
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags,
                 mExpirePeriod, mInstanceId);
-
         // Send REGISTER request
         sendRegister(register);
     }
@@ -642,13 +607,10 @@ public class RegistrationManager extends PeriodicRefresher {
         }
         mRegistered = false;
         mReasonCode = ReasonCode.CONNECTION_LOST;
-
         // Registration has failed, stop the periodic registration
         stopTimer();
-
         // Reset dialog path attributes
         resetDialogPath();
-
         // Notify event listener
         mCore.getListener().onRegistrationFailed(error);
     }
@@ -681,7 +643,6 @@ public class RegistrationManager extends PeriodicRefresher {
                 }
             }
         }
-
         // Extract expire value from Expires header
         ExpiresHeader expiresHeader = (ExpiresHeader) response.getHeader(ExpiresHeader.NAME);
         if (expiresHeader != null) {
@@ -726,9 +687,9 @@ public class RegistrationManager extends PeriodicRefresher {
                     * SECONDS_TO_MILLISECONDS_CONVERSION_RATE;
             if (durationInMillis > 0) {
                 mNetworkInterface.setRetryAfterHeaderDuration(durationInMillis);
-                handleError(new ImsError(ImsError.REGISTRATION_FAILED, new StringBuilder(
-                        "retry after").append(durationInMillis).append(" for 4xx/5xx/6xx")
-                        .toString()));
+                handleError(new ImsError(ImsError.REGISTRATION_FAILED, "retry after"
+                        + durationInMillis + " for 4xx/5xx/6xx"));
+
             } else {
                 mNb4xx5xx6xxFailures++;
                 if (mNb4xx5xx6xxFailures >= MAX_REGISTRATION_FAILURES) {

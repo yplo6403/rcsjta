@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -63,23 +64,13 @@ public class GroupChatPersistedStorageAccessor {
         mRcsSettings = rcsSettings;
     }
 
-    public GroupChatPersistedStorageAccessor(String chatId, String subject, Direction direction,
-            MessagingLog messagingLog, RcsSettings rcsSettings, long timestamp) {
-        mChatId = chatId;
-        mSubject = subject;
-        mDirection = direction;
-        mMessagingLog = messagingLog;
-        mRcsSettings = rcsSettings;
-        mTimestamp = timestamp;
-    }
-
     private void cacheData() {
         Cursor cursor = null;
         try {
             cursor = mMessagingLog.getGroupChatData(mChatId);
             if (!cursor.moveToNext()) {
-                throw new ServerApiPersistentStorageException(new StringBuilder(
-                        "Data not found for group chat ").append(mChatId).toString());
+                throw new ServerApiPersistentStorageException("Data not found for group chat "
+                        + mChatId);
             }
             mSubject = cursor.getString(cursor.getColumnIndexOrThrow(GroupChatData.KEY_SUBJECT));
             mDirection = Direction.valueOf(cursor.getInt(cursor
@@ -111,8 +102,8 @@ public class GroupChatPersistedStorageAccessor {
     public State getState() {
         State state = mMessagingLog.getGroupChatState(mChatId);
         if (state == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "State not found for group chat ").append(mChatId).toString());
+            throw new ServerApiPersistentStorageException("State not found for group chat "
+                    + mChatId);
         }
         return state;
     }
@@ -120,8 +111,8 @@ public class GroupChatPersistedStorageAccessor {
     public ReasonCode getReasonCode() {
         ReasonCode reasonCode = mMessagingLog.getGroupChatReasonCode(mChatId);
         if (reasonCode == null) {
-            throw new ServerApiPersistentStorageException(new StringBuilder(
-                    "Reason code not found for group chat ").append(mChatId).toString());
+            throw new ServerApiPersistentStorageException("Reason code not found for group chat "
+                    + mChatId);
         }
         return reasonCode;
     }
@@ -227,8 +218,10 @@ public class GroupChatPersistedStorageAccessor {
         mMessagingLog.addGroupChatEvent(mChatId, contact, status, timestamp);
     }
 
-    public void addIncomingGroupChatMessage(ChatMessage msg, boolean imdnDisplayedRequested) {
-        mMessagingLog.addIncomingGroupChatMessage(mChatId, msg, imdnDisplayedRequested);
+    public void addIncomingGroupChatMessage(ChatMessage msg, String sipInstance,
+            boolean imdnDisplayedRequested) {
+        mMessagingLog
+                .addIncomingGroupChatMessage(mChatId, msg, sipInstance, imdnDisplayedRequested);
     }
 
     public void addOutgoingGroupChatMessage(ChatMessage msg, Set<ContactId> recipients,
@@ -258,7 +251,7 @@ public class GroupChatPersistedStorageAccessor {
                 timestampDisplayed);
     }
 
-    public void addGroupChatFailedDeliveryMessage(ChatMessage msg) {
-        mMessagingLog.addGroupChatFailedDeliveryMessage(mChatId, msg);
+    public void addGroupChatFailedDeliveryMessage(ChatMessage msg, String sipInstance) {
+        mMessagingLog.addGroupChatFailedDeliveryMessage(mChatId, msg, sipInstance);
     }
 }

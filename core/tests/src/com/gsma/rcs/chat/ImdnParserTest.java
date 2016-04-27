@@ -88,6 +88,6 @@ public class ImdnParserTest extends AndroidTestCase {
             logger.info("MsgId=" + imdnDoc.getMsgId() + "  status=" + imdnDoc.getStatus());
         }
         assertEquals(imdnDoc.getMsgId(), "34jk324j");
-        assertEquals(imdnDoc.getStatus(), "displayed");
+        assertEquals(imdnDoc.getStatus().toString(), "displayed");
     }
 }

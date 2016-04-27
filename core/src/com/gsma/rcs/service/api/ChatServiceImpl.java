@@ -147,40 +147,44 @@ public class ChatServiceImpl extends IChatService.Stub {
      * Tries to send a displayed delivery report for a one to one chat
      * 
      * @param msgId Message ID
-     * @param remote Remote contact
+     * @param remote the remote contact
+     * @param remoteSipInstance the remote SIP instance
      * @param timestamp Timestamp sent in payload for IMDN datetime
      * @throws NetworkException
      */
-    public void sendOne2OneDisplayedDeliveryReport(String msgId, ContactId remote, long timestamp)
-            throws NetworkException {
-        getOrCreateOneToOneChat(remote).sendDisplayedDeliveryReport(remote, msgId, timestamp);
+    public void sendOne2OneDisplayedDeliveryReport(String msgId, ContactId remote,
+            String remoteSipInstance, long timestamp) throws NetworkException {
+        getOrCreateOneToOneChat(remote).sendDisplayedDeliveryReport(remote, remoteSipInstance,
+                msgId, timestamp);
     }
 
     /**
      * Tries to send a displayed delivery report for a group chat
      * 
      * @param msgId Message ID
-     * @param contact Contact ID
+     * @param contact the remote contact
+     * @param sipInstance the SIP instance of the remote contact
      * @param timestamp Timestamp sent in payload for IMDN datetime
+     * @param chatId the chat ID
      * @throws NetworkException
      */
-    public void sendGroupChatDisplayedDeliveryReport(final String msgId, final ContactId contact,
-            final long timestamp, String chatId) throws NetworkException {
+    public void sendGroupChatDisplayedDeliveryReport(String msgId, ContactId contact,
+            String sipInstance, long timestamp, String chatId) throws NetworkException {
         final GroupChatSession session = mImService.getGroupChatSession(chatId);
         if (session == null || !session.isMediaEstablished()) {
             if (sLogger.isActivated()) {
                 sLogger.info("No suitable session found to send the delivery status for " + msgId
                         + " : use SIP message");
             }
-            mImService.getImdnManager().sendMessageDeliveryStatus(chatId, contact, msgId,
-                    ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp);
+            mImService.getImdnManager().sendMessageDeliveryStatus(chatId, contact, sipInstance,
+                    msgId, ImdnDocument.DeliveryStatus.DISPLAYED, timestamp);
             return;
         }
         if (sLogger.isActivated()) {
             sLogger.info("Using the available session to send displayed for " + msgId);
         }
-        session.sendMsrpMessageDeliveryStatus(contact, msgId,
-                ImdnDocument.DELIVERY_STATUS_DISPLAYED, timestamp);
+        session.sendMsrpMessageDeliveryStatus(contact, sipInstance, msgId,
+                ImdnDocument.DeliveryStatus.DISPLAYED, timestamp);
     }
 
     /**
@@ -190,7 +194,6 @@ public class ChatServiceImpl extends IChatService.Stub {
         // Clear list of sessions
         mOneToOneChatCache.clear();
         mGroupChatCache.clear();
-
         if (sLogger.isActivated()) {
             sLogger.info("Chat service API is closed");
         }
@@ -288,7 +291,7 @@ public class ChatServiceImpl extends IChatService.Stub {
      * @param imdn Imdn document
      */
     public void onOneToOneMessageDeliveryStatusReceived(ContactId contact, ImdnDocument imdn) {
-        String status = imdn.getStatus();
+        ImdnDocument.DeliveryStatus status = imdn.getStatus();
         String msgId = imdn.getMsgId();
         String notificationType = imdn.getNotificationType();
         long timestamp = imdn.getDateTime();
@@ -298,9 +301,9 @@ public class ChatServiceImpl extends IChatService.Stub {
                     + status + "notificationType=" + notificationType);
         }
         String mimeType = mMessagingLog.getMessageMimeType(msgId);
-        if (ImdnDocument.DELIVERY_STATUS_ERROR.equals(status)
-                || ImdnDocument.DELIVERY_STATUS_FAILED.equals(status)
-                || ImdnDocument.DELIVERY_STATUS_FORBIDDEN.equals(status)) {
+        if (ImdnDocument.DeliveryStatus.ERROR == status
+                || ImdnDocument.DeliveryStatus.FAILED == status
+                || ImdnDocument.DeliveryStatus.FORBIDDEN == status) {
             ReasonCode reasonCode = imdnToFailedReasonCode(imdn);
             synchronized (mLock) {
                 if (mMessagingLog.setChatMessageStatusAndReasonCode(msgId, Status.FAILED,
@@ -310,7 +313,7 @@ public class ChatServiceImpl extends IChatService.Stub {
                 }
             }
 
-        } else if (ImdnDocument.DELIVERY_STATUS_DELIVERED.equals(status)) {
+        } else if (ImdnDocument.DeliveryStatus.DELIVERED == status) {
             mImService.getDeliveryExpirationManager().cancelDeliveryTimeoutAlarm(msgId);
             synchronized (mLock) {
                 if (mMessagingLog.setChatMessageStatusDelivered(msgId, timestamp)) {
@@ -319,7 +322,7 @@ public class ChatServiceImpl extends IChatService.Stub {
                 }
             }
 
-        } else if (ImdnDocument.DELIVERY_STATUS_DISPLAYED.equals(status)) {
+        } else if (ImdnDocument.DeliveryStatus.DISPLAYED == status) {
             mImService.getDeliveryExpirationManager().cancelDeliveryTimeoutAlarm(msgId);
             synchronized (mLock) {
                 if (mMessagingLog.setChatMessageStatusDisplayed(msgId, timestamp)) {
@@ -490,7 +493,6 @@ public class ChatServiceImpl extends IChatService.Stub {
                         }
                         setGroupChatStateAndReasonCode(chatId, GroupChat.State.FAILED,
                                 GroupChat.ReasonCode.FAILED_INITIATION);
-
                     }
                 }
             });
@@ -820,9 +822,6 @@ public class ChatServiceImpl extends IChatService.Stub {
     public void removeEventListener3(IGroupChatListener listener) throws RemoteException {
         if (listener == null) {
             throw new ServerApiIllegalArgumentException("listener must not be null!");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info("Remove a group chat event listener");
         }
         try {
             synchronized (mLock) {

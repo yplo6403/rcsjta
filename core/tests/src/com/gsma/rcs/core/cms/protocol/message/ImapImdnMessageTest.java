@@ -66,7 +66,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Integer uid = 12;
         Part part = new Part();
         part.fromPayload(getPayload(true, from, to, direction, messageId,
-                ImdnDocument.DELIVERY_STATUS_DELIVERED));
+                ImdnDocument.DeliveryStatus.DELIVERED));
         ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
         metadata.getFlags().add(Flag.Seen);
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
@@ -101,13 +101,13 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Assert.assertEquals(Direction.INCOMING, imapImdnMessage.getDirection());
         Assert.assertEquals("1443517760826", imapImdnMessage.getImdnId());
         Assert.assertEquals(messageId, imapImdnMessage.getImdnDocument().getMsgId());
-        Assert.assertEquals(ImdnDocument.DELIVERY_STATUS_DELIVERED, imapImdnMessage
+        Assert.assertEquals(ImdnDocument.DeliveryStatus.DELIVERED, imapImdnMessage
                 .getImdnDocument().getStatus());
 
         part.fromPayload(getPayload(true, from, to, direction, messageId,
-                ImdnDocument.DELIVERY_STATUS_DISPLAYED));
+                ImdnDocument.DeliveryStatus.DISPLAYED));
         imapImdnMessage = new ImapImdnMessage(imapMessage);
-        Assert.assertEquals(ImdnDocument.DELIVERY_STATUS_DISPLAYED, imapImdnMessage
+        Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }
 
@@ -122,7 +122,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Integer uid = 12;
         Part part = new Part();
         part.fromPayload(getPayload(false, from, to, direction, messageId,
-                ImdnDocument.DELIVERY_STATUS_DELIVERED));
+                ImdnDocument.DeliveryStatus.DELIVERED));
         ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
         metadata.getFlags().add(Flag.Seen);
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
@@ -157,18 +157,18 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Assert.assertEquals(Direction.INCOMING, imapImdnMessage.getDirection());
         Assert.assertEquals("1443517760826", imapImdnMessage.getImdnId());
         Assert.assertEquals(messageId, imapImdnMessage.getImdnDocument().getMsgId());
-        Assert.assertEquals(ImdnDocument.DELIVERY_STATUS_DELIVERED, imapImdnMessage
+        Assert.assertEquals(ImdnDocument.DeliveryStatus.DELIVERED, imapImdnMessage
                 .getImdnDocument().getStatus());
 
         part.fromPayload(getPayload(false, from, to, direction, messageId,
-                ImdnDocument.DELIVERY_STATUS_DISPLAYED));
+                ImdnDocument.DeliveryStatus.DISPLAYED));
         imapImdnMessage = new ImapImdnMessage(imapMessage);
-        Assert.assertEquals(ImdnDocument.DELIVERY_STATUS_DISPLAYED, imapImdnMessage
+        Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }
 
     public String getPayload(boolean isOneToOne, String headerFrom, String headerTo,
-            String direction, String messageId, String status) {
+            String direction, String messageId, ImdnDocument.DeliveryStatus status) {
         String headerFromCpim = isOneToOne ? ImapImdnMessage.ANONYMOUS : headerFrom;
         return "From: " + headerFrom + Constants.CRLF + "To: " + headerTo + Constants.CRLF
                 + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: 1443517760826"

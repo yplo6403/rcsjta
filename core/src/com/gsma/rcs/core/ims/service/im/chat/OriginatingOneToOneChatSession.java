@@ -57,10 +57,8 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
      */
     private final static String BOUNDARY_TAG = "boundary1";
 
-    /**
-     * The logger
-     */
-    private final Logger mLogger = Logger.getLogger(getClass().getName());
+    private final static Logger sLogger = Logger.getLogger(OriginatingOneToOneChatSession.class
+            .getName());
 
     /**
      * Constructor
@@ -78,7 +76,7 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
             ChatMessage msg, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
             ContactManager contactManager, CmsManager cmsManager) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), msg, rcsSettings,
-                messagingLog, timestamp, contactManager, cmsManager);
+                messagingLog, timestamp, contactManager, cmsManager, null);
         // Create dialog path
         createOriginatingDialogPath();
         // Set contribution ID
@@ -91,16 +89,14 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
      */
     public void run() {
         try {
-            if (mLogger.isActivated()) {
-                mLogger.info("Initiate a new 1-1 chat session as originating");
+            if (sLogger.isActivated()) {
+                sLogger.info("Initiate a new 1-1 chat session as originating");
             }
-
             // Set setup mode
             String localSetup = createSetupOffer();
-            if (mLogger.isActivated()) {
-                mLogger.debug("Local setup attribute is " + localSetup);
+            if (sLogger.isActivated()) {
+                sLogger.debug("Local setup attribute is " + localSetup);
             }
-
             // Set local port
             int localMsrpPort;
             if ("active".equals(localSetup)) {
@@ -108,7 +104,6 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
             } else {
                 localMsrpPort = getMsrpMgr().getLocalMsrpPort();
             }
-
             // Build SDP part
             // String ntpTime =
             // SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
@@ -116,7 +111,6 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
             String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
                     getMsrpMgr().getLocalMsrpPath(), getSdpDirection());
-
             // If there is a first message then builds a multipart content else
             // builds a SDP content
             ChatMessage chatMessage = getFirstMessage();
@@ -136,16 +130,15 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
                             networkContent, msgId, timestampSent);
                 }
                 if (mImdnManager.isRequestOneToOneDeliveryDisplayedReportsEnabled()) {
-                    cpim = ChatUtils.buildCpimMessageWithImdn(from, to, msgId, networkContent,
-                            networkMimeType, timestampSent);
-                } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
-                    cpim = ChatUtils.buildCpimMessageWithoutDisplayedImdn(from, to, msgId,
+                    cpim = ChatUtils.buildOneToOneChatCpimMessageWithImdn(from, to, msgId,
                             networkContent, networkMimeType, timestampSent);
+                } else if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
+                    cpim = ChatUtils.buildOneToOneChatCpimMessageWithoutDisplayedImdn(from, to,
+                            msgId, networkContent, networkMimeType, timestampSent);
                 } else {
-                    cpim = ChatUtils.buildCpimMessage(from, to, networkContent, networkMimeType,
-                            timestampSent);
+                    cpim = ChatUtils.buildOneToOneChatCpimMessage(from, to, networkContent,
+                            networkMimeType, timestampSent);
                 }
-
                 String multipart = Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG + SipUtils.CRLF
                         + "Content-Type: application/sdp" + SipUtils.CRLF + "Content-Length: "
                         + sdp.getBytes(UTF8).length + SipUtils.CRLF + SipUtils.CRLF + sdp
@@ -157,27 +150,25 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
 
                 // Set the local SDP part in the dialog path
                 getDialogPath().setLocalContent(multipart);
+
             } else {
                 // Set the local SDP part in the dialog path
                 getDialogPath().setLocalContent(sdp);
             }
             SipRequest invite = createInvite();
-
             // Set the Authorization header
             getAuthenticationAgent().setAuthorizationHeader(invite);
-
             // Set initial request in the dialog path
             getDialogPath().setInvite(invite);
-
             // Send INVITE request
             sendInvite(invite);
 
         } catch (InvalidArgumentException | ParseException e) {
-            mLogger.error("Unable to set authorization header for chat invite!", e);
+            sLogger.error("Unable to set authorization header for chat invite!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
 
         } catch (FileAccessException | PayloadException e) {
-            mLogger.error("Unable to send 200OK response!", e);
+            sLogger.error("Unable to send 200OK response!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
 
         } catch (NetworkException e) {
@@ -188,7 +179,7 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
              * Intentionally catch runtime exceptions as else it will abruptly end the thread and
              * eventually bring the whole system down, which is not intended.
              */
-            mLogger.error("Failed initiating chat session!", e);
+            sLogger.error("Failed initiating chat session!", e);
             handleError(new ChatError(ChatError.SESSION_INITIATION_FAILED, e));
         }
     }

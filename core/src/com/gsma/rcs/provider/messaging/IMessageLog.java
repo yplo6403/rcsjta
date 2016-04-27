@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -45,16 +45,19 @@ public interface IMessageLog {
      * Add a spam message
      * 
      * @param msg Chat message
+     * @param remoteSipInstance the remote SIP instance (or null if not found)
      */
-    void addOneToOneSpamMessage(ChatMessage msg);
+    void addOneToOneSpamMessage(ChatMessage msg, String remoteSipInstance);
 
     /**
      * Add a chat message
      * 
      * @param msg Chat message
+     * @param remoteSipInstance the remote SIP instance (or null if not found)
      * @param imdnDisplayedRequested IMDN display report requested
      */
-    void addIncomingOneToOneChatMessage(ChatMessage msg, boolean imdnDisplayedRequested);
+    void addIncomingOneToOneChatMessage(ChatMessage msg, String remoteSipInstance,
+            boolean imdnDisplayedRequested);
 
     /**
      * Add a chat message
@@ -72,15 +75,18 @@ public interface IMessageLog {
      * 
      * @param chatId Chat ID
      * @param msg Chat message
+     * @param remoteSipInstance the remote SIP instance (or null if not found)
      * @param imdnDisplayedRequested IMDN display report requested
      */
-    void addIncomingGroupChatMessage(String chatId, ChatMessage msg, boolean imdnDisplayedRequested);
+    void addIncomingGroupChatMessage(String chatId, ChatMessage msg, String remoteSipInstance,
+            boolean imdnDisplayedRequested);
 
     /**
      * Add an outgoing group chat message
      * 
      * @param chatId Chat ID
      * @param msg Chat message
+     * @param recipients the set of recipients
      * @param status Message status
      * @param reasonCode Status reason code
      */
@@ -102,7 +108,7 @@ public interface IMessageLog {
     /**
      * Update chat message read status
      *
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return the number of rows affected.
      */
     int markMessageAsRead(String msgId);
@@ -112,22 +118,12 @@ public interface IMessageLog {
      * Status.DELIVERED and Status.DISPLAYED. These states require timestamps and should be set
      * through setChatMessageStatusDelivered and setChatMessageStatusDisplayed respectively.
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @param status Message status (See restriction above)
      * @param reasonCode Message status reason code
      * @return True if an entry was updated, otherwise false
      */
     boolean setChatMessageStatusAndReasonCode(String msgId, Status status, ReasonCode reasonCode);
-
-    /**
-     * Set chat message timestamp and timestampSent
-     * 
-     * @param msgId Message ID
-     * @param timestamp New local timestamp
-     * @param timestampSent New timestamp sent in payload
-     * @return True if an entry was updated, otherwise false
-     */
-    boolean setChatMessageTimestamp(String msgId, long timestamp, long timestampSent);
 
     /**
      * Check if the message is already persisted in db
@@ -148,7 +144,7 @@ public interface IMessageLog {
     /**
      * Returns the timestamp_sent of a message
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return timestamp_sent
      */
     Long getMessageSentTimestamp(String msgId);
@@ -156,7 +152,7 @@ public interface IMessageLog {
     /**
      * Returns the timestamp of a message
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return timestamp
      */
     Long getMessageTimestamp(String msgId);
@@ -164,7 +160,7 @@ public interface IMessageLog {
     /**
      * Get message state from its unique ID
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return State
      */
     Status getMessageStatus(String msgId);
@@ -172,7 +168,7 @@ public interface IMessageLog {
     /**
      * Get message reason code from its unique ID
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return reason code of the state
      */
     ReasonCode getMessageReasonCode(String msgId);
@@ -180,7 +176,7 @@ public interface IMessageLog {
     /**
      * Get message MIME-type from its unique ID
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return MIME-type
      */
     String getMessageMimeType(String msgId);
@@ -188,7 +184,7 @@ public interface IMessageLog {
     /**
      * Get message data from its unique ID
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return Cursor or null if no data exists
      */
     Cursor getChatMessageData(String msgId);
@@ -196,18 +192,18 @@ public interface IMessageLog {
     /**
      * Get message contact ID
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return contact ID
      */
     ContactId getMessageContact(String msgId);
 
     /**
-     * Get chat message content
-     * 
-     * @param msgId Message ID
-     * @return Content of chat message
+     * Get message SIP instance
+     *
+     * @param msgId message ID
+     * @return SIP instance or null
      */
-    String getChatMessageContent(String msgId);
+    String getMessageSipInstance(String msgId);
 
     /**
      * Get all one-to-one chat messages for specific contact that are in queued state in ascending
@@ -217,13 +213,6 @@ public interface IMessageLog {
      * @return Cursor
      */
     Cursor getQueuedOneToOneChatMessages(ContactId contact);
-
-    /**
-     * Get all one-to-one chat messages that are in queued state in ascending order of timestamp
-     * 
-     * @return Cursor
-     */
-    Cursor getAllQueuedOneToOneChatMessages();
 
     /**
      * Gets group chat events per contacts for chat ID
@@ -244,7 +233,7 @@ public interface IMessageLog {
     /**
      * Set chat message delivered
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @param timestampDelivered Delivered time
      * @return True if an entry was updated, otherwise false
      */
@@ -253,7 +242,7 @@ public interface IMessageLog {
     /**
      * Set chat message displayed
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @param timestampDisplayed Displayed time
      * @return True if an entry was updated, otherwise false
      */
@@ -269,7 +258,7 @@ public interface IMessageLog {
     /**
      * Set message delivery expired for specified message id.
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return True if an entry was updated, otherwise false
      */
     boolean setChatMessageDeliveryExpired(String msgId);
@@ -287,7 +276,7 @@ public interface IMessageLog {
      * successful, delivery expiration has been cleared (see clearMessageDeliveryExpiration) or that
      * this particular chat message is not eligible for delivery expiration in the first place.
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return boolean
      */
     Boolean isChatMessageExpiredDelivery(String msgId);
@@ -295,7 +284,7 @@ public interface IMessageLog {
     /**
      * Get chat id for chat message
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @return ChatId
      */
     String getMessageChatId(String msgId);
@@ -303,7 +292,7 @@ public interface IMessageLog {
     /**
      * Set chat message status and sent timestamp for outgoing messages
      * 
-     * @param msgId Message ID
+     * @param msgId message ID
      * @param status Message status
      * @param reasonCode Message status reason code
      * @param timestamp New local timestamp
@@ -317,21 +306,23 @@ public interface IMessageLog {
      * Add a one to one chat message for which delivery report has failed
      * 
      * @param msg Chat message
+     * @param remoteSipInstance the remote SIP instance (or null if not found)
      */
-    void addOneToOneFailedDeliveryMessage(ChatMessage msg);
+    void addOneToOneFailedDeliveryMessage(ChatMessage msg, String remoteSipInstance);
 
     /**
      * Add a group chat message for which delivery report has failed
      * 
-     * @param chatId Chat ID
+     * @param chatId the chat ID
      * @param msg Chat message
+     * @param sipInstance the SIP instance of the sender
      */
-    void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg);
+    void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg, String sipInstance);
 
     /**
      * Set message delivery displayed for specified message id.
      *
-     * @param msgId Message ID
+     * @param msgId message ID
      * @param timestampDisplayed displayed timestamp
      * @return True if an entry was updated, otherwise false
      */

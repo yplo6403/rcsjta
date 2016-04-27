@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -143,13 +143,14 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public void addOneToOneSpamMessage(ChatMessage msg) {
-        mMessageLog.addOneToOneSpamMessage(msg);
+    public void addOneToOneSpamMessage(ChatMessage msg, String remoteSipInstance) {
+        mMessageLog.addOneToOneSpamMessage(msg, remoteSipInstance);
     }
 
     @Override
-    public void addIncomingOneToOneChatMessage(ChatMessage msg, boolean imdnDisplayedRequested) {
-        mMessageLog.addIncomingOneToOneChatMessage(msg, imdnDisplayedRequested);
+    public void addIncomingOneToOneChatMessage(ChatMessage msg, String remoteSipInstance,
+            boolean imdnDisplayedRequested) {
+        mMessageLog.addIncomingOneToOneChatMessage(msg, remoteSipInstance, imdnDisplayedRequested);
     }
 
     @Override
@@ -160,8 +161,9 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
 
     @Override
     public void addIncomingGroupChatMessage(String chatId, ChatMessage msg,
-            boolean imdnDisplayedRequested) {
-        mMessageLog.addIncomingGroupChatMessage(chatId, msg, imdnDisplayedRequested);
+            String remoteSipInstance, boolean imdnDisplayedRequested) {
+        mMessageLog.addIncomingGroupChatMessage(chatId, msg, remoteSipInstance,
+                imdnDisplayedRequested);
     }
 
     @Override
@@ -181,6 +183,7 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
         return mMessageLog.markMessageAsRead(msgId);
     }
 
+    @Override
     public boolean setChatMessageStatusAndReasonCode(String msgId, Status status,
             Content.ReasonCode reasonCode) {
         return mMessageLog.setChatMessageStatusAndReasonCode(msgId, status, reasonCode);
@@ -365,11 +368,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public DownloadState getFileTransferDownloadState(String fileTransferId) {
-        return mFileTransferLog.getFileTransferDownloadState(fileTransferId);
-    }
-
-    @Override
     public FileTransfer.ReasonCode getFileTransferReasonCode(String fileTransferId) {
         return mFileTransferLog.getFileTransferReasonCode(fileTransferId);
     }
@@ -461,8 +459,8 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public String getChatMessageContent(String msgId) {
-        return mMessageLog.getChatMessageContent(msgId);
+    public String getMessageSipInstance(String msgId) {
+        return mMessageLog.getMessageSipInstance(msgId);
     }
 
     @Override
@@ -476,11 +474,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public Cursor getAllQueuedOneToOneChatMessages() {
-        return mMessageLog.getAllQueuedOneToOneChatMessages();
-    }
-
-    @Override
     public Cursor getQueuedAndUploadedButNotTransferredFileTransfers() {
         return mFileTransferLog.getQueuedAndUploadedButNotTransferredFileTransfers();
     }
@@ -488,10 +481,6 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public Cursor getInterruptedFileTransfers() {
         return mFileTransferLog.getInterruptedFileTransfers();
-    }
-
-    public boolean setChatMessageTimestamp(String msgId, long timestamp, long timestampSent) {
-        return mMessageLog.setChatMessageTimestamp(msgId, timestamp, timestampSent);
     }
 
     @Override
@@ -637,13 +626,13 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public void addOneToOneFailedDeliveryMessage(ChatMessage msg) {
-        mMessageLog.addOneToOneFailedDeliveryMessage(msg);
+    public void addOneToOneFailedDeliveryMessage(ChatMessage msg, String remoteSipInstance) {
+        mMessageLog.addOneToOneFailedDeliveryMessage(msg, remoteSipInstance);
     }
 
     @Override
-    public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg) {
-        mMessageLog.addGroupChatFailedDeliveryMessage(chatId, msg);
+    public void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg, String sipInstance) {
+        mMessageLog.addGroupChatFailedDeliveryMessage(chatId, msg, sipInstance);
     }
 
     @Override
@@ -695,5 +684,10 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     @Override
     public Direction getFileTransferDirection(String fileTransferId) {
         return mFileTransferLog.getFileTransferDirection(fileTransferId);
+    }
+
+    @Override
+    public String getFileTransferSipInstance(String fileTransferId) {
+        return mFileTransferLog.getFileTransferSipInstance(fileTransferId);
     }
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.chat.ChatLog.Message.Content.ReasonCode;
@@ -98,7 +99,7 @@ public class MessageData {
     /**
      * This is set on the receiver side when the message has been displayed.
      * 
-     * @see com.gsma.services.rcs.RcsCommon.ReadStatus for the list of status.
+     * @see RcsService.ReadStatus for the list of status.
      */
     /* package private */static final String KEY_READ_STATUS = ChatLog.Message.READ_STATUS;
 
@@ -132,4 +133,10 @@ public class MessageData {
      * delivery expiration.
      */
     /* package private */static final String KEY_DELIVERY_EXPIRATION = "delivery_expiration";
+
+    /**
+     * The "sip.instance" tag which identifies the user agent instance of the remote contact.<br>
+     * Used in a multi devices context to identify the remote contact. May be null.
+     */
+    /* package private */static final String KEY_SIP_INSTANCE = "sip_instance";
 }

@@ -130,7 +130,6 @@ import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import javax2.sip.header.ContactHeader;
 import javax2.sip.message.Response;
 
 /**
@@ -966,7 +965,6 @@ public class InstantMessagingService extends ImsService {
                                 return;
                         }
                     }
-
                     String referredId = ChatUtils.getReferredIdentityAsContactUri(invite);
                     ContactId remote = ChatUtils.getReferredIdentityAsContactId(invite);
                     String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
@@ -994,39 +992,30 @@ public class InstantMessagingService extends ImsService {
                             RcsStatus.RCS_CAPABLE, RegistrationState.ONLINE, displayName);
 
                     ChatMessage firstMsg = ChatUtils.getFirstMessage(invite, timestamp);
+                    String remoteInstanceId = SipUtils.getRemoteInstanceId(invite);
                     if (mContactManager.isBlockedForContact(remote)) {
                         if (logActivated) {
                             sLogger.debug("Contact " + remote
                                     + " is blocked: automatically reject the chat invitation");
                         }
-
                         if (firstMsg != null
                                 && !mMessagingLog.isMessagePersisted(firstMsg.getMessageId())) {
-                            mMessagingLog.addOneToOneSpamMessage(firstMsg);
-                            mCmsManager.getChatEventHandler().onMessageReceived(firstMsg, false,
-                                    false);
+                            mMessagingLog.addOneToOneSpamMessage(firstMsg, remoteInstanceId);
+                            mCmsManager.getChatEventHandler().onMessageReceived(firstMsg,
+                                    remoteInstanceId, false, false);
                         }
-
                         if (mImdnManager.isDeliveryDeliveredReportsEnabled()) {
                             String msgId = ChatUtils.getMessageId(invite);
                             if (msgId != null) {
-                                String remoteInstanceId = null;
-                                ContactHeader inviteContactHeader = (ContactHeader) invite
-                                        .getHeader(ContactHeader.NAME);
-                                if (inviteContactHeader != null) {
-                                    remoteInstanceId = inviteContactHeader
-                                            .getParameter(SipUtils.SIP_INSTANCE_PARAM);
-                                }
                                 mImdnManager.sendMessageDeliveryStatusImmediately(
                                         remote.toString(), remote, msgId,
-                                        ImdnDocument.DELIVERY_STATUS_DELIVERED, remoteInstanceId,
+                                        ImdnDocument.DeliveryStatus.DELIVERED, remoteInstanceId,
                                         timestamp);
                             }
                         }
                         sendErrorResponse(invite, Response.BUSY_HERE);
                         return;
                     }
-
                     /*
                      * Save the message if it was not already persisted in the DB. We don't have to
                      * reject the session if the message was a duplicate one as the session
@@ -1039,11 +1028,11 @@ public class InstantMessagingService extends ImsService {
                         boolean imdnDisplayRequested = mImdnManager
                                 .isSendOneToOneDeliveryDisplayedReportsEnabled()
                                 && ChatUtils.isImdnDisplayedRequested(invite);
-                        mMessagingLog
-                                .addIncomingOneToOneChatMessage(firstMsg, imdnDisplayRequested);
-                        mCmsManager.getChatEventHandler().onMessageReceived(firstMsg, false, false);
+                        mMessagingLog.addIncomingOneToOneChatMessage(firstMsg, remoteInstanceId,
+                                imdnDisplayRequested);
+                        mCmsManager.getChatEventHandler().onMessageReceived(firstMsg,
+                                remoteInstanceId, false, false);
                     }
-
                     if (!isChatSessionAvailable()) {
                         if (logActivated) {
                             sLogger.debug("The max number of chat sessions is achieved: reject the invitation from "
@@ -1052,10 +1041,9 @@ public class InstantMessagingService extends ImsService {
                         sendErrorResponse(invite, Response.BUSY_HERE);
                         return;
                     }
-
                     TerminatingOneToOneChatSession session = new TerminatingOneToOneChatSession(
-                            imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager, mCmsManager);
+                            imService, invite, remote, remoteInstanceId, mRcsSettings,
+                            mMessagingLog, timestamp, mContactManager, mCmsManager);
                     mChatService.receiveOneToOneChatInvitation(session);
                     session.startSession();
 
@@ -1397,7 +1385,7 @@ public class InstantMessagingService extends ImsService {
                         sLogger.debug("Receive S&F push messages invitation");
                     }
                     ChatMessage firstMsg = ChatUtils.getFirstMessage(invite, timestamp);
-
+                    String remoteInstanceId = SipUtils.getRemoteInstanceId(invite);
                     if (mContactManager.isBlockedForContact(remote)) {
                         if (logActivated) {
                             sLogger.debug("Contact " + remote
@@ -1418,11 +1406,11 @@ public class InstantMessagingService extends ImsService {
                         boolean imdnDisplayRequested = mImdnManager
                                 .isSendOneToOneDeliveryDisplayedReportsEnabled()
                                 && ChatUtils.isImdnDisplayedRequested(invite);
-                        mMessagingLog
-                                .addIncomingOneToOneChatMessage(firstMsg, imdnDisplayRequested);
+                        mMessagingLog.addIncomingOneToOneChatMessage(firstMsg, remoteInstanceId,
+                                imdnDisplayRequested);
                     }
                     getStoreAndForwardManager().receiveStoreAndForwardMessageInvitation(invite,
-                            remote, timestamp);
+                            remote, remoteInstanceId, timestamp);
 
                 } catch (NetworkException e) {
                     if (sLogger.isActivated()) {
@@ -1472,8 +1460,9 @@ public class InstantMessagingService extends ImsService {
                         sendErrorResponse(invite, Response.BUSY_HERE);
                         return;
                     }
+                    String remoteSipInstance = SipUtils.getRemoteInstanceId(invite);
                     getStoreAndForwardManager().receiveStoreAndForwardNotificationInvitation(
-                            invite, remote, timestamp);
+                            invite, remote, remoteSipInstance, timestamp);
 
                 } catch (NetworkException e) {
                     if (sLogger.isActivated()) {
@@ -1511,7 +1500,7 @@ public class InstantMessagingService extends ImsService {
                     String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
                     if (remote == null) {
                         if (logActivated) {
-                            sLogger.error("Discard OneToOne HttpFileTranferInvitation: invalid remote ID '"
+                            sLogger.error("Discard OneToOne HttpFileTransferInvitation: invalid remote ID '"
                                     + referredId + "'");
                         }
                         sendErrorResponse(invite, Response.DECLINE);
@@ -1589,10 +1578,10 @@ public class InstantMessagingService extends ImsService {
                                 timestampSent);
                         return;
                     }
-
+                    String remoteSipInstance = SipUtils.getRemoteInstanceId(invite);
                     TerminatingOneToOneChatSession oneToOneChatSession = new TerminatingOneToOneChatSession(
-                            imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager, mCmsManager);
+                            imService, invite, remote, remoteSipInstance, mRcsSettings,
+                            mMessagingLog, timestamp, mContactManager, mCmsManager);
                     receiveOneOneChatSessionInitiation(oneToOneChatSession);
                     oneToOneChatSession.startSession();
 
@@ -1657,12 +1646,12 @@ public class InstantMessagingService extends ImsService {
                         }
                         return;
                     }
-
                     DownloadFromInviteFileSharingSession fileSharingSession = new DownloadFromInviteFileSharingSession(
                             imService, oneToOneChatSession, ftinfo, fileTransferId,
                             oneToOneChatSession.getRemoteContact(),
                             oneToOneChatSession.getRemoteDisplayName(), mRcsSettings,
-                            mMessagingLog, timestamp, timestampSent, mContactManager);
+                            mMessagingLog, timestamp, timestampSent, mContactManager,
+                            remoteSipInstance);
                     if (fileSharingSession.getFileicon() != null) {
                         try {
                             fileSharingSession.downloadFileIcon();
@@ -1788,10 +1777,10 @@ public class InstantMessagingService extends ImsService {
                                 timestampSent);
                         return;
                     }
-
+                    String sipInstance = SipUtils.getRemoteInstanceId(invite);
                     TerminatingStoreAndForwardOneToOneChatMessageSession oneToOneChatSession = new TerminatingStoreAndForwardOneToOneChatMessageSession(
-                            imService, invite, remote, mRcsSettings, mMessagingLog, timestamp,
-                            mContactManager, mCmsManager);
+                            imService, invite, remote, sipInstance, mRcsSettings, mMessagingLog,
+                            timestamp, mContactManager, mCmsManager);
                     receiveOneOneChatSessionInitiation(oneToOneChatSession);
                     oneToOneChatSession.startSession();
 
@@ -1802,7 +1791,6 @@ public class InstantMessagingService extends ImsService {
                         }
                         return;
                     }
-
                     if (isFileSizeExceeded(ftinfo.getSize())) {
                         if (logActivated) {
                             sLogger.debug("File is too big, reject file transfer invitation from "
@@ -1817,12 +1805,11 @@ public class InstantMessagingService extends ImsService {
                                 FileSharingError.MEDIA_SIZE_TOO_BIG));
                         return;
                     }
-
                     DownloadFromInviteFileSharingSession filetransferSession = new DownloadFromInviteFileSharingSession(
                             imService, oneToOneChatSession, ftinfo, fileTransferId,
                             oneToOneChatSession.getRemoteContact(),
                             oneToOneChatSession.getRemoteDisplayName(), mRcsSettings,
-                            mMessagingLog, timestamp, timestampSent, mContactManager);
+                            mMessagingLog, timestamp, timestampSent, mContactManager, sipInstance);
                     if (filetransferSession.getFileicon() != null) {
                         try {
                             filetransferSession.downloadFileIcon();

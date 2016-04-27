@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -40,15 +41,20 @@ public class DelayedDisplayNotificationDispatcher implements Runnable {
 
     private static final String[] PROJECTION_CHAT_MESSAGE = new String[] {
             MessageData.KEY_MESSAGE_ID, MessageData.KEY_CHAT_ID, MessageData.KEY_CONTACT,
-            MessageData.KEY_TIMESTAMP_DISPLAYED
+            MessageData.KEY_TIMESTAMP_DISPLAYED, MessageData.KEY_SIP_INSTANCE
     };
 
-    private final static String SELECTION_READ_CHAT_MESSAGES_WITH_DISPLAY_REPORT_REQUESTED = new StringBuilder(
-            MessageData.KEY_MIME_TYPE).append(" IN('").append(MimeType.TEXT_MESSAGE).append("','")
-            .append(MimeType.GEOLOC_MESSAGE).append("') AND ").append(MessageData.KEY_READ_STATUS)
-            .append("=").append(ReadStatus.READ.toInt()).append(" AND ")
-            .append(MessageData.KEY_STATUS).append("=")
-            .append(Status.DISPLAY_REPORT_REQUESTED.toInt()).toString();
+    private final static String SELECTION_READ_CHAT_MESSAGES_WITH_DISPLAY_REPORT_REQUESTED = MessageData.KEY_MIME_TYPE
+            + " IN('"
+            + MimeType.TEXT_MESSAGE
+            + "','"
+            + MimeType.GEOLOC_MESSAGE
+            + "') AND "
+            + MessageData.KEY_READ_STATUS
+            + "="
+            + ReadStatus.READ.toInt()
+            + " AND "
+            + MessageData.KEY_STATUS + "=" + Status.DISPLAY_REPORT_REQUESTED.toInt();
 
     private static final String ORDER_BY_TIMESTAMP_ASC = MessageData.KEY_TIMESTAMP.concat(" ASC");
 
@@ -75,19 +81,21 @@ public class DelayedDisplayNotificationDispatcher implements Runnable {
             int columnIdxTimestampDisplayed = cursor
                     .getColumnIndexOrThrow(MessageData.KEY_TIMESTAMP_DISPLAYED);
             int columnIdxChatId = cursor.getColumnIndexOrThrow(MessageData.KEY_CHAT_ID);
+            int columnIdxSipInstance = cursor.getColumnIndexOrThrow(MessageData.KEY_SIP_INSTANCE);
             while (cursor.moveToNext()) {
                 String contactNumber = cursor.getString(columnIdxContact);
                 String chatId = cursor.getString(columnIdxChatId);
                 String msgId = cursor.getString(columIdxMessageId);
                 long timestampDisplayed = cursor.getLong(columnIdxTimestampDisplayed);
-
                 /* Do no check validity for trusted data */
                 ContactId contact = ContactUtil.createContactIdFromTrustedData(contactNumber);
-
+                String sipInstance = cursor.getString(columnIdxSipInstance);
                 if (chatId.equals(contactNumber)) {
-                    mChatApi.sendOne2OneDisplayedDeliveryReport(msgId, contact, timestampDisplayed);
+                    mChatApi.sendOne2OneDisplayedDeliveryReport(msgId, contact, sipInstance,
+                            timestampDisplayed);
                 } else {
-                    mChatApi.sendGroupChatDisplayedDeliveryReport(msgId, contact,
+
+                    mChatApi.sendGroupChatDisplayedDeliveryReport(msgId, contact, sipInstance,
                             timestampDisplayed, chatId);
                 }
             }

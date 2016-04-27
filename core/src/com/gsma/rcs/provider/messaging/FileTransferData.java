@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,13 +22,13 @@
 
 package com.gsma.rcs.provider.messaging;
 
+import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 
 import android.net.Uri;
 import android.util.SparseArray;
-
-import com.gsma.services.rcs.RcsService.Direction;
 
 /**
  * File transfer data constants
@@ -43,7 +43,8 @@ public class FileTransferData {
     public enum DownloadState {
 
         /**
-         * File transfer has been transferred on the content server and is ready for being downloaded fom secondary devices
+         * File transfer has been transferred on the content server and is ready for being
+         * downloaded fom secondary devices
          */
         QUEUED(1),
 
@@ -95,13 +96,13 @@ public class FileTransferData {
          * @param value the integer value
          * @return State instance
          */
-        public final static DownloadState valueOf(int value) {
+        public static DownloadState valueOf(int value) {
             DownloadState entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(DownloadState.class.getName()).append("").append(value).append("!").toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + DownloadState.class.getName() + "" + value + "!");
         }
     }
 
@@ -242,8 +243,8 @@ public class FileTransferData {
     /* package private */static final String KEY_DOWNLOAD_URI = "download_uri";
 
     /**
-     * The remote SIP instance ID to fill the accept contact header of the SIP delivery
-     * notification (hidden field from client applications).<br>
+     * The remote SIP instance ID to fill the accept contact header of the SIP delivery notification
+     * (hidden field from client applications).<br>
      * Only application for incoming HTTP file transfers.
      */
     /* package private */static final String KEY_REMOTE_SIP_ID = "remote_sip_id";

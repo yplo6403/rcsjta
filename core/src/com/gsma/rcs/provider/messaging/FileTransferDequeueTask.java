@@ -205,16 +205,13 @@ public class FileTransferDequeueTask extends DequeueTask {
                 } catch (SessionUnavailableException | SessionNotEstablishedException
                         | FileAccessException | NetworkException e) {
                     if (logActivated) {
-                        mLogger.debug(new StringBuilder(
-                                "Failed to dequeue file transfer with fileTransferId '").append(id)
-                                .append("' on chat '").append(chatId).append("' due to: ")
-                                .append(e.getMessage()).toString());
+                        mLogger.debug("Failed to dequeue file transfer with fileTransferId '" + id
+                                + "' on chat '" + chatId + "' due to: " + e.getMessage());
                     }
 
                 } catch (PayloadException e) {
-                    mLogger.error(new StringBuilder(
-                            "Failed to dequeue file transfer with fileTransferId '").append(id)
-                            .append("' on chat '").append(chatId).toString(), e);
+                    mLogger.error("Failed to dequeue file transfer with fileTransferId '" + id
+                            + "' on chat '" + chatId, e);
                     setGroupFileTransferAsFailedDequeue(id, groupFile, contact, chatId);
 
                 } catch (RuntimeException e) {
@@ -224,9 +221,8 @@ public class FileTransferDequeueTask extends DequeueTask {
                      * so the bug can then be properly tracked down and fixed. We also mark the
                      * respective entry that failed to dequeue as FAILED.
                      */
-                    mLogger.error(new StringBuilder(
-                            "Failed to dequeue file transfer with fileTransferId '").append(id)
-                            .append("' and chatId '").append(chatId).append("'!").toString(), e);
+                    mLogger.error("Failed to dequeue file transfer with fileTransferId '" + id
+                            + "' and chatId '" + chatId + "'!", e);
                     setGroupFileTransferAsFailedDequeue(id, groupFile, contact, chatId);
                 }
             }
@@ -238,11 +234,8 @@ public class FileTransferDequeueTask extends DequeueTask {
              * can then be properly tracked down and fixed. We also mark the respective entry that
              * failed to dequeue as FAILED.
              */
-            mLogger.error(
-                    new StringBuilder(
-                            "Exception occurred while dequeueing file transfer with transferId '")
-                            .append(id).append("' and chatId '").append(chatId).append("'!")
-                            .toString(), e);
+            mLogger.error("Exception occurred while dequeueing file transfer with transferId '"
+                    + id + "' and chatId '" + chatId + "'!", e);
             if (id == null) {
                 return;
             }

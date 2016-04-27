@@ -69,8 +69,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     }
 
     @Override
-    public void onMessageReceived(ChatMessage msg, boolean imdnDisplayedRequested,
-            boolean deliverySuccess) {
+    public void onMessageReceived(ChatMessage msg, String remoteSipInstance,
+            boolean imdnDisplayedRequested, boolean deliverySuccess) {
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
@@ -128,7 +128,7 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onDeliveryReportSendViaMsrpFailure(String msgId, ContactId contact,
-            TypeMsrpChunk chunktype) {
+            String remoteSipInstance, TypeMsrpChunk chunktype) {
     }
 
     @Override
