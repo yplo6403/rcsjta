@@ -24,7 +24,6 @@ import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimBody;
 import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
-import com.gsma.rcs.utils.logger.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MultipartCpimBody extends CpimBody {
-
-    private static final Logger sLogger = Logger.getLogger(MultipartCpimBody.class.getSimpleName());
 
     private static final String C_BOUNDARY = "boundary_";
 
@@ -53,11 +50,8 @@ public class MultipartCpimBody extends CpimBody {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
                 mHeaders.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
-
             if (!checkMultipart(getContentType())) {
-                StringBuilder message = new StringBuilder("This content type is not supported")
-                        .append(Constants.CRLF).append(body);
-                new RuntimeException(message.toString());
+                throw new RuntimeException("This content type is not supported" + Constants.CRLF + body);
             }
             // remove first boundary and last boundary separator
             int length = Constants.BOUDARY_SEP.length() + mBoundary.length();
@@ -69,25 +63,20 @@ public class MultipartCpimBody extends CpimBody {
 
     @Override
     protected String toPayload() {
-
         StringBuilder sb = new StringBuilder();
         if (mBoundary == null) {
-            mBoundary = new StringBuilder(C_BOUNDARY).append(NtpTrustedTime.currentTimeMillis())
-                    .toString();
+            mBoundary = C_BOUNDARY + NtpTrustedTime.currentTimeMillis();
         }
-
         // content type : multipart/related
         sb.append(Constants.HEADER_CONTENT_TYPE).append(Constants.HEADER_SEP)
                 .append(Constants.CONTENT_TYPE_MULTIPART_RELATED).append(";")
                 .append(Constants.BOUNDARY).append("\"").append(mBoundary).append("\";");
-
         sb.append(Constants.CRLFCRLF);
         for (Part part : mParts) {
             sb.append(Constants.BOUDARY_SEP).append(mBoundary).append(Constants.CRLF);
             sb.append(part);
             sb.append(Constants.CRLF);
         }
-
         sb.append(Constants.BOUDARY_SEP).append(mBoundary).append(Constants.BOUDARY_SEP);
         return sb.toString();
     }
@@ -98,10 +87,9 @@ public class MultipartCpimBody extends CpimBody {
 
     private boolean checkMultipart(String contentType) {
         boolean isMultipart = false;
-        if (contentType.startsWith(Constants.CONTENT_TYPE_MULTIPART_RELATED)) {
+        if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_MULTIPART_RELATED)) {
             isMultipart = true;
         }
-
         String pattern = "^.*boundary=\"(.*)\".*$";
         Matcher matcher = Pattern.compile(pattern).matcher(contentType);
         if (matcher.matches()) {
@@ -111,8 +99,7 @@ public class MultipartCpimBody extends CpimBody {
     }
 
     private void checkParts(String content) {
-        String delimiter = new StringBuilder(Constants.CRLF).append(Constants.BOUDARY_SEP)
-                .append(mBoundary).toString();
+        String delimiter = Constants.CRLF + Constants.BOUDARY_SEP + mBoundary;
         for (String mimePart : content.split(delimiter)) {
             if (mimePart.startsWith(Constants.CRLF)) {
                 mimePart = mimePart.substring(Constants.CRLF.length());
@@ -152,12 +139,7 @@ public class MultipartCpimBody extends CpimBody {
         }
 
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(mHeaderPart);
-            sb.append(Constants.CRLF);
-            sb.append(mContent);
-            sb.append(Constants.CRLF);
-            return sb.toString();
+            return String.valueOf(mHeaderPart) + Constants.CRLF + mContent + Constants.CRLF;
         }
 
         private void fromPayload(String partContent) {

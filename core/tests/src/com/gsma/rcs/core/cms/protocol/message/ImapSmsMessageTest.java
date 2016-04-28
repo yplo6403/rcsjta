@@ -56,7 +56,7 @@ public class ImapSmsMessageTest extends AndroidTestCase {
                 + Constants.CRLF + "Contribution-ID: 1443517760826" + Constants.CRLF
                 + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
                 + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
-                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: Message/CPIM"
+                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: message/cpim"
                 + Constants.CRLF + Constants.CRLF + "From: +33642575779" + Constants.CRLF
                 + "To: +33640332859" + Constants.CRLF + "NS: imdn <urn:ietf:params:imdn>"
                 + Constants.CRLF + "NS: rcs <http://www.gsma.com>" + Constants.CRLF
@@ -96,7 +96,7 @@ public class ImapSmsMessageTest extends AndroidTestCase {
         Assert.assertEquals("1", imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
         Assert.assertEquals("pager-message",
                 imapSmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
-        Assert.assertEquals("Message/CPIM", imapSmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
+        Assert.assertEquals("message/cpim", imapSmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
         Assert.assertEquals("+33642575779",
                 imapSmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));

@@ -105,7 +105,7 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
                 + "Conversation-ID: 1443517760826" + Constants.CRLF
                 + "Contribution-ID: 1443517760826" + Constants.CRLF
                 + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: sent"
-                + Constants.CRLF + "Content-Type: Application/group-state-object+xml"
+                + Constants.CRLF + "Content-Type: application/group-state-object+xml"
                 + Constants.CRLF + Constants.CRLF + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 + Constants.CRLF + "<groupstate" + Constants.CRLF
                 + "timestamp=\"2012-06-13T16:39:57-05:00\"" + Constants.CRLF

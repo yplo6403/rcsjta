@@ -19,7 +19,6 @@
 package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
-
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.Part;
@@ -33,22 +32,17 @@ import java.util.List;
 public class FetchHeaderCmdHandlerTest extends AndroidTestCase {
 
     public void test() {
-
         String expectedCmd = String.format(FetchHeaderCmdHandler.sCommand, "1", "8");
-
         String line1 = "* 1 FETCH (UID 1 FLAGS (\\Seen) MODSEQ (6) BODY[HEADER] {297}";
         String line2 = "* 7 FETCH (UID 7 FLAGS (\\Deleted) MODSEQ (5) BODY[HEADER] {297}";
-        String payload = new StringBuilder().append("From: +33642575779").append(Constants.CRLF)
-                .append("To: tel:+33640332859").append(Constants.CRLF)
-                .append("Date: mar., 29 09 2015 11:09:20.826 +0200").append(Constants.CRLF)
-                .append("Conversation-ID: 1443517760826").append(Constants.CRLF)
-                .append("Contribution-ID: 1443517760826").append(Constants.CRLF)
-                .append("IMDN-Message-ID: 1443517760826").append(Constants.CRLF)
-                .append("Message-Direction: received").append(Constants.CRLF)
-                .append("Message-Correlator: 1").append(Constants.CRLF)
-                .append("Message-Context: \"pager-message\"").append(Constants.CRLF)
-                .append("Content-Type: Message/CPIM").append(Constants.CRLF).append(Constants.CRLF)
-                .append(")").toString();
+        String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
+                + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
+                + "Conversation-ID: 1443517760826" + Constants.CRLF
+                + "Contribution-ID: 1443517760826" + Constants.CRLF
+                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
+                + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
+                + "Message-Context: \"pager-message\"" + Constants.CRLF
+                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF + ")";
 
         FetchHeaderCmdHandler handler = new FetchHeaderCmdHandler();
         String cmd = handler.buildCommand("1", "8");

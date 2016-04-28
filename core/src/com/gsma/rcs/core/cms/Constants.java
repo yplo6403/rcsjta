@@ -23,8 +23,11 @@ public class Constants {
 
     public static final String CMS_ROOT_DIRECTORY = "Default";
     public static final String CMS_DIRECTORY_SEPARATOR = "/";
-    public static final String CMD_LIST_STATUS = "LIST \"\" \""+ CMS_ROOT_DIRECTORY + CMS_DIRECTORY_SEPARATOR + "*\" RETURN (STATUS (MESSAGES UIDNEXT UIDVALIDITY HIGHESTMODSEQ))";
-    public static final String CMD_LIST = "LIST \"\" \""+ CMS_ROOT_DIRECTORY + CMS_DIRECTORY_SEPARATOR + "*\"";
+    public static final String CMD_LIST_STATUS = "LIST \"\" \"" + CMS_ROOT_DIRECTORY
+            + CMS_DIRECTORY_SEPARATOR
+            + "*\" RETURN (STATUS (MESSAGES UIDNEXT UIDVALIDITY HIGHESTMODSEQ))";
+    public static final String CMD_LIST = "LIST \"\" \"" + CMS_ROOT_DIRECTORY
+            + CMS_DIRECTORY_SEPARATOR + "*\"";
     public static final String CMD_SELECT_CONDSTORE = "SELECT %1$s (CONDSTORE)";
     public static final String CMD_FETCH_FLAGS = "UID FETCH 1:%1$s (UID FLAGS) (CHANGEDSINCE %2$s)";
     public static final String CMD_UID_SEARCH = "UID SEARCH %1$s";
@@ -70,10 +73,14 @@ public class Constants {
     public static final String BOUNDARY = "boundary=";
     public static final String BOUDARY_SEP = "--";
 
-    public static final String MESSAGE_CPIM = "Message/CPIM";
-    public static final String APPLICATION_CPM_SESSION = "Application/X-CPM-Session";
-    public static final String APPLICATION_GROUP_STATE = "Application/group-state-object+xml";
-    public static final String APPLICATION_FILE_TRANSFER = "Application/X-CPM-File-Transfer";
+    /*
+     * Below strings are inserted into Content-Type header. Therefore they are sent to CMS in lower
+     * case but comparison with Content-type received from CMS shall be done case un-sensitive.
+     */
+    public static final String MESSAGE_CPIM = "message/cpim";
+    public static final String APPLICATION_CPM_SESSION = "application/x-cpm-session";
+    public static final String APPLICATION_GROUP_STATE = "application/group-state-object+xml";
+    public static final String APPLICATION_FILE_TRANSFER = "application/x-cpm-file-transfer";
     public static final String PAGER_MESSAGE = "pager-message";
     public static final String MULTIMEDIA_MESSAGE = "multimedia-message";
     public static final String DIRECTION_SENT = "sent";
@@ -83,6 +90,6 @@ public class Constants {
 
     public static final String CONTENT_TYPE_TEXT_PLAIN = "text/plain";
     public static final String CONTENT_TYPE_MESSAGE_IMDN_XML = "message/imdn+xml";
-    public static final String CONTENT_TYPE_MULTIPART_RELATED = "Multipart/Related";
+    public static final String CONTENT_TYPE_MULTIPART_RELATED = "multipart/related";
 
 }

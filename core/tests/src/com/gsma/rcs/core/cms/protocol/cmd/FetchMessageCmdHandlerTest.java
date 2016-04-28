@@ -19,7 +19,6 @@
 package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
-
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.Part;
@@ -31,26 +30,22 @@ import junit.framework.Assert;
 public class FetchMessageCmdHandlerTest extends AndroidTestCase {
 
     public void test() {
-
         String expectedCmd = String.format(FetchMessageCmdHandler.sCommand, "1");
 
         String line = "* 1 FETCH (UID 1 RFC822.SIZE 460 FLAGS (\\Seen) MODSEQ (6) BODY[] {460}";
-        String payload = new StringBuilder().append("From: +33642575779").append(Constants.CRLF)
-                .append("To: tel:+33640332859").append(Constants.CRLF)
-                .append("Date: mar., 29 09 2015 11:09:20.826 +0200").append(Constants.CRLF)
-                .append("Conversation-ID: 1443517760826").append(Constants.CRLF)
-                .append("Contribution-ID: 1443517760826").append(Constants.CRLF)
-                .append("IMDN-Message-ID: 1443517760826").append(Constants.CRLF)
-                .append("Message-Direction: received").append(Constants.CRLF)
-                .append("Message-Correlator: 1").append(Constants.CRLF)
-                .append("Message-Context: \"pager-message\"").append(Constants.CRLF)
-                .append("Content-Type: Message/CPIM").append(Constants.CRLF).append(Constants.CRLF)
-                .append("From: +33642575779").append(Constants.CRLF).append("To: +33640332859")
-                .append(Constants.CRLF).append("imdn.Message-ID: 1443517760826")
-                .append(Constants.CRLF).append("DateTime: mar., 29 09 2015 11:09:20.826 +0200")
-                .append(Constants.CRLF).append(Constants.CRLF)
-                .append("Content-Type: text/plain; charset=utf-8").append(Constants.CRLF)
-                .append(Constants.CRLF).append("1)").append(Constants.CRLF).toString();
+        String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
+                + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
+                + "Conversation-ID: 1443517760826" + Constants.CRLF
+                + "Contribution-ID: 1443517760826" + Constants.CRLF
+                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
+                + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
+                + "Message-Context: \"pager-message\"" + Constants.CRLF
+                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
+                + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
+                + "imdn.Message-ID: 1443517760826" + Constants.CRLF
+                + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF + Constants.CRLF
+                + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF + Constants.CRLF
+                + "1)" + Constants.CRLF;
 
         FetchMessageCmdHandler handler = new FetchMessageCmdHandler();
         String cmd = handler.buildCommand("1");

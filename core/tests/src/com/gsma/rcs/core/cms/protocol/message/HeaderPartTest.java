@@ -35,7 +35,7 @@ public class HeaderPartTest extends AndroidTestCase {
         headerContent.append("IMDN-Message-ID: 1446218776000").append(Constants.CRLF);
         headerContent.append("Message-Direction: received").append(Constants.CRLF);
         headerContent.append("Message-Context: \"multimedia-message\"").append(Constants.CRLF);
-        headerContent.append("Content-Type: Message/CPIM").append(Constants.CRLF);
+        headerContent.append("Content-Type: message/cpim").append(Constants.CRLF);
     }
 
     public void test() {
@@ -49,7 +49,7 @@ public class HeaderPartTest extends AndroidTestCase {
         headers.addHeader(headers.new Header(Constants.HEADER_IMDN_MESSAGE_ID, "1446218776000"));
         headers.addHeader(headers.new Header(Constants.HEADER_DIRECTION, "received"));
         headers.addHeader(Constants.HEADER_MESSAGE_CONTEXT, "\"multimedia-message\"");
-        headers.addHeader(Constants.HEADER_CONTENT_TYPE, "Message/CPIM");
+        headers.addHeader(Constants.HEADER_CONTENT_TYPE, "message/cpim");
         assertEquals(headerContent.toString(), headers.toString());
     }
 }

@@ -71,12 +71,12 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                 + "Message-ID: myMmsId" + Constants.CRLF + "IMDN-Message-ID: 1443517760826"
                 + Constants.CRLF + "Message-Direction: received" + Constants.CRLF
                 + "Message-Context: multimedia-message" + Constants.CRLF
-                + "Content-Type: Message/CPIM" + Constants.CRLF + Constants.CRLF
+                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
                 + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
                 + "DateTime: " + mCpimDate + Constants.CRLF + "NS: imdn <urn:ietf:params:imdn>"
                 + Constants.CRLF + "NS: rcs <http://www.gsma.com>" + Constants.CRLF
                 + "imdn.Message-ID: 1443517760826" + Constants.CRLF + Constants.CRLF
-                + "Content-Type: Multipart/Related;boundary=\"boundary_1446218793256\";"
+                + "Content-Type: multipart/related;boundary=\"boundary_1446218793256\";"
                 + Constants.CRLF + Constants.CRLF + "--boundary_1446218793256" + Constants.CRLF
                 + "Content-Type: text/plain" + Constants.CRLF + Constants.CRLF + "myContent"
                 + Constants.CRLF + Constants.CRLF + "--boundary_1446218793256" + Constants.CRLF
@@ -103,7 +103,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
         Assert.assertEquals("received", imapMmsMessage.getHeader(Constants.HEADER_DIRECTION));
         Assert.assertEquals("multimedia-message",
                 imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
-        Assert.assertEquals("Message/CPIM", imapMmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
+        Assert.assertEquals("message/cpim", imapMmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
         Assert.assertEquals("+33642575779",
                 imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
@@ -115,7 +115,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
 
         MultipartCpimBody cpimBody = (MultipartCpimBody) imapMmsMessage.getCpimMessage().getBody();
 
-        Assert.assertEquals("Multipart/Related;boundary=\"boundary_1446218793256\";",
+        Assert.assertEquals("multipart/related;boundary=\"boundary_1446218793256\";",
                 cpimBody.getContentType());
         Assert.assertEquals(2, cpimBody.getParts().size());
 
@@ -156,7 +156,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                     + "IMDN-Message-ID: 1443517760826" + Constants.CRLF
                     + "Message-Direction: received" + Constants.CRLF + "Message-Correlator: 1"
                     + Constants.CRLF + "Message-Context: pager-message" + Constants.CRLF
-                    + "Content-Type: Message/CPIM" + Constants.CRLF + Constants.CRLF
+                    + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
                     + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
                     + "imdn.Message-ID: 1443517760826" + Constants.CRLF
                     + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
@@ -185,7 +185,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                     + "IMDN-Message-ID: 1443517760826" + Constants.CRLF
                     + "Message-Direction: received" + Constants.CRLF + "Message-Correlator: 1"
                     + Constants.CRLF + "Message-Context: multimedia-message" + Constants.CRLF
-                    + "Content-Type: Message/CPIM" + Constants.CRLF + Constants.CRLF
+                    + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
                     + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
                     + "imdn.Message-ID: 1443517760826" + Constants.CRLF
                     + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF

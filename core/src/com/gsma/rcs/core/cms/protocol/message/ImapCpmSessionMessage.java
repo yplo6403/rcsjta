@@ -88,7 +88,7 @@ public class ImapCpmSessionMessage extends ImapMessage {
             String xml = getBodyPart().getPayload();
             if (!xml.isEmpty()) {
                 CpmSessionParser parser = new CpmSessionParser(new InputSource(
-                        new ByteArrayInputStream(xml.toString().getBytes())));
+                        new ByteArrayInputStream(xml.getBytes())));
                 CpmSessionDocument document = parser.parse().getCpmSessionDocument();
                 String sessionType = document.getSessionType();
                 if (!SESSION_TYPE_GROUP.equals(sessionType)) {
@@ -99,7 +99,6 @@ public class ImapCpmSessionMessage extends ImapMessage {
                 mParticipants.remove(settings.getUserProfileImsUserName());
             }
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
-            e.printStackTrace();
             throw new CmsSyncXmlFormatException(e);
         }
     }

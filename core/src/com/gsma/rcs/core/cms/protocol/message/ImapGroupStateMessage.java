@@ -28,6 +28,7 @@ import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
 import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 import org.xml.sax.InputSource;
@@ -40,12 +41,14 @@ import javax.xml.parsers.ParserConfigurationException;
 
 public class ImapGroupStateMessage extends ImapMessage {
 
+    private final static Logger sLogger = Logger.getLogger(ImapGroupStateMessage.class.getName());
     private final String mChatId;
     private String mRejoinId;
     private List<ContactId> mParticipants;
 
     /**
      * Constructor
+     * 
      * @param settings the RCS settings accessor
      * @param rawMessage the IMAP raw message
      * @throws CmsSyncException
@@ -62,11 +65,15 @@ public class ImapGroupStateMessage extends ImapMessage {
             String xml = getBodyPart().getPayload();
             if (!xml.isEmpty()) {
                 GroupStateParser parser = new GroupStateParser(new InputSource(
-                        new ByteArrayInputStream(xml.toString().getBytes())));
+                        new ByteArrayInputStream(xml.getBytes())));
                 GroupStateDocument document = parser.parse().getGroupStateDocument();
                 mRejoinId = document.getLastfocussessionid();
                 mParticipants = document.getParticipants();
                 mParticipants.remove(settings.getUserProfileImsUserName());
+                if (mParticipants == null || mParticipants.isEmpty()) {
+                    sLogger.error("Invalid Group State: " + xml);
+                    throw new CmsSyncXmlFormatException("Invalid Group State: " + xml);
+                }
             }
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
             e.printStackTrace();

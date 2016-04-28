@@ -99,7 +99,7 @@ public class ImapCpmSessionMessageTest extends AndroidTestCase {
                 + Constants.CRLF + "To: sip:Conference-Factory@volteofr.com" + Constants.CRLF
                 + "Message-ID: <881999583.1171.1455195649122@RCS5frontox1>" + Constants.CRLF
                 + "Subject: cfff" + Constants.CRLF + "MIME-Version: 1.0" + Constants.CRLF
-                + "Content-Type: Application/X-CPM-Session" + Constants.CRLF
+                + "Content-Type: application/x-cpm-session" + Constants.CRLF
                 + "Content-Transfer-Encoding: 8bit" + Constants.CRLF
                 + "Conversation-ID: 927d83c9902c362b08f2f2d731bdddb7" + Constants.CRLF
                 + "Contribution-ID: 927d83c9902c362b08f2f2d731bdddb7" + Constants.CRLF

@@ -28,12 +28,8 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.logger.Logger;
 
 public class ImapMessageResolver {
-
-    private static final Logger sLogger = Logger.getLogger(ImapMessageResolver.class
-            .getSimpleName());
 
     private final RcsSettings mRcsSettings;
 
@@ -46,71 +42,68 @@ public class ImapMessageResolver {
 
     public MessageType resolveType(com.gsma.rcs.imaplib.imap.ImapMessage imapMessage)
             throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
-
         String messageContext = imapMessage.getBody().getHeader(Constants.HEADER_MESSAGE_CONTEXT);
         if (messageContext != null) {
             messageContext = messageContext.toLowerCase();
-            if (Constants.PAGER_MESSAGE.toLowerCase().equals(messageContext)) { // SMS legacy
-                                                                                // message
+            if (Constants.PAGER_MESSAGE.equals(messageContext)) {
+                // SMS legacy message
                 return MessageType.SMS;
-            } else if (Constants.MULTIMEDIA_MESSAGE.toLowerCase().equals(messageContext)) { // MMS
-                                                                                            // legacy
-                                                                                            // message
+            } else if (Constants.MULTIMEDIA_MESSAGE.equals(messageContext)) {
+                // MMS legacy message
                 return MessageType.MMS;
             }
         }
-
         String imapContentType = imapMessage.getBody().getHeader(Constants.HEADER_CONTENT_TYPE);
         if (imapContentType == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE
                     + " IMAP header is missing");
         }
         imapContentType = imapContentType.toLowerCase();
-        if (Constants.MESSAGE_CPIM.toLowerCase().equals(imapContentType)) {
-
+        if (Constants.MESSAGE_CPIM.equals(imapContentType)) {
             String rawBody = imapMessage.getTextBody();
-            if (rawBody.isEmpty()) { // we have only imap headers -->not able to determine more
-                                     // precisely the type of the message
+            if (rawBody.isEmpty()) {
+                /*
+                 * we have only IMAP headers -->not able to determine more precisely the type of the
+                 * message.
+                 */
                 return MessageType.MESSAGE_CPIM;
             }
-
             CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
             cpimMessage.parsePayload(rawBody);
             String contentType = cpimMessage.getContentType();
             if (contentType == null) {
                 throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE
-                        + " Cpim header is missing");
+                        + " CPIM header is missing");
             }
-
-            if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_TEXT_PLAIN.toLowerCase())) {
+            if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_TEXT_PLAIN)) {
                 return MessageType.CHAT_MESSAGE;
+
             } else if (contentType.toLowerCase().contains(
-                    Constants.CONTENT_TYPE_MESSAGE_IMDN_XML.toLowerCase())) {
+                    Constants.CONTENT_TYPE_MESSAGE_IMDN_XML)) {
                 return MessageType.IMDN;
+
             } else if (contentType.toLowerCase().contains(
-                    FileTransferHttpInfoDocument.MIME_TYPE.toLowerCase())) {
+                    FileTransferHttpInfoDocument.MIME_TYPE)) {
                 return MessageType.FILE_TRANSFER;
             }
             throw new CmsSyncMessageNotSupportedException(
-                    "unsupported cpim message type : ".concat(contentType));
+                    "unsupported CPIM message type : ".concat(contentType));
 
-        } else if (imapContentType.contains(Constants.APPLICATION_CPM_SESSION.toLowerCase())) {
+        } else if (imapContentType.contains(Constants.APPLICATION_CPM_SESSION)) {
             return MessageType.CPM_SESSION;
-        } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE.toLowerCase())) {
+
+        } else if (imapContentType.contains(Constants.APPLICATION_GROUP_STATE)) {
             return MessageType.GROUP_STATE;
         }
         // } else if (imapContentType.contains(Constants.APPLICATION_FILE_TRANSFER.toLowerCase())) {
         // return MessageType.FILE_TRANSFER;
         // }
-
-        StringBuilder msg = new StringBuilder("Can not determine the type of the message").append(
-                Constants.CRLF).append(imapMessage.getPayload());
-        throw new CmsSyncMessageNotSupportedException(msg.toString());
+        throw new CmsSyncMessageNotSupportedException("Can not determine the type of the message"
+                + Constants.CRLF + imapMessage.getPayload());
     }
 
     public IImapMessage resolveMessage(MessageType messageType,
             com.gsma.rcs.imaplib.imap.ImapMessage imapMessage) throws CmsSyncException {
-
         switch (messageType) {
             case SMS:
                 return new ImapSmsMessage(imapMessage);
@@ -128,7 +121,6 @@ public class ImapMessageResolver {
                 return new ImapCpmSessionMessage(mRcsSettings, imapMessage);
             case GROUP_STATE:
                 return new ImapGroupStateMessage(mRcsSettings, imapMessage);
-
         }
         throw new CmsSyncMessageNotSupportedException(
                 "unsupported message type : ".concat(messageType.toString()));

@@ -26,4 +26,13 @@ public class CmsSyncXmlFormatException extends CmsSyncException {
     public CmsSyncXmlFormatException(Exception e) {
         super(e);
     }
+
+    /**
+     * Constructor
+     *
+     * @param message the message
+     */
+    public CmsSyncXmlFormatException(String message) {
+        super(message);
+    }
 }

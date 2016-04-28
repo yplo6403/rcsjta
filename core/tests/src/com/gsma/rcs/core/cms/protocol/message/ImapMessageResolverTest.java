@@ -54,7 +54,7 @@ public class ImapMessageResolverTest extends AndroidTestCase {
                 + "Contribution-ID: 1443517760826" + Constants.CRLF
                 + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
                 + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
-                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: Message/CPIM"
+                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: message/cpim"
                 + Constants.CRLF + Constants.CRLF + "From: +33642575779" + Constants.CRLF
                 + "To: +33640332859" + Constants.CRLF + "imdn.Message-ID: 1443517760826"
                 + Constants.CRLF + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
@@ -83,7 +83,7 @@ public class ImapMessageResolverTest extends AndroidTestCase {
                 + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
                 + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
                 + "Message-Context: multimedia-message" + Constants.CRLF
-                + "Content-Type: Message/CPIM" + Constants.CRLF + Constants.CRLF
+                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
                 + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
                 + "imdn.Message-ID: 1443517760826" + Constants.CRLF
                 + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF + Constants.CRLF

@@ -88,7 +88,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Assert.assertEquals("1443517760826",
                 imapImdnMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
         Assert.assertEquals(direction, imapImdnMessage.getHeader(Constants.HEADER_DIRECTION));
-        Assert.assertEquals("Message/CPIM",
+        Assert.assertEquals("message/cpim",
                 imapImdnMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
         Assert.assertEquals(ImapChatMessage.ANONYMOUS,
@@ -144,7 +144,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Assert.assertEquals("1443517760826",
                 imapImdnMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
         Assert.assertEquals(direction, imapImdnMessage.getHeader(Constants.HEADER_DIRECTION));
-        Assert.assertEquals("Message/CPIM",
+        Assert.assertEquals("message/cpim",
                 imapImdnMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
         Assert.assertEquals("+33642575779",
@@ -174,7 +174,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
                 + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: 1443517760826"
                 + Constants.CRLF + "Contribution-ID: 1443517760826" + Constants.CRLF
                 + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: "
-                + direction + Constants.CRLF + "Content-Type: Message/CPIM" + Constants.CRLF
+                + direction + Constants.CRLF + "Content-Type: message/cpim" + Constants.CRLF
                 + Constants.CRLF + "From: " + headerFromCpim + Constants.CRLF
                 + "To: <sip:anonymous@anonymous.invalid>" + Constants.CRLF
                 + "NS: imdn <urn:ietf:params:imdn>" + Constants.CRLF
