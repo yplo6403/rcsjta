@@ -277,10 +277,15 @@ public class FileTransferUtils {
     private static String formatHttpFileInfo(String fileType, Uri downloadUri, String name,
             String mimeType, long size, long expiration) {
         String expirationAsIso = DateUtils.encodeDate(expiration);
-        return "<file-info type=\"" + fileType + "\">" + "<file-size>" + size + "</file-size>"
-                + "<file-name>" + name + "</file-name>" + "<content-type>" + mimeType
-                + "</content-type>" + "<data url = \"" + downloadUri.toString() + "\"  until=\""
-                + expirationAsIso + "\"/></file-info>";
+        StringBuilder info = new StringBuilder("<file-info type=\"").append(fileType).append("\">");
+        info.append("<file-size>").append(size).append("</file-size>");
+        if (name != null) {
+            info.append("<file-name>").append(name).append("</file-name>");
+        }
+        info.append("<content-type>").append(mimeType).append("</content-type>");
+        info.append("<data url = \"").append(downloadUri.toString()).append("\"  until=\"")
+                .append(expirationAsIso).append("\"/></file-info>");
+        return info.toString();
     }
 
     /**
