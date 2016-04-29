@@ -43,6 +43,7 @@ import com.gsma.rcs.platform.file.FileFactory;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.CloseableUtils;
+import com.gsma.rcs.utils.DateUtils;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
@@ -69,9 +70,6 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class FileTransferUtils {
 
-    /**
-     * The logger
-     */
     private static final Logger logger = Logger.getLogger(FileTransferUtils.class.getName());
 
     private static final String FILEICON_INFO = "thumbnail";
@@ -276,21 +274,13 @@ public class FileTransferUtils {
         return ContentManager.createMmContent(uri, desc.getSize(), desc.getName());
     }
 
-    private static String getInfo(String fileType, Uri downloadUri, String name, String mimeType,
-            long size, long expiration) {
-        StringBuilder info = new StringBuilder("<file-info type=\"").append(fileType).append("\">");
-        if (size != 0) {
-            info.append("<file-size>").append(size).append("</file-size>");
-        }
-        if (name != null) {
-            info.append("<file-name>").append(name).append("</file-name>");
-        }
-        if (mimeType != null) {
-            info.append("<content-type>").append(mimeType).append("</content-type>");
-        }
-        info.append("<data url = \"").append(downloadUri.toString()).append("\"  until=\"")
-                .append(expiration).append("\"/></file-info>");
-        return info.toString();
+    private static String formatHttpFileInfo(String fileType, Uri downloadUri, String name,
+            String mimeType, long size, long expiration) {
+        String expirationAsIso = DateUtils.encodeDate(expiration);
+        return "<file-info type=\"" + fileType + "\">" + "<file-size>" + size + "</file-size>"
+                + "<file-name>" + name + "</file-name>" + "<content-type>" + mimeType
+                + "</content-type>" + "<data url = \"" + downloadUri.toString() + "\"  until=\""
+                + expirationAsIso + "\"/></file-info>";
     }
 
     /**
@@ -304,11 +294,11 @@ public class FileTransferUtils {
         StringBuilder info = new StringBuilder("<?xml version=\"1.0\" encoding=\"")
                 .append(UTF8_STR).append("\"?><file>");
         if (fileIcon != null) {
-            String fileIconInfo = getInfo(FILEICON_INFO, fileIcon.getUri(), null,
+            String fileIconInfo = formatHttpFileInfo(FILEICON_INFO, fileIcon.getUri(), null,
                     fileIcon.getMimeType(), fileIcon.getSize(), fileIcon.getExpiration());
             info.append(fileIconInfo);
         }
-        String fileInfo = getInfo(FILE_INFO, fileTransferData.getUri(),
+        String fileInfo = formatHttpFileInfo(FILE_INFO, fileTransferData.getUri(),
                 fileTransferData.getFilename(), fileTransferData.getMimeType(),
                 fileTransferData.getSize(), fileTransferData.getExpiration());
         info.append(fileInfo);

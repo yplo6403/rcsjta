@@ -75,7 +75,7 @@ public class FileTransferHttpInfoDocument {
     /**
      * Constructor
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     public FileTransferHttpInfoDocument(RcsSettings rcsSettings) {
         mRcsSettings = rcsSettings;
@@ -140,7 +140,7 @@ public class FileTransferHttpInfoDocument {
     /**
      * Sets file URI
      * 
-     * @param file
+     * @param file the file URI
      */
     public void setUri(Uri file) {
         mFile = file;
