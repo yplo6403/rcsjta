@@ -402,6 +402,7 @@
     <string name="switch_mms_body">Automatic backup from RCS to MMS</string>
     <string name="LabelPermissionsError">You must accept permissions to use RSC RI</string>
     <string name="LabelTitlePermissionsError">ALERT</string>
+    <string name="label_ungranted_permission">Below permissions are not granted!</string>
 
     <!-- States -->
 

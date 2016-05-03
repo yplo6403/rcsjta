@@ -157,4 +157,7 @@
     <string name="ntp_servers">NTP servers (comma separated list)</string>
     <string name="ntp_server_timeout">Timeout for NTP server (milliseconds)</string>
     <string name="ntp_cache_validity">NTP cache validity (milliseconds)</string>
+
+    <string name="label_ungranted_permission">Below permissions are not granted!</string>
+
 </resources>

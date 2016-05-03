@@ -10,6 +10,7 @@
 	<property name="stack.root" value="${terminal.root}/core" />
 	<property name="tools" value="${terminal.root}/tools" />
 	<property name="settings.root" value="${tools}/settings" />
+	<property name="cmsToolKit.root" value="${tools}/cmsToolKit" />
 	<property name="generate.root" value="${terminal.root}/gen" />
 	<property name="sdk.zip" value="${generate.root}/rcsjta_cms_sdk_${TODAY_MY}.zip" />
 
@@ -30,13 +31,15 @@
 			</fileset>
 		</delete>
 		<zip destfile="${sdk.zip}">
-			<fileset dir="${stack.root}" includes="NOTICE.txt" />
+			<fileset dir="${stack.root}" includes="NOTICE.md" />
 			<zipfileset dir="${settings.root}/build/outputs/apk" includes="*debug.apk"
 				fullpath="tools/RCS_settings.apk" />
 			<zipfileset dir="${stack.root}/build/outputs/apk" includes="*debug.apk"
 				fullpath="stack/RCS_core.apk" />
 			<zipfileset dir="${ri.root}/build/outputs/apk" includes="*debug.apk"
 				fullpath="tools/RCS_RI.apk" />
+			<zipfileset dir="${cmsToolKit.root}/build/outputs/apk" includes="*debug.apk"
+				fullpath="tools/cmsToolKit.apk" />
 		</zip>
 	</target>
 
