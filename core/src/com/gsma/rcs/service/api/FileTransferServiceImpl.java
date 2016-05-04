@@ -1223,8 +1223,9 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             throw new ServerApiIllegalArgumentException("transferId must not be null or empty!");
         }
         try {
+            long now = NtpTrustedTime.currentTimeMillis();
             /* No notification type corresponds currently to mark as read */
-            mMessagingLog.markFileTransferAsRead(transferId);
+            mMessagingLog.markFileTransferAsRead(transferId, now);
             mCmsManager.getFileTransferEventHandler().onReadFileTransfer(transferId);
 
         } catch (ServerApiBaseException e) {

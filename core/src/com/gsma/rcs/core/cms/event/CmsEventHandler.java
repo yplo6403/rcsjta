@@ -42,6 +42,7 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingError;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
@@ -157,14 +158,14 @@ public class CmsEventHandler implements CmsEventListener {
         if (mMessagingLog.isMessagePersisted(msgId)) {
             mMessagingLog.setChatMessageStatusAndReasonCode(msgId, Status.RECEIVED,
                     Content.ReasonCode.UNSPECIFIED);
-            mMessagingLog.markMessageAsRead(msgId);
+            mMessagingLog.markMessageAsRead(msgId, NtpTrustedTime.currentTimeMillis());
         }
     }
 
     private void onReadFileTransfer(CmsObject imapData) {
         String msgId = imapData.getMessageId();
         if (mMessagingLog.isFileTransfer(msgId)) {
-            mMessagingLog.markFileTransferAsRead(msgId);
+            mMessagingLog.markFileTransferAsRead(msgId, NtpTrustedTime.currentTimeMillis());
         }
     }
 
@@ -279,7 +280,7 @@ public class CmsEventHandler implements CmsEventListener {
         }
         if (direction == Direction.INCOMING) {
             if (isSeen) {
-                mMessagingLog.markMessageAsRead(msgId);
+                mMessagingLog.markMessageAsRead(msgId, NtpTrustedTime.currentTimeMillis());
             } else {
                 mChatService.broadcastNewChatMessage(chatMessage);
             }

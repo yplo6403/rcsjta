@@ -109,9 +109,10 @@ public interface IMessageLog {
      * Update chat message read status
      *
      * @param msgId message ID
+     * @param timestampDisplayed Displayed time
      * @return the number of rows affected.
      */
-    int markMessageAsRead(String msgId);
+    int markMessageAsRead(String msgId, long timestampDisplayed);
 
     /**
      * Set chat message status and reason code. Note that this method should not be used for
@@ -318,14 +319,5 @@ public interface IMessageLog {
      * @param sipInstance the SIP instance of the sender
      */
     void addGroupChatFailedDeliveryMessage(String chatId, ChatMessage msg, String sipInstance);
-
-    /**
-     * Set message delivery displayed for specified message id.
-     *
-     * @param msgId message ID
-     * @param timestampDisplayed displayed timestamp
-     * @return True if an entry was updated, otherwise false
-     */
-    boolean setChatMessageTimestampDisplayed(String msgId, long timestampDisplayed);
 
 }
