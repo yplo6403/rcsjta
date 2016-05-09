@@ -212,7 +212,8 @@ public class CmsEventHandler implements CmsEventListener {
     public String onRemoteNewMessage(MessageType messageType, IImapMessage message)
             throws CmsSyncException, FileAccessException {
         if (sLogger.isActivated()) {
-            sLogger.debug("onRemoteNewMessage : " + messageType);
+            sLogger.debug("onRemoteNewMessage : " + messageType + " uid=" + message.getUid()
+                    + " folder=" + message.getFolder());
         }
         if (MessageType.SMS == messageType) {
             return onNewSmsMessage((ImapSmsMessage) message);
