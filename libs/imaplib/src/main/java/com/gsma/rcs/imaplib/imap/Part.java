@@ -32,11 +32,9 @@ import java.util.logging.Logger;
 
 public class Part implements IPart {
 
-    private Map<String, Header> mHeaders = new HashMap<String, Header>();
+    private Map<String, Header> mHeaders = new HashMap<>();
 
     private String mContent;
-
-    private boolean mEmpty;
 
     private static final Logger sLogger = Logger.getLogger(Part.class.getName());
 
@@ -52,20 +50,13 @@ public class Part implements IPart {
         fromPayload(payload);
     }
 
-    public boolean isEmpty() {
-        return mEmpty;
-    }
-
     @Override
     public void fromPayload(String payload) {
         int sepa = payload.indexOf(CRLFCRLF);
         if (sepa != -1) {
             String headerString = payload.substring(0, sepa); // extract and unfold
-
             mHeaders = Header.parseHeaders(headerString);
-
             mContent = payload.substring(sepa + CRLFCRLF.length());
-
         } else {
             if (payload.indexOf(':') != -1) {
                 mHeaders = Header.parseHeaders(payload);
@@ -74,16 +65,15 @@ public class Part implements IPart {
                 sLogger.warning("Payload with no header : " + payload);
                 mContent = payload;
             }
-
         }
     }
 
     public void setContent(byte[] contentAsBytes) {
-        this.mContent = encodeBase64(contentAsBytes);
+        mContent = encodeBase64(contentAsBytes);
     }
 
     public void setContent(String content) {
-        this.mContent = content;
+        mContent = content;
     }
 
     public String getContent() {
@@ -92,8 +82,9 @@ public class Part implements IPart {
 
     public String getContentType() {
         Header h = mHeaders.get(HEADER_CONTENT_TYPE);
-        if (h == null)
+        if (h == null) {
             return null;
+        }
         return h.getValue();
     }
 
@@ -101,25 +92,21 @@ public class Part implements IPart {
         mHeaders.put(HEADER_CONTENT_TYPE, new Header(HEADER_CONTENT_TYPE, contentType));
     }
 
-    public byte[] decodeBinaryContent() {
-        return decodeBase64(mContent.getBytes());
-    }
-
     public void setHeader(String key, String value) {
         mHeaders.put(key, new Header(key, value));
     }
 
     public String getHeader(String key) {
-        if (mHeaders.containsKey(key))
+        if (mHeaders.containsKey(key)) {
             return mHeaders.get(key).getValue();
-        else
-            return null;
+        }
+        return null;
     }
 
     @Override
     public String toPayload() {
         Set<String> keys = mHeaders.keySet();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String k : keys) {
             sb.append(k);
             sb.append(':');
@@ -135,13 +122,11 @@ public class Part implements IPart {
 
     /**
      * http://tools.ietf.org/html/rfc2046#section-5.1.3
-     * 
-     * @param boundary
      */
     public List<Part> getMultiParts() {
         String boundary = mHeaders.get(HEADER_CONTENT_TYPE).getValueAttribute("boundary");
         String[] ptexts = mContent.split("--" + boundary);
-        List<Part> parts = new ArrayList<Part>();
+        List<Part> parts = new ArrayList<>();
         for (int i = 1; i < ptexts.length; i++) {
             String t = ptexts[i];
             if (t.equals("--"))
@@ -153,12 +138,6 @@ public class Part implements IPart {
 
     public byte[] getContentAsBytes() {
         return decodeBase64(mContent.getBytes());
-    }
-
-    public void replace(Part p) {
-        this.mHeaders = p.mHeaders;
-        this.mContent = p.mContent;
-        this.mEmpty = p.mEmpty;
     }
 
     public void setDate(Date date) {

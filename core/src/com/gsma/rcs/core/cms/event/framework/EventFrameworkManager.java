@@ -69,7 +69,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
      * @param settings the RCS settings accessor
      */
     public EventFrameworkManager(CmsSyncScheduler scheduler,
-                                 InstantMessagingService instantMessagingService, CmsLog cmsLog, RcsSettings settings) {
+            InstantMessagingService instantMessagingService, CmsLog cmsLog, RcsSettings settings) {
         mInstantMessagingService = instantMessagingService;
         mCmsSyncScheduler = scheduler;
         mSettings = settings;
@@ -91,7 +91,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
         updateFlags(null, chatId);
     }
 
-    private SipEventFrameworkDocument buildDocument(String cmsFolder) {
+    private SipEventFrameworkDocument buildDocument(String cmsFolder, String contributionId) {
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
         for (CmsObject cmsObject : mCmsLog.getMessagesToSync(cmsFolder)) {
@@ -105,7 +105,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
         if (seenObjects.isEmpty() && deletedObjects.isEmpty()) {
             return null;
         }
-        return new SipEventFrameworkDocument(seenObjects, deletedObjects);
+        return new SipEventFrameworkDocument(seenObjects, deletedObjects, contributionId);
     }
 
     private void updateFlags(ContactId contactId, String chatId) {
@@ -125,15 +125,33 @@ public class EventFrameworkManager implements IEventFrameworkListener {
             case ENABLED:
                 ChatSession chatSession;
                 String cmsFolder;
+                String contributionId = null;
                 if (isOneToOne) {
                     chatSession = mInstantMessagingService.getOneToOneChatSession(contactId);
                     cmsFolder = CmsUtils.contactToCmsFolder(contactId);
                 } else {
+                    /*
+                     * For GC, the contribution ID is equals to the chat ID and is persisted. The
+                     * contribution ID is never null (there is no forward session).
+                     */
+                    contributionId = chatId;
                     chatSession = mInstantMessagingService.getGroupChatSession(chatId);
                     cmsFolder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
                 }
                 if (chatSession != null && chatSession.isMediaEstablished()) {
-                    SipEventFrameworkDocument sipEventReportingFrameworkDoc = buildDocument(cmsFolder);
+                    /*
+                     * Event framework notification is sent in the MSRP session.
+                     */
+                    if (contributionId == null) {
+                        /*
+                         * For 1 to 1 chat, the contribution ID is not persisted but can be
+                         * retrieved from the session. Since the MSRP is established, it is not a
+                         * forward session and then contribution ID is not null.
+                         */
+                        contributionId = chatSession.getContributionID();
+                    }
+                    SipEventFrameworkDocument sipEventReportingFrameworkDoc = buildDocument(
+                            cmsFolder, contributionId);
                     if (sipEventReportingFrameworkDoc != null) {
                         byte[] bytes = sipEventReportingFrameworkDoc.toXml().getBytes(UTF8);
                         ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
@@ -180,7 +198,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
         }
     }
 
-   private void updateFlags(ContactId contact) {
+    private void updateFlags(ContactId contact) {
         if (!mCmsSyncScheduler.scheduleUpdateFlags(contact)) {
             if (sLogger.isActivated()) {
                 sLogger.info("--> can not schedule update flag operation for contact : "

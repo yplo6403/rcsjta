@@ -27,9 +27,9 @@ public class ImapMessageMetadata {
 
     private final int mUid;
 
-    private long mModseq = -1l;
+    private long mModseq = -1L;
 
-    private final Set<Flag> mFlags = new HashSet<Flag>();
+    private final Set<Flag> mFlags = new HashSet<>();
 
     private final String mEnvelope;
 
@@ -123,7 +123,7 @@ public class ImapMessageMetadata {
     // "sony.com")) NIL NIL NIL NIL NIL) BODY ("TEXT" "PLAIN" ("charset" "us-ascii") NIL NIL "7BIT"
     // 39 1))
     private static Map<String, String> parseMetadata(String l) {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
 
         l = l.substring(l.indexOf('(') + 1, l.lastIndexOf(')')) + " ";
 

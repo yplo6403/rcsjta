@@ -24,7 +24,6 @@ import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.chat.ChatLog.Message;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;
@@ -37,25 +36,31 @@ public class SipEventFrameworkDocument {
     private final static String XML_OBJECT_WITH_UID = "<object uid=\"%1$s\" folder-path=\"%2$s/\">"
             + "<message-id>%3$s</message-id>" + "</object>";
 
-    private final static String XML_CHAT_MESSAGE = "<object>"
-            + "<conversation-id>%1$s</conversation-id>" + "<contribution-id>%2$s</contribution-id>"
-            + "<other-party>%3$s</other-party>" + "<message-id>%4$s</message-id>" + "</object>";
-
-    private final static String XML_GCHAT_MESSAGE = "<object>"
-            + "<conversation-id>%1$s</conversation-id>" + "<contribution-id>%2$s</contribution-id>"
-            + "<message-id>%3$s</message-id>" + "</object>";
-
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mSeenObject;
     // List is required to keep insertion order from content provider
     private final List<CmsObject> mDeletedObject;
+    private final String mContributionId;
 
-    public SipEventFrameworkDocument(List<CmsObject> seenObjects,
-                                     List<CmsObject> deletedObjects) {
+    /**
+     * A class to format SIP event framework document
+     * 
+     * @param seenObjects the list of seen objects
+     * @param deletedObjects the list of deleted objects
+     * @param contributionId the contribution ID
+     */
+    public SipEventFrameworkDocument(List<CmsObject> seenObjects, List<CmsObject> deletedObjects,
+            String contributionId) {
         mSeenObject = seenObjects;
         mDeletedObject = deletedObjects;
+        mContributionId = contributionId;
     }
 
+    /**
+     * Format document to XML
+     * 
+     * @return the XML representation of the event framework document
+     */
     public String toXml() {
         StringBuilder sb = new StringBuilder(
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -79,6 +84,24 @@ public class SipEventFrameworkDocument {
         return sb.toString();
     }
 
+    private String objectToXml(ContactId contact, String contributionId, String conversationId,
+            String messageId) {
+        StringBuilder xml = new StringBuilder("<object>");
+        if (conversationId != null) {
+            xml.append("<conversation-id>").append(conversationId).append("</conversation-id>");
+        }
+        if (contributionId != null) {
+            xml.append("<contribution-id>").append(contributionId).append("</contribution-id>");
+        }
+        if (contact != null) {
+            xml.append("<other-party>").append(Constants.TEL_PREFIX).append(contact.toString())
+                    .append("/other-party>");
+        }
+        xml.append("<message-id>").append(messageId).append("</message-id>");
+        xml.append("</object>");
+        return xml.toString();
+    }
+
     private String toXml(CmsObject object) {
         Integer uid = object.getUid();
         if (uid != null) {
@@ -95,17 +118,10 @@ public class SipEventFrameworkDocument {
         if (MessageType.CHAT_MESSAGE == messageType || MessageType.FILE_TRANSFER == messageType) {
             String folder = object.getFolder();
             ContactId contact = CmsUtils.cmsFolderToContact(folder);
-            if (contact != null) { // 1-1
-                // For 1To1 conversation in Simple IM mode, contribution-Id and conversation-Id are
-                // not available.
-                // They are filled with message-Id value
-                return String.format(XML_CHAT_MESSAGE, object.getMessageId(),
-                        object.getMessageId(), Constants.TEL_PREFIX + contact.toString(),
-                        object.getMessageId());
-            } else { // GC
-                String chatId = CmsUtils.cmsFolderToChatId(folder);
-                return String.format(XML_GCHAT_MESSAGE, chatId, chatId, object.getMessageId());
-            }
+            /*
+             * For GC, contact is null.
+             */
+            return objectToXml(contact, mContributionId, mContributionId, object.getMessageId());
         }
         return "";
     }

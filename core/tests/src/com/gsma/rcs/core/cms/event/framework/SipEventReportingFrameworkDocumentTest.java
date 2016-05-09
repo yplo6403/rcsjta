@@ -74,7 +74,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                null);
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -99,10 +100,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 null);
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
-                
                 seenObjects,
-                deletedObjects
-                );
+                deletedObjects,
+                null);
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -138,7 +138,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                null);
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -164,7 +165,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                null);
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -212,7 +214,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                null);
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -249,7 +252,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                chatId1);
         String expectedXml;
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
@@ -264,10 +268,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-        String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED,
                 PushStatus.PUSHED,
@@ -277,7 +280,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         seenObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                chatId1);
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -288,8 +292,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
                 "<object>" +
-                "<conversation-id>" + chatId2 + "</conversation-id>" +
-                "<contribution-id>" + chatId2 + "</contribution-id>" +
+                "<conversation-id>" + chatId1 + "</conversation-id>" +
+                "<contribution-id>" + chatId1 + "</contribution-id>" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
@@ -316,7 +320,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects, 
+                chatId1);
         String expectedXml;
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
@@ -331,10 +336,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</event-cpm-imap>" +
                 "</cpm-evfw>";
         Assert.assertEquals(expectedXml, sipEventReportingFrameworkDocument.toXml());
-        String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.UNREAD,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
                 PushStatus.PUSHED,
@@ -344,7 +348,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                chatId1);
         expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -355,8 +360,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "<message-id>" + messageId1 + "</message-id>" +
                 "</object>" +
                 "<object>" +
-                "<conversation-id>" + chatId2 + "</conversation-id>" +
-                "<contribution-id>" + chatId2 + "</contribution-id>" +
+                "<conversation-id>" + chatId1 + "</conversation-id>" +
+                "<contribution-id>" + chatId1 + "</contribution-id>" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
@@ -381,10 +386,9 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         seenObjects.add(cmsObject);
-        String chatId2 = IdGenerator.generateMessageID();
         String messageId2 = IdGenerator.generateMessageID();
         cmsObject = new CmsObject(
-                CmsUtils.groupChatToCmsFolder( chatId2, chatId2),
+                CmsUtils.groupChatToCmsFolder( chatId1, chatId1),
                 ReadStatus.UNREAD,
                 DeleteStatus.DELETED_REPORT_REQUESTED,
                 PushStatus.PUSHED,
@@ -394,7 +398,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
         deletedObjects.add(cmsObject);
         sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
                 seenObjects,
-                deletedObjects);
+                deletedObjects,
+                chatId1);
         String expectedXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
                 "<cpm-evfw xmlns=\"urn:oma:xml:cpm:evfw\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
                 "<event-cpm-imap type=\"flags\" index=\"0\">" +
@@ -407,8 +412,8 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 "</operation>" +
                 "<operation name=\"add\" flag=\"\\Deleted\">" +
                 "<object>" +
-                "<conversation-id>" + chatId2 + "</conversation-id>" +
-                "<contribution-id>" + chatId2 + "</contribution-id>" +
+                "<conversation-id>" + chatId1 + "</conversation-id>" +
+                "<contribution-id>" + chatId1 + "</contribution-id>" +
                 "<message-id>" + messageId2 + "</message-id>" +
                 "</object>" +
                 "</operation>" +
