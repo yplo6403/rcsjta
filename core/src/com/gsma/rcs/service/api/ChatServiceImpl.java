@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,7 +74,7 @@ import java.util.Set;
 
 /**
  * Chat service implementation
- * 
+ *
  * @author Jean-Marc AUFFRET
  */
 public class ChatServiceImpl extends IChatService.Stub {
@@ -109,7 +109,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Constructor
-     * 
+     *
      * @param imService InstantMessagingService
      * @param messagingLog MessagingLog
      * @param historyLog HistoryLog
@@ -145,7 +145,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Tries to send a displayed delivery report for a one to one chat
-     * 
+     *
      * @param msgId Message ID
      * @param remote the remote contact
      * @param remoteSipInstance the remote SIP instance
@@ -160,7 +160,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Tries to send a displayed delivery report for a group chat
-     * 
+     *
      * @param msgId Message ID
      * @param contact the remote contact
      * @param sipInstance the SIP instance of the remote contact
@@ -201,7 +201,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns true if the service is registered to the platform, else returns false
-     * 
+     *
      * @return Returns true if registered else returns false
      */
     @Override
@@ -211,7 +211,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Return the reason code for IMS service registration
-     * 
+     *
      * @return the reason code for IMS service registration
      */
     @Override
@@ -221,7 +221,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Registers a listener on service registration events
-     * 
+     *
      * @param listener Service registration listener
      */
     @Override
@@ -233,7 +233,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Unregisters a listener on service registration events
-     * 
+     *
      * @param listener Service registration listener
      */
     @Override
@@ -254,7 +254,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Notifies unregistration event
-     * 
+     *
      * @param reasonCode for unregistration
      */
     public void notifyUnRegistration(RcsServiceRegistration.ReasonCode reasonCode) {
@@ -265,7 +265,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Receive a new chat invitation
-     * 
+     *
      * @param session Chat session
      */
     public void receiveOneToOneChatInvitation(OneToOneChatSession session) {
@@ -286,7 +286,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Receive message delivery status
-     * 
+     *
      * @param contact Contact ID
      * @param imdn Imdn document
      */
@@ -335,7 +335,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Remove a oneToOne chat from the list
-     * 
+     *
      * @param contact Contact ID
      */
     public void removeOneToOneChat(ContactId contact) {
@@ -358,7 +358,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns a chat from its unique ID
-     * 
+     *
      * @param contact Contact ID
      * @return IOneToOneChat
      * @throws RemoteException
@@ -385,7 +385,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Receive a new group chat invitation
-     * 
+     *
      * @param session Chat session
      */
     public void receiveGroupChatInvitation(GroupChatSession session) {
@@ -401,7 +401,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Add a group chat in the list
-     * 
+     *
      * @param groupChat Group chat
      */
     /* package private */void addGroupChat(GroupChatImpl groupChat) {
@@ -415,7 +415,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Remove a group chat from the list
-     * 
+     *
      * @param chatId Chat ID
      */
     public void removeGroupChat(String chatId) {
@@ -429,7 +429,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Initiates a group chat with a group of contact and returns a GroupChat instance. The subject
      * is optional and may be null.
-     * 
+     *
      * @param contacts List of contact IDs
      * @param subject Subject
      * @return instance of IGroupChat
@@ -525,7 +525,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns a group chat from its unique ID. An exception is thrown if the chat ID does not exist
-     * 
+     *
      * @param chatId Chat ID
      * @return IGroupChat
      * @throws RemoteException
@@ -552,7 +552,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns true if it is possible to initiate a group chat now, else returns false.
-     * 
+     *
      * @return boolean
      * @throws RemoteException
      */
@@ -594,7 +594,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Returns true if it's possible to initiate a new group chat with the specified contactId right
      * now, else returns false.
-     * 
+     *
      * @param contact Remote contact
      * @return true if it's possible to initiate a new group chat
      * @throws RemoteException
@@ -666,7 +666,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Deletes a one to one chat with a given contact from history and abort/reject any associated
      * ongoing session if such exists.
-     * 
+     *
      * @param contact Remote contact
      */
     @Override
@@ -677,7 +677,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Delete a group chat by its chat id from history and abort/reject any associated ongoing
      * session if such exists.
-     * 
+     *
      * @param chatId Chat id
      */
     @Override
@@ -688,7 +688,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Delete a message from its message id from history. Will resolve if the message is one to one
      * or from a group chat.
-     * 
+     *
      * @param msgId Message Id
      */
     @Override
@@ -699,7 +699,7 @@ public class ChatServiceImpl extends IChatService.Stub {
     /**
      * Disables and clears any delivery expiration for a set of chat messages regardless if the
      * delivery of them has expired already or not.
-     * 
+     *
      * @param msgIds Message ID
      * @throws RemoteException
      */
@@ -733,7 +733,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Adds a listener on one-to-one chat events
-     * 
+     *
      * @param listener One-to-One chat event listener
      * @throws RemoteException
      */
@@ -760,7 +760,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Removes a listener on one-to-one chat events
-     * 
+     *
      * @param listener One-to-One chat event listener
      * @throws RemoteException
      */
@@ -787,7 +787,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Adds a listener on group chat events
-     * 
+     *
      * @param listener Group chat event listener
      * @throws RemoteException
      */
@@ -814,7 +814,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Removes a listener on group chat events
-     * 
+     *
      * @param listener Group chat event listener
      * @throws RemoteException
      */
@@ -841,7 +841,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns the configuration of the chat service
-     * 
+     *
      * @return Configuration
      */
     @Override
@@ -851,7 +851,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Mark a received message as read (ie. displayed in the UI)
-     * 
+     *
      * @param msgId Message ID
      * @throws RemoteException
      */
@@ -895,7 +895,6 @@ public class ChatServiceImpl extends IChatService.Stub {
             @Override
             public void run() {
                 try {
-                    mCmsManager.getChatEventHandler().onReadChatMessage(msgId);
                     if (mRcsSettings.isImReportsActivated()
                             && mRcsSettings.isRespondToDisplayReports()) {
                         if (sLogger.isActivated()) {
@@ -908,6 +907,8 @@ public class ChatServiceImpl extends IChatService.Stub {
                             mImService.tryToDispatchAllPendingDisplayNotifications();
                         }
                     }
+                    mCmsManager.getChatEventHandler().onReadChatMessage(msgId);
+
                 } catch (RuntimeException e) {
                     /*
                      * Normally we are not allowed to catch runtime exceptions as these are genuine
@@ -924,7 +925,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns service version
-     * 
+     *
      * @return Version
      * @see VERSION_CODES
      */
@@ -934,7 +935,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Add and broadcast group chat invitation rejections.
-     * 
+     *
      * @param chatId Chat ID
      * @param contact Contact ID
      * @param subject Subject
@@ -954,7 +955,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Handle one-to-one chat session initiation
-     * 
+     *
      * @param session OneToOneChatSession
      */
     public void receiveOneToOneChatSessionInitiation(OneToOneChatSession session) {
@@ -965,7 +966,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns a chat message from its unique ID
-     * 
+     *
      * @param msgId Message Id
      * @return IChatMessage
      * @throws RemoteException
@@ -994,7 +995,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Handle rejoin group chat as part of send operation
-     * 
+     *
      * @param chatId Chat Id
      */
     public void rejoinGroupChatAsPartOfSendOperation(String chatId) throws PayloadException,
@@ -1006,7 +1007,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Handle rejoin group chat
-     * 
+     *
      * @param chatId Chat Id
      * @throws NetworkException
      * @throws PayloadException
@@ -1018,7 +1019,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Returns the common service configuration
-     * 
+     *
      * @return the common service configuration
      */
     @Override
@@ -1028,7 +1029,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Set one-one chat message status and reason code
-     * 
+     *
      * @param msgId Message Id
      * @param mimeType Mime type
      * @param contact Remote contact
@@ -1045,7 +1046,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Set group chat message status and reason code
-     * 
+     *
      * @param msgId Message Id
      * @param mimeType Mime type
      * @param chatId Chat id
@@ -1076,9 +1077,8 @@ public class ChatServiceImpl extends IChatService.Stub {
         ChatMessagePersistedStorageAccessor persistedStorage = new ChatMessagePersistedStorageAccessor(
                 mMessagingLog, chatMessage.getMessageId());
         ContactId contact = persistedStorage.getRemoteContact();
-        if (contact != null && contact.toString().equals(persistedStorage.getChatId())) { // OneToOne
-                                                                                          // chat
-                                                                                          // message
+        if (contact != null && contact.toString().equals(persistedStorage.getChatId())) {
+            // OneToOne chat message
             mOneToOneChatEventBroadcaster.broadcastMessageReceived(persistedStorage.getMimeType(),
                     chatMessage.getMessageId());
         } else { // GC message
@@ -1089,7 +1089,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Set group chat state and reason code
-     * 
+     *
      * @param chatId Chat id
      * @param state State
      * @param reasonCode Reason code
@@ -1103,7 +1103,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Broadcasts Group Chat state change
-     * 
+     *
      * @param chatId Chat id
      * @param state State
      * @param reasonCode Reason code
@@ -1115,7 +1115,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Checks if the group chat with specific chatId is active
-     * 
+     *
      * @param chatId Chat id
      * @return boolean
      */
@@ -1125,7 +1125,7 @@ public class ChatServiceImpl extends IChatService.Stub {
 
     /**
      * Checks if the group chat is abandoned and can never be used to send or receive messages.
-     * 
+     *
      * @param chatId Chat id
      * @return boolean
      */

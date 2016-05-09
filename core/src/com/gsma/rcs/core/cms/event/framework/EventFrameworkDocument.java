@@ -28,9 +28,9 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;
 
-public class SipEventFrameworkDocument {
+public class EventFrameworkDocument {
 
-    private static final Logger sLogger = Logger.getLogger(SipEventFrameworkDocument.class
+    private static final Logger sLogger = Logger.getLogger(EventFrameworkDocument.class
             .getSimpleName());
 
     private final static String XML_OBJECT_WITH_UID = "<object uid=\"%1$s\" folder-path=\"%2$s/\">"
@@ -49,7 +49,7 @@ public class SipEventFrameworkDocument {
      * @param deletedObjects the list of deleted objects
      * @param contributionId the contribution ID
      */
-    public SipEventFrameworkDocument(List<CmsObject> seenObjects, List<CmsObject> deletedObjects,
+    public EventFrameworkDocument(List<CmsObject> seenObjects, List<CmsObject> deletedObjects,
             String contributionId) {
         mSeenObject = seenObjects;
         mDeletedObject = deletedObjects;
@@ -95,7 +95,7 @@ public class SipEventFrameworkDocument {
         }
         if (contact != null) {
             xml.append("<other-party>").append(Constants.TEL_PREFIX).append(contact.toString())
-                    .append("/other-party>");
+                    .append("</other-party>");
         }
         xml.append("<message-id>").append(messageId).append("</message-id>");
         xml.append("</object>");
@@ -124,5 +124,13 @@ public class SipEventFrameworkDocument {
             return objectToXml(contact, mContributionId, mContributionId, object.getMessageId());
         }
         return "";
+    }
+
+    public List<CmsObject> getDeletedObject() {
+        return mDeletedObject;
+    }
+
+    public List<CmsObject> getSeenObject() {
+        return mSeenObject;
     }
 }

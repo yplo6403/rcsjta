@@ -126,8 +126,9 @@ public class CmsSyncScheduler {
         if (!mStarted) {
             return;
         }
-        mSyncRequestHandler.getLooper().quit();
-        mSyncRequestHandler.getLooper().getThread().interrupt();
+        Looper looper = mSyncRequestHandler.getLooper();
+        looper.quit();
+        looper.getThread().interrupt();
         mStarted = false;
     }
 

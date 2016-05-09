@@ -32,7 +32,6 @@ import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
-import com.gsma.rcs.utils.logger.Logger;
 
 import android.text.TextUtils;
 
@@ -46,13 +45,9 @@ import java.util.Set;
  */
 public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
 
-    private static final Logger sLogger = Logger.getLogger(CmsSyncUpdateFlagTask.class
-            .getSimpleName());
-
     private final List<CmsObject> mCmsObjects;
     private final CmsLog mCmsLog;
     private final String mRemoteFolder;
-
     private Set<Integer> mReadRequestedUids;
     private Set<Integer> mDeletedRequestedUids;
 
@@ -80,10 +75,8 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
      */
     public void updateFlags(BasicImapService basicImapService, String remoteFolder,
             List<CmsObject> cmsObjects) throws NetworkException, PayloadException {
-
         mReadRequestedUids = new HashSet<>();
         mDeletedRequestedUids = new HashSet<>();
-
         try {
             basicImapService.select(remoteFolder);
             for (CmsObject cmsObject : cmsObjects) {
@@ -97,23 +90,22 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
                                     Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
                             if (uid != null) {
                                 cmsObject.setUid(uid);
-                                mCmsLog.updateUid(messageType,
-                                        cmsObject.getMessageId(), uid);
+                                mCmsLog.updateUid(messageType, cmsObject.getMessageId(), uid);
                             }
                             break;
+
                         case SMS:
                             // TODO FGI
                             break;
+
                         case MMS:
                             // TODO FGI
                             break;
                     }
                 }
-
                 if (uid == null) { // we are not able to update flags without UID
                     continue;
                 }
-
                 if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
                     mReadRequestedUids.add(uid);
                 }
@@ -121,11 +113,9 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
                     mDeletedRequestedUids.add(uid);
                 }
             }
-
             if (!mReadRequestedUids.isEmpty()) {
                 basicImapService.addFlags(TextUtils.join(",", mReadRequestedUids), Flag.Seen);
             }
-
             if (!mDeletedRequestedUids.isEmpty()) {
                 basicImapService.addFlags(TextUtils.join(",", mDeletedRequestedUids), Flag.Deleted);
             }

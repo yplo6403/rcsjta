@@ -299,7 +299,6 @@ public class XmsSynchronizer implements Runnable {
             if (protocol != null) {
                 direction = Direction.INCOMING;
             }
-
             ReadStatus readStatus = ReadStatus.READ;
             if (read == 0) {
                 readStatus = ReadStatus.UNREAD;
@@ -358,7 +357,6 @@ public class XmsSynchronizer implements Runnable {
         } finally {
             CursorUtil.close(cursor);
         }
-
         /* Get recipients and associate a message Id */
         Map<ContactId, String> messageIds = new HashMap<>();
         try {
@@ -390,8 +388,7 @@ public class XmsSynchronizer implements Runnable {
         } finally {
             CursorUtil.close(cursor);
         }
-
-        /* Get parts and duplicate for al recipients */
+        /* Get parts and duplicate for all recipients */
         Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
         try {
             cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
@@ -455,13 +452,11 @@ public class XmsSynchronizer implements Runnable {
         } finally {
             CursorUtil.close(cursor);
         }
-
         for (Entry<ContactId, List<MmsPart>> entry : mmsParts.entrySet()) {
             ContactId contact = entry.getKey();
             mmsDataObject.add(new MmsDataObject(mmsId, messageIds.get(contact), contact, subject,
                     direction, readStatus, date, id, threadId, entry.getValue()));
         }
-
         State state = State.DISPLAYED;
         if (Direction.INCOMING == direction) {
             state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
@@ -485,7 +480,6 @@ public class XmsSynchronizer implements Runnable {
             if (isActivated) {
                 sLogger.info(" <<< end sync providers");
             }
-
         } catch (RuntimeException | FileAccessException e) {
             sLogger.error("CMS sync failure", e);
 

@@ -25,7 +25,6 @@ import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -45,7 +44,8 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
     }
 
     @Override
-    public void onDeliveryReport(String chatId, ContactId remote, String messageId, String imdnMessageId) {
+    public void onDeliveryReport(String chatId, ContactId remote, String messageId,
+            String imdnMessageId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + chatId + ", " + remote.toString() + ", "
                     + imdnMessageId);
@@ -62,7 +62,8 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + chatId + ", " + imdnMessageId);
         }
-        if(mCmsLog.getChatData(messageId) == null){ // do not persist IMDN if chat message is not present
+        if (mCmsLog.getChatData(messageId) == null) {
+            // do not persist IMDN if chat message is not present
             return;
         }
         mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
@@ -75,7 +76,8 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeliveryReport: " + contact + ", " + imdnMessageId);
         }
-        if(mCmsLog.getChatData(messageId) == null){// Do not persist IMDN if chat message is not present
+        if (mCmsLog.getChatData(messageId) == null) {
+            // Do not persist IMDN if chat message is not present
             return;
         }
         mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,

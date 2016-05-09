@@ -40,7 +40,7 @@ import junit.framework.Assert;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
+public class EventReportingFrameworkDocumentTest extends AndroidTestCase {
 
     private ContactId mContact1;
     private ContactId mContact2;
@@ -56,7 +56,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportSeenObjectWithUid() throws RcsPermissionDeniedException {
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -72,7 +72,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         seenObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 null);
@@ -99,7 +99,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         seenObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 null);
@@ -120,7 +120,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportDeletedObjectWithUid(){
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -136,7 +136,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 null);
@@ -163,7 +163,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 null);
@@ -184,7 +184,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportSeenAndDeletedObjectWithUid(){
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -212,7 +212,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 null);
@@ -235,7 +235,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportSeenGroupChatMessageWithoutUid(){
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -250,7 +250,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         seenObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 chatId1);
@@ -278,7 +278,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         seenObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 chatId1);
@@ -303,7 +303,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportDeletedGroupChatMessageWithoutUid(){
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -318,7 +318,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId1,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects, 
                 chatId1);
@@ -346,7 +346,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 chatId1);
@@ -371,7 +371,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
     }
 
     public void testReportSeenAndDeletedGroupChatMessageWithoutUid(){
-        SipEventFrameworkDocument sipEventReportingFrameworkDocument;
+        EventFrameworkDocument sipEventReportingFrameworkDocument;
         CmsObject cmsObject;
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
@@ -396,7 +396,7 @@ public class SipEventReportingFrameworkDocumentTest extends AndroidTestCase {
                 messageId2,
                 null);
         deletedObjects.add(cmsObject);
-        sipEventReportingFrameworkDocument = new SipEventFrameworkDocument(
+        sipEventReportingFrameworkDocument = new EventFrameworkDocument(
                 seenObjects,
                 deletedObjects,
                 chatId1);

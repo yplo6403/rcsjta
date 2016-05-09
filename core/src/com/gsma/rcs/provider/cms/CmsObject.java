@@ -89,10 +89,14 @@ public final class CmsObject {
          * server
          */
         READ_REPORT_REQUESTED(1), /**
-         * The message has been displayed in the UI and synchronized with
-         * the CMS server
+         * The message has been displayed in the UI and reported to CMS
+         * server but CMS server has not acknowledged the report processing.
          */
-        READ(2);
+        READ_REPORTED(2), /**
+         * The message has been displayed in the UI and synchronized with the CMS
+         * server
+         */
+        READ(3);
 
         private final int mValue;
 
@@ -145,10 +149,14 @@ public final class CmsObject {
          * CMS server
          */
         DELETED_REPORT_REQUESTED(1), /**
-         * The message has been deleted from the UI and synchronized
-         * with the CMS server
+         * The message has been deleted in the UI and reported to CMS
+         * server but CMS server has not acknowledged the report processing.
          */
-        DELETED(2);
+        DELETED_REPORTED(2), /**
+         * The message has been deleted from the UI and synchronized with the
+         * CMS server
+         */
+        DELETED(3);
 
         private final int mValue;
 

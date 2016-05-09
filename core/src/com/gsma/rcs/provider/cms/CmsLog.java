@@ -51,11 +51,11 @@ public class CmsLog {
 
     private final LocalContentResolver mLocalContentResolver;
 
-    private static final String[] PROJECTION_ID = new String[] {
-        BaseColumns._ID
+    private static final String[] PROJECTION_ID = new String[]{
+            BaseColumns._ID
     };
-    private static final String[] PROJECTION_UID = new String[] {
-        CmsObject.KEY_UID
+    private static final String[] PROJECTION_UID = new String[]{
+            CmsObject.KEY_UID
     };
 
     // Folder table
@@ -68,7 +68,7 @@ public class CmsLog {
 
         private static final String PROJECTION_MAX_UID = "MAX(" + CmsObject.KEY_UID + ")";
 
-        private static final String[] PROJECTION_NATIVE_PROVIDERID_READ_DELETE = new String[] {
+        private static final String[] PROJECTION_NATIVE_PROVIDERID_READ_DELETE = new String[]{
                 CmsObject.KEY_NATIVE_PROVIDER_ID, CmsObject.KEY_READ_STATUS,
                 CmsObject.KEY_DELETE_STATUS
         };
@@ -90,7 +90,6 @@ public class CmsLog {
         private static final String SELECTION_DELETE_STATUS = CmsObject.KEY_DELETE_STATUS + "=?";
         private static final String SELECTION_READ_STATUS_OR_DELETE_STATUS = "(" + SELECTION_READ_STATUS + " OR " + SELECTION_DELETE_STATUS + ")";
 
-        private static final String SELECTION_PUSH_STATUS = CmsObject.KEY_PUSH_STATUS + "=?";
         private static final String SELECTION_CHAT = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.CHAT_MESSAGE + "'";
         private static final String SELECTION_IMDN = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.IMDN + "'";
         private static final String SELECTION_FT = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.FILE_TRANSFER + "'";
@@ -109,9 +108,6 @@ public class CmsLog {
         private static final String SELECTION_SMS_MESSAGEID = SELECTION_SMS + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_MMS_MESSAGEID = SELECTION_MMS + " AND " + SELECTION_MESSAGE_ID;
 
-        private static final String SELECTION_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_XMS + " AND " + SELECTION_PUSH_STATUS + " AND " + SELECTION_DELETE_STATUS;
-        private static final String SELECTION_FOLDER_XMS_PUSH_STATUS_DELETE_STATUS = SELECTION_FOLDER_NAME + " AND " + SELECTION_XMS_PUSH_STATUS_DELETE_STATUS;
-
         private static final String SELECTION_MESSAGE_TYPE_MESSAGE_ID = SELECTION_MESSAGE_TYPE + " AND " + SELECTION_MESSAGE_ID;
         private static final String SELECTION_MESSAGE_TYPE_PROVIDER_ID = SELECTION_MESSAGE_TYPE + " AND " + SELECTION_PROVIDER_ID;
         private static final String SELECTION_MESSAGES_TO_SYNC = SELECTION_FOLDER_NAME + " AND " + SELECTION_READ_STATUS_OR_DELETE_STATUS;
@@ -121,8 +117,11 @@ public class CmsLog {
 
         private static final String SELECTION_XMS_TO_PUSH =
                 CmsObject.KEY_DELETE_STATUS + "=" + DeleteStatus.DELETED_REPORT_REQUESTED.toInt() + " OR " +
-                CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
-                CmsObject.KEY_PUSH_STATUS +  "=" + PushStatus.PUSH_REQUESTED.toInt();
+                        CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
+                        CmsObject.KEY_PUSH_STATUS + "=" + PushStatus.PUSH_REQUESTED.toInt();
+
+        public static final String SEL_DELETED_REPORTED = CmsObject.KEY_DELETE_STATUS + "=" + DeleteStatus.DELETED_REPORTED.toInt();
+        public static final String SEL_READ_REPORTED = CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORTED.toInt();
 
         // @formatter:on
     }
@@ -232,8 +231,8 @@ public class CmsLog {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsFolder.CONTENT_URI, PROJECTION_ID,
-                    Folder.SELECTION_NAME, new String[] {
-                        name
+                    Folder.SELECTION_NAME, new String[]{
+                            name
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsFolder.CONTENT_URI);
             if (cursor.moveToFirst()) {
@@ -250,7 +249,7 @@ public class CmsLog {
     /**
      * Deletes a folder
      *
-     * @param name the folder name
+     * @param name           the folder name
      * @param deleteMessages True if messages must be deleted
      * @return id
      */
@@ -259,8 +258,8 @@ public class CmsLog {
             removeMessages(name);
         }
         return mLocalContentResolver.delete(CmsFolder.CONTENT_URI, Folder.SELECTION_NAME,
-                new String[] {
-                    name
+                new String[]{
+                        name
                 });
     }
 
@@ -318,8 +317,8 @@ public class CmsLog {
      * Updates message
      *
      * @param messageType the type
-     * @param messageId the ID
-     * @param uid the UID
+     * @param messageId   the ID
+     * @param uid         the UID
      */
     public void updateUid(MessageType messageType, String messageId, Integer uid) {
         boolean logActivated = sLogger.isActivated();
@@ -331,23 +330,23 @@ public class CmsLog {
             sLogger.debug("Update messageData : " + messageType + "," + messageId + "," + uid);
         }
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[]{
                         messageType.toString(), messageId
                 });
     }
 
     /**
      * Updates message
-     * 
+     *
      * @param messageType the type
-     * @param messageId the ID
-     * @param folderName the folder name
-     * @param uid the UID
-     * @param seen the seen flag
-     * @param deleted the deleted flag
+     * @param messageId   the ID
+     * @param folderName  the folder name
+     * @param uid         the UID
+     * @param seen        the seen flag
+     * @param deleted     the deleted flag
      */
     public void updateMessage(MessageType messageType, String messageId, String folderName,
-            Integer uid, Boolean seen, Boolean deleted) {
+                              Integer uid, Boolean seen, Boolean deleted) {
         boolean logActivated = sLogger.isActivated();
 
         ContentValues values = new ContentValues();
@@ -364,7 +363,7 @@ public class CmsLog {
                     + folderName + "," + uid);
         }
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[]{
                         messageType.toString(), messageId
                 });
     }
@@ -373,14 +372,14 @@ public class CmsLog {
      * Get message by folderName and uid
      *
      * @param folderName the folder name
-     * @param uid the UID
+     * @param uid        the UID
      * @return CmsObject
      */
     public CmsObject getMessage(String folderName, Integer uid) {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
-                    Message.SELECTION_FOLDER_NAME_UID, new String[] {
+                    Message.SELECTION_FOLDER_NAME_UID, new String[]{
                             folderName, String.valueOf(uid)
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
@@ -401,7 +400,7 @@ public class CmsLog {
                     cursor.getString(cursor.getColumnIndexOrThrow(CmsObject.KEY_MESSAGE_ID)),
                     cursor.isNull(cursor.getColumnIndexOrThrow(CmsObject.KEY_NATIVE_PROVIDER_ID)) ? null
                             : cursor.getLong(cursor
-                                    .getColumnIndexOrThrow(CmsObject.KEY_NATIVE_PROVIDER_ID)));
+                            .getColumnIndexOrThrow(CmsObject.KEY_NATIVE_PROVIDER_ID)));
         } finally {
             CursorUtil.close(cursor);
         }
@@ -471,8 +470,8 @@ public class CmsLog {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null, selection,
-                    new String[] {
-                        messageId
+                    new String[]{
+                            messageId
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
             if (!cursor.moveToFirst()) {
@@ -509,10 +508,10 @@ public class CmsLog {
     public Integer getMaxUidForMessages(String folderName) {
         Cursor cursor = null;
         try {
-            cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, new String[] {
-                Message.PROJECTION_MAX_UID
-            }, Message.SELECTION_FOLDER_NAME, new String[] {
-                folderName
+            cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, new String[]{
+                    Message.PROJECTION_MAX_UID
+            }, Message.SELECTION_FOLDER_NAME, new String[]{
+                    folderName
             }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
             if (!cursor.moveToFirst()) {
@@ -535,7 +534,7 @@ public class CmsLog {
         List<CmsObject> messages = new ArrayList<>();
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
-                    Message.SELECTION_MESSAGES_TO_SYNC, new String[] {
+                    Message.SELECTION_MESSAGES_TO_SYNC, new String[]{
                             folderName, String.valueOf(ReadStatus.READ_REPORT_REQUESTED.toInt()),
                             String.valueOf(DeleteStatus.DELETED_REPORT_REQUESTED.toInt())
                     }, null);
@@ -552,11 +551,11 @@ public class CmsLog {
             while (cursor.moveToNext()) {
                 messages.add(new CmsObject(cursor.getString(folderIdx),
                         cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx), ReadStatus
-                                .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
-                                .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
+                        .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
+                        .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
-                                .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                : cursor.getLong(nativeProviderIdIdx)));
+                        .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
+                        : cursor.getLong(nativeProviderIdIdx)));
             }
             return messages;
 
@@ -572,8 +571,8 @@ public class CmsLog {
      * @return CmsObject
      */
     public List<CmsObject> getMessages(ReadStatus readStatus) {
-        return getMessages(Message.SELECTION_READ_STATUS, new String[] {
-            String.valueOf(readStatus.toInt())
+        return getMessages(Message.SELECTION_READ_STATUS, new String[]{
+                String.valueOf(readStatus.toInt())
         });
     }
 
@@ -581,7 +580,7 @@ public class CmsLog {
      * Gets messages by readStatus
      *
      * @param selection the selection
-     * @param params the parameters
+     * @param params    the parameters
      * @return CmsObject
      */
     private List<CmsObject> getMessages(String selection, String[] params) {
@@ -603,11 +602,11 @@ public class CmsLog {
             while (cursor.moveToNext()) {
                 messages.add(new CmsObject(cursor.getString(folderIdx),
                         cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx), ReadStatus
-                                .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
-                                .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
+                        .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
+                        .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
-                                .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                : cursor.getLong(nativeProviderIdIdx)));
+                        .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
+                        : cursor.getLong(nativeProviderIdIdx)));
 
             }
             return messages;
@@ -624,54 +623,9 @@ public class CmsLog {
      * @return the set of CmsObject instances
      */
     public List<CmsObject> getMessages(DeleteStatus deleteStatus) {
-        return getMessages(Message.SELECTION_DELETE_STATUS, new String[] {
-            String.valueOf(deleteStatus.toInt())
+        return getMessages(Message.SELECTION_DELETE_STATUS, new String[]{
+                String.valueOf(deleteStatus.toInt())
         });
-    }
-
-    /**
-     * Gets messages by folder name and pushStatus Filter out messages marked as deleted
-     *
-     * @param folderName the folder name
-     * @param pushStatus the push status
-     * @return the set of CmsObjects
-     */
-    public Set<CmsObject> getXmsMessages(String folderName, PushStatus pushStatus) {
-        Cursor cursor = null;
-        Set<CmsObject> messages = new HashSet<>();
-        try {
-            cursor = mLocalContentResolver.query(
-                    CmsObject.CONTENT_URI,
-                    null,
-                    Message.SELECTION_FOLDER_XMS_PUSH_STATUS_DELETE_STATUS,
-                    new String[] {
-                            folderName, String.valueOf(pushStatus.toInt()),
-                            String.valueOf(DeleteStatus.NOT_DELETED.toInt())
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
-            int uidIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_UID);
-            int folderIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_FOLDER_NAME);
-            int seenIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_READ_STATUS);
-            int deletedIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_DELETE_STATUS);
-            int pushIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_PUSH_STATUS);
-            int messageTypeIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_MESSAGE_TYPE);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_MESSAGE_ID);
-            int nativeProviderIdIdx = cursor
-                    .getColumnIndexOrThrow(CmsObject.KEY_NATIVE_PROVIDER_ID);
-            while (cursor.moveToNext()) {
-                messages.add(new CmsObject(cursor.getString(folderIdx),
-                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx), ReadStatus
-                                .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
-                                .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
-                        MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
-                                .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                : cursor.getLong(nativeProviderIdIdx)));
-
-            }
-            return messages;
-        } finally {
-            CursorUtil.close(cursor);
-        }
     }
 
     /**
@@ -699,55 +653,11 @@ public class CmsLog {
             while (cursor.moveToNext()) {
                 messages.add(new CmsObject(cursor.getString(folderIdx),
                         cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx), ReadStatus
-                                .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
-                                .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
+                        .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
+                        .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
                         MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
-                                .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                : cursor.getLong(nativeProviderIdIdx)));
-
-            }
-            return messages;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Gets messages by pushStatus Filter out messages marked as deleted
-     * 
-     * @param pushStatus the push status
-     * @return the set CmsObjects
-     */
-    public Set<CmsObject> getXmsMessages(PushStatus pushStatus) {
-        Cursor cursor = null;
-        Set<CmsObject> messages = new HashSet<>();
-        try {
-            cursor = mLocalContentResolver.query(
-                    CmsObject.CONTENT_URI,
-                    null,
-                    Message.SELECTION_XMS_PUSH_STATUS_DELETE_STATUS,
-                    new String[] {
-                            String.valueOf(pushStatus.toInt()),
-                            String.valueOf(DeleteStatus.NOT_DELETED.toInt())
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
-            int uidIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_UID);
-            int folderIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_FOLDER_NAME);
-            int seenIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_READ_STATUS);
-            int deletedIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_DELETE_STATUS);
-            int pushIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_PUSH_STATUS);
-            int messageTypeIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_MESSAGE_TYPE);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_MESSAGE_ID);
-            int nativeProviderIdIdx = cursor
-                    .getColumnIndexOrThrow(CmsObject.KEY_NATIVE_PROVIDER_ID);
-            while (cursor.moveToNext()) {
-                messages.add(new CmsObject(cursor.getString(folderIdx),
-                        cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx), ReadStatus
-                                .valueOf(cursor.getInt(seenIdx)), DeleteStatus.valueOf(cursor
-                                .getInt(deletedIdx)), PushStatus.valueOf(cursor.getInt(pushIdx)),
-                        MessageType.valueOf(cursor.getString(messageTypeIdx)), cursor
-                                .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                : cursor.getLong(nativeProviderIdIdx)));
+                        .getString(messageIdIdx), cursor.isNull(nativeProviderIdIdx) ? null
+                        : cursor.getLong(nativeProviderIdIdx)));
 
             }
             return messages;
@@ -760,14 +670,14 @@ public class CmsLog {
      * Gets messageId for a folder name and uid message
      *
      * @param folderName the folder name
-     * @param uid the UID
+     * @param uid        the UID
      * @return id the message ID
      */
     public Integer getMessageId(String folderName, Integer uid) {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, PROJECTION_ID,
-                    Message.SELECTION_FOLDER_NAME_UID, new String[] {
+                    Message.SELECTION_FOLDER_NAME_UID, new String[]{
                             folderName, String.valueOf(uid)
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
@@ -784,7 +694,7 @@ public class CmsLog {
 
     /**
      * Gets uid by messageId
-     * 
+     *
      * @param baseId the base ID
      * @return uid
      */
@@ -792,8 +702,8 @@ public class CmsLog {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, PROJECTION_UID,
-                    Message.SELECTION_XMS_MESSAGEID, new String[] {
-                        baseId
+                    Message.SELECTION_XMS_MESSAGEID, new String[]{
+                            baseId
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
             int uidIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_UID);
@@ -809,47 +719,47 @@ public class CmsLog {
 
     /**
      * Updates delete status of all messages
-     * 
+     *
      * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(String folder, DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SELECTION_FOLDER_NAME,
-                new String[] {
-                    folder
+                new String[]{
+                        folder
                 });
     }
 
     /**
      * Updates delete status by folder and uid
-     * 
-     * @param folder the folder name
-     * @param uid the UID
+     *
+     * @param folder       the folder name
+     * @param uid          the UID
      * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(String folder, Integer uid, DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_FOLDER_NAME_UID, new String[] {
+                Message.SELECTION_FOLDER_NAME_UID, new String[]{
                         folder, String.valueOf(uid)
                 });
     }
 
     /**
      * Updates delete status by messageType and messageId
-     * 
-     * @param messageType the type
-     * @param messageId the message ID
+     *
+     * @param messageType  the type
+     * @param messageId    the message ID
      * @param deleteStatus the deleted status
      */
     public void updateDeleteStatus(MessageType messageType, String messageId,
-            DeleteStatus deleteStatus) {
+                                   DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[]{
                         messageType.toString(), messageId
                 });
     }
@@ -857,55 +767,55 @@ public class CmsLog {
     /**
      * Updates delete status by messageId for XMS messages
      *
-     * @param messageId the message ID
+     * @param messageId    the message ID
      * @param deleteStatus the deleted status
      */
     public void updateXmsDeleteStatus(String messageId, DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_XMS_MESSAGEID, new String[] {
-                    messageId
+                Message.SELECTION_XMS_MESSAGEID, new String[]{
+                        messageId
                 });
     }
 
     /**
      * Updates read status by folder and uid
-     * 
-     * @param folder the folder name
-     * @param uid the UID
+     *
+     * @param folder     the folder name
+     * @param uid        the UID
      * @param readStatus the read status
      */
     public void updateReadStatus(String folder, Integer uid, ReadStatus readStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_READ_STATUS, readStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_FOLDER_NAME_UID, new String[] {
+                Message.SELECTION_FOLDER_NAME_UID, new String[]{
                         folder, String.valueOf(uid)
                 });
     }
 
     /**
      * Updates read status by messageType and messageId
-     * 
+     *
      * @param messageType the type
-     * @param messageId the message ID
-     * @param readStatus the read status
+     * @param messageId   the message ID
+     * @param readStatus  the read status
      */
     public void updateReadStatus(MessageType messageType, String messageId, ReadStatus readStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_READ_STATUS, readStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[]{
                         messageType.toString(), messageId
                 });
     }
 
     /**
      * Updates push status and uid by messageId
-     * 
-     * @param uid the UID
-     * @param messageId the message ID
+     *
+     * @param uid        the UID
+     * @param messageId  the message ID
      * @param pushStatus the push status
      */
     public void updateXmsPushStatus(Integer uid, String messageId, PushStatus pushStatus) {
@@ -913,23 +823,23 @@ public class CmsLog {
         values.put(CmsObject.KEY_UID, uid);
         values.put(CmsObject.KEY_PUSH_STATUS, pushStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_XMS_MESSAGEID, new String[] {
-                    messageId
+                Message.SELECTION_XMS_MESSAGEID, new String[]{
+                        messageId
                 });
     }
 
     /**
      * Updates push status by messageType
-     * 
+     *
      * @param messageType the type
-     * @param pushStatus the push status
+     * @param pushStatus  the push status
      */
     public void updatePushStatus(MessageType messageType, PushStatus pushStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_PUSH_STATUS, pushStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SELECTION_MESSAGE_TYPE,
-                new String[] {
-                    messageType.toString()
+                new String[]{
+                        messageType.toString()
                 });
     }
 
@@ -941,55 +851,55 @@ public class CmsLog {
      */
     public int removeMessages(String folderName) {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI, Message.SELECTION_FOLDER_NAME,
-                new String[] {
-                    folderName
+                new String[]{
+                        folderName
                 });
     }
 
     /**
      * Updates delete status by messageType and nativeProviderId
-     * 
-     * @param messageType the type
+     *
+     * @param messageType      the type
      * @param nativeProviderId the native provider ID
-     * @param deleteStatus the deleted status
+     * @param deleteStatus     the deleted status
      */
     public void updateDeleteStatus(MessageType messageType, Long nativeProviderId,
-            DeleteStatus deleteStatus) {
+                                   DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         values.put(CmsObject.KEY_NATIVE_PROVIDER_ID, (String) null);
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[]{
                         messageType.toString(), String.valueOf(nativeProviderId)
                 });
     }
 
     /**
      * Updates read status by messageType and nativeProviderId
-     * 
-     * @param messageType the type
+     *
+     * @param messageType      the type
      * @param nativeProviderId the native provider ID
-     * @param readStatus the read status
+     * @param readStatus       the read status
      */
     public void updateReadStatus(MessageType messageType, Long nativeProviderId,
-            ReadStatus readStatus) {
+                                 ReadStatus readStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_READ_STATUS, readStatus.toInt());
         mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
-                Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[] {
+                Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[]{
                         messageType.toString(), String.valueOf(nativeProviderId)
                 });
     }
 
     /**
      * Purges messages
-     * 
+     *
      * @return The number of rows affected.
      */
     public int purgeMessages() {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI,
-                Message.SELECTION_DELETE_STATUS_PROVIDER_ID_NULL, new String[] {
-                    String.valueOf(DeleteStatus.DELETED.toInt())
+                Message.SELECTION_DELETE_STATUS_PROVIDER_ID_NULL, new String[]{
+                        String.valueOf(DeleteStatus.DELETED.toInt())
                 });
     }
 
@@ -1008,8 +918,8 @@ public class CmsLog {
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI,
                     Message.PROJECTION_NATIVE_PROVIDERID_READ_DELETE,
-                    Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID_NOT_NULL, new String[] {
-                        messageType.toString()
+                    Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID_NOT_NULL, new String[]{
+                            messageType.toString()
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
             int readIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_READ_STATUS);
@@ -1028,4 +938,14 @@ public class CmsLog {
         }
     }
 
+    public void resetReportedStatus() {
+        ContentValues values = new ContentValues();
+        values.put(CmsObject.KEY_DELETE_STATUS, DeleteStatus.DELETED_REPORT_REQUESTED.toInt());
+        mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SEL_DELETED_REPORTED,
+                null);
+        values.clear();
+        values.put(CmsObject.KEY_READ_STATUS, ReadStatus.READ_REPORT_REQUESTED.toInt());
+        mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SEL_READ_REPORTED,
+                null);
+    }
 }

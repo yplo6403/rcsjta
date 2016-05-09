@@ -97,11 +97,9 @@ public class CmsManager implements XmsMessageListener {
         // execute sync between providers in a dedicated thread
         new Thread(new XmsSynchronizer(mCtx.getContentResolver(), mRcsSettings, mXmsLog, mCmsLog))
                 .start();
-
         // instantiate CmsEventHandler in charge of handling events from Cms
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mCmsLog, mXmsLog,
                 mMessagingLog, chatService, fileTransferService, cmsService, mRcsSettings);
-
         // instantiate LocalStorage in charge of handling events relatives to IMAP sync
         mLocalStorage = new LocalStorage(mRcsSettings, mCmsLog, cmsEventHandler);
 
@@ -121,20 +119,18 @@ public class CmsManager implements XmsMessageListener {
             mEventFrameworkManager = new EventFrameworkManager(mSyncScheduler,
                     mImsModule.getInstantMessagingService(), mCmsLog, mRcsSettings);
             mXmsEventHandler.setEventFrameworkManager(mEventFrameworkManager);
+            mEventFrameworkManager.start();
         }
-
         /*
-         * Instantiate ImdnDeliveryReportHanlder
+         * Instantiate ImdnDeliveryReportHandler
          */
         mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog);
-
         /*
          * instantiate ChatEventHandler in charge of handling events from ChatSession,read or
          * deletion of messages.
          */
         mChatEventHandler = new ChatEventHandler(mEventFrameworkManager, mCmsLog, mMessagingLog,
                 mRcsSettings, mImdnDeliveryReportHandler);
-
         /*
          * instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
          * deletion of messages.
@@ -143,7 +139,6 @@ public class CmsManager implements XmsMessageListener {
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
 
         mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mXmsLog, mRcsSettings, mSyncScheduler);
-
         /*
          * instantiate FileTransferEventHandler in charge of handling events from
          * FileSharingSession, read or deletion of file transfer.
@@ -159,6 +154,10 @@ public class CmsManager implements XmsMessageListener {
         if (mSyncScheduler != null) {
             mSyncScheduler.stop();
             mSyncScheduler = null;
+        }
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.stop();
+            mEventFrameworkManager = null;
         }
         mLocalStorage = null;
         mXmsEventHandler = null;

@@ -7,14 +7,13 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.core.cms.event.framework;
@@ -35,6 +34,10 @@ import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,46 +55,96 @@ public class EventFrameworkManager implements IEventFrameworkListener {
 
     public final static String MIME_TYPE = "application/vnd.oma.cpm-eventfw+xml";
 
-    private static final Logger sLogger = Logger.getLogger(EventFrameworkManager.class
-            .getSimpleName());
+    /*
+    Delay before reporting event in order to aggregate multiple events in a single CPIM message.
+     */
+    private static final long DELAY_NOTIFICATION_EVENT_FRAMEWORK = 1000;
+
+    private static final String EVENT_FRAMEWORK_MANAGER = EventFrameworkManager.class
+            .getName();
+    private static final Logger sLogger = Logger.getLogger(EVENT_FRAMEWORK_MANAGER);
 
     private final RcsSettings mSettings;
     private final InstantMessagingService mInstantMessagingService;
     private final CmsLog mCmsLog;
     private final CmsSyncScheduler mCmsSyncScheduler;
+    private Handler mHandler;
 
     /**
      * Constructor
-     * 
-     * @param scheduler the scheduler
+     *
+     * @param scheduler               the scheduler
      * @param instantMessagingService the IMS module
-     * @param cmsLog the CMS log accessor
-     * @param settings the RCS settings accessor
+     * @param cmsLog                  the CMS log accessor
+     * @param settings                the RCS settings accessor
      */
     public EventFrameworkManager(CmsSyncScheduler scheduler,
-            InstantMessagingService instantMessagingService, CmsLog cmsLog, RcsSettings settings) {
+                                 InstantMessagingService instantMessagingService,
+                                 CmsLog cmsLog, RcsSettings settings) {
         mInstantMessagingService = instantMessagingService;
         mCmsSyncScheduler = scheduler;
         mSettings = settings;
         mCmsLog = cmsLog;
     }
 
+    public synchronized void start() {
+        /**
+         * Use a handler to delay event framework notification since client apps may mark messages
+         * as read by batch.
+         * Delaying event reports allows to aggregate events in a single CPIM message.
+         */
+        mHandler = allocateBgHandler(EVENT_FRAMEWORK_MANAGER);
+        mCmsLog.resetReportedStatus();
+    }
+
+    public synchronized void stop() {
+        Looper looper = mHandler.getLooper();
+        looper.quit();
+        looper.getThread().interrupt();
+    }
+
+    private Handler allocateBgHandler(String threadName) {
+        HandlerThread thread = new HandlerThread(threadName);
+        thread.start();
+        return new Handler(thread.getLooper());
+    }
+
     @Override
     public void updateFlagsForXms(ContactId contact) {
-        updateFlags(contact, null);
+        // Do nothing for XMS
     }
 
     @Override
-    public void updateFlagsForChat(ContactId contact) {
-        updateFlags(contact, null);
+    public void updateFlagsForChat(final ContactId contact) {
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    updateFlags(contact, null);
+
+                } catch (RuntimeException e) {
+                    sLogger.error("Failed to update flags for contact=" + contact, e);
+                }
+            }
+        }, DELAY_NOTIFICATION_EVENT_FRAMEWORK);
     }
 
     @Override
-    public void updateFlagsForGroupChat(String chatId) {
-        updateFlags(null, chatId);
+    public void updateFlagsForGroupChat(final String chatId) {
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    updateFlags(null, chatId);
+
+                } catch (RuntimeException e) {
+                    sLogger.error("Failed to update flags for chatId=" + chatId, e);
+                }
+            }
+        }, DELAY_NOTIFICATION_EVENT_FRAMEWORK);
     }
 
-    private SipEventFrameworkDocument buildDocument(String cmsFolder, String contributionId) {
+    private EventFrameworkDocument buildDocument(String cmsFolder, String contributionId) {
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
         for (CmsObject cmsObject : mCmsLog.getMessagesToSync(cmsFolder)) {
@@ -103,9 +156,18 @@ public class EventFrameworkManager implements IEventFrameworkListener {
             }
         }
         if (seenObjects.isEmpty() && deletedObjects.isEmpty()) {
+            // Nothing to report
             return null;
         }
-        return new SipEventFrameworkDocument(seenObjects, deletedObjects, contributionId);
+        return new EventFrameworkDocument(seenObjects, deletedObjects, contributionId);
+    }
+
+    private List<String> getIds(List<CmsObject> cmsObjects) {
+        List<String> result = new ArrayList<>();
+        for (CmsObject cmsObject : cmsObjects) {
+            result.add(cmsObject.getMessageId());
+        }
+        return result;
     }
 
     private void updateFlags(ContactId contactId, String chatId) {
@@ -150,33 +212,59 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                          */
                         contributionId = chatSession.getContributionID();
                     }
-                    SipEventFrameworkDocument sipEventReportingFrameworkDoc = buildDocument(
-                            cmsFolder, contributionId);
-                    if (sipEventReportingFrameworkDoc != null) {
-                        byte[] bytes = sipEventReportingFrameworkDoc.toXml().getBytes(UTF8);
+                    EventFrameworkDocument eventFrameworkDoc = buildDocument(cmsFolder,
+                            contributionId);
+                    // Is there anything to report ?
+                    if (eventFrameworkDoc != null) {
+                        byte[] bytes = eventFrameworkDoc.toXml().getBytes(UTF8);
                         ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
                         try {
                             chatSession.getMsrpMgr().sendChunks(stream,
                                     IdGenerator.generateMessageID(), MIME_TYPE, bytes.length,
                                     MsrpSession.TypeMsrpChunk.EventReportingFramework);
-
+                            List<CmsObject> deleted = eventFrameworkDoc.getDeletedObject();
+                            if (!deleted.isEmpty()) {
+                                if (sLogger.isActivated()) {
+                                    if (isOneToOne) {
+                                        sLogger.debug("Report deletion for IDs " + getIds(deleted)
+                                                + ", contact=" + contactId);
+                                    } else {
+                                        sLogger.debug("Report deletion " + getIds(deleted) + ", chatId="
+                                                + chatId);
+                                    }
+                                }
+                                for (CmsObject cmsObject : eventFrameworkDoc.getDeletedObject()) {
+                                    mCmsLog.updateDeleteStatus(CmsObject.MessageType.CHAT_MESSAGE,
+                                            cmsObject.getMessageId(),
+                                            CmsObject.DeleteStatus.DELETED_REPORTED);
+                                }
+                            }
+                            List<CmsObject> displayed = eventFrameworkDoc.getSeenObject();
+                            if (!displayed.isEmpty()) {
+                                if (sLogger.isActivated()) {
+                                    if (isOneToOne) {
+                                        sLogger.debug("Report display for IDs " + getIds(displayed)
+                                                + ",contact=" + contactId);
+                                    } else {
+                                        sLogger.debug("Report display for IDs " + getIds(displayed)
+                                                + ", chatId=" + chatId);
+                                    }
+                                }
+                                for (CmsObject cmsObject : displayed) {
+                                    mCmsLog.updateReadStatus(CmsObject.MessageType.CHAT_MESSAGE,
+                                            cmsObject.getMessageId(),
+                                            CmsObject.ReadStatus.READ_REPORTED);
+                                }
+                            }
                         } catch (NetworkException e) {
                             if (sLogger.isActivated()) {
                                 if (isOneToOne) {
                                     sLogger.warn("Failed to update flags for contact " + contactId,
                                             e);
                                 } else {
-                                    sLogger.warn("Failed to update flagsfor chatId " + chatId, e);
+                                    sLogger.warn("Failed to update flags for chatId " + chatId, e);
                                 }
                             }
-                        }
-                    } else {
-                        if (isOneToOne) {
-                            sLogger.error("Cannot update flags, xml document is null for contact "
-                                    + contactId);
-                        } else {
-                            sLogger.error("Cannot update flags, xml document is null for chatId "
-                                    + chatId);
                         }
                     }
                 } else { // no MSRP session available, use IMAP session instead
@@ -204,6 +292,10 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                 sLogger.info("--> can not schedule update flag operation for contact : "
                         + contact.toString());
             }
+        } else {
+            if (sLogger.isActivated()) {
+                sLogger.debug("Schedule update flag operation for contact : " + contact.toString());
+            }
         }
     }
 
@@ -211,6 +303,10 @@ public class EventFrameworkManager implements IEventFrameworkListener {
         if (!mCmsSyncScheduler.scheduleUpdateFlags(chatId)) {
             if (sLogger.isActivated()) {
                 sLogger.info("--> can not schedule update flag operation for chatId : " + chatId);
+            }
+        } else {
+            if (sLogger.isActivated()) {
+                sLogger.debug("Schedule update flag operation for chatId : " + chatId);
             }
         }
     }
