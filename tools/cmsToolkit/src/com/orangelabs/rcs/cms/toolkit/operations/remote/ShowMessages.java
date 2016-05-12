@@ -1,11 +1,11 @@
 
 package com.orangelabs.rcs.cms.toolkit.operations.remote;
 
-import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.ShowMessagesTask;
-import com.gsma.rcs.core.cms.sync.scheduler.task.ShowMessagesTask.ShowMessagesTaskListener;
+import com.orangelabs.rcs.cms.toolkit.protocol.service.BasicImapService;
+import com.orangelabs.rcs.cms.toolkit.protocol.service.ImapServiceHandler;
+import com.orangelabs.rcs.cms.toolkit.scheduler.SchedulerTask;
+import com.orangelabs.rcs.cms.toolkit.scheduler.task.ShowMessagesTask;
+import com.orangelabs.rcs.cms.toolkit.scheduler.task.ShowMessagesTask.ShowMessagesTaskListener;
 
 import com.orangelabs.rcs.cms.toolkit.AlertDialogUtils;
 import com.orangelabs.rcs.cms.toolkit.R;

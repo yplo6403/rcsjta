@@ -30,6 +30,7 @@ import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
 import com.gsma.rcs.imaplib.imap.Part;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.utils.ContactUtilMockContext;
+import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
@@ -41,15 +42,17 @@ import junit.framework.Assert;
 
 public class ImapImdnMessageTest extends AndroidTestCase {
 
+    private final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
     private ContactId mExpectedContact;
     private String mImapDate;
     private String mCpimDate;
+    private ContactUtil mContactUtil;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        ContactUtil contactUtil = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
-        mExpectedContact = contactUtil.formatContact("+33642575779");
+        mContactUtil = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        mExpectedContact = mContactUtil.formatContact("+33642575779");
         long date = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT);
         mCpimDate = DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT);
@@ -57,9 +60,10 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testOneToOneImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException {
+            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException {
         String folderName = "myFolder";
         String from = "+33642575779";
+        ContactId remote = mContactUtil.formatContact(from);
         String to = "+33640332859";
         String direction = Constants.DIRECTION_RECEIVED;
         String messageId = "MsgfkYflzUUKA";
@@ -72,7 +76,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
         imapMessage.setFolderPath(folderName);
 
-        ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage);
+        ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
         Assert.assertEquals(folderName, imapImdnMessage.getFolder());
         Assert.assertEquals(uid, imapImdnMessage.getUid());
         Assert.assertTrue(imapImdnMessage.isSeen());
@@ -91,12 +95,11 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         Assert.assertEquals("message/cpim",
                 imapImdnMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapImdnMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapImdnMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
 
-        Assert.assertTrue(imapImdnMessage.isOneToOne());
         Assert.assertEquals(mExpectedContact, imapImdnMessage.getContact());
         Assert.assertEquals(Direction.INCOMING, imapImdnMessage.getDirection());
         Assert.assertEquals("1443517760826", imapImdnMessage.getImdnId());
@@ -106,16 +109,17 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
         part.fromPayload(getPayload(true, from, to, direction, messageId,
                 ImdnDocument.DeliveryStatus.DISPLAYED));
-        imapImdnMessage = new ImapImdnMessage(imapMessage);
+        imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
         Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }
 
     @SmallTest
     public void testGroupChatImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException {
+            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException {
         String folderName = "myFolder";
         String from = "+33642575779";
+        ContactId remote = mContactUtil.formatContact(from);
         String to = "+33640332859";
         String direction = Constants.DIRECTION_RECEIVED;
         String messageId = "MsgfkYflzUUKA";
@@ -128,7 +132,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
         imapMessage.setFolderPath(folderName);
 
-        ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage);
+        ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
         Assert.assertEquals(folderName, imapImdnMessage.getFolder());
         Assert.assertEquals(uid, imapImdnMessage.getUid());
         Assert.assertTrue(imapImdnMessage.isSeen());
@@ -149,10 +153,9 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
         Assert.assertEquals("+33642575779",
                 imapImdnMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapImdnMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
 
-        Assert.assertFalse(imapImdnMessage.isOneToOne());
         Assert.assertEquals(mExpectedContact, imapImdnMessage.getContact());
         Assert.assertEquals(Direction.INCOMING, imapImdnMessage.getDirection());
         Assert.assertEquals("1443517760826", imapImdnMessage.getImdnId());
@@ -162,14 +165,14 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
         part.fromPayload(getPayload(false, from, to, direction, messageId,
                 ImdnDocument.DeliveryStatus.DISPLAYED));
-        imapImdnMessage = new ImapImdnMessage(imapMessage);
+        imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
         Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }
 
     public String getPayload(boolean isOneToOne, String headerFrom, String headerTo,
             String direction, String messageId, ImdnDocument.DeliveryStatus status) {
-        String headerFromCpim = isOneToOne ? ImapImdnMessage.ANONYMOUS : headerFrom;
+        String headerFromCpim = isOneToOne ? ANONYMOUS : headerFrom;
         return "From: " + headerFrom + Constants.CRLF + "To: " + headerTo + Constants.CRLF
                 + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: 1443517760826"
                 + Constants.CRLF + "Contribution-ID: 1443517760826" + Constants.CRLF

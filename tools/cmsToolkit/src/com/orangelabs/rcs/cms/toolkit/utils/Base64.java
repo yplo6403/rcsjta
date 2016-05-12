@@ -20,9 +20,9 @@
  * Modifications are licensed under the License.
  ******************************************************************************/
 
-package com.gsma.rcs.utils;
+package com.orangelabs.rcs.cms.toolkit.utils;
 
-import static com.gsma.rcs.utils.StringUtils.UTF8;
+import static com.orangelabs.rcs.cms.toolkit.utils.StringUtils.UTF8;
 
 /**
  * Provides Base64 encoding and decoding as defined by RFC 2045.

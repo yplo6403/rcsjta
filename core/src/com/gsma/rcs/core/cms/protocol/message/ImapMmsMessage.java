@@ -23,6 +23,7 @@ import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
@@ -51,37 +52,32 @@ public class ImapMmsMessage extends ImapCpimMessage {
      * Constructor
      * 
      * @param rawMessage the raw IMAP message
+     * @param remote the remote contact or null if group conversation
      * @throws CmsSyncMissingHeaderException
      * @throws CmsSyncHeaderFormatException
      */
-    public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
-        super(rawMessage);
-
+    public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
+            CmsSyncXmlFormatException {
+        super(rawMessage, remote);
         mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
         if (mMmsId == null) {
             throw new CmsSyncMissingHeaderException(
                     Constants.HEADER_MESSAGE_ID.concat(" IMAP header is missing"));
         }
-
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
             throw new CmsSyncMissingHeaderException(
                     Constants.HEADER_DATE.concat(" IMAP header is missing"));
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
-
-        CpimMessage cpimMessage = getCpimMessage();
-        if (!cpimMessage.getPayload().isEmpty()) {
-            mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
-        }
+        mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
     }
 
     public ImapMmsMessage(Context context, ContactId remote, String from, String to,
             String direction, long date, String subject, String conversationId,
             String contributionId, String imdnMessageId, String mmsId, List<MmsPart> mmsParts) {
         super(remote);
-
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);
         addHeader(Constants.HEADER_DATE,

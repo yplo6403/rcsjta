@@ -136,16 +136,11 @@ public class CmsSyncHandler {
                         sLogger.debug("The message has been deleted on CMS : " + remoteFolder + ","
                                 + flagChange.getJoinedUids());
                     }
-
                 }
                 flagChangesToKeep.add(flagChange);
             }
         } catch (IOException ioe) { // we stop updating status flag on CMS in case of ioe
-            if (logActivated) {
-                sLogger.debug("IOException during sync with CMS server");
-                ioe.printStackTrace();
-            }
-
+            sLogger.warn("IOException during sync with CMS server", ioe);
         }
         flagChanges.retainAll(flagChangesToKeep);
     }

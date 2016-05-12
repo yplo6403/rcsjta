@@ -30,9 +30,9 @@ public class Toolkit extends ListActivity {
         String[] items = {
                 getString(R.string.menu_cms_toolkit_pref),
                 getString(R.string.menu_cms_toolkit_remote_operations),
-                getString(R.string.menu_cms_toolkit_delete)
+                getString(R.string.menu_cms_toolkit_local_operations)
         };
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1, items);
         setListAdapter(arrayAdapter);
     }

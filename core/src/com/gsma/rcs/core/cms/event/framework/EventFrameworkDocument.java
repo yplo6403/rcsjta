@@ -111,7 +111,7 @@ public class EventFrameworkDocument {
         MessageType messageType = object.getMessageType();
         if (MessageType.SMS == messageType || MessageType.MMS == messageType) {
             if (sLogger.isActivated()) {
-                sLogger.debug("Sip event reporting framework not implemented for XMS messages having no uid");
+                sLogger.debug("Event reporting framework not implemented for XMS messages having no uid");
             }
             return "";
         }

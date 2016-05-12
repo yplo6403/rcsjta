@@ -17,11 +17,11 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.sync.scheduler.task;
+package com.orangelabs.rcs.cms.toolkit.scheduler.task;
 
-import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
-import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.ImapFolder;
+import com.orangelabs.rcs.cms.toolkit.protocol.service.BasicImapService;
+import com.orangelabs.rcs.cms.toolkit.scheduler.SchedulerTask;
 
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 

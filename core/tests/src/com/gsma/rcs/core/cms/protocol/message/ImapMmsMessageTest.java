@@ -47,7 +47,6 @@ import java.util.List;
 
 public class ImapMmsMessageTest extends AndroidTestCase {
 
-    private static RcsSettings mSettings;
     private String mPayload;
     private String mBoundary;
     private long mDate;
@@ -58,8 +57,6 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mSettings = RcsSettingsMock.getMockSettings(getContext());
-
         mBoundary = "boundary_1446218793256";
         mDate = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_IMAP_DATE_FORMAT);
@@ -89,7 +86,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
             CmsSyncHeaderFormatException {
         ImapMessage rawMessage = new ImapMessage();
         rawMessage.fromPayload(mPayload);
-        ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage);
+        ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage, mRemote);
         Assert.assertEquals("+33642575779", imapMmsMessage.getHeader(Constants.HEADER_FROM));
         Assert.assertEquals("+33640332859", imapMmsMessage.getHeader(Constants.HEADER_TO));
         Assert.assertEquals(mImapDate, imapMmsMessage.getHeader(Constants.HEADER_DATE));
@@ -146,65 +143,4 @@ public class ImapMmsMessageTest extends AndroidTestCase {
 
     }
 
-    public static class ImapMessageResolverTest extends AndroidTestCase {
-
-        public void testSms() throws CmsSyncException {
-            String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
-                    + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                    + "Conversation-ID: 1443517760826" + Constants.CRLF
-                    + "Contribution-ID: 1443517760826" + Constants.CRLF
-                    + "IMDN-Message-ID: 1443517760826" + Constants.CRLF
-                    + "Message-Direction: received" + Constants.CRLF + "Message-Correlator: 1"
-                    + Constants.CRLF + "Message-Context: pager-message" + Constants.CRLF
-                    + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
-                    + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                    + "imdn.Message-ID: 1443517760826" + Constants.CRLF
-                    + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                    + Constants.CRLF + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF
-                    + Constants.CRLF + "1)" + Constants.CRLF;
-            Integer uid = 12;
-            Part part = new Part();
-            part.fromPayload(payload);
-            ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
-            metadata.getFlags().add(Flag.Seen);
-            ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
-
-            ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
-            MessageType type = imapMessageResolver.resolveType(imapMessage);
-            Assert.assertEquals(MessageType.SMS, type);
-
-            Assert.assertTrue(imapMessageResolver.resolveMessage(type, imapMessage) instanceof ImapSmsMessage);
-        }
-
-        public void testMms() throws CmsSyncMissingHeaderException,
-                CmsSyncMessageNotSupportedException {
-            String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
-                    + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                    + "Conversation-ID: 1443517760826" + Constants.CRLF
-                    + "Contribution-ID: 1443517760826" + Constants.CRLF
-                    + "IMDN-Message-ID: 1443517760826" + Constants.CRLF
-                    + "Message-Direction: received" + Constants.CRLF + "Message-Correlator: 1"
-                    + Constants.CRLF + "Message-Context: multimedia-message" + Constants.CRLF
-                    + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
-                    + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                    + "imdn.Message-ID: 1443517760826" + Constants.CRLF
-                    + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                    + Constants.CRLF + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF
-                    + Constants.CRLF + "1)" + Constants.CRLF;
-
-            Integer uid = 12;
-            Part part = new Part();
-            part.fromPayload(payload);
-            ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
-            metadata.getFlags().add(Flag.Seen);
-            ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
-
-            ImapMessageResolver imapMessageResolver = new ImapMessageResolver(mSettings);
-            MessageType type = imapMessageResolver.resolveType(imapMessage);
-            Assert.assertEquals(MessageType.MMS, type);
-            // TODO
-            // Assert.assertTrue(imapMessageResolver.resolveMessage(type, imapMessage) instanceof
-            // ImapMmsMessage);
-        }
-    }
 }

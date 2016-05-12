@@ -11,6 +11,7 @@ News:
 
 Bugs fixed:
 
+	* Cms: Bad aggregation of event framework messages
 	* Cms: wrong value for contribution and conversion id in the eventfw message sent via MSRP
 	* Core: bad format of the date validity for HTTP file transfer information
 	* Core: do not insert +g.oma.sip-im tag into capabilities options

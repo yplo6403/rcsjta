@@ -38,8 +38,7 @@ public class HeaderPart {
         }
 
         public String toString() {
-            return new StringBuilder(mKey).append(Constants.HEADER_SEP).append(mValue)
-                    .append(Constants.CRLF).toString();
+            return mKey + Constants.HEADER_SEP + mValue + Constants.CRLF;
         }
     }
 

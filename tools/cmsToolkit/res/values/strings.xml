@@ -3,15 +3,14 @@
 
     <!-- Menu -->
     <string name="menu_cms_toolkit_pref">Preferences</string>
-    <string name="menu_cms_toolkit_delete">Delete operations</string>
     <string name="menu_cms_toolkit_remote_operations">CMS Server operation</string>
-    <string name="menu_cms_toolkit_local_operations">Local operation</string>
+    <string name="menu_cms_toolkit_local_operations">Local delete operation</string>
         
     <!-- CMS Tester -->
     <string name="cms_toolkit_app_name">CMS Toolkit</string>    
-    <string name="cms_toolkit_in_progress">In progress ... </string>
+    <string name="cms_toolkit_in_progress">In progress … </string>
     <string name="cms_toolkit_result_ok">Successful !</string>
-    <string name="cms_toolkit_result_ko">A problem occured !</string>
+    <string name="cms_toolkit_result_ko">A problem occurred !</string>
 
     <!-- CMS Preferences -->
     <string name="cms_toolkit_pref_save_btn_label">Save preferences</string>
@@ -32,17 +31,9 @@
 	<!-- Delete operations menu -->
 	<string name="cms_toolkit_delete_local_storage">Delete local storage \n (IMAP + XMS + Chat messages)</string>
 	<string name="cms_toolkit_delete_imap_data">Delete IMAP data only</string>
-	<string name="cms_toolkit_delete_xms_messages">Delete XMS messages only</string>
-    <string name="cms_toolkit_delete_chat_messages">Delete Chat messages only</string>
-	<string name="cms_toolkit_delete_cms_messages">Delete messages on CMS server</string>
-    
+
     <!-- Show messages from CMS -->
 	<string name="cms_toolkit_remote_operations_show_messages">Show messages from CMS server</string>
     <string name="cms_toolkit_messages_list_empty">Messages list is empty</string>
-
-	<!-- Local Operation -->
-    <string name="cms_toolkit_local_operations_delete_all">Delete IMAP data (folder and messages)</string>
-    <string name="cms_toolkit_local_operations_delete_folder">Delete a specific folder</string>
-    <string name="cms_toolkit_local_operations_delete_message">Delete a specific message</string>
 
 </resources>

@@ -21,30 +21,29 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.text.TextUtils;
 
 public class ImapFileTransferMessage extends ImapCpimMessage {
 
-    private final boolean isOneToOne;
-    private final ContactId mRemote;
     private final String mChatId;
     private String mImdnId;
-    private FileTransferHttpInfoDocument mFileTransferHttpInfoDocument;
+    private FileTransferHttpInfoDocument mInfoDocument;
 
     public ImapFileTransferMessage(RcsSettings rcsSettings,
-            com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException {
-        super(rawMessage);
+            com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
+            CmsSyncXmlFormatException {
+        super(rawMessage, remote);
         mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
         if (mChatId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
@@ -55,53 +54,34 @@ public class ImapFileTransferMessage extends ImapCpimMessage {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
-        String from = getCpimMessage().getHeader(Constants.HEADER_FROM);
-        if (from == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_FROM
-                    + " IMAP header is missing");
-        }
-        isOneToOne = ImapChatMessage.ANONYMOUS.equals(from);
-        if (isOneToOne) {
-            // For OneToOne, get contact from IMAP headers.
-            mRemote = super.getContact();
-
-        } else if (RcsService.Direction.OUTGOING == getDirection()) {
-            mRemote = null;
-
-        } else {
-            // For GC, get contact from CPIM headers.
-            ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(from);
-            mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-        }
         CpimMessage cpim = (CpimMessage) getBodyPart();
-        if (!cpim.getPayload().isEmpty()) {
-            try {
-                TextCpimBody cpimBody = (TextCpimBody) cpim.getBody();
-                mFileTransferHttpInfoDocument = FileTransferUtils.parseFileTransferHttpDocument(
-                        cpimBody.getContent().getBytes(), rcsSettings);
-            } catch (PayloadException e) {
-                throw new CmsSyncImdnFormatException(e);
-            }
+        TextCpimBody cpimBody = (TextCpimBody) cpim.getBody();
+        String content = cpimBody.getContent();
+        if (TextUtils.isEmpty(content)) {
+            /* CPIM messages are always instantiated with the body */
+            throw new CmsSyncXmlFormatException("FToHTTP message has not body content! (chatId="
+                    + mChatId + ")(ftId=" + mImdnId + ")");
+        }
+        // The body is peeked
+        try {
+            mInfoDocument = FileTransferUtils.parseFileTransferHttpDocument(content.getBytes(),
+                    rcsSettings);
+
+        } catch (PayloadException e) {
+            throw new CmsSyncXmlFormatException(e);
         }
     }
 
-    public FileTransferHttpInfoDocument getFileTransferHttpInfoDocument() {
-        return mFileTransferHttpInfoDocument;
+    public FileTransferHttpInfoDocument getInfoDocument() {
+        return mInfoDocument;
     }
 
     public String getImdnId() {
         return mImdnId;
     }
 
-    public boolean isOneToOne() {
-        return isOneToOne;
-    }
-
     public String getChatId() {
         return mChatId;
     }
 
-    public ContactId getContact() {
-        return mRemote;
-    }
 }

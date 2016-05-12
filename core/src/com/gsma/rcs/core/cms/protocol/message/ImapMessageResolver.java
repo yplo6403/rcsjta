@@ -28,6 +28,7 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.services.rcs.contact.ContactId;
 
 public class ImapMessageResolver {
 
@@ -78,12 +79,10 @@ public class ImapMessageResolver {
             if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_TEXT_PLAIN)) {
                 return MessageType.CHAT_MESSAGE;
 
-            } else if (contentType.toLowerCase().contains(
-                    Constants.CONTENT_TYPE_MESSAGE_IMDN_XML)) {
+            } else if (contentType.toLowerCase().contains(Constants.CONTENT_TYPE_MESSAGE_IMDN_XML)) {
                 return MessageType.IMDN;
 
-            } else if (contentType.toLowerCase().contains(
-                    FileTransferHttpInfoDocument.MIME_TYPE)) {
+            } else if (contentType.toLowerCase().contains(FileTransferHttpInfoDocument.MIME_TYPE)) {
                 return MessageType.FILE_TRANSFER;
             }
             throw new CmsSyncMessageNotSupportedException(
@@ -102,21 +101,31 @@ public class ImapMessageResolver {
                 + Constants.CRLF + imapMessage.getPayload());
     }
 
+    /**
+     * Create a terminal IMAP message from raw IMAP message
+     * 
+     * @param messageType the message type
+     * @param imapMessage the raw IMAP message
+     * @param remote the remote contact or null for group conversation
+     * @return the terminal IMAP message instance
+     * @throws CmsSyncException
+     */
     public IImapMessage resolveMessage(MessageType messageType,
-            com.gsma.rcs.imaplib.imap.ImapMessage imapMessage) throws CmsSyncException {
+            com.gsma.rcs.imaplib.imap.ImapMessage imapMessage, ContactId remote)
+            throws CmsSyncException {
         switch (messageType) {
             case SMS:
-                return new ImapSmsMessage(imapMessage);
+                return new ImapSmsMessage(imapMessage, remote);
             case MMS:
-                return new ImapMmsMessage(imapMessage);
+                return new ImapMmsMessage(imapMessage, remote);
             case MESSAGE_CPIM:
-                return new ImapCpimMessage(imapMessage);
+                return new ImapCpimMessage(imapMessage, remote);
             case CHAT_MESSAGE:
-                return new ImapChatMessage(imapMessage);
+                return new ImapChatMessage(imapMessage, remote);
             case IMDN:
-                return new ImapImdnMessage(imapMessage);
+                return new ImapImdnMessage(imapMessage, remote);
             case FILE_TRANSFER:
-                return new ImapFileTransferMessage(mRcsSettings, imapMessage);
+                return new ImapFileTransferMessage(mRcsSettings, imapMessage, remote);
             case CPM_SESSION:
                 return new ImapCpmSessionMessage(mRcsSettings, imapMessage);
             case GROUP_STATE:

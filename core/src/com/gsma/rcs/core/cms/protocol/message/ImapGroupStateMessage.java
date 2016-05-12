@@ -28,8 +28,9 @@ import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
 import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.text.TextUtils;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -41,7 +42,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 public class ImapGroupStateMessage extends ImapMessage {
 
-    private final static Logger sLogger = Logger.getLogger(ImapGroupStateMessage.class.getName());
     private final String mChatId;
     private String mRejoinId;
     private List<ContactId> mParticipants;
@@ -63,7 +63,8 @@ public class ImapGroupStateMessage extends ImapMessage {
                         + " IMAP header is missing");
             }
             String xml = getBodyPart().getPayload();
-            if (!xml.isEmpty()) {
+            if (!TextUtils.isEmpty(xml)) {
+                // the payload is peeked
                 GroupStateParser parser = new GroupStateParser(new InputSource(
                         new ByteArrayInputStream(xml.getBytes())));
                 GroupStateDocument document = parser.parse().getGroupStateDocument();
@@ -71,12 +72,10 @@ public class ImapGroupStateMessage extends ImapMessage {
                 mParticipants = document.getParticipants();
                 mParticipants.remove(settings.getUserProfileImsUserName());
                 if (mParticipants == null || mParticipants.isEmpty()) {
-                    sLogger.error("Invalid Group State: " + xml);
                     throw new CmsSyncXmlFormatException("Invalid Group State: " + xml);
                 }
             }
         } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
-            e.printStackTrace();
             throw new CmsSyncXmlFormatException(e);
         }
     }

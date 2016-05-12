@@ -34,6 +34,7 @@ import com.gsma.rcs.provider.cms.CmsUtils;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
 
@@ -116,7 +117,6 @@ public class BasicSyncStrategy {
                     mLocalStorageHandler.applyFolderChange(CmsUtils.toCmsFolder(remoteFolder));
                     isMailboxSelected = true;
                 }
-
                 if (!isMailboxSelected) {
                     mSynchronizer.selectFolder(remoteFolderName);
                 }
@@ -126,9 +126,7 @@ public class BasicSyncStrategy {
                 mSynchronizer.syncLocalFlags(remoteFolderName, flagChanges);
                 mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
             }
-
             pushLocalMessages();
-
             mExecutionResult = true;
             if (logActivated) {
                 sLogger.debug("<<< BasicSyncStrategy.execute ");
@@ -144,20 +142,22 @@ public class BasicSyncStrategy {
     private void startRemoteSynchro(CmsFolder localFolder, ImapFolder remoteFolder)
             throws IOException, ImapException, FileAccessException {
         String folderName = remoteFolder.getName();
-
         mSynchronizer.selectFolder(folderName);
-
+        // Synchronize flags
         if (localFolder.hasMessages()) {
             List<FlagChangeOperation> flagChanges = mSynchronizer.syncRemoteFlags(localFolder,
                     remoteFolder);
             mLocalStorageHandler.applyFlagChange(flagChanges);
         }
+        // Synchronize headers only
+        ContactId remote = com.gsma.rcs.core.cms.utils.CmsUtils.cmsFolderToContact(folderName);
         List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);
-        Set<Integer> uids = mLocalStorageHandler.filterNewMessages(messages);
-
+        // Only keep new UIDs
+        Set<Integer> uids = mLocalStorageHandler.filterNewMessages(messages, remote);
+        // Synchronize new messages (peek body)
         Set<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(),
                 uids);
-        mLocalStorageHandler.createMessages(newMessages);
+        mLocalStorageHandler.createMessages(newMessages, remote);
     }
 
     private boolean shouldStartRemoteSynchronization(CmsFolder local, ImapFolder remote) {

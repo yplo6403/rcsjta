@@ -17,13 +17,13 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.protocol.service;
+package com.orangelabs.rcs.cms.toolkit.protocol.service;
 
-import com.gsma.rcs.core.cms.protocol.cmd.CmdHandler;
-import com.gsma.rcs.core.cms.protocol.cmd.CmdHandler.CommandType;
-import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
-import com.gsma.rcs.core.cms.protocol.cmd.ListCmdHandler;
-import com.gsma.rcs.core.cms.protocol.cmd.ListStatusCmdHandler;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.CmdHandler;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.CmdHandler.CommandType;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.ImapFolder;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.ListCmdHandler;
+import com.orangelabs.rcs.cms.toolkit.protocol.cmd.ListStatusCmdHandler;
 
 import com.gsma.rcs.imaplib.imap.DefaultImapService;
 import com.gsma.rcs.imaplib.imap.Flag;

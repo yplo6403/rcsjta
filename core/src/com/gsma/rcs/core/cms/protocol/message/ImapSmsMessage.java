@@ -22,6 +22,7 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
@@ -33,16 +34,15 @@ public class ImapSmsMessage extends ImapCpimMessage {
     private String mCorrelator;
     private long mDate;
 
-    public ImapSmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
-        super(rawMessage);
-
+    public ImapSmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
+            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
+            CmsSyncXmlFormatException {
+        super(rawMessage, remote);
         mCorrelator = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
         if (mCorrelator == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR
                     + " IMAP header is missing");
         }
-
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_DATE
@@ -54,7 +54,6 @@ public class ImapSmsMessage extends ImapCpimMessage {
     public ImapSmsMessage(ContactId remote, String from, String to, String direction, long date,
             String content, String conversationId, String contributionId, String imdnMessageId) {
         super(remote);
-
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);
         addHeader(Constants.HEADER_DATE,

@@ -39,6 +39,8 @@ import junit.framework.Assert;
 
 public class ImapChatMessageTest extends AndroidTestCase {
 
+    private final static String ANONYMOUS = "<sip:anonymous@anonymous.invalid>";
+
     private ContactId mExpectedContact;
     private String mImapDate;
     private String mCpimDate;
@@ -50,8 +52,8 @@ public class ImapChatMessageTest extends AndroidTestCase {
     }
 
     public void init() throws Exception {
-        mExpectedContact = ContactUtil.getInstance(new ContactUtilMockContext(mContext))
-                .formatContact("+33642575779");
+        ContactUtil contactUtil = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        mExpectedContact = contactUtil.formatContact("+33642575779");
         long date = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT);
         mCpimDate = DateUtils.getDateAsString(date, DateUtils.CMS_CPIM_DATE_FORMAT);
@@ -73,7 +75,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
         imapMessage.setFolderPath(folderName);
 
-        ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage);
+        ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage, mExpectedContact);
         Assert.assertEquals(folderName, imapChatMessage.getFolder());
         Assert.assertEquals(uid, imapChatMessage.getUid());
         Assert.assertTrue(imapChatMessage.isSeen());
@@ -92,12 +94,11 @@ public class ImapChatMessageTest extends AndroidTestCase {
         Assert.assertEquals("message/cpim",
                 imapChatMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapChatMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapChatMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
 
-        Assert.assertTrue(imapChatMessage.isOneToOne());
         Assert.assertEquals(mExpectedContact, imapChatMessage.getContact());
         Assert.assertEquals(Direction.INCOMING, imapChatMessage.getDirection());
         Assert.assertEquals(contributionId, imapChatMessage.getChatId());
@@ -120,7 +121,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
         imapMessage.setFolderPath(folderName);
 
-        ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage);
+        ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage, mExpectedContact);
         Assert.assertEquals(folderName, imapChatMessage.getFolder());
         Assert.assertEquals(uid, imapChatMessage.getUid());
         Assert.assertTrue(imapChatMessage.isSeen());
@@ -141,10 +142,9 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
         Assert.assertEquals("<" + headerFrom + ">",
                 imapChatMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
-        Assert.assertEquals(ImapChatMessage.ANONYMOUS,
+        Assert.assertEquals(ANONYMOUS,
                 imapChatMessage.getCpimMessage().getHeader(Constants.HEADER_TO));
 
-        Assert.assertFalse(imapChatMessage.isOneToOne());
         Assert.assertEquals(mExpectedContact, imapChatMessage.getContact());
         Assert.assertEquals(Direction.INCOMING, imapChatMessage.getDirection());
         Assert.assertEquals(contributionId, imapChatMessage.getChatId());
@@ -153,7 +153,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
     public String getPayload(boolean isOneToOne, String headerFrom, String headerTo,
             String contributionId, String direction) {
-        String headerFromCpim = isOneToOne ? ImapChatMessage.ANONYMOUS : "<" + headerFrom + ">";
+        String headerFromCpim = isOneToOne ? ANONYMOUS : "<" + headerFrom + ">";
         return "From: " + headerFrom + Constants.CRLF + "To: " + headerTo + Constants.CRLF
                 + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: " + contributionId
                 + Constants.CRLF + "Contribution-ID: " + contributionId + Constants.CRLF

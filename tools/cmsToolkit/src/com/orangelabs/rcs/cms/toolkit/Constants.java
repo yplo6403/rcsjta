@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms;
+package com.orangelabs.rcs.cms.toolkit;
 
 public class Constants {
 

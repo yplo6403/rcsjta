@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.protocol.service;
+package com.orangelabs.rcs.cms.toolkit.protocol.service;
 
 import com.orangelabs.rcs.cms.toolkit.Preferences;
 import com.gsma.rcs.imaplib.imap.IoService;

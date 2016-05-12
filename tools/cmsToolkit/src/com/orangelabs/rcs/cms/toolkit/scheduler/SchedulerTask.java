@@ -17,9 +17,9 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.sync.scheduler;
+package com.orangelabs.rcs.cms.toolkit.scheduler;
 
-import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
+import com.orangelabs.rcs.cms.toolkit.protocol.service.BasicImapService;
 
 public abstract class SchedulerTask implements Runnable {
 

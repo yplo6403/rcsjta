@@ -19,6 +19,8 @@
 
 package com.gsma.rcs.core.cms.protocol.message;
 
+import android.text.TextUtils;
+
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
@@ -86,7 +88,7 @@ public class ImapCpmSessionMessage extends ImapMessage {
             }
             mSubject = getHeader(Constants.HEADER_SUBJECT);
             String xml = getBodyPart().getPayload();
-            if (!xml.isEmpty()) {
+            if (!TextUtils.isEmpty(xml)) {
                 CpmSessionParser parser = new CpmSessionParser(new InputSource(
                         new ByteArrayInputStream(xml.getBytes())));
                 CpmSessionDocument document = parser.parse().getCpmSessionDocument();

@@ -17,9 +17,9 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.sync.scheduler.task;
+package com.orangelabs.rcs.cms.toolkit.scheduler.task;
 
-import com.gsma.rcs.core.cms.sync.scheduler.SchedulerTask;
+import com.orangelabs.rcs.cms.toolkit.scheduler.SchedulerTask;
 
 import com.gsma.rcs.imaplib.imap.ImapException;
 
@@ -98,7 +98,6 @@ public class DeleteTask extends SchedulerTask {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
             sLogger.severe("Failed to delete mailbox: '" + mMailbox + "'!");
         }
     }

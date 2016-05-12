@@ -20,7 +20,7 @@
  * Modifications are licensed under the License.
  ******************************************************************************/
 
-package com.gsma.rcs.utils;
+package com.orangelabs.rcs.cms.toolkit.utils;
 
 import java.nio.charset.Charset;
 import java.text.CharacterIterator;

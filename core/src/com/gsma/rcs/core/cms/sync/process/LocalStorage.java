@@ -22,8 +22,6 @@ package com.gsma.rcs.core.cms.sync.process;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.event.CmsEventListener;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapMessageResolver;
 import com.gsma.rcs.imaplib.imap.Flag;
@@ -37,6 +35,7 @@ import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -142,9 +141,10 @@ public class LocalStorage {
      * should be downloaded from CMS server
      *
      * @param messages the list of messages
+     * @param remote the remote contact or null for group chat
      * @return uids of new messages
      */
-    public Set<Integer> filterNewMessages(List<ImapMessage> messages) {
+    public Set<Integer> filterNewMessages(List<ImapMessage> messages, ContactId remote) {
         Set<Integer> uids = new TreeSet<>();
         for (ImapMessage msg : messages) {
             try {
@@ -152,7 +152,8 @@ public class LocalStorage {
                 if (!checkMessageType(messageType)) {
                     continue;
                 }
-                IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg);
+                IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg,
+                        remote);
                 CmsObject imapData = mCmsEventListener.searchLocalMessage(messageType,
                         resolvedMessage);
                 boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
@@ -171,17 +172,13 @@ public class LocalStorage {
                     mCmsLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(),
                             msg.getFolderPath(), msg.getUid(), isSeen, isDeleted);
                 }
-            } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
+            } catch (CmsSyncException e) {
                 /*
                  * There is a wrongly formatted IMAP message on the CMS server. Keep processing
                  * remaining IMAP messages but log error since it MUST be fixed on CMS server.
                  */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
 
-            } catch (CmsSyncException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info(e.getMessage());
-                }
             } catch (RuntimeException e) {
                 /*
                  * Intentionally catch runtime exceptions as else it will abruptly end the sync
@@ -194,32 +191,35 @@ public class LocalStorage {
     }
 
     private boolean checkMessageType(MessageType messageType) {
-        boolean isActivated = sLogger.isActivated();
-        if (messageType == MessageType.SMS || messageType == MessageType.MMS
-                || messageType == MessageType.MESSAGE_CPIM
-                || messageType == MessageType.GROUP_STATE || messageType == MessageType.CPM_SESSION) {
-            return true;
+        switch (messageType) {
+            case SMS:
+            case MMS:
+            case MESSAGE_CPIM:
+            case CPM_SESSION:
+            case GROUP_STATE:
+                return true;
+            default:
+                sLogger.error("This type of message is not synchronized : " + messageType);
+                return false;
         }
-        if (isActivated) {
-            sLogger.debug("This type of message is not synchronized : " + messageType);
-        }
-        return false;
     }
 
     /**
      * Create new messages in local storage.
      *
      * @param messages the set of messages
+     * @param remote the remote contact or null if group conversation
      */
-    public void createMessages(Set<ImapMessage> messages) throws FileAccessException {
-        Map<MessageType, List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages);
+    public void createMessages(Set<ImapMessage> messages, ContactId remote)
+            throws FileAccessException {
+        Map<MessageType, List<IImapMessage>> mapOfMessages = resolveMessagesByType(messages, remote);
         for (Entry<MessageType, List<IImapMessage>> entry : mapOfMessages.entrySet()) {
             MessageType messageType = entry.getKey();
             List<IImapMessage> resolvedMessages = entry.getValue();
             for (IImapMessage resolvedMessage : resolvedMessages) {
                 try {
                     String messageId = mCmsEventListener.onRemoteNewMessage(messageType,
-                            resolvedMessage);
+                            resolvedMessage, remote);
                     CmsObject cmsObject = new CmsObject(resolvedMessage.getFolder(),
                             resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
                                     : ReadStatus.UNREAD,
@@ -228,7 +228,7 @@ public class LocalStorage {
                             messageId, null);
                     mCmsLog.addMessage(cmsObject);
 
-                } catch (CmsSyncHeaderFormatException | CmsSyncMissingHeaderException e) {
+                } catch (CmsSyncException e) {
                     /*
                      * There is a wrongly formatted IMAP message on the CMS server. Keep processing
                      * remaining IMAP messages but log error since it MUST be fixed on CMS server.
@@ -236,24 +236,19 @@ public class LocalStorage {
                     sLogger.warn("FIX ME: badly formatted CMS message! [" + resolvedMessage + "]",
                             e);
 
-                } catch (CmsSyncException e) {
-                    if (sLogger.isActivated()) {
-                        sLogger.info(e.getMessage());
-                    }
                 } catch (RuntimeException e) {
                     /*
                      * Intentionally catch runtime exceptions as else it will abruptly end the sync
                      * process
                      */
-
                     sLogger.error("Failed to create message : ", e);
-
                 }
             }
         }
     }
 
-    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(Set<ImapMessage> rawMessages) {
+    private Map<MessageType, List<IImapMessage>> resolveMessagesByType(
+            Set<ImapMessage> rawMessages, ContactId remote) {
         Map<MessageType, List<IImapMessage>> mapOfMessages = new LinkedHashMap<>();
         mapOfMessages.put(MessageType.CPM_SESSION, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.GROUP_STATE, new ArrayList<IImapMessage>());
@@ -262,7 +257,6 @@ public class LocalStorage {
         mapOfMessages.put(MessageType.SMS, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.MMS, new ArrayList<IImapMessage>());
         mapOfMessages.put(MessageType.IMDN, new ArrayList<IImapMessage>());
-
         for (ImapMessage msg : rawMessages) {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
@@ -273,19 +267,15 @@ public class LocalStorage {
                     }
                     continue;
                 }
-                msgList.add(mMessageResolver.resolveMessage(messageType, msg));
+                msgList.add(mMessageResolver.resolveMessage(messageType, msg, remote));
 
-            } catch (CmsSyncMissingHeaderException e) {
+            } catch (CmsSyncException e) {
                 /*
                  * Missing mandatory header on the CMS server. Keep processing remaining IMAP
                  * messages but log error since it MUST be fixed on CMS server.
                  */
                 sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
 
-            } catch (CmsSyncException e) {
-                if (sLogger.isActivated()) {
-                    sLogger.info(e.getMessage());
-                }
             } catch (RuntimeException e) {
                 /*
                  * Intentionally catch runtime exceptions as else it will abruptly end the sync
@@ -293,7 +283,6 @@ public class LocalStorage {
                  */
                 sLogger.error("Failed to resolve message : ", e);
             }
-
         }
         return mapOfMessages;
     }

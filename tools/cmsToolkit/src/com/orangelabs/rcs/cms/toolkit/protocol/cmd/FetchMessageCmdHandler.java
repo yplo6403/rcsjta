@@ -17,9 +17,9 @@
  *
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.protocol.cmd;
+package com.orangelabs.rcs.cms.toolkit.protocol.cmd;
 
-import com.gsma.rcs.core.cms.Constants;
+import com.orangelabs.rcs.cms.toolkit.Constants;
 
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
