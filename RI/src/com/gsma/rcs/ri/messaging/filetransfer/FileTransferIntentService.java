@@ -45,7 +45,6 @@ import com.gsma.services.rcs.filetransfer.FileTransferService;
 
 import android.app.IntentService;
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -55,7 +54,6 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.TableLayout;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,12 +75,19 @@ public class FileTransferIntentService extends IntentService {
 
     private static final String SEL_UNDELIVERED_FTS = FileTransferLog.CHAT_ID + "=? AND "
             + FileTransferLog.EXPIRED_DELIVERY + "='1'";
+    private ChatPendingIntentManager mPendingIntentManager;
 
     /**
      * Constructor
      */
     public FileTransferIntentService() {
         super("FileTransferIntentService");
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        mPendingIntentManager = ChatPendingIntentManager.getChatPendingIntentManager(this);
     }
 
     @Override
@@ -152,6 +157,7 @@ public class FileTransferIntentService extends IntentService {
                     + ftDao.getSize());
         }
         forwardFileTransferInvitationToUi(intent, ftDao);
+        TalkList.notifyNewConversationEvent(this, FileTransferIntent.ACTION_NEW_INVITATION);
     }
 
     /**
@@ -162,36 +168,27 @@ public class FileTransferIntentService extends IntentService {
      */
     private void forwardFileTransferInvitationToUi(Intent invitation, FileTransferDAO ftDao) {
         ContactId contact = ftDao.getContact();
-        if (ftDao.getContact() == null) {
-            if (LogUtils.isActive) {
-                Log.e(LOGTAG, "forwardFileTransferInvitationToUi failed: cannot parse contact");
-            }
-            return;
-        }
-        Intent intent = ReceiveFileTransfer.forgeInvitationIntent(this, ftDao, invitation);
+        String chatId = ftDao.getChatId();
+        boolean singleTalk = ftDao.isOneToOne();
+        Intent intent = singleTalk ? OneToOneTalkView.forgeIntentOnStackEvent(this, contact,
+                invitation) : GroupTalkView.forgeIntentNewMessage(this, invitation, chatId);
         /*
          * If the PendingIntent has the same operation, action, data, categories, components, and
          * flags it will be replaced. Invitation should be notified individually so we use a random
          * generator to provide a unique request code and reuse it for the notification.
          */
-        int uniqueId = Utils.getUniqueIdForPendingIntent();
-        PendingIntent pi = PendingIntent.getActivity(this, uniqueId, intent,
-                PendingIntent.FLAG_ONE_SHOT);
+        Integer uniqueId = mPendingIntentManager.tryContinueChatConversation(intent, chatId);
+        if (uniqueId != null) {
+            PendingIntent pi = PendingIntent.getActivity(this, uniqueId, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
 
-        boolean displayNotification = true;
-        if (TalkList.isActivityVisible()) {
-            TalkList.notifyNewConversationEvent(this, FileTransferIntent.ACTION_NEW_INVITATION);
-        } else {
-            displayNotification = ftDao.isOneToOne() ? !OneToOneTalkView.isActivityVisible() : !GroupTalkView.isActivityVisible();
-        }
-        /* Send notification */
-        if(displayNotification){
+            /* Send notification */
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(contact);
             String title = getString(R.string.title_recv_file_transfer);
             String message = getString(R.string.label_from_args, displayName);
-            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             Notification notif = buildNotification(pi, title, message);
-            notificationManager.notify(ftDao.getTransferId(), uniqueId, notif);
+            /* Send notification */
+            mPendingIntentManager.postNotification(uniqueId, notif);
         }
     }
 

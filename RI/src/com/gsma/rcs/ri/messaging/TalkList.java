@@ -597,7 +597,4 @@ public class TalkList extends RcsActivity {
         }
     }
 
-    public static boolean isActivityVisible(){
-        return sActivityVisible;
-    }
 }

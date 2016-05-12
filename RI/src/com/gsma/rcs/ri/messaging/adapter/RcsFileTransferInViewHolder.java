@@ -25,7 +25,9 @@ import com.gsma.services.rcs.history.HistoryLog;
 
 import android.database.Cursor;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
@@ -41,6 +43,10 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
     private final int mColumnFilesizeIdx;
     private final int mColumnTransferredIdx;
     private final int mColumnContactIdx;
+    private final int mColumnFileiconIdx;
+    private final LinearLayout mButtonLayout;
+    private final Button mAcceptButton;
+    private final Button mRejectButton;
 
     /**
      * Constructor
@@ -56,9 +62,13 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
         mColumnFilesizeIdx = cursor.getColumnIndexOrThrow(HistoryLog.FILESIZE);
         mColumnTransferredIdx = cursor.getColumnIndexOrThrow(HistoryLog.TRANSFERRED);
         mColumnContactIdx = cursor.getColumnIndexOrThrow(HistoryLog.CONTACT);
+        mColumnFileiconIdx = cursor.getColumnIndexOrThrow(HistoryLog.FILEICON);
         /* Save children views */
         mProgressText = (TextView) base.findViewById(R.id.progress_text);
         mFileImageView = (ImageView) base.findViewById(R.id.file_image);
+        mButtonLayout = (LinearLayout) base.findViewById(R.id.button);
+        mAcceptButton = (Button) base.findViewById(R.id.accept_btn);
+        mRejectButton = (Button) base.findViewById(R.id.reject_btn);
     }
 
     public int getColumnContentIdx() {
@@ -87,5 +97,21 @@ public class RcsFileTransferInViewHolder extends BasicViewHolder {
 
     public int getColumnContactIdx() {
         return mColumnContactIdx;
+    }
+
+    public Button getRejectButton() {
+        return mRejectButton;
+    }
+
+    public LinearLayout getButtonLayout() {
+        return mButtonLayout;
+    }
+
+    public Button getAcceptButton() {
+        return mAcceptButton;
+    }
+
+    public int getColumnFileiconIdx() {
+        return mColumnFileiconIdx;
     }
 }

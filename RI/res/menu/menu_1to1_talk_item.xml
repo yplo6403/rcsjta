@@ -19,7 +19,7 @@
   ~  ******************************************************************************/
   -->
 
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
         android:id="@+id/menu_delete_message"
@@ -35,17 +35,10 @@
 
     <item
         android:id="@+id/menu_display_content"
-        android:title="@string/menu_view_message" />
+        android:title="@string/menu_view_message"/>
 
     <item
         android:id="@+id/menu_ft_download"
-        android:title="@string/menu_ft_download" />
+        android:title="@string/menu_ft_download"/>
 
-    <item
-        android:id="@+id/menu_ft_accept"
-        android:title="@string/menu_ft_accept" />
-
-    <item
-        android:id="@+id/menu_ft_decline"
-        android:title="@string/menu_ft_decline" />
 </menu>

@@ -58,7 +58,6 @@ import com.gsma.services.rcs.cms.CmsService;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 import com.gsma.services.rcs.contact.RcsContact;
-import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.filetransfer.FileTransferService;
 import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
@@ -130,7 +129,8 @@ public class GroupTalkView extends RcsFragmentActivity implements
             HistoryLog.FILESIZE,
             HistoryLog.TRANSFERRED,
             HistoryLog.REASON_CODE,
-            HistoryLog.READ_STATUS};
+            HistoryLog.READ_STATUS,
+            HistoryLog.FILEICON};
     // @formatter:on
 
     /**
@@ -553,8 +553,6 @@ public class GroupTalkView extends RcsFragmentActivity implements
         inflater.inflate(R.menu.menu_gchat_item, menu);
         menu.findItem(R.id.menu_display_content).setVisible(false);
         menu.findItem(R.id.menu_ft_download).setVisible(false);
-        menu.findItem(R.id.menu_ft_accept).setVisible(false);
-        menu.findItem(R.id.menu_ft_decline).setVisible(false);
         /* Get the list item position. */
         AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
         Cursor cursor = (Cursor) mAdapter.getItem(info.position);
@@ -564,19 +562,16 @@ public class GroupTalkView extends RcsFragmentActivity implements
         try {
             if (FileTransferLog.HISTORYLOG_MEMBER_ID == providerId) {
                 String id = cursor.getString(cursor.getColumnIndexOrThrow(HistoryLog.ID));
-                FileTransfer.State state = FileTransfer.State.valueOf(cursor.getInt(cursor
-                        .getColumnIndexOrThrow(HistoryLog.STATUS)));
                 String mimeType = cursor.getString(cursor
                         .getColumnIndexOrThrow(HistoryLog.MIME_TYPE));
                 boolean isImage = Utils.isImageType(mimeType);
-                if (FileTransfer.State.INVITED == state) {
-                    menu.findItem(R.id.menu_ft_accept).setVisible(true);
-                    menu.findItem(R.id.menu_ft_decline).setVisible(true);
-                } else if (mFileTransferService.isAllowedToDownloadFile(id)) {
+                if (mFileTransferService.isAllowedToDownloadFile(id)) {
                     menu.findItem(R.id.menu_ft_download).setVisible(true);
+
                 } else if (isImage) {
                     if (Direction.OUTGOING == direction) {
                         menu.findItem(R.id.menu_display_content).setVisible(true);
+
                     } else if (RcsService.Direction.INCOMING == direction) {
                         Long transferred = cursor.getLong(cursor
                                 .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
@@ -635,31 +630,6 @@ public class GroupTalkView extends RcsFragmentActivity implements
                             String transferId = cursor.getString(cursor
                                     .getColumnIndexOrThrow(HistoryLog.ID));
                             mFileTransferService.getFileTransfer(transferId).download();
-                            break;
-
-                        default:
-                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
-                    }
-                    return true;
-
-                case R.id.menu_ft_accept:
-                    switch (providerId) {
-                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                            String transferId = cursor.getString(cursor
-                                    .getColumnIndexOrThrow(HistoryLog.ID));
-                            mFileTransferService.getFileTransfer(transferId).acceptInvitation();
-                            break;
-
-                        default:
-                            throw new IllegalArgumentException("Invalid provider ID=" + providerId);
-                    }
-
-                case R.id.menu_ft_decline:
-                    switch (providerId) {
-                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
-                            String transferId = cursor.getString(cursor
-                                    .getColumnIndexOrThrow(HistoryLog.ID));
-                            mFileTransferService.getFileTransfer(transferId).rejectInvitation();
                             break;
 
                         default:
@@ -1140,7 +1110,4 @@ public class GroupTalkView extends RcsFragmentActivity implements
         startActivityForResult(new Intent(this, EditGeoloc.class), SELECT_GEOLOCATION);
     }
 
-    public static boolean isActivityVisible() {
-        return RI.sChatIdOnForeground != null;
-    }
 }
