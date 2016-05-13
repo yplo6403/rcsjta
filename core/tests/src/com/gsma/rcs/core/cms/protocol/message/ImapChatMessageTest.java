@@ -21,6 +21,7 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
@@ -61,7 +62,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testOneToOneChatMessage() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException {
+            CmsSyncHeaderFormatException, CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String headerFrom = "tel:+33642575779";
         String headerTo = "tel:+33640332859";
@@ -107,7 +108,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testGroupChatMessage() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException {
+            CmsSyncHeaderFormatException, CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String headerFrom = "tel:+33642575779";
         String headerTo = "tel:+33640332859";

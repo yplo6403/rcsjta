@@ -22,6 +22,7 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.imaplib.imap.Flag;
@@ -60,7 +61,8 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testOneToOneImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException {
+            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException,
+            CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String from = "+33642575779";
         ContactId remote = mContactUtil.formatContact(from);
@@ -116,7 +118,8 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testGroupChatImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException {
+            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException,
+            CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String from = "+33642575779";
         ContactId remote = mContactUtil.formatContact(from);

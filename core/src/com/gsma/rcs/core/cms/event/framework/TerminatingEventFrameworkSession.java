@@ -22,9 +22,11 @@ package com.gsma.rcs.core.cms.event.framework;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.network.sip.SipManager;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
+import com.gsma.rcs.core.ims.protocol.msrp.MsrpManager;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession;
 import com.gsma.rcs.core.ims.protocol.sdp.MediaAttribute;
 import com.gsma.rcs.core.ims.protocol.sdp.MediaDescription;
@@ -63,7 +65,6 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
         super(imService, rcsSettings, messagingLog, timestamp);
         // Create dialog path
         createTerminatingDialogPath(invite);
-
         // Set contribution ID
         String id = ChatUtils.getContributionId(invite);
         setContributionID(id);
@@ -79,7 +80,6 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
                 sLogger.info("Initiate a event reporting session as terminating");
             }
             SipDialogPath dialogPath = getDialogPath();
-
             /* Parse the remote SDP part */
             final SipRequest invite = dialogPath.getInvite();
             String remoteSdp = invite.getSdpContent();
@@ -91,9 +91,7 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
             String remotePath = attr1.getValue();
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
-
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
-
             /* Extract the "setup" parameter */
             String remoteSetup = "passive";
             MediaAttribute attr2 = mediaDesc.getMediaAttribute("setup");
@@ -103,30 +101,26 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
             if (logActivated) {
                 sLogger.debug("Remote setup attribute is ".concat(remoteSetup));
             }
-
             /* Set setup mode */
             String localSetup = createSetupAnswer(remoteSetup);
             if (logActivated) {
                 sLogger.debug("Local setup attribute is ".concat(localSetup));
             }
-
+            MsrpManager msrpMgr = getMsrpMgr();
             /* Set local port */
             int localMsrpPort;
             if (localSetup.equals("active")) {
                 localMsrpPort = 9; /* See RFC4145, Page 4 */
             } else {
-                localMsrpPort = getMsrpMgr().getLocalMsrpPort();
+                localMsrpPort = msrpMgr.getLocalMsrpPort();
             }
-
             /* Build SDP part */
             String ipAddress = dialogPath.getSipStack().getLocalIpAddress();
-            String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
-                    .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
-                    getMsrpMgr().getLocalMsrpPath(), getSdpDirection());
-
+            String sdp = SdpUtils.buildChatSDP(ipAddress, localMsrpPort,
+                    msrpMgr.getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(),
+                    localSetup, msrpMgr.getLocalMsrpPath(), SdpUtils.DIRECTION_SENDRECV);
             /* Set the local SDP part in the dialog path */
             dialogPath.setLocalContent(sdp);
-
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -134,37 +128,31 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
                 }
                 return;
             }
-
             /* Create a 200 OK response */
             if (logActivated) {
                 sLogger.info("Send 200 OK");
             }
             SipResponse resp = SipMessageFactory.create200OkInviteResponse(dialogPath,
                     getFeatureTags(), sdp);
-
             dialogPath.setSigEstablished();
-
+            SipManager sipManager = getImsService().getImsModule().getSipManager();
             /* Send response */
-            SipTransactionContext ctx = getImsService().getImsModule().getSipManager()
-                    .sendSipMessage(resp);
-
+            SipTransactionContext ctx = sipManager.sendSipMessage(resp);
             /* Create the MSRP server session */
             if (localSetup.equals("passive")) {
                 /* Passive mode: client wait a connection */
-                MsrpSession session = getMsrpMgr().createMsrpServerSession(remotePath, this);
+                MsrpSession session = msrpMgr.createMsrpServerSession(remotePath, this);
                 session.setFailureReportOption(false);
                 session.setSuccessReportOption(false);
-                getMsrpMgr().openMsrpSession();
+                msrpMgr.openMsrpSession();
                 /*
                  * Even if local setup is passive, an empty chunk must be sent to open the NAT and
                  * so enable the active endpoint to initiate a MSRP connection.
                  */
                 sendEmptyDataChunk();
             }
-
             /* wait a response */
-            getImsService().getImsModule().getSipManager().waitResponse(ctx);
-
+            sipManager.waitResponse(ctx);
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -172,22 +160,20 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
                 }
                 return;
             }
-
             /* Analyze the received response */
             if (ctx.isSipAck()) {
                 if (logActivated) {
                     sLogger.info("ACK request received");
                 }
                 dialogPath.setSessionEstablished();
-
                 /* Create the MSRP client session */
                 if (localSetup.equals("active")) {
                     /* Active mode: client should connect */
-                    MsrpSession session = getMsrpMgr().createMsrpClientSession(remoteHost,
-                            remotePort, remotePath, this, fingerprint);
+                    MsrpSession session = msrpMgr.createMsrpClientSession(remoteHost, remotePort,
+                            remotePath, this, fingerprint);
                     session.setFailureReportOption(false);
                     session.setSuccessReportOption(false);
-                    getMsrpMgr().openMsrpSession();
+                    msrpMgr.openMsrpSession();
                     sendEmptyDataChunk();
                 }
                 SessionTimerManager sessionTimerManager = getSessionTimerManager();
@@ -222,7 +208,4 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
         }
     }
 
-    public String getSdpDirection() {
-        return SdpUtils.DIRECTION_SENDRECV;
-    }
 }

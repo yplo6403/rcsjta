@@ -234,7 +234,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                     }
                                 }
                                 for (CmsObject cmsObject : eventFrameworkDoc.getDeletedObject()) {
-                                    mCmsLog.updateDeleteStatus(CmsObject.MessageType.CHAT_MESSAGE,
+                                    mCmsLog.updateDeleteStatus(cmsObject.getMessageType(),
                                             cmsObject.getMessageId(),
                                             CmsObject.DeleteStatus.DELETED_REPORTED);
                                 }
@@ -251,7 +251,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                     }
                                 }
                                 for (CmsObject cmsObject : displayed) {
-                                    mCmsLog.updateReadStatus(CmsObject.MessageType.CHAT_MESSAGE,
+                                    mCmsLog.updateReadStatus(cmsObject.getMessageType(),
                                             cmsObject.getMessageId(),
                                             CmsObject.ReadStatus.READ_REPORTED);
                                 }

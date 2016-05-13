@@ -19,20 +19,13 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
-import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
-import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
-import com.gsma.rcs.imaplib.imap.Part;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
@@ -83,7 +76,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testFromPayload() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException {
+            CmsSyncHeaderFormatException, CmsSyncXmlFormatException {
         ImapMessage rawMessage = new ImapMessage();
         rawMessage.fromPayload(mPayload);
         ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage, mRemote);

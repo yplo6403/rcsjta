@@ -21,6 +21,7 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.imaplib.imap.Flag;
@@ -67,7 +68,7 @@ public class ImapSmsMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testFromPayload() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException {
+            CmsSyncHeaderFormatException, CmsSyncXmlFormatException {
         String folderName = "myFolder";
         Integer uid = 12;
         Part part = new Part();
