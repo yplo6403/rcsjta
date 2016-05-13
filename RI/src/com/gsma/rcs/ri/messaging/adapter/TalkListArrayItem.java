@@ -22,6 +22,7 @@ import com.gsma.rcs.ri.R;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -33,6 +34,7 @@ public class TalkListArrayItem implements Comparable<TalkListArrayItem> {
 
     private final long mTimestamp;
     private final RcsService.Direction mDirection;
+    private final String mId;
     private String mSubject;
     private final String mChatId;
     private final ContactId mContact;
@@ -43,6 +45,7 @@ public class TalkListArrayItem implements Comparable<TalkListArrayItem> {
     /**
      * Constructor for XMS and RCS chat information
      *
+     * @param id the message ID
      * @param chatId the chat ID
      * @param contact the contact ID
      * @param timestamp the timestamp
@@ -51,8 +54,9 @@ public class TalkListArrayItem implements Comparable<TalkListArrayItem> {
      * @param mimeType the mime type
      * @param unreadCount the read status
      */
-    public TalkListArrayItem(String chatId, ContactId contact, long timestamp,
+    public TalkListArrayItem(String id, String chatId, ContactId contact, long timestamp,
             RcsService.Direction direction, String content, String mimeType, int unreadCount) {
+        mId = id;
         mChatId = chatId;
         mContact = contact;
         mTimestamp = timestamp;
@@ -98,11 +102,12 @@ public class TalkListArrayItem implements Comparable<TalkListArrayItem> {
         mSubject = subject;
     }
 
+    public String getId() {
+        return mId;
+    }
+
     @Override
-    public int compareTo(TalkListArrayItem another) {
-        if (another == null) {
-            throw new NullPointerException("Cannot compare to null");
-        }
+    public int compareTo(@NonNull TalkListArrayItem another) {
         return Long.valueOf(another.getTimestamp()).compareTo(mTimestamp);
     }
 

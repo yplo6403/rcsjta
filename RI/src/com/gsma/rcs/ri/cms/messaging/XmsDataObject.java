@@ -100,10 +100,6 @@ public class XmsDataObject {
         }
     }
 
-    public String getMessageId() {
-        return mMessageId;
-    }
-
     public String getMimeType() {
         return mMimeType;
     }
@@ -126,14 +122,8 @@ public class XmsDataObject {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("XmsDataObject{");
-        sb.append("mMessageId='").append(mMessageId).append('\'');
-        sb.append(", mMimeType='").append(mMimeType).append('\'');
-        sb.append(", mContact=").append(mContact);
-        sb.append(", mTimestamp=").append(mTimestamp);
-        sb.append(", mContent='").append(mContent).append('\'');
-        sb.append(", mDirection=").append(mDirection);
-        sb.append('}');
-        return sb.toString();
+        return "XmsDataObject{" + "mMessageId='" + mMessageId + '\'' + ", mMimeType='" + mMimeType
+                + '\'' + ", mContact=" + mContact + ", mTimestamp=" + mTimestamp + ", mContent='"
+                + mContent + '\'' + ", mDirection=" + mDirection + '}';
     }
 }

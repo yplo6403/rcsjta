@@ -18,10 +18,12 @@
 
 package com.gsma.rcs.ri.messaging;
 
+import com.gsma.rcs.ri.cms.messaging.MmsPartDataObject;
 import com.gsma.rcs.ri.messaging.adapter.TalkListArrayItem;
 import com.gsma.rcs.ri.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.chat.ChatLog;
+import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
@@ -37,6 +39,7 @@ import android.os.AsyncTask;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A class to update the talk list in background
@@ -109,6 +112,7 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
             int columnProviderId = cursor.getColumnIndexOrThrow(HistoryLog.PROVIDER_ID);
             int columnDirection = cursor.getColumnIndexOrThrow(HistoryLog.DIRECTION);
             int columnChatId = cursor.getColumnIndexOrThrow(HistoryLog.CHAT_ID);
+            int columnId = cursor.getColumnIndexOrThrow(HistoryLog.ID);
             int columnContact = cursor.getColumnIndexOrThrow(HistoryLog.CONTACT);
             int columnContent = cursor.getColumnIndexOrThrow(HistoryLog.CONTENT);
             int columnMimeType = cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE);
@@ -142,7 +146,6 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
                     }
                     unreadCount += item.getUnreadCount();
                 }
-
                 String content;
                 if (FileTransferLog.HISTORYLOG_MEMBER_ID != providerId) {
                     /* There is not body text message for RCS file transfer */
@@ -150,26 +153,43 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
                 } else {
                     content = cursor.getString(columnFilename);
                 }
+                String id = cursor.getString(columnId);
                 String mimeType = cursor.getString(columnMimeType);
-
                 if (ChatLog.GroupChat.HISTORYLOG_MEMBER_ID == providerId) {
                     if (item != null) {
                         item.setSubject(content);
                     } else {
-                        item = new TalkListArrayItem(chatId, contact, timestamp, dir, null,
+                        item = new TalkListArrayItem(id, chatId, contact, timestamp, dir, null,
                                 mimeType, unreadCount);
                         item.setSubject(content);
                     }
                 } else if (item != null) {
                     String subject = item.getSubject();
-                    item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
+                    item = new TalkListArrayItem(id, chatId, contact, timestamp, dir, content,
                             mimeType, unreadCount);
                     item.setSubject(subject);
                 } else {
-                    item = new TalkListArrayItem(chatId, contact, timestamp, dir, content,
+                    item = new TalkListArrayItem(id, chatId, contact, timestamp, dir, content,
                             mimeType, unreadCount);
                 }
                 dataMap.put(chatId, item);
+            }
+            /*
+            Replace subject by body text for MMS message
+             */
+            for (TalkListArrayItem value : dataMap.values()) {
+                if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(value.getMimeType())) {
+                    // replace the subject by the MMS body
+                    Set<MmsPartDataObject> parts = MmsPartDataObject.getParts(mCtx, value.getId());
+                    if (parts != null) {
+                        for (MmsPartDataObject part : parts) {
+                            if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(part.getMimeType())) {
+                                value.setContent(part.getBody());
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         } finally {
             if (cursor != null) {
