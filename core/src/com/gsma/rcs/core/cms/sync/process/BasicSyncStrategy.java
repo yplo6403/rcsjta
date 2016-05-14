@@ -182,28 +182,27 @@ public class BasicSyncStrategy {
         return sync;
     }
 
-    private void pushLocalMessages() throws FileAccessException,
-            NetworkException, PayloadException {
-            CmsSyncPushRequestTask task = new CmsSyncPushRequestTask(mContext, mRcsSettings,
-                    mXmsLog, mCmsLog, new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
-                @Override
-                public void onMessagesPushed(Map<String, Integer> uids) {
-                    for (Entry<String, Integer> entry : uids.entrySet()) {
-                        String baseId = entry.getKey();
-                        Integer uid = entry.getValue();
-                        mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+    private void pushLocalMessages() throws FileAccessException, NetworkException, PayloadException {
+        CmsSyncPushRequestTask task = new CmsSyncPushRequestTask(mContext, mRcsSettings, mXmsLog,
+                mCmsLog, new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
+                    @Override
+                    public void onMessagesPushed(Map<String, Integer> uids) {
+                        for (Entry<String, Integer> entry : uids.entrySet()) {
+                            String baseId = entry.getKey();
+                            Integer uid = entry.getValue();
+                            mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                        }
                     }
-                }
 
-                @Override
-                public void onReadRequestsReported(String folder, Set<Integer> uids) {
-                }
+                    @Override
+                    public void onReadRequestsReported(String folder, Set<Integer> uids) {
+                    }
 
-                @Override
-                public void onDeleteRequestsReported(String folder, Set<Integer> uids) {
-                }
-            });
-            task.execute(mBasicImapService);
+                    @Override
+                    public void onDeleteRequestsReported(String folder, Set<Integer> uids) {
+                    }
+                });
+        task.execute(mBasicImapService);
     }
 
     /**

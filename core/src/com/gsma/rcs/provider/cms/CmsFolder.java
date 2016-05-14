@@ -59,19 +59,19 @@ public final class CmsFolder {
     private Integer mMaxUid;
 
     /**
-     * @param name
+     * @param name the folder name
      */
     public CmsFolder(String name) {
         super();
-        this.mName = name;
+        mName = name;
         resetCounters();
     }
 
     /**
-     * @param name
-     * @param nextUid
-     * @param modseq
-     * @param uidValidity
+     * @param name the folder name
+     * @param nextUid the next UID
+     * @param modseq the modification sequence
+     * @param uidValidity the UID validity
      */
     public CmsFolder(String name, Integer nextUid, Integer modseq, Integer uidValidity) {
         super();
@@ -81,7 +81,7 @@ public final class CmsFolder {
         mUidValidity = uidValidity;
     }
 
-    public void resetCounters(){
+    public void resetCounters() {
         mNextUid = mModseq = mUidValidity = mMaxUid = 0;
     }
 
@@ -135,7 +135,7 @@ public final class CmsFolder {
     }
 
     /**
-     * @param maxUid
+     * @param maxUid the maximum UID
      */
     public void setMaxUid(Integer maxUid) {
         mMaxUid = maxUid;

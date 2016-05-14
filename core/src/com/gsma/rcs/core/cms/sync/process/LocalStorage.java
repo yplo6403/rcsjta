@@ -92,7 +92,11 @@ public class LocalStorage {
      * @param folder the folder
      */
     public void applyFolderChange(CmsFolder folder) {
-        mCmsLog.addFolder(folder);
+        if (mCmsLog.isFolderPersisted(folder.getName())) {
+            mCmsLog.updateFolder(folder);
+        } else {
+            mCmsLog.addFolder(folder);
+        }
     }
 
     /**

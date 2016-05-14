@@ -29,8 +29,7 @@ public class CmsUtils {
 
     public static String contactToCmsFolder(ContactId contactId) {
         return Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR
-                + Constants.TEL_PREFIX
-                + contactId.toString();
+                + Constants.TEL_PREFIX + contactId.toString();
     }
 
     public static String contactToHeader(ContactId contactId) {
@@ -39,7 +38,8 @@ public class CmsUtils {
 
     public static ContactId cmsFolderToContact(String cmsFolder) {
         String contact = StringUtils.removeQuotes(cmsFolder);
-        String prefix = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + (Constants.TEL_PREFIX);
+        String prefix = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR
+                + Constants.TEL_PREFIX;
         if (cmsFolder.startsWith(prefix)) {
             contact = cmsFolder.substring(prefix.length());
         }
@@ -50,15 +50,14 @@ public class CmsUtils {
         return null;
     }
 
-    public static String groupChatToCmsFolder(String conversationId,
-            String contributionId) {
+    public static String groupChatToCmsFolder(String conversationId, String contributionId) {
         return Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + conversationId
                 + Constants.CMS_DIRECTORY_SEPARATOR + contributionId;
     }
 
     public static String cmsFolderToChatId(String cmsFolder) {
         String folder = StringUtils.removeQuotes(cmsFolder);
-        String prefix =Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR;
+        String prefix = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR;
         if (cmsFolder.startsWith(prefix)) {
             folder = folder.substring(prefix.length());
         }

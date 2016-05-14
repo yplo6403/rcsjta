@@ -65,6 +65,7 @@ public class CmsProvisioning extends Activity {
     };
 
     private boolean mInFront;
+    private CmsLog mCmsLog;
 
     @Override
     public void onCreate(Bundle bundle) {
@@ -75,6 +76,7 @@ public class CmsProvisioning extends Activity {
         Button btn = (Button) findViewById(R.id.save_btn);
         btn.setOnClickListener(saveBtnListener);
         mRcsSettings = RcsSettings.getInstance(new LocalContentResolver(this));
+        mCmsLog = CmsLog.getInstance(this);
         updateView(bundle);
         mInFront = true;
     }
@@ -110,16 +112,16 @@ public class CmsProvisioning extends Activity {
         saveStringEditTextParam(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH, helper);
         saveStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
         saveStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
-        CmsLog cmsLog = CmsLog.getInstance();
         saveCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS,
                 helper);
+        // TODO manage screen rotation for CMS parameters
         if (!((CheckBox) findViewById(R.id.message_store_push_sms)).isChecked()) {
-            cmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
+            mCmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
         }
         saveCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
                 helper);
         if (!((CheckBox) findViewById(R.id.message_store_push_mms)).isChecked()) {
-            cmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
+            mCmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
         Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_spinner);
         String selected = (String) spinner.getSelectedItem();

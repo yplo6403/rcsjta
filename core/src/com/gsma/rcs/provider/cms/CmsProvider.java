@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.provider.cms;
 
+import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.DatabaseUtils;
 
@@ -54,13 +55,17 @@ public class CmsProvider extends ContentProvider {
 
     private static final String SELECTION_WITH_ID_ONLY = BaseColumns._ID.concat("=?");
 
+    private static final String SELECTION_WITH_FOLDER_NAME_ONLY = CmsFolder.KEY_NAME.concat("=?");
+
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
         sUriMatcher.addURI(CmsFolder.CONTENT_URI.getAuthority(), CmsFolder.CONTENT_URI.getPath()
                 .substring(1), UriType.Folder.FOLDER);
         sUriMatcher.addURI(CmsFolder.CONTENT_URI.getAuthority(), CmsFolder.CONTENT_URI.getPath()
-                .substring(1).concat("/*"), UriType.Folder.FOLDER_WITH_ID);
+                .substring(1).concat("/Default/*"), UriType.Folder.FOLDER_SINGLE);
+        sUriMatcher.addURI(CmsFolder.CONTENT_URI.getAuthority(), CmsFolder.CONTENT_URI.getPath()
+                .substring(1).concat("/Default/*/*"), UriType.Folder.FOLDER_GROUP);
         sUriMatcher.addURI(CmsObject.CONTENT_URI.getAuthority(), CmsObject.CONTENT_URI.getPath()
                 .substring(1), UriType.Message.MESSAGE);
         sUriMatcher.addURI(CmsObject.CONTENT_URI.getAuthority(), CmsObject.CONTENT_URI.getPath()
@@ -70,13 +75,14 @@ public class CmsProvider extends ContentProvider {
     private static final class UriType {
 
         private static final class Folder {
-            private static final int FOLDER_WITH_ID = 1;
-            private static final int FOLDER = 2;
+            private static final int FOLDER_SINGLE = 1;
+            private static final int FOLDER_GROUP = 2;
+            private static final int FOLDER = 3;
         }
 
         private static final class Message {
-            private static final int MESSAGE_WITH_ID = 3;
-            private static final int MESSAGE = 4;
+            private static final int MESSAGE_WITH_ID = 4;
+            private static final int MESSAGE = 5;
         }
     }
 
@@ -94,7 +100,7 @@ public class CmsProvider extends ContentProvider {
     }
 
     private static class DatabaseHelper extends SQLiteOpenHelper {
-        private static final int DATABASE_VERSION = 1;
+        private static final int DATABASE_VERSION = 2;
 
         public DatabaseHelper(Context ctx) {
             super(ctx, DATABASE_NAME, null, DATABASE_VERSION);
@@ -104,18 +110,12 @@ public class CmsProvider extends ContentProvider {
         @Override
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FOLDER + '(' + 
-                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
-                    CmsFolder.KEY_NAME + " TEXT NOT NULL," + 
+                    CmsFolder.KEY_NAME + " TEXT NOT NULL PRIMARY KEY," +
                     CmsFolder.KEY_NEXT_UID + " INTEGER," + 
                     CmsFolder.KEY_HIGHESTMODSEQ + " INTEGER," + 
                     CmsFolder.KEY_UID_VALIDITY + " INTEGER)");
             
-            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + BaseColumns._ID + "_idx" + " ON "
-                    + TABLE_FOLDER + '(' + BaseColumns._ID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_FOLDER + '_' + CmsFolder.KEY_NAME + "_idx" + " ON "
-                    + TABLE_FOLDER + '(' + CmsFolder.KEY_NAME + ')');
-
-            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' + 
+            db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' +
                     BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
                     CmsObject.KEY_FOLDER_NAME + " TEXT," + 
                     CmsObject.KEY_UID + " INTEGER," + 
@@ -126,8 +126,6 @@ public class CmsProvider extends ContentProvider {
                     CmsObject.KEY_MESSAGE_ID + " TEXT NOT NULL," + 
                     CmsObject.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
             
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + BaseColumns._ID + "_idx" + " ON "
-                    + TABLE_MESSAGE + '(' + BaseColumns._ID + ')');
             db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_idx"
                     + " ON " + TABLE_MESSAGE + '(' + CmsObject.KEY_FOLDER_NAME + ')');
             db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_"
@@ -161,7 +159,8 @@ public class CmsProvider extends ContentProvider {
         switch (sUriMatcher.match(uri)) {
             case UriType.Folder.FOLDER:
                 return CursorType.Folder.TYPE_DIRECTORY;
-            case UriType.Folder.FOLDER_WITH_ID:
+            case UriType.Folder.FOLDER_SINGLE:
+            case UriType.Folder.FOLDER_GROUP:
                 return CursorType.Folder.TYPE_ITEM;
             case UriType.Message.MESSAGE:
                 return CursorType.Message.TYPE_DIRECTORY;
@@ -179,9 +178,36 @@ public class CmsProvider extends ContentProvider {
         return "(" + SELECTION_WITH_ID_ONLY + ") AND (" + selection + ')';
     }
 
+    private String getSelectionWithFolder(String selection) {
+        if (TextUtils.isEmpty(selection)) {
+            return SELECTION_WITH_FOLDER_NAME_ONLY;
+        }
+        return "(" + SELECTION_WITH_FOLDER_NAME_ONLY + ") AND (" + selection + ')';
+    }
+
     private String[] getSelectionArgsWithId(String[] selectionArgs, String id) {
         String[] keySelectionArg = new String[] {
             id
+        };
+        if (selectionArgs == null) {
+            return keySelectionArg;
+        }
+        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+    }
+
+    private String[] getSelectionArgsWithTelUri(String[] selectionArgs, String telUri) {
+        String[] keySelectionArg = new String[] {
+            Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + telUri
+        };
+        if (selectionArgs == null) {
+            return keySelectionArg;
+        }
+        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+    }
+
+    private String[] getSelectionArgsWithChatId(String[] selectionArgs, String chatId) {
+        String[] keySelectionArg = new String[] {
+            com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId, chatId)
         };
         if (selectionArgs == null) {
             return keySelectionArg;
@@ -193,18 +219,26 @@ public class CmsProvider extends ContentProvider {
     public Cursor query(@NonNull Uri uri, String[] projection, String selection,
             String[] selectionArgs, String sort) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.Folder.FOLDER_WITH_ID:
-                String id = uri.getLastPathSegment();
-                selection = getSelectionWithId(selection);
-                selectionArgs = getSelectionArgsWithId(selectionArgs, id);
-                /* Intentional fall through */
-            case UriType.Folder.FOLDER:
+            case UriType.Folder.FOLDER_GROUP:
+                String chatId = uri.getLastPathSegment();
+                selection = getSelectionWithFolder(selection);
+                selectionArgs = getSelectionArgsWithChatId(selectionArgs, chatId);
                 SQLiteDatabase db = mOpenHelper.getReadableDatabase();
                 return db.query(TABLE_FOLDER, projection, selection, selectionArgs, null, null,
                         sort);
 
+            case UriType.Folder.FOLDER_SINGLE:
+                String telUri = uri.getLastPathSegment();
+                selection = getSelectionWithFolder(selection);
+                selectionArgs = getSelectionArgsWithTelUri(selectionArgs, telUri);
+                /* Intentional fall through */
+            case UriType.Folder.FOLDER:
+                db = mOpenHelper.getReadableDatabase();
+                return db.query(TABLE_FOLDER, projection, selection, selectionArgs, null, null,
+                        sort);
+
             case UriType.Message.MESSAGE_WITH_ID:
-                id = uri.getLastPathSegment();
+                String id = uri.getLastPathSegment();
                 selection = getSelectionWithId(selection);
                 selectionArgs = getSelectionArgsWithId(selectionArgs, id);
                 /* Intentional fall through */
@@ -215,29 +249,37 @@ public class CmsProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
-
     }
 
     @Override
     public int update(@NonNull Uri uri, ContentValues values, String selection,
             String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.Folder.FOLDER_WITH_ID:
-                String id = uri.getLastPathSegment();
-                selection = getSelectionWithId(selection);
-                selectionArgs = getSelectionArgsWithId(selectionArgs, id);
-                /* Intentional fall through */
-            case UriType.Folder.FOLDER:
+            case UriType.Folder.FOLDER_GROUP:
+                String chatId = uri.getLastPathSegment();
+                selection = getSelectionWithFolder(selection);
+                selectionArgs = getSelectionArgsWithChatId(selectionArgs, chatId);
                 SQLiteDatabase db = mOpenHelper.getReadableDatabase();
                 return db.update(TABLE_FOLDER, values, selection, selectionArgs);
+
+            case UriType.Folder.FOLDER_SINGLE:
+                String telUri = uri.getLastPathSegment();
+                selection = getSelectionWithFolder(selection);
+                selectionArgs = getSelectionArgsWithTelUri(selectionArgs, telUri);
+                /* Intentional fall through */
+            case UriType.Folder.FOLDER:
+                db = mOpenHelper.getReadableDatabase();
+                return db.update(TABLE_FOLDER, values, selection, selectionArgs);
+
             case UriType.Message.MESSAGE_WITH_ID:
-                id = uri.getLastPathSegment();
+                String id = uri.getLastPathSegment();
                 selection = getSelectionWithId(selection);
                 selectionArgs = getSelectionArgsWithId(selectionArgs, id);
                 /* Intentional fall through */
             case UriType.Message.MESSAGE:
                 db = mOpenHelper.getReadableDatabase();
                 return db.update(TABLE_MESSAGE, values, selection, selectionArgs);
+
             default:
                 throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
@@ -246,15 +288,14 @@ public class CmsProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, ContentValues initialValues) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.Folder.FOLDER_WITH_ID:
+            case UriType.Folder.FOLDER_GROUP:
+            case UriType.Folder.FOLDER_SINGLE:
                 /* Intentional fall through */
             case UriType.Folder.FOLDER:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-                if (db.insert(TABLE_FOLDER, null, initialValues) == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
-                            + uri + '!');
-                }
+                db.insert(TABLE_FOLDER, null, initialValues);
                 return uri;
+
             case UriType.Message.MESSAGE_WITH_ID:
                 /* Intentional fall through */
             case UriType.Message.MESSAGE:
@@ -272,26 +313,31 @@ public class CmsProvider extends ContentProvider {
     @Override
     public int delete(@NonNull Uri uri, String where, String[] whereArgs) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.Folder.FOLDER_WITH_ID:
+            case UriType.Folder.FOLDER_GROUP:
+                String chatId = uri.getLastPathSegment();
+                where = getSelectionWithFolder(where);
+                whereArgs = getSelectionArgsWithChatId(whereArgs, chatId);
+                SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+                return db.delete(TABLE_FOLDER, where, whereArgs);
+
+            case UriType.Folder.FOLDER_SINGLE:
+                String telUri = uri.getLastPathSegment();
+                where = getSelectionWithFolder(where);
+                whereArgs = getSelectionArgsWithTelUri(whereArgs, telUri);
                 /* Intentional fall through */
             case UriType.Folder.FOLDER:
-                SQLiteDatabase db = mOpenHelper.getWritableDatabase();
-                int nb = db.delete(TABLE_FOLDER, where, whereArgs);
-                if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
-                            + uri + '!');
-                }
-                return nb;
+                db = mOpenHelper.getWritableDatabase();
+                return db.delete(TABLE_FOLDER, where, whereArgs);
+
             case UriType.Message.MESSAGE_WITH_ID:
+                String id = uri.getLastPathSegment();
+                where = getSelectionWithId(where);
+                whereArgs = getSelectionArgsWithId(whereArgs, id);
                 /* Intentional fall through */
             case UriType.Message.MESSAGE:
                 db = mOpenHelper.getWritableDatabase();
-                nb = db.delete(TABLE_MESSAGE, where, whereArgs);
-                if (nb == INVALID_ROW_ID) {
-                    throw new ServerApiPersistentStorageException("Unable to insert row for URI "
-                            + uri + '!');
-                }
-                return nb;
+                return db.delete(TABLE_MESSAGE, where, whereArgs);
+
             default:
                 throw new IllegalArgumentException("Unsupported URI " + uri + "!");
         }
