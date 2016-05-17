@@ -492,6 +492,8 @@ public class GroupTalkView extends RcsFragmentActivity implements
     protected void onResume() {
         super.onResume();
         RI.sChatIdOnForeground = mChatId;
+        ChatPendingIntentManager.getChatPendingIntentManager(this).clearNotification(
+                mChatId);
         try {
             if (mChatListener != null && mChatService != null && !mChatListnerSet) {
                 mChatService.addEventListener(mChatListener);

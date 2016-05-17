@@ -606,7 +606,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 /* Either it is the first conversation loading or switch to another conversation */
                 loadConversation(newContact);
             }
-
             /* Set activity title with display name */
             String displayName = RcsContactUtil.getInstance(this).getDisplayName(mContact);
             setTitle(displayName);
@@ -625,9 +624,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case FileTransferIntent.ACTION_NEW_INVITATION:
-                    ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
-                            .getChatPendingIntentManager(this);
-                    pendingIntentManager.clearNotification(mContact.toString());
                     break;
 
                 case FileTransferIntent.ACTION_FILE_TRANSFER_DELIVERY_EXPIRED:
@@ -647,16 +643,18 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         }
     }
 
+    private void clearNotification() {
+        ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
+                .getChatPendingIntentManager(this);
+        pendingIntentManager.clearNotification(mContact.toString());
+    }
+
     private void loadConversation(ContactId newContact) throws RcsServiceNotAvailableException,
             RcsGenericException, RcsPersistentStorageException {
         boolean firstLoad = (mContact == null);
         /* Save contact ID */
         mContact = newContact;
-
-        ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
-                .getChatPendingIntentManager(this);
-        pendingIntentManager.clearNotification(mContact.toString());
-
+        clearNotification();
         /*
          * Open chat so that if the parameter IM SESSION START is 0 then the session is accepted
          * now.
@@ -737,6 +735,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         super.onResume();
         if (mContact != null) {
             RI.sChatIdOnForeground = mContact.toString();
+            clearNotification();
         }
         try {
             if (mChatListener != null && mChatService != null && !mChatListenerSet) {
