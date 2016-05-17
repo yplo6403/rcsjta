@@ -320,7 +320,7 @@ public class RcsCoreService extends Service implements CoreListener {
             // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
             XmsEventHandler xmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings,
                     mCmsApi);
-            Logger.activationFlag = mRcsSettings.isTraceActivated();
+            Logger.sActivationFlag = mRcsSettings.isTraceActivated();
             Logger.traceLevel = mRcsSettings.getTraceLevel();
 
             if (logActivated) {

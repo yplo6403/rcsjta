@@ -109,11 +109,6 @@ public class CmsService extends ImsService {
 
     public void register(CmsServiceImpl cmsService, ChatServiceImpl chatService,
             FileTransferServiceImpl fileTransferService) {
-        if (sLogger.isActivated()) {
-            sLogger.debug(cmsService.getClass().getName() + " registered ok.");
-            sLogger.debug(chatService.getClass().getName() + " registered ok.");
-            sLogger.debug(fileTransferService.getClass().getName() + " registered ok.");
-        }
         mCmsServiceImpl = cmsService;
         mChatServiceImpl = chatService;
         mFileTransferServiceImpl = fileTransferService;
@@ -369,8 +364,8 @@ public class CmsService extends ImsService {
             public void run() {
                 try {
                     TerminatingEventFrameworkSession session = new TerminatingEventFrameworkSession(
-                            mImsModule.getInstantMessagingService(), invite, mRcsSettings,
-                            mMessagingLog, timestamp);
+                            mImsModule.getInstantMessagingService(), invite, mRcsSettings, mCmsLog,
+                            timestamp);
                     session.startSession();
 
                 } catch (NetworkException e) {

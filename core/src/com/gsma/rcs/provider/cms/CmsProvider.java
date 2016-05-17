@@ -24,8 +24,11 @@ import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.DatabaseUtils;
 
 import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -34,6 +37,8 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+
+import java.util.ArrayList;
 
 public class CmsProvider extends ContentProvider {
 
@@ -340,6 +345,27 @@ public class CmsProvider extends ContentProvider {
 
             default:
                 throw new IllegalArgumentException("Unsupported URI " + uri + "!");
+        }
+    }
+
+    @NonNull
+    @Override
+    public ContentProviderResult[] applyBatch(
+            @NonNull ArrayList<ContentProviderOperation> operations)
+            throws OperationApplicationException {
+        SQLiteDatabase database = mOpenHelper.getWritableDatabase();
+        database.beginTransaction();
+        try {
+            ContentProviderResult[] results = new ContentProviderResult[operations.size()];
+            int index = 0;
+            for (ContentProviderOperation operation : operations) {
+                results[index] = operation.apply(this, results, index);
+                index++;
+            }
+            database.setTransactionSuccessful();
+            return results;
+        } finally {
+            database.endTransaction();
         }
     }
 }

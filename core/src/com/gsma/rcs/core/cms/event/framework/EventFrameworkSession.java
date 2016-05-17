@@ -21,6 +21,7 @@ package com.gsma.rcs.core.cms.event.framework;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
+import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -36,17 +37,25 @@ import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.core.ims.service.SessionActivityManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
+import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimMessage;
+import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimParser;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.contact.ContactManagerException;
-import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.NetworkRessourceManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.chat.ChatLog;
 
+import android.content.ContentProviderResult;
+
+import org.xml.sax.SAXException;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Event Reporting session
@@ -69,7 +78,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
 
     private static final Logger sLogger = Logger.getLogger(EventFrameworkSession.class.getName());
 
-    protected final MessagingLog mMessagingLog;
+    protected final CmsLog mCmsLog;
 
     protected final InstantMessagingService mImService;
 
@@ -78,21 +87,19 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
      *
      * @param imService InstantMessagingService
      * @param rcsSettings RCS settings
-     * @param messagingLog Messaging log
+     * @param cmsLog CMS log accessor
      * @param timestamp Local timestamp for the session
      */
     public EventFrameworkSession(InstantMessagingService imService, RcsSettings rcsSettings,
-            MessagingLog messagingLog, long timestamp) {
+            CmsLog cmsLog, long timestamp) {
         super(imService, null, null, rcsSettings, timestamp, null);
 
         mImService = imService;
-        mMessagingLog = messagingLog;
+        mCmsLog = cmsLog;
         mActivityMgr = new SessionActivityManager(this, rcsSettings);
 
-        addAcceptTypes(EventFrameworkManager.MIME_TYPE);
         addAcceptTypes(CpimMessage.MIME_TYPE);
         addWrappedTypes(ImdnDocument.MIME_TYPE);
-        addWrappedTypes(ChatLog.Message.MimeType.TEXT_MESSAGE);
 
         mFeatureTags.add(FeatureTags.FEATURE_3GPP + "=\""
                 + FeatureTags.FEATURE_3GPP_SERVICE_CPM_SYSTEM_MSG + "\"");
@@ -251,24 +258,47 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
             throws PayloadException, NetworkException, ContactManagerException {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
-            sLogger.info("Data received (type " + mimeType + ")");
+            sLogger.debug("Data received (type " + mimeType + ")");
         }
         mActivityMgr.updateActivity();
-        // TODO check if it is necessary to test if data is empty ?
         if (data == null || data.length == 0) {
             if (logActivated) {
                 sLogger.debug("By-pass received empty data");
             }
             return;
         }
-        if (logActivated) {
-            sLogger.debug("EventFrameworkSession::receiveMsrpData");
+        if (ChatUtils.isMessageCpimType(mimeType)) {
+            CpimParser cpimParser = new CpimParser(data);
+            CpimMessage cpimMsg = cpimParser.getCpimMessage();
+            String contentType = cpimMsg.getContentType();
+            if (!ChatUtils.isMessageImdnType(contentType)) {
+                if (logActivated) {
+                    sLogger.warn("Invalid wrapped content type: " + contentType);
+                }
+                return;
+            }
+            try {
+                ImdnDocument imdn = ChatUtils.parseDeliveryReport(cpimMsg.getMessageContent());
+                if (ImdnDocument.DeliveryStatus.DELIVERED == imdn.getStatus()) {
+                    ContentProviderResult[] result = mCmsLog.updateStatusesWhereReported(imdn
+                            .getMsgId());
+                    if (result != null && logActivated) {
+                        sLogger.warn("Message Id " + msgId + " read reported: " + result[0].count);
+                        sLogger.warn("Message Id " + msgId + " delete reported: " + result[1].count);
+                    }
+                } else {
+                    if (logActivated) {
+                        sLogger.warn("Not supported status: ".concat(cpimMsg.toString()));
+                    }
+                }
+            } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
+                throw new PayloadException("Failed to parse IMDN document", e);
+            }
+        } else {
+            if (logActivated) {
+                sLogger.warn("Not supported content: " + mimeType);
+            }
         }
-        // TODO FGI : TO BE implemented
-        /*
-         * For positive AS ack, update flag report status in local storage. DELETED_REPORT_REQUESTED
-         * --> DELETED READ_REPORT_REQUESTED --> READ
-         */
     }
 
     @Override

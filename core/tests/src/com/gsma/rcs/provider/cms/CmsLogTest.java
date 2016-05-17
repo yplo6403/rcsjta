@@ -26,6 +26,7 @@ import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
+import android.content.ContentProviderResult;
 import android.content.Context;
 import android.test.AndroidTestCase;
 
@@ -273,4 +274,117 @@ public class CmsLogTest extends AndroidTestCase {
         assertEquals(0, mCmsLogTestIntegration.getMessages().size());
     }
 
+    public void testUpdateDeleteStatus() {
+        CmsObject message;
+        mCmsLog.addMessage(mMessages[0]);
+        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
+        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
+
+        mCmsLog.updateDeleteStatus(mMessages[0].getMessageType(), mMessages[0].getMessageId(),
+                DeleteStatus.DELETED_REPORT_REQUESTED);
+        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, message.getDeleteStatus());
+    }
+
+    public void testUpdateReadStatus() {
+        CmsObject message;
+        mCmsLog.addMessage(mMessages[0]);
+        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
+        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+
+        mCmsLog.updateReadStatus(mMessages[0].getMessageType(), mMessages[0].getMessageId(),
+                ReadStatus.READ_REPORT_REQUESTED);
+        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
+        assertEquals(ReadStatus.READ_REPORT_REQUESTED, message.getReadStatus());
+    }
+
+    public void testResetReportedStatus() {
+        CmsObject obj0 = new CmsObject("folder0", 0, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, "messageId0", null);
+        CmsObject obj1 = new CmsObject("folder1", 1, ReadStatus.READ_REPORTED,
+                DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId1", null);
+        CmsObject obj2 = new CmsObject("folder2", 2, ReadStatus.UNREAD,
+                DeleteStatus.DELETED_REPORTED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId2", null);
+        CmsObject obj3 = new CmsObject("folder3", 3, ReadStatus.READ_REPORTED,
+                DeleteStatus.DELETED_REPORTED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId3", null);
+
+        mCmsLog.addMessage(obj0);
+        mCmsLog.addMessage(obj1);
+        mCmsLog.addMessage(obj2);
+        mCmsLog.addMessage(obj3);
+
+        ContentProviderResult[] result = mCmsLog.resetReportedStatus();
+        assertEquals(Integer.valueOf(2), result[0].count);
+        assertEquals(Integer.valueOf(2), result[1].count);
+
+        CmsObject message = mCmsLog.getMessage(obj0.getFolder(), obj0.getUid());
+        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj1.getFolder(), obj1.getUid());
+        assertEquals(ReadStatus.READ_REPORT_REQUESTED, message.getReadStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj2.getFolder(), obj2.getUid());
+        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj3.getFolder(), obj3.getUid());
+        assertEquals(ReadStatus.READ_REPORT_REQUESTED, message.getReadStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, message.getDeleteStatus());
+    }
+
+    public void testUpdateStatusesWhereReported() {
+        CmsObject obj0 = new CmsObject("folder0", 0, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                PushStatus.PUSHED, MessageType.CHAT_MESSAGE, "messageId0", null);
+        CmsObject obj1 = new CmsObject("folder1", 1, ReadStatus.READ_REPORTED,
+                DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId1", null);
+        CmsObject obj2 = new CmsObject("folder2", 2, ReadStatus.UNREAD,
+                DeleteStatus.DELETED_REPORTED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId2", null);
+        CmsObject obj3 = new CmsObject("folder3", 3, ReadStatus.READ_REPORTED,
+                DeleteStatus.DELETED_REPORTED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
+                "messageId3", null);
+
+        mCmsLog.addMessage(obj0);
+        mCmsLog.addMessage(obj1);
+        mCmsLog.addMessage(obj2);
+        mCmsLog.addMessage(obj3);
+
+        ContentProviderResult[] result = mCmsLog.updateStatusesWhereReported(obj0.getMessageId());
+        assertEquals(Integer.valueOf(0), result[0].count);
+        assertEquals(Integer.valueOf(0), result[1].count);
+
+        result = mCmsLog.updateStatusesWhereReported(obj1.getMessageId());
+        assertEquals(Integer.valueOf(1), result[0].count);
+        assertEquals(Integer.valueOf(0), result[1].count);
+
+        result = mCmsLog.updateStatusesWhereReported(obj2.getMessageId());
+        assertEquals(Integer.valueOf(0), result[0].count);
+        assertEquals(Integer.valueOf(1), result[1].count);
+
+        result = mCmsLog.updateStatusesWhereReported(obj3.getMessageId());
+        assertEquals(Integer.valueOf(1), result[0].count);
+        assertEquals(Integer.valueOf(1), result[1].count);
+
+        CmsObject message = mCmsLog.getMessage(obj0.getFolder(), obj0.getUid());
+        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj1.getFolder(), obj1.getUid());
+        assertEquals(ReadStatus.READ, message.getReadStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj2.getFolder(), obj2.getUid());
+        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+        assertEquals(DeleteStatus.DELETED, message.getDeleteStatus());
+
+        message = mCmsLog.getMessage(obj3.getFolder(), obj3.getUid());
+        assertEquals(ReadStatus.READ, message.getReadStatus());
+        assertEquals(DeleteStatus.DELETED, message.getDeleteStatus());
+    }
 }

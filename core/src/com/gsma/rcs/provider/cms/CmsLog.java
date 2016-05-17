@@ -26,8 +26,11 @@ import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.utils.logger.Logger;
 
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
@@ -117,11 +120,14 @@ public class CmsLog {
 
         private static final String SELECTION_XMS_TO_PUSH =
                 CmsObject.KEY_DELETE_STATUS + "=" + DeleteStatus.DELETED_REPORT_REQUESTED.toInt() + " OR " +
-                        CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
-                        CmsObject.KEY_PUSH_STATUS + "=" + PushStatus.PUSH_REQUESTED.toInt();
+                CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
+                CmsObject.KEY_PUSH_STATUS + "=" + PushStatus.PUSH_REQUESTED.toInt();
 
-        public static final String SEL_DELETED_REPORTED = CmsObject.KEY_DELETE_STATUS + "=" + DeleteStatus.DELETED_REPORTED.toInt();
-        public static final String SEL_READ_REPORTED = CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORTED.toInt();
+        private static final String SEL_DELETED_REPORTED = CmsObject.KEY_DELETE_STATUS + "=" + DeleteStatus.DELETED_REPORTED.toInt();
+        private static final String SEL_READ_REPORTED = CmsObject.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORTED.toInt();
+
+        private static final String WHERE_READ_REPORTED = SEL_READ_REPORTED + " AND " + SELECTION_MESSAGE_ID;
+        private static final String WHERE_DELETE_REPORTED = SEL_DELETED_REPORTED + " AND " + SELECTION_MESSAGE_ID;
 
         // @formatter:on
     }
@@ -748,12 +754,13 @@ public class CmsLog {
      * @param messageType the type
      * @param messageId the message ID
      * @param deleteStatus the deleted status
+     * @return the number of rows affected.
      */
-    public void updateDeleteStatus(MessageType messageType, String messageId,
+    public int updateDeleteStatus(MessageType messageType, String messageId,
             DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
+        return mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
                         messageType.toString(), messageId
                 });
@@ -796,11 +803,12 @@ public class CmsLog {
      * @param messageType the type
      * @param messageId the message ID
      * @param readStatus the read status
+     * @return the number of rows affected.
      */
-    public void updateReadStatus(MessageType messageType, String messageId, ReadStatus readStatus) {
+    public int updateReadStatus(MessageType messageType, String messageId, ReadStatus readStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_READ_STATUS, readStatus.toInt());
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
+        return mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_MESSAGE_ID, new String[] {
                         messageType.toString(), messageId
                 });
@@ -857,13 +865,14 @@ public class CmsLog {
      * @param messageType the type
      * @param nativeProviderId the native provider ID
      * @param deleteStatus the deleted status
+     * @return the number of rows affected.
      */
-    public void updateDeleteStatus(MessageType messageType, Long nativeProviderId,
+    public int updateDeleteStatus(MessageType messageType, Long nativeProviderId,
             DeleteStatus deleteStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_DELETE_STATUS, deleteStatus.toInt());
         values.put(CmsObject.KEY_NATIVE_PROVIDER_ID, (String) null);
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
+        return mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[] {
                         messageType.toString(), String.valueOf(nativeProviderId)
                 });
@@ -875,15 +884,43 @@ public class CmsLog {
      * @param messageType the type
      * @param nativeProviderId the native provider ID
      * @param readStatus the read status
+     * @return the number of rows affected.
      */
-    public void updateReadStatus(MessageType messageType, Long nativeProviderId,
+    public int updateReadStatus(MessageType messageType, Long nativeProviderId,
             ReadStatus readStatus) {
         ContentValues values = new ContentValues();
         values.put(CmsObject.KEY_READ_STATUS, readStatus.toInt());
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
+        return mLocalContentResolver.update(CmsObject.CONTENT_URI, values,
                 Message.SELECTION_MESSAGE_TYPE_PROVIDER_ID, new String[] {
                         messageType.toString(), String.valueOf(nativeProviderId)
                 });
+    }
+
+    /**
+     * Update the CMS entry with msgId to READ if READ_REPORTED and DELETED if DELETED_REPORTED
+     * 
+     * @param msgId the message ID
+     * @return the results of the applications
+     */
+    public ContentProviderResult[] updateStatusesWhereReported(String msgId) {
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        ops.add(ContentProviderOperation.newUpdate(CmsObject.CONTENT_URI)
+                .withValue(CmsObject.KEY_READ_STATUS, ReadStatus.READ.toInt())
+                .withSelection(Message.WHERE_READ_REPORTED, new String[] {
+                    msgId
+                }).build());
+        ops.add(ContentProviderOperation.newUpdate(CmsObject.CONTENT_URI)
+                .withValue(CmsObject.KEY_DELETE_STATUS, DeleteStatus.DELETED.toInt())
+                .withSelection(Message.WHERE_DELETE_REPORTED, new String[] {
+                    msgId
+                }).build());
+        try {
+            return mLocalContentResolver.applyBatch(CmsObject.CONTENT_URI, ops);
+
+        } catch (OperationApplicationException e) {
+            sLogger.error("updateStatusesWhereReported failed", e);
+            return null;
+        }
     }
 
     /**
@@ -933,14 +970,27 @@ public class CmsLog {
         }
     }
 
-    public void resetReportedStatus() {
-        ContentValues values = new ContentValues();
-        values.put(CmsObject.KEY_DELETE_STATUS, DeleteStatus.DELETED_REPORT_REQUESTED.toInt());
-        mLocalContentResolver.update(CmsObject.CONTENT_URI, values, Message.SEL_DELETED_REPORTED,
-                null);
-        values.clear();
-        values.put(CmsObject.KEY_READ_STATUS, ReadStatus.READ_REPORT_REQUESTED.toInt());
-        mLocalContentResolver
-                .update(CmsObject.CONTENT_URI, values, Message.SEL_READ_REPORTED, null);
+    /**
+     * Resets rows that have ReadStatus set to READ_REPORTED to READ_REPORT_REQUESTED and
+     * DeleteStatus set to DELETE_REPORTED to DELETE_REPORT_REQUESTED.
+     */
+    public ContentProviderResult[] resetReportedStatus() {
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+        ops.add(ContentProviderOperation.newUpdate(CmsObject.CONTENT_URI)
+                .withValue(CmsObject.KEY_READ_STATUS, ReadStatus.READ_REPORT_REQUESTED.toInt())
+                .withSelection(Message.SEL_READ_REPORTED, null).build());
+
+        ops.add(ContentProviderOperation
+                .newUpdate(CmsObject.CONTENT_URI)
+                .withValue(CmsObject.KEY_DELETE_STATUS,
+                        DeleteStatus.DELETED_REPORT_REQUESTED.toInt())
+                .withSelection(Message.SEL_DELETED_REPORTED, null).build());
+        try {
+            return mLocalContentResolver.applyBatch(CmsObject.CONTENT_URI, ops);
+
+        } catch (OperationApplicationException e) {
+            sLogger.error("resetReportedStatus failed", e);
+            return null;
+        }
     }
 }

@@ -40,7 +40,7 @@ import com.gsma.rcs.core.ims.service.SessionTimerManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatError;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
-import com.gsma.rcs.provider.messaging.MessagingLog;
+import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -56,13 +56,13 @@ public class TerminatingEventFrameworkSession extends EventFrameworkSession {
      *
      * @param imService InstantMessagingService
      * @param invite Initial INVITE request
-     * @param rcsSettings RCS settings
-     * @param messagingLog Messaging log
+     * @param rcsSettings RCS settings accessor
+     * @param cmsLog CMS log accessor
      * @param timestamp Local timestamp for the session
      */
     public TerminatingEventFrameworkSession(InstantMessagingService imService, SipRequest invite,
-            RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp) {
-        super(imService, rcsSettings, messagingLog, timestamp);
+            RcsSettings rcsSettings, CmsLog cmsLog, long timestamp) {
+        super(imService, rcsSettings, cmsLog, timestamp);
         // Create dialog path
         createTerminatingDialogPath(invite);
         // Set contribution ID

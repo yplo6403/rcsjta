@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
+ * <p/>
  * Copyright (C) 2010 France Telecom S.A.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ package com.gsma.rcs.chat;
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnParser;
+import com.gsma.rcs.utils.DateUtils;
 import com.gsma.rcs.utils.logger.Logger;
 
 import android.test.AndroidTestCase;
@@ -34,60 +35,46 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 
 public class ImdnParserTest extends AndroidTestCase {
-    private Logger logger = Logger.getLogger(this.getClass().getName());
-
-    private static final String CRLF = "\r\n";
+    private static Logger sLogger = Logger.getLogger(ImdnParserTest.class.getName());
 
     // @formatter:off
-    /*
-     * IMDN SAMPLE: <?xml version="1.0" encoding="UTF-8"?> <imdn
-     * xmlns="urn:ietf:params:xml:ns:imdn"> <message-id>34jk324j</message-id>
-     * <datetime>2008-04-04T12:16:49-05:00</datetime> <display-notification> <status> <displayed/>
-     * </status> </display-notification> </imdn>
-     */
+    private static final String sXmlDisplayNotification = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">\n"
+            + "<message-id>34jk324j</message-id>\n"
+            + "<datetime>2008-04-04T12:16:49-05:00</datetime>\n"
+            + "<display-notification><status><displayed/></status></display-notification>\n"
+            + "</imdn>";
+
+    private static final String sXmlDeliveryNotification = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">\n"
+            + "<message-id>554671c403f544208924fc29aee3e6eb</message-id>\n"
+            + "<datetime>2016-05-13T14:23:23+02:00</datetime>\n"
+            + "<delivery-notification><status><delivered/></status></delivery-notification>\n"
+            + "</imdn>";
+
     // @formatter:on
 
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception {
-        super.tearDown();
-    }
-
-    public void testGetImdnDocument() throws SAXException, ParserConfigurationException,
-            IOException, ParseFailureException {
-        /**
-         * Parse a delivery report
-         * 
-         * @param xml XML document
-         * @return IMDN document
-         */
-        StringBuffer sb = new StringBuffer("<?xml version=\"1.08\" encoding=\"UTF-8\"?>");
-        sb.append("<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">");
-        sb.append("<message-id>34jk324j</message-id>");
-        sb.append("DateTime: 2008-12-13T13:40:00-08:00");
-        sb.append("<display-notification>");
-        sb.append(CRLF);
-        sb.append("<status>");
-        sb.append(CRLF);
-        sb.append("<displayed/>");
-        sb.append(CRLF);
-        sb.append("</status>");
-        sb.append(CRLF);
-        sb.append("</display-notification>");
-        sb.append(CRLF);
-        sb.append("</imdn>");
-        String xml = sb.toString();
-
-        InputSource inputso = new InputSource(new ByteArrayInputStream(xml.getBytes()));
-        ImdnParser parser = new ImdnParser(inputso);
+    public void testParseImdnDocumentDisplayNofitfication() throws SAXException,
+            ParserConfigurationException, IOException, ParseFailureException {
+        ImdnParser parser = new ImdnParser(new InputSource(new ByteArrayInputStream(
+                sXmlDisplayNotification.getBytes())));
         parser.parse();
         ImdnDocument imdnDoc = parser.getImdnDocument();
-        if (logger.isActivated()) {
-            logger.info("MsgId=" + imdnDoc.getMsgId() + "  status=" + imdnDoc.getStatus());
-        }
-        assertEquals(imdnDoc.getMsgId(), "34jk324j");
-        assertEquals(imdnDoc.getStatus().toString(), "displayed");
+        assertEquals("34jk324j", imdnDoc.getMsgId());
+        assertEquals("displayed", imdnDoc.getStatus().toString());
+        assertEquals("display-notification", imdnDoc.getNotificationType());
+        assertEquals(DateUtils.decodeDate("2008-04-04T12:16:49-05:00"), imdnDoc.getDateTime());
+    }
+
+    public void testParseImdnDocumentDeliveryNofitfication() throws SAXException,
+            ParserConfigurationException, IOException, ParseFailureException {
+        ImdnParser parser = new ImdnParser(new InputSource(new ByteArrayInputStream(
+                sXmlDeliveryNotification.getBytes())));
+        parser.parse();
+        ImdnDocument imdnDoc = parser.getImdnDocument();
+        assertEquals("554671c403f544208924fc29aee3e6eb", imdnDoc.getMsgId());
+        assertEquals("delivered", imdnDoc.getStatus().toString());
+        assertEquals("delivery-notification", imdnDoc.getNotificationType());
+        assertEquals(DateUtils.decodeDate("2016-05-13T14:23:23+02:00"), imdnDoc.getDateTime());
     }
 }
