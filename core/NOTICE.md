@@ -13,6 +13,7 @@ News:
 
 Bugs fixed:
 
+	* Core: Core: Fix for NPE while parsing the configuration file
 	* Core: User alias is not displayed for unsaved Contacts
 	* Core: Excludes own number in participants list if Referred-by has it in INVITE
 	* Core: Handling IllegalArgumentException while deleting 1-to-1 conversation
