@@ -112,6 +112,9 @@ public class FileTransferLog implements IFileTransferLog {
             + ","
             + State.DISPLAYED.toInt() + ")";
 
+    private static final String SELECTION_BY_UNDELIVERED_STATUS = FileTransferData.KEY_STATE
+            + " NOT IN(" + State.DELIVERED.toInt() + "," + State.DISPLAYED.toInt() + ")";
+
     private static final String ORDER_BY_TIMESTAMP_ASC = FileTransferData.KEY_TIMESTAMP
             .concat(" ASC");
 
@@ -190,7 +193,7 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public void addOutgoingGroupFileTransfer(String fileTransferId, String chatId,
-            MmContent content, MmContent fileIcon, Set<ContactId> recipients, State state,
+            MmContent content, MmContent thumbnail, Set<ContactId> recipients, State state,
             ReasonCode reasonCode, long timestamp, long timestampSent) {
         if (sLogger.isActivated()) {
             sLogger.debug("addOutgoingGroupFileTransfer: Id=" + fileTransferId + ", chatId="
@@ -215,9 +218,9 @@ public class FileTransferLog implements IFileTransferLog {
         values.put(FileTransferData.KEY_EXPIRED_DELIVERY, 0);
         values.put(FileTransferData.KEY_STATE, state.toInt());
         values.put(FileTransferData.KEY_REASON_CODE, reasonCode.toInt());
-        if (fileIcon != null) {
-            values.put(FileTransferData.KEY_FILEICON, fileIcon.getUri().toString());
-            values.put(FileTransferData.KEY_FILEICON_MIME_TYPE, fileIcon.getEncoding());
+        if (thumbnail != null) {
+            values.put(FileTransferData.KEY_FILEICON, thumbnail.getUri().toString());
+            values.put(FileTransferData.KEY_FILEICON_MIME_TYPE, thumbnail.getEncoding());
         }
         values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
         values.put(FileTransferData.KEY_FILE_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
@@ -318,8 +321,8 @@ public class FileTransferLog implements IFileTransferLog {
         values.put(FileTransferData.KEY_STATE, state.toInt());
         values.put(FileTransferData.KEY_REASON_CODE, reasonCode.toInt());
         return mLocalContentResolver.update(
-                Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values, null,
-                null) > 0;
+                Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values,
+                SELECTION_BY_UNDELIVERED_STATUS, null) > 0;
     }
 
     /**
@@ -826,9 +829,6 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public State getFileTransferState(String fileTransferId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Get file transfer state for ".concat(fileTransferId));
-        }
         Cursor cursor = getFileTransferData(FileTransferData.KEY_STATE, fileTransferId);
         if (cursor == null) {
             return null;

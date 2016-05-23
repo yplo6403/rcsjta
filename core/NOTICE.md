@@ -8,9 +8,13 @@
 News:
 
 	* Manage permissions for Android Marshmallow
+	* CMS RI: manage accept/reject of file transfer within talk views
+	* CMS RI: replace subject by body text for MMS in TalkListView
 
 Bugs fixed:
 
+	* Core: Status is updated as Failed even for delivered messages and FT
+    * Core: Fix for crash if network type/subtype is UNKNOWN
 	* Cms: Bad aggregation of event framework messages
 	* Cms: wrong value for contribution and conversion id in the eventfw message sent via MSRP
 	* Core: bad format of the date validity for HTTP file transfer information
