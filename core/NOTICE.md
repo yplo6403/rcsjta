@@ -13,6 +13,7 @@ News:
 
 Bugs fixed:
 
+	* Core: Initiating provisioning if registration fails with 403 response
 	* Core: Status is updated as Failed even for delivered messages and FT
     * Core: Fix for crash if network type/subtype is UNKNOWN
 	* Cms: Bad aggregation of event framework messages

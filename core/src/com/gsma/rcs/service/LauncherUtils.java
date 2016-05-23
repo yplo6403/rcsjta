@@ -24,8 +24,8 @@ package com.gsma.rcs.service;
 
 import com.gsma.rcs.addressbook.AccountChangedReceiver;
 import com.gsma.rcs.addressbook.RcsAccountManager;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.AndroidFactory;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.platform.registry.AndroidRegistryFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.contact.ContactManager;
@@ -71,6 +71,11 @@ public class LauncherUtils {
      * Key for storing the expiration date of the provisioning
      */
     private static final String REGISTRY_PROVISIONING_EXPIRATION = "ProvisioningExpiration";
+
+    /**
+     * Count of Registration 403 response
+     */
+    private static final String REGISTRATION_FORBIDDEN_COUNT = "RegForbiddenCount";
 
     private static final Logger sLogger = Logger.getLogger(LauncherUtils.class.getName());
 
@@ -317,5 +322,31 @@ public class LauncherUtils {
         editor.putLong(REGISTRY_PROVISIONING_VALIDITY, validity);
         editor.putLong(REGISTRY_PROVISIONING_EXPIRATION, next);
         editor.commit();
+    }
+
+    /**
+     * Write the registration forbidden count in the registry
+     *
+     * @param context application context
+     * @param value count of registration forbidden failures
+     */
+    public static void setRegForbiddenCount(Context context, int value) {
+        SharedPreferences preferences = context.getSharedPreferences(
+                AndroidRegistryFactory.RCS_PREFS_NAME, Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt(REGISTRATION_FORBIDDEN_COUNT, value);
+        editor.apply();
+    }
+
+    /**
+     * Get the registration forbidden count from the registry
+     *
+     * @param context application context
+     * @return Number of registration forbidden failures
+     */
+    public static int getRegForbiddenCount(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(
+                AndroidRegistryFactory.RCS_PREFS_NAME, Activity.MODE_PRIVATE);
+        return preferences.getInt(REGISTRATION_FORBIDDEN_COUNT, 0);
     }
 }
