@@ -86,8 +86,7 @@ public class NetworkUtils {
                 return getNetworkSubType(networkInfo.getSubtype());
 
             default:
-                throw new IllegalArgumentException(new StringBuilder("Unknown network type : ")
-                        .append(networkType).append("!").toString());
+                return NETWORK_ACCESS_UNKNOWN;
         }
     }
 
@@ -114,18 +113,16 @@ public class NetworkUtils {
                 /* ~ 1-23 Mbps */
             case TelephonyManager.NETWORK_TYPE_HSUPA:
                 /* Intentional fall back */
-                /* TelephonyManager.NETWORK_TYPE_HSPAP (available on API level 13) ~10-20 Mbps */
-            case 15:
+                /* ~10+ Mbps */
+            case TelephonyManager.NETWORK_TYPE_HSPAP:
                 return NETWORK_ACCESS_3GPLUS;
 
-                /* TelephonyManager.NETWORK_TYPE_LTE (available on API level 11) ~10+ Mbps */
-            case 13:
+                /* ~10+ Mbps */
+            case TelephonyManager.NETWORK_TYPE_LTE:
                 return NETWORK_ACCESS_4G;
 
             default:
-                throw new IllegalArgumentException(new StringBuilder(
-                        "Unknown sub-type for mobile network : ").append(subType).append("!")
-                        .toString());
+                return NETWORK_ACCESS_UNKNOWN;
         }
     }
 }
