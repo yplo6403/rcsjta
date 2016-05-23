@@ -22,7 +22,6 @@
 
 package com.gsma.rcs.core.ims.service.sip;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -36,6 +35,7 @@ import com.gsma.rcs.core.ims.service.sip.messaging.TerminatingSipMsrpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.GenericSipRtpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.OriginatingSipRtpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.TerminatingSipRtpSession;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.api.MultimediaSessionServiceImpl;
@@ -148,9 +148,7 @@ public class SipService extends ImsService {
         }
     }
 
-    /**
-     * Check the IMS service
-     */
+    @Override
     public void check() {
     }
 
@@ -190,9 +188,8 @@ public class SipService extends ImsService {
             }
             // Test if the contact is blocked
             ContactId remote = ContactUtil.createContactIdFromValidatedData(number);
-            mContactManager.setContactDisplayName(remote,
-                    SipUtils.getDisplayNameFromUri(invite.getFrom()));
-
+            mContactManager
+                    .setContactDisplayName(remote, SipUtils.getDisplayNameFromInvite(invite));
             if (mContactManager.isBlockedForContact(remote)) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Contact " + remote
@@ -201,10 +198,8 @@ public class SipService extends ImsService {
                 sendErrorResponse(invite, Response.DECLINE);
                 return;
             }
-
             final TerminatingSipMsrpSession session = new TerminatingSipMsrpSession(this, invite,
                     getImsModule(), remote, sessionInvite, mRcsSettings, timestamp, mContactManager);
-
             mMultimediaMessagingOperationHandler.post(new Runnable() {
 
                 @Override
@@ -225,23 +220,12 @@ public class SipService extends ImsService {
                     }
                 }
             });
-
         } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.debug("Failed to receive generic MSRP session invitation! ("
                         + e.getMessage() + ")");
             }
-
-        } catch (PayloadException e) {
-            sLogger.error("Failed to receive generic MSRP session invitation!", e);
-
-        } catch (RuntimeException e) {
-            /*
-             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-             * which should be handled/fixed within the code. However the cases when we are
-             * executing operations on a thread unhandling such exceptions will eventually lead to
-             * exit the system and thus can bring the whole system down, which is not intended.
-             */
+        } catch (PayloadException | RuntimeException e) {
             sLogger.error("Failed to receive generic MSRP session invitation!", e);
         }
     }
@@ -282,9 +266,8 @@ public class SipService extends ImsService {
             }
             // Test if the contact is blocked
             ContactId remote = ContactUtil.createContactIdFromValidatedData(number);
-            mContactManager.setContactDisplayName(remote,
-                    SipUtils.getDisplayNameFromUri(invite.getFrom()));
-
+            mContactManager
+                    .setContactDisplayName(remote, SipUtils.getDisplayNameFromInvite(invite));
             if (mContactManager.isBlockedForContact(remote)) {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Contact " + remote
@@ -293,10 +276,8 @@ public class SipService extends ImsService {
                 sendErrorResponse(invite, Response.DECLINE);
                 return;
             }
-
             final TerminatingSipRtpSession session = new TerminatingSipRtpSession(this, invite,
                     getImsModule(), remote, sessionInvite, mRcsSettings, timestamp, mContactManager);
-
             mMultimediaStreamingOperationHandler.post(new Runnable() {
 
                 @Override
@@ -317,23 +298,12 @@ public class SipService extends ImsService {
                     }
                 }
             });
-
         } catch (NetworkException e) {
             if (sLogger.isActivated()) {
                 sLogger.debug("Failed to receive generic RTP session invitation! ("
                         + e.getMessage() + ")");
             }
-
-        } catch (PayloadException e) {
-            sLogger.error("Failed to receive generic RTP session invitation!", e);
-
-        } catch (RuntimeException e) {
-            /*
-             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-             * which should be handled/fixed within the code. However the cases when we are
-             * executing operations on a thread unhandling such exceptions will eventually lead to
-             * exit the system and thus can bring the whole system down, which is not intended.
-             */
+        } catch (PayloadException | RuntimeException e) {
             sLogger.error("Failed to receive generic RTP session invitation!", e);
         }
     }

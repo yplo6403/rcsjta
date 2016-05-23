@@ -90,22 +90,12 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             ContactManager contactManager, CmsManager cmsManager) throws PayloadException {
         super(imService, contact, remoteContact, participantsFromInvite, rcsSettings, messagingLog,
                 timestamp, contactManager, cmsManager);
-
         String subject = ChatUtils.getSubject(invite);
         setSubject(subject);
-
         createTerminatingDialogPath(invite);
-
-        if (contact != null) {
-            String fromUri = invite.getFrom();
-            if (fromUri != null) {
-                setRemoteDisplayName(SipUtils.getDisplayNameFromUri(fromUri));
-            }
-        }
-
+        setRemoteDisplayName(SipUtils.getDisplayNameFromInvite(invite));
         String chatId = ChatUtils.getContributionId(invite);
         setContributionID(chatId);
-
         if (shouldBeAutoAccepted()) {
             setSessionAccepted();
         }
@@ -352,7 +342,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                 }
                 return;
             }
-
             /* Analyze the received response */
             if (ctx.isSipAck()) {
                 if (logActivated) {

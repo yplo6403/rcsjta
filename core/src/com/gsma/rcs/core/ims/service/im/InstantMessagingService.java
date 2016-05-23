@@ -786,7 +786,7 @@ public class InstantMessagingService extends ImsService {
                         sLogger.debug("Receive a file transfer session invitation from "
                                 .concat(remote.toString()));
                     }
-                    String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
+                    String displayName = SipUtils.getDisplayNameFromInvite(invite);
                     /*
                      * Update the remote contact's capabilities to include at least MSRP FT
                      * capabilities as we have just received a MSRP file transfer session invitation
@@ -967,7 +967,7 @@ public class InstantMessagingService extends ImsService {
                     }
                     String referredId = ChatUtils.getReferredIdentityAsContactUri(invite);
                     ContactId remote = ChatUtils.getReferredIdentityAsContactId(invite);
-                    String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
+                    String displayName = SipUtils.getDisplayNameFromInvite(invite);
                     if (remote == null) {
                         if (logActivated) {
                             sLogger.error("Discard One2OneChatSession: invalid remote ID '"
@@ -1101,7 +1101,7 @@ public class InstantMessagingService extends ImsService {
                         sLogger.debug("Receive an ad-hoc group chat session invitation from "
                                 + contact);
                     }
-                    String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
+                    String displayName = SipUtils.getDisplayNameFromInvite(invite);
                     /*
                      * Update the remote contact's capabilities to include at least IM session
                      * capabilities as we have just received a group chat session invitation from
@@ -1497,7 +1497,7 @@ public class InstantMessagingService extends ImsService {
                     boolean logActivated = sLogger.isActivated();
                     String referredId = ChatUtils.getReferredIdentityAsContactUri(invite);
                     ContactId remote = ChatUtils.getReferredIdentityAsContactId(invite);
-                    String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
+                    String displayName = SipUtils.getDisplayNameFromInvite(invite);
                     if (remote == null) {
                         if (logActivated) {
                             sLogger.error("Discard OneToOne HttpFileTransferInvitation: invalid remote ID '"
@@ -1736,7 +1736,7 @@ public class InstantMessagingService extends ImsService {
                     boolean logActivated = sLogger.isActivated();
                     String referredId = ChatUtils.getReferredIdentityAsContactUri(invite);
                     ContactId remote = ChatUtils.getReferredIdentityAsContactId(invite);
-                    String displayName = SipUtils.getDisplayNameFromUri(invite.getFrom());
+                    String displayName = SipUtils.getDisplayNameFromInvite(invite);
                     if (remote == null) {
                         sLogger.error("Discard S&F OneToOne HttpFileTranfer Invitation. Invalid remote ID "
                                 .concat(referredId));
