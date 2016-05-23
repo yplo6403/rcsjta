@@ -13,6 +13,7 @@ News:
 
 Bugs fixed:
 
+	* Core: Handling IllegalArgumentException while deleting 1-to-1 conversation
 	* Core: GC messages are getting deleted while deleting o2o chat thread
 	* Core: Initiating provisioning if registration fails with 403 response
 	* Core: Status is updated as Failed even for delivered messages and FT
