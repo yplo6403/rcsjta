@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,13 +44,13 @@ public class MobileNetworkInterface extends ImsNetworkInterface {
      * Constructor
      * 
      * @param imsModule IMS module
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     public MobileNetworkInterface(ImsModule imsModule, RcsSettings rcsSettings) {
-        super(imsModule, ConnectivityManager.TYPE_MOBILE, new MobileNetworkAccess(), rcsSettings
-                .getImsProxyAddrForMobile(), rcsSettings.getImsProxyPortForMobile(), rcsSettings
-                .getSipDefaultProtocolForMobile(), rcsSettings
-                .getImsAuthenticationProcedureForMobile(), rcsSettings);
+        super(imsModule, ConnectivityManager.TYPE_MOBILE, new MobileNetworkAccess(rcsSettings),
+                rcsSettings.getImsProxyAddrForMobile(), rcsSettings.getImsProxyPortForMobile(),
+                rcsSettings.getSipDefaultProtocolForMobile(), rcsSettings
+                        .getImsAuthenticationProcedureForMobile(), rcsSettings);
 
         if (logger.isActivated()) {
             logger.info("Mobile network interface has been loaded");

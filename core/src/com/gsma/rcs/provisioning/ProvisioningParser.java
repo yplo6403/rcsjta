@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -140,8 +140,7 @@ public class ProvisioningParser {
         try {
             final boolean logActivated = sLogger.isActivated();
             if (logActivated) {
-                sLogger.debug(
-                        "Start the parsing of content first=".concat(Boolean.toString(first)));
+                sLogger.debug("Start the parsing of content first=".concat(Boolean.toString(first)));
             }
             mFirst = first;
             inputStream = new ByteArrayInputStream(mContent.getBytes(UTF8));
@@ -262,17 +261,15 @@ public class ProvisioningParser {
         if (versionchild != null) {
             do {
                 if (version == null) {
-                    if ((version = getValueByParamName("version", versionchild,
-                            TYPE_TXT)) != null) {
+                    if ((version = getValueByParamName("version", versionchild, TYPE_TXT)) != null) {
                         provisioningInfo.setVersion(Integer.parseInt(version));
                         continue;
                     }
                 }
                 if (validity == null) {
-                    if ((validity = getValueByParamName("validity", versionchild,
-                            TYPE_INT)) != null) {
-                        provisioningInfo.setValidity(
-                                Long.parseLong(validity) * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
+                    if ((validity = getValueByParamName("validity", versionchild, TYPE_INT)) != null) {
+                        provisioningInfo.setValidity(Long.parseLong(validity)
+                                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
                     }
                 }
             } while ((versionchild = versionchild.getNextSibling()) != null);
@@ -298,8 +295,7 @@ public class ProvisioningParser {
                     }
                 }
                 if (tokenValidity == null) {
-                    if ((tokenValidity = getValueByParamName("validity", tokenChild,
-                            TYPE_INT)) != null) {
+                    if ((tokenValidity = getValueByParamName("validity", tokenChild, TYPE_INT)) != null) {
                         provisioningInfo.setTokenValidity(Long.parseLong(tokenValidity));
                     }
                 }
@@ -323,23 +319,22 @@ public class ProvisioningParser {
             do {
                 if (title == null) {
                     if ((title = getValueByParamName("title", childnode, TYPE_TXT)) != null) {
-                        mRcsSettings
-                                .setProvisioningUserMessageTitle("".equals(title) ? null : title);
+                        mRcsSettings.setProvisioningUserMessageTitle("".equals(title) ? null
+                                : title);
                         provisioningInfo.setTitle(title);
                         continue;
                     }
                 }
                 if (message == null) {
                     if ((message = getValueByParamName("message", childnode, TYPE_TXT)) != null) {
-                        mRcsSettings.setProvisioningUserMessageContent(
-                                "".equals(message) ? null : message);
+                        mRcsSettings.setProvisioningUserMessageContent("".equals(message) ? null
+                                : message);
                         provisioningInfo.setMessage(message);
                         continue;
                     }
                 }
                 if (acceptBtn == null) {
-                    if ((acceptBtn = getValueByParamName("Accept_btn", childnode,
-                            TYPE_INT)) != null) {
+                    if ((acceptBtn = getValueByParamName("Accept_btn", childnode, TYPE_INT)) != null) {
                         boolean accept = STRING_BOOLEAN_TRUE.equals(acceptBtn);
                         mRcsSettings.setProvisioningAcceptButton(accept);
                         provisioningInfo.setAcceptBtn(accept);
@@ -347,8 +342,7 @@ public class ProvisioningParser {
                     }
                 }
                 if (rejectBtn == null) {
-                    if ((rejectBtn = getValueByParamName("Reject_btn", childnode,
-                            TYPE_INT)) != null) {
+                    if ((rejectBtn = getValueByParamName("Reject_btn", childnode, TYPE_INT)) != null) {
                         boolean reject = STRING_BOOLEAN_TRUE.equals(rejectBtn);
                         mRcsSettings.setProvisioningRejectButton(reject);
                         provisioningInfo.setRejectBtn(reject);
@@ -388,8 +382,8 @@ public class ProvisioningParser {
             } while ((childnode = childnode.getNextSibling()) != null);
         }
 
-        if (appRef != null && (appRef.equalsIgnoreCase("IMS-Settings")
-                || appRef.equalsIgnoreCase("ims-rcse"))) {
+        if (appRef != null
+                && (appRef.equalsIgnoreCase("IMS-Settings") || appRef.equalsIgnoreCase("ims-rcse"))) {
             parseIMS(node);
         }
 
@@ -437,14 +431,13 @@ public class ProvisioningParser {
         String iconMaxSize = null;
         String noteMaxSize = null;
         String publishTimer = null;
-        Node typenode;
         Node childnode = node.getFirstChild();
 
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     if (childnode.getAttributes().getLength() > 0) {
-                        typenode = childnode.getAttributes().getNamedItem("type");
+                        Node typenode = childnode.getAttributes().getNamedItem("type");
                         if (typenode != null) {
                             if (typenode.getNodeValue().equalsIgnoreCase("FAVLINK")) {
                                 parseFavoriteLink(childnode);
@@ -459,8 +452,7 @@ public class ProvisioningParser {
                 }
 
                 if (usePresence == null) {
-                    if ((usePresence = getValueByParamName("usePresence", childnode,
-                            TYPE_INT)) != null) {
+                    if ((usePresence = getValueByParamName("usePresence", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_SOCIAL_PRESENCE,
                                 !usePresence.equals("0"));
                         continue;
@@ -468,8 +460,7 @@ public class ProvisioningParser {
                 }
 
                 if (presencePrfl == null) {
-                    if ((presencePrfl = getValueByParamName("presencePrfl", childnode,
-                            TYPE_INT)) != null) {
+                    if ((presencePrfl = getValueByParamName("presencePrfl", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_PRESENCE_DISCOVERY,
                                 !presencePrfl.equals("0"));
                         continue;
@@ -477,8 +468,7 @@ public class ProvisioningParser {
                 }
 
                 if (iconMaxSize == null) {
-                    if ((iconMaxSize = getValueByParamName("IconMaxSize", childnode,
-                            TYPE_INT)) != null) {
+                    if ((iconMaxSize = getValueByParamName("IconMaxSize", childnode, TYPE_INT)) != null) {
                         long size = Long.parseLong(iconMaxSize);
                         mRcsSettings.setMaxPhotoIconSize(size);
                         continue;
@@ -486,8 +476,7 @@ public class ProvisioningParser {
                 }
 
                 if (noteMaxSize == null) {
-                    if ((noteMaxSize = getValueByParamName("NoteMaxSize", childnode,
-                            TYPE_INT)) != null) {
+                    if ((noteMaxSize = getValueByParamName("NoteMaxSize", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeInteger(RcsSettingsData.MAX_FREETXT_LENGTH,
                                 Integer.parseInt(noteMaxSize));
                         continue;
@@ -495,8 +484,7 @@ public class ProvisioningParser {
                 }
 
                 if (publishTimer == null) {
-                    if ((publishTimer = getValueByParamName("PublishTimer", childnode,
-                            TYPE_INT)) != null) {
+                    if ((publishTimer = getValueByParamName("PublishTimer", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.PUBLISH_EXPIRE_PERIOD,
                                 Long.parseLong(publishTimer)
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
@@ -549,8 +537,7 @@ public class ProvisioningParser {
                 }
 
                 if (groupChatAuth == null) {
-                    if ((groupChatAuth = getValueByParamName("groupChatAuth", childnode,
-                            TYPE_INT)) != null) {
+                    if ((groupChatAuth = getValueByParamName("groupChatAuth", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_IM_GROUP_SESSION,
                                 groupChatAuth.equals("1"));
                         continue;
@@ -582,8 +569,7 @@ public class ProvisioningParser {
                 }
 
                 if (geolocPushAuth == null) {
-                    if ((geolocPushAuth = getValueByParamName("geolocPushAuth", childnode,
-                            TYPE_INT)) != null) {
+                    if ((geolocPushAuth = getValueByParamName("geolocPushAuth", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_GEOLOCATION_PUSH,
                                 geolocPushAuth.equals("1"));
                         continue;
@@ -591,14 +577,12 @@ public class ProvisioningParser {
                 }
 
                 if (presencePrfl == null) {
-                    if ((presencePrfl = getValueByParamName("presencePrfl", childnode,
-                            TYPE_INT)) != null) {
+                    if ((presencePrfl = getValueByParamName("presencePrfl", childnode, TYPE_INT)) != null) {
                         if (presencePrfl.equals("1")) {
-                            sLogger.error(
-                                    "Social presence is not supported in TAPI 1.5.1, ignoring capability received through provisioning.");
+                            sLogger.error("Social presence is not supported in TAPI 1.5.1, ignoring capability received through provisioning.");
                         }
-                        mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_SOCIAL_PRESENCE,
-                                false);
+                        mRcsSettings
+                                .writeBoolean(RcsSettingsData.CAPABILITY_SOCIAL_PRESENCE, false);
                         continue;
                     }
                 }
@@ -654,8 +638,7 @@ public class ProvisioningParser {
         if (childnode != null) {
             do {
                 if (revokeTimer == null) {
-                    if ((revokeTimer = getValueByParamName("RevokeTimer", childnode,
-                            TYPE_INT)) != null) {
+                    if ((revokeTimer = getValueByParamName("RevokeTimer", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.REVOKE_TIMEOUT,
                                 Long.parseLong(revokeTimer)
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
@@ -664,10 +647,9 @@ public class ProvisioningParser {
                 }
 
                 if (xcapRootURI == null) {
-                    if ((xcapRootURI = getValueByParamName("XCAPRootURI", childnode,
-                            TYPE_TXT)) != null) {
-                        mRcsSettings.setXdmServer(
-                                "".equals(xcapRootURI) ? null : Uri.parse(xcapRootURI));
+                    if ((xcapRootURI = getValueByParamName("XCAPRootURI", childnode, TYPE_TXT)) != null) {
+                        mRcsSettings.setXdmServer("".equals(xcapRootURI) ? null : Uri
+                                .parse(xcapRootURI));
                         continue;
                     }
                 }
@@ -708,8 +690,7 @@ public class ProvisioningParser {
         if (childnode != null) {
             do {
                 if (textMaxLength == null) {
-                    if ((textMaxLength = getValueByParamName("TextMaxLength", childnode,
-                            TYPE_INT)) != null) {
+                    if ((textMaxLength = getValueByParamName("TextMaxLength", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeInteger(RcsSettingsData.MAX_GEOLOC_LABEL_LENGTH,
                                 Integer.parseInt(textMaxLength));
                         continue;
@@ -717,8 +698,8 @@ public class ProvisioningParser {
                 }
 
                 if (locInfoMaxValidTime == null) {
-                    if ((locInfoMaxValidTime = getValueByParamName("LocInfoMaxValidTime", childnode,
-                            TYPE_INT)) != null) {
+                    if ((locInfoMaxValidTime = getValueByParamName("LocInfoMaxValidTime",
+                            childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.GEOLOC_EXPIRATION_TIME,
                                 Long.parseLong(locInfoMaxValidTime)
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
@@ -739,13 +720,12 @@ public class ProvisioningParser {
      * @param node Node
      */
     private void parseServiceProviderExt(Node node) {
-        Node typenode = null;
         Node childnode = node.getFirstChild();
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     if (childnode.getAttributes().getLength() > 0) {
-                        typenode = childnode.getAttributes().getNamedItem("type");
+                        Node typenode = childnode.getAttributes().getNamedItem("type");
                         if (typenode != null) {
                             if (typenode.getNodeValue().equalsIgnoreCase("joyn")) {
                                 parseRcs(childnode);
@@ -763,7 +743,6 @@ public class ProvisioningParser {
      * @param node Node
      */
     private void parseRcs(Node node) {
-        Node typenode;
         if (node == null) {
             return;
         }
@@ -774,7 +753,7 @@ public class ProvisioningParser {
                 if (childnode.getNodeName().equals("characteristic")) {
                     NamedNodeMap attributes = childnode.getAttributes();
                     if (attributes.getLength() > 0) {
-                        typenode = attributes.getNamedItem("type");
+                        Node typenode = attributes.getNamedItem("type");
                         if (typenode != null) {
                             String nodeValue = typenode.getNodeValue();
                             if (nodeValue.equalsIgnoreCase("UX")) {
@@ -786,8 +765,7 @@ public class ProvisioningParser {
                     }
                 }
                 if (msgCapValidity == null) {
-                    if ((msgCapValidity = getValueByParamName("msgCapValidity", childnode,
-                            TYPE_INT)) != null) {
+                    if ((msgCapValidity = getValueByParamName("msgCapValidity", childnode, TYPE_INT)) != null) {
                         long validity = Long.parseLong(msgCapValidity)
                                 * SECONDS_TO_MILLISECONDS_CONVERSION_RATE;
                         mRcsSettings.writeLong(RcsSettingsData.MSG_CAP_VALIDITY_PERIOD, validity);
@@ -840,15 +818,12 @@ public class ProvisioningParser {
      */
     private void parseUx(Node node, ImsServerVersion isJoyn) {
         String messagingUX = null;
-
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
 
                 if (messagingUX == null) {
-                    if ((messagingUX = getValueByParamName("messagingUX", childnode,
-                            TYPE_INT)) != null) {
+                    if ((messagingUX = getValueByParamName("messagingUX", childnode, TYPE_INT)) != null) {
                         if (messagingUX.equals("1")) {
                             mRcsSettings.setMessagingMode(MessagingMode.INTEGRATED);
                         } else {
@@ -863,7 +838,6 @@ public class ProvisioningParser {
 
             } while ((childnode = childnode.getNextSibling()) != null);
         }
-
         // Not used: oneButtonVoiceCall
         // Not used: oneButtonVideoCall
     }
@@ -907,8 +881,7 @@ public class ProvisioningParser {
         if (childnode != null) {
             do {
                 if (imCapAlwaysOn == null) {
-                    if ((imCapAlwaysOn = getValueByParamName("imCapAlwaysON", childnode,
-                            TYPE_INT)) != null) {
+                    if ((imCapAlwaysOn = getValueByParamName("imCapAlwaysON", childnode, TYPE_INT)) != null) {
                         boolean _imCapAlwaysOn = !imCapAlwaysOn.equals("0");
                         mRcsSettings.writeBoolean(RcsSettingsData.IM_CAPABILITY_ALWAYS_ON,
                                 _imCapAlwaysOn);
@@ -925,8 +898,7 @@ public class ProvisioningParser {
                 }
 
                 if (ftCapAlwaysOn == null) {
-                    if ((ftCapAlwaysOn = getValueByParamName("ftCapAlwaysON", childnode,
-                            TYPE_INT)) != null) {
+                    if ((ftCapAlwaysOn = getValueByParamName("ftCapAlwaysON", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.FT_CAPABILITY_ALWAYS_ON,
                                 !ftCapAlwaysOn.equals("0"));
                         continue;
@@ -969,12 +941,12 @@ public class ProvisioningParser {
                 }
 
                 if (autoAcceptFt == null) {
-                    if ((autoAcceptFt = getValueByParamName("ftAutAccept", childnode,
-                            TYPE_INT)) != null) {
+                    if ((autoAcceptFt = getValueByParamName("ftAutAccept", childnode, TYPE_INT)) != null) {
                         boolean aaModeChangeable = !autoAcceptFt.equals("0");
                         // Check if first provisioning or transition of MNO setting
-                        if (mFirst || (aaModeChangeable != mRcsSettings
-                                .isFtAutoAcceptedModeChangeable())) {
+                        if (mFirst
+                                || (aaModeChangeable != mRcsSettings
+                                        .isFtAutoAcceptedModeChangeable())) {
                             // Save first or new setting value
                             mRcsSettings.setFtAutoAcceptedModeChangeable(aaModeChangeable);
                             if (aaModeChangeable) {
@@ -994,8 +966,7 @@ public class ProvisioningParser {
                 }
 
                 if (ftSF == null) {
-                    if ((ftSF = getValueByParamName("ftStAndFwEnabled", childnode,
-                            TYPE_INT)) != null) {
+                    if ((ftSF = getValueByParamName("ftStAndFwEnabled", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_FILE_TRANSFER_SF,
                                 !ftSF.equals("0"));
                         continue;
@@ -1003,8 +974,7 @@ public class ProvisioningParser {
                 }
 
                 if (ftHttpCsUri == null) {
-                    if ((ftHttpCsUri = getValueByParamName("ftHTTPCSURI", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((ftHttpCsUri = getValueByParamName("ftHTTPCSURI", childnode, TYPE_TXT)) != null) {
                         /*
                          * According to "Rich Communication Suite 5.1 Advanced Communications
                          * Services and Client Specification Version 4.0" 3.5.4.8.3 File transfer
@@ -1028,24 +998,21 @@ public class ProvisioningParser {
                 }
 
                 if (ftHttpCsUser == null) {
-                    if ((ftHttpCsUser = getValueByParamName("ftHTTPCSUser", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((ftHttpCsUser = getValueByParamName("ftHTTPCSUser", childnode, TYPE_TXT)) != null) {
                         mRcsSettings.setFtHttpLogin("".equals(ftHttpCsUser) ? null : ftHttpCsUser);
                         continue;
                     }
                 }
 
                 if (ftHttpCsPwd == null) {
-                    if ((ftHttpCsPwd = getValueByParamName("ftHTTPCSPwd", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((ftHttpCsPwd = getValueByParamName("ftHTTPCSPwd", childnode, TYPE_TXT)) != null) {
                         mRcsSettings.setFtHttpPassword("".equals(ftHttpCsPwd) ? null : ftHttpCsPwd);
                         continue;
                     }
                 }
 
                 if (ftDefaultMech == null) {
-                    if ((ftDefaultMech = getValueByParamName("ftDefaultMech", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((ftDefaultMech = getValueByParamName("ftDefaultMech", childnode, TYPE_TXT)) != null) {
                         FileTransferProtocol protocol = FileTransferProtocol.valueOf(ftDefaultMech);
                         mRcsSettings.setFtProtocol(protocol);
                         continue;
@@ -1053,18 +1020,16 @@ public class ProvisioningParser {
                 }
 
                 if (imSessionStart == null) {
-                    if ((imSessionStart = getValueByParamName("imSessionStart", childnode,
-                            TYPE_INT)) != null) {
-                        ImSessionStartMode mode = ImSessionStartMode
-                                .valueOf(Integer.parseInt(imSessionStart));
+                    if ((imSessionStart = getValueByParamName("imSessionStart", childnode, TYPE_INT)) != null) {
+                        ImSessionStartMode mode = ImSessionStartMode.valueOf(Integer
+                                .parseInt(imSessionStart));
                         mRcsSettings.setImSessionStartMode(mode);
                         continue;
                     }
                 }
 
                 if (ftWarnSize == null) {
-                    if ((ftWarnSize = getValueByParamName("ftWarnSize", childnode,
-                            TYPE_INT)) != null) {
+                    if ((ftWarnSize = getValueByParamName("ftWarnSize", childnode, TYPE_INT)) != null) {
                         long size = Long.parseLong(ftWarnSize) * 1024L;
                         mRcsSettings.setWarningMaxFileTransferSize(size);
                         continue;
@@ -1092,8 +1057,7 @@ public class ProvisioningParser {
                 }
 
                 if (autoAcceptChat == null) {
-                    if ((autoAcceptChat = getValueByParamName("AutAccept", childnode,
-                            TYPE_INT)) != null) {
+                    if ((autoAcceptChat = getValueByParamName("AutAccept", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.AUTO_ACCEPT_CHAT,
                                 !autoAcceptChat.equals("0"));
                         continue;
@@ -1110,8 +1074,7 @@ public class ProvisioningParser {
                 }
 
                 if (maxSize1to1 == null) {
-                    if ((maxSize1to1 = getValueByParamName("MaxSize1to1", childnode,
-                            TYPE_INT)) != null) {
+                    if ((maxSize1to1 = getValueByParamName("MaxSize1to1", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeInteger(RcsSettingsData.MAX_CHAT_MSG_LENGTH,
                                 Integer.parseInt(maxSize1to1));
                         continue;
@@ -1119,8 +1082,7 @@ public class ProvisioningParser {
                 }
 
                 if (maxSize1toM == null) {
-                    if ((maxSize1toM = getValueByParamName("MaxSize1toM", childnode,
-                            TYPE_INT)) != null) {
+                    if ((maxSize1toM = getValueByParamName("MaxSize1toM", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeInteger(RcsSettingsData.MAX_GROUPCHAT_MSG_LENGTH,
                                 Integer.parseInt(maxSize1toM));
                         continue;
@@ -1128,11 +1090,11 @@ public class ProvisioningParser {
                 }
 
                 if (timerIdle == null) {
-                    if ((timerIdle = getValueByParamName("TimerIdle", childnode,
-                            TYPE_INT)) != null) {
-                        mRcsSettings.writeLong(RcsSettingsData.CHAT_IDLE_DURATION,
-                                Long.parseLong(timerIdle)
-                                        * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
+                    if ((timerIdle = getValueByParamName("TimerIdle", childnode, TYPE_INT)) != null) {
+                        mRcsSettings
+                                .writeLong(RcsSettingsData.CHAT_IDLE_DURATION,
+                                        Long.parseLong(timerIdle)
+                                                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
                         continue;
                     }
                 }
@@ -1165,17 +1127,15 @@ public class ProvisioningParser {
                 }
 
                 if (confFctyUri == null) {
-                    if ((confFctyUri = getValueByParamName("conf-fcty-uri", childnode,
-                            TYPE_TXT)) != null) {
-                        mRcsSettings.setImConferenceUri(
-                                "".equals(confFctyUri) ? null : formatSipUri(confFctyUri.trim()));
+                    if ((confFctyUri = getValueByParamName("conf-fcty-uri", childnode, TYPE_TXT)) != null) {
+                        mRcsSettings.setImConferenceUri("".equals(confFctyUri) ? null
+                                : formatSipUri(confFctyUri.trim()));
                         continue;
                     }
                 }
 
                 if (imMsgTech == null) {
-                    if ((imMsgTech = getValueByParamName("imMsgTech", childnode,
-                            TYPE_INT)) != null) {
+                    if ((imMsgTech = getValueByParamName("imMsgTech", childnode, TYPE_INT)) != null) {
                         ImMsgTech value = ImMsgTech.valueOf(Integer.parseInt(imMsgTech));
                         mRcsSettings.setImMsgTech(value);
                         continue;
@@ -1205,10 +1165,9 @@ public class ProvisioningParser {
                          * "positivedelivery".
                          */
                         if (!isFirstMessageInvite) {
-                            sLogger.error(
-                                    "isFirstMessageInInvite is set to false, it is incorrect according"
-                                            + " to Blackbird protocol, please check provisioning values. Ignoring the "
-                                            + "set to false request.");
+                            sLogger.error("isFirstMessageInInvite is set to false, it is incorrect according"
+                                    + " to Blackbird protocol, please check provisioning values. Ignoring the "
+                                    + "set to false request.");
                             continue;
                         }
                         mRcsSettings.setFirstMessageInInvite(isFirstMessageInvite);
@@ -1236,13 +1195,12 @@ public class ProvisioningParser {
             return;
         }
         Node childnode = node.getFirstChild();
-        Node typenode;
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     NamedNodeMap attributes = childnode.getAttributes();
                     if (attributes.getLength() > 0) {
-                        typenode = attributes.getNamedItem("type");
+                        Node typenode = attributes.getNamedItem("type");
                         if (typenode != null) {
                             if (typenode.getNodeValue().equalsIgnoreCase("Ext")) {
                                 parseExt(childnode);
@@ -1251,8 +1209,7 @@ public class ProvisioningParser {
                     }
                 }
                 if (pollingPeriod == null) {
-                    if ((pollingPeriod = getValueByParamName("pollingPeriod", childnode,
-                            TYPE_INT)) != null) {
+                    if ((pollingPeriod = getValueByParamName("pollingPeriod", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.CAPABILITY_POLLING_PERIOD,
                                 Long.parseLong(pollingPeriod)
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
@@ -1261,8 +1218,7 @@ public class ProvisioningParser {
                 }
 
                 if (capInfoExpiry == null) {
-                    if ((capInfoExpiry = getValueByParamName("capInfoExpiry", childnode,
-                            TYPE_INT)) != null) {
+                    if ((capInfoExpiry = getValueByParamName("capInfoExpiry", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.CAPABILITY_EXPIRY_TIMEOUT,
                                 Long.parseLong(capInfoExpiry)
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
@@ -1289,17 +1245,14 @@ public class ProvisioningParser {
     private void parseAPN(Node node) {
         // Not supported: "rcseOnlyAPN"
         String enableRcseSwitch = null;
-
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
-
                 if (enableRcseSwitch == null) {
                     if ((enableRcseSwitch = getValueByParamName("enableRcseSwitch", childnode,
                             TYPE_INT)) != null) {
-                        mRcsSettings.setEnableRcseSwitch(
-                                EnableRcseSwitch.valueOf(Integer.valueOf(enableRcseSwitch)));
+                        mRcsSettings.setEnableRcseSwitch(EnableRcseSwitch.valueOf(Integer
+                                .valueOf(enableRcseSwitch)));
                     }
                 }
 
@@ -1314,6 +1267,8 @@ public class ProvisioningParser {
      */
     private void parseTransportProtocol(Node node) {
         String psSignalling = null;
+        String psMedia = null;
+        String psRtMedia = null;
         String wifiSignalling = null;
         String wifiMedia = null;
         String wifiRtMedia = null;
@@ -1325,8 +1280,7 @@ public class ProvisioningParser {
         if (childnode != null) {
             do {
                 if (psSignalling == null) {
-                    if ((psSignalling = getValueByParamName("psSignalling", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((psSignalling = getValueByParamName("psSignalling", childnode, TYPE_TXT)) != null) {
                         if (psSignalling.equals("SIPoUDP")) {
                             mRcsSettings.writeString(
                                     RcsSettingsData.SIP_DEFAULT_PROTOCOL_FOR_MOBILE,
@@ -1345,8 +1299,7 @@ public class ProvisioningParser {
                 }
 
                 if (wifiSignalling == null) {
-                    if ((wifiSignalling = getValueByParamName("wifiSignalling", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((wifiSignalling = getValueByParamName("wifiSignalling", childnode, TYPE_TXT)) != null) {
                         if (wifiSignalling.equals("SIPoUDP")) {
                             mRcsSettings.writeString(RcsSettingsData.SIP_DEFAULT_PROTOCOL_FOR_WIFI,
                                     ListeningPoint.UDP);
@@ -1362,8 +1315,7 @@ public class ProvisioningParser {
                 }
 
                 if (wifiMedia == null) {
-                    if ((wifiMedia = getValueByParamName("wifiMedia", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((wifiMedia = getValueByParamName("wifiMedia", childnode, TYPE_TXT)) != null) {
                         if (wifiMedia.equals("MSRP")) {
                             mRcsSettings.writeBoolean(RcsSettingsData.SECURE_MSRP_OVER_WIFI, false);
                         } else if (wifiMedia.equals("MSRPoTLS")) {
@@ -1374,8 +1326,7 @@ public class ProvisioningParser {
                 }
 
                 if (wifiRtMedia == null) {
-                    if ((wifiRtMedia = getValueByParamName("wifiRTMedia", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((wifiRtMedia = getValueByParamName("wifiRTMedia", childnode, TYPE_TXT)) != null) {
                         if ("RTP".equals(wifiMedia)) {
                             mRcsSettings.writeBoolean(RcsSettingsData.SECURE_RTP_OVER_WIFI, false);
                         } else if ("SRTP".equals(wifiMedia)) {
@@ -1384,8 +1335,29 @@ public class ProvisioningParser {
                     }
                 }
 
-                // Not supported: "psMedia"
-                // Not supported: "psRTMedia"
+                if (psMedia == null) {
+                    if ((psMedia = getValueByParamName("psMedia", childnode, TYPE_TXT)) != null) {
+                        if ("MSRP".equals(psMedia)) {
+                            mRcsSettings.writeBoolean(RcsSettingsData.SECURE_MSRP_OVER_MOBILE,
+                                    false);
+                        } else if ("MSRPoTLS".equals(psMedia)) {
+                            mRcsSettings
+                                    .writeBoolean(RcsSettingsData.SECURE_MSRP_OVER_MOBILE, true);
+                        }
+                        continue;
+                    }
+                }
+
+                if (psRtMedia == null) {
+                    if ((psRtMedia = getValueByParamName("psRTMedia", childnode, TYPE_TXT)) != null) {
+                        if ("RTP".equals(psRtMedia)) {
+                            mRcsSettings
+                                    .writeBoolean(RcsSettingsData.SECURE_RTP_OVER_MOBILE, false);
+                        } else if ("SRTP".equals(psRtMedia)) {
+                            mRcsSettings.writeBoolean(RcsSettingsData.SECURE_RTP_OVER_MOBILE, true);
+                        }
+                    }
+                }
 
             } while ((childnode = childnode.getNextSibling()) != null);
         }
@@ -1407,14 +1379,13 @@ public class ProvisioningParser {
         String beIPVideoCallUpgradeAttemptEarly = null;
         String maxMsrpLengthExtensions = null;
 
-        Node typenode;
         Node childnode = node.getFirstChild();
 
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     if (childnode.getAttributes().getLength() > 0) {
-                        typenode = childnode.getAttributes().getNamedItem("type");
+                        Node typenode = childnode.getAttributes().getNamedItem("type");
                         if (typenode != null) {
                             if (typenode.getNodeValue().equalsIgnoreCase("transportProto")) {
                                 parseTransportProtocol(childnode);
@@ -1426,8 +1397,9 @@ public class ProvisioningParser {
                 if (endUserConfReqId == null) {
                     if ((endUserConfReqId = getValueByParamName("endUserConfReqId", childnode,
                             TYPE_TXT)) != null) {
-                        mRcsSettings.setEndUserConfirmationRequestUri("".equals(endUserConfReqId)
-                                ? null : formatSipUri(endUserConfReqId.trim()));
+                        mRcsSettings
+                                .setEndUserConfirmationRequestUri("".equals(endUserConfReqId) ? null
+                                        : formatSipUri(endUserConfReqId.trim()));
                         continue;
                     }
                 }
@@ -1441,10 +1413,9 @@ public class ProvisioningParser {
                 }
 
                 if (uuidValue == null) {
-                    if ((uuidValue = getValueByParamName(UUID_VALUE, childnode,
-                            TYPE_TXT)) != null) {
-                        mRcsSettings.writeString(RcsSettingsData.UUID,
-                                "".equals(uuidValue) ? null : uuidValue);
+                    if ((uuidValue = getValueByParamName(UUID_VALUE, childnode, TYPE_TXT)) != null) {
+                        mRcsSettings.writeString(RcsSettingsData.UUID, "".equals(uuidValue) ? null
+                                : uuidValue);
                         continue;
                     }
                 }
@@ -1488,7 +1459,8 @@ public class ProvisioningParser {
                 if (beIPVideoCallUpgradeAttemptEarly == null) {
                     if ((beIPVideoCallUpgradeAttemptEarly = getValueByParamName(
                             "rcsIPVideoCallUpgradeAttemptEarly", childnode, TYPE_INT)) != null) {
-                        mRcsSettings.writeBoolean(RcsSettingsData.IPVIDEOCALL_UPGRADE_ATTEMPT_EARLY,
+                        mRcsSettings.writeBoolean(
+                                RcsSettingsData.IPVIDEOCALL_UPGRADE_ATTEMPT_EARLY,
                                 beIPVideoCallUpgradeAttemptEarly.equals("1"));
                         continue;
                     }
@@ -1511,8 +1483,8 @@ public class ProvisioningParser {
              * RFC4122, section 4.2.
              */
             if (uuidValue == null) {
-                mRcsSettings.writeString(RcsSettingsData.UUID,
-                        DeviceUtils.generateUUID().toString());
+                mRcsSettings.writeString(RcsSettingsData.UUID, DeviceUtils.generateUUID()
+                        .toString());
             }
         }
     }
@@ -1533,8 +1505,8 @@ public class ProvisioningParser {
             do {
                 if (conRef == null) {
                     if ((conRef = getValueByParamName("ConRef", childnode, TYPE_TXT)) != null) {
-                        mRcsSettings.writeString(RcsSettingsData.RCS_APN,
-                                "".equals(conRef) ? null : conRef);
+                        mRcsSettings.writeString(RcsSettingsData.RCS_APN, "".equals(conRef) ? null
+                                : conRef);
                     }
                 }
             } while ((childnode = childnode.getNextSibling()) != null);
@@ -1556,8 +1528,8 @@ public class ProvisioningParser {
         if (childnode != null) {
             do {
                 if (publicUserIdentity == null) {
-                    if ((publicUserIdentity = getValueByParamName("Public_User_Identity", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((publicUserIdentity = getValueByParamName("Public_User_Identity",
+                            childnode, TYPE_TXT)) != null) {
                         String username = extractUserNamePart(publicUserIdentity.trim());
                         PhoneNumber number = ContactUtil.getValidPhoneNumberFromUri(username);
                         if (number == null) {
@@ -1625,7 +1597,6 @@ public class ProvisioningParser {
         String intUrlFmt = null;
         String maxSizeImageShare = null;
         String maxTimeVideoShare = null;
-        Node typenode;
         if (node == null) {
             return;
         }
@@ -1635,7 +1606,7 @@ public class ProvisioningParser {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     if (childnode.getAttributes().getLength() > 0) {
-                        typenode = childnode.getAttributes().getNamedItem("type");
+                        Node typenode = childnode.getAttributes().getNamedItem("type");
                         if (typenode != null) {
                             String nodeValue = typenode.getNodeValue();
                             if (nodeValue.equalsIgnoreCase("SecondaryDevicePar")) {
@@ -1648,8 +1619,7 @@ public class ProvisioningParser {
                 }
 
                 if (intUrlFmt == null) {
-                    if ((intUrlFmt = getValueByParamName("IntUrlFmt", childnode,
-                            TYPE_INT)) != null) {
+                    if ((intUrlFmt = getValueByParamName("IntUrlFmt", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeBoolean(RcsSettingsData.TEL_URI_FORMAT,
                                 intUrlFmt.equals("0"));
                         continue;
@@ -1702,15 +1672,14 @@ public class ProvisioningParser {
             return;
         }
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
                 if (addr == null) {
                     if ((addr = getValueByParamName("Address", childnode, TYPE_TXT)) != null) {
                         String[] address = addr.split(":");
                         String proxyAddr = address[0];
-                        mRcsSettings
-                                .setImsProxyAddrForMobile("".equals(proxyAddr) ? null : proxyAddr);
+                        mRcsSettings.setImsProxyAddrForMobile("".equals(proxyAddr) ? null
+                                : proxyAddr);
                         mRcsSettings
                                 .setImsProxyAddrForWifi("".equals(proxyAddr) ? null : proxyAddr);
                         if (address.length > 1) {
@@ -1720,9 +1689,7 @@ public class ProvisioningParser {
                         }
                     }
                 }
-
                 // Not used: "AddressType"
-
             } while ((childnode = childnode.getNextSibling()) != null);
         }
     }
@@ -1751,37 +1718,33 @@ public class ProvisioningParser {
             return;
         }
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
                 if (authType == null) {
                     if ((authType = getValueByParamName("AuthType", childnode, TYPE_TXT)) != null) {
                         if (authType.equals("EarlyIMS")) {
-                            mRcsSettings.setImsAuthenticationProcedureForMobile(
-                                    AuthenticationProcedure.GIBA);
+                            mRcsSettings
+                                    .setImsAuthenticationProcedureForMobile(AuthenticationProcedure.GIBA);
                         } else {
-                            mRcsSettings.setImsAuthenticationProcedureForMobile(
-                                    AuthenticationProcedure.DIGEST);
+                            mRcsSettings
+                                    .setImsAuthenticationProcedureForMobile(AuthenticationProcedure.DIGEST);
                         }
                         continue;
                     }
                 }
-
                 if (realm == null) {
                     if ((realm = getValueByParamName("Realm", childnode, TYPE_TXT)) != null) {
                         mRcsSettings.setUserProfileImsRealm("".equals(realm) ? null : realm);
                         continue;
                     }
                 }
-
                 if (userName == null) {
                     if ((userName = getValueByParamName("UserName", childnode, TYPE_TXT)) != null) {
-                        mRcsSettings
-                                .setUserProfileImsPrivateId("".equals(userName) ? null : userName);
+                        mRcsSettings.setUserProfileImsPrivateId("".equals(userName) ? null
+                                : userName);
                         continue;
                     }
                 }
-
                 if (userPwd == null) {
                     if ((userPwd = getValueByParamName("UserPwd", childnode, TYPE_TXT)) != null) {
                         mRcsSettings.setUserProfileImsPassword("".equals(userPwd) ? null : userPwd);
@@ -1797,7 +1760,6 @@ public class ProvisioningParser {
      * @param node Node
      */
     private void parseRCSe(Node node) {
-        Node typenode;
         if (node == null) {
             return;
         }
@@ -1808,7 +1770,7 @@ public class ProvisioningParser {
                 if (childnode.getNodeName().equals("characteristic")) {
                     NamedNodeMap attributes = childnode.getAttributes();
                     if (attributes.getLength() > 0) {
-                        typenode = attributes.getNamedItem("type");
+                        Node typenode = attributes.getNamedItem("type");
                         if (typenode != null) {
                             String nodeValue = typenode.getNodeValue();
                             if (nodeValue.equalsIgnoreCase("IMS")) {
@@ -1907,18 +1869,17 @@ public class ProvisioningParser {
                     }
                 }
                 if (eventRpting == null) {
-                    if ((eventRpting = getValueByParamName("EventRpting", childnode,
-                            TYPE_TXT)) != null) {
+                    if ((eventRpting = getValueByParamName("EventRpting", childnode, TYPE_TXT)) != null) {
                         // TODO mRcsSettings.writeBoolean();
                         continue;
                     }
                 }
                 if (syncTimer == null) {
-                    if ((syncTimer = getValueByParamName("SyncTimer", childnode,
-                            TYPE_TXT)) != null) {
-                        mRcsSettings.writeLong(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER,
-                                Long.parseLong(syncTimer)
-                                        * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
+                    if ((syncTimer = getValueByParamName("SyncTimer", childnode, TYPE_TXT)) != null) {
+                        mRcsSettings
+                                .writeLong(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER,
+                                        Long.parseLong(syncTimer)
+                                                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
                         continue;
                     }
                 }
@@ -1958,26 +1919,25 @@ public class ProvisioningParser {
         String keepAliveEnabled = null;
         String regRetryBasetime = null;
         String regRetryMaxtime = null;
-        Node typenode;
         Node childnode = node.getFirstChild();
 
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
                     if (childnode.getAttributes().getLength() > 0) {
-                        typenode = childnode.getAttributes().getNamedItem("type");
+                        Node typenode = childnode.getAttributes().getNamedItem("type");
                         if (typenode != null) {
                             if (typenode.getNodeValue().equalsIgnoreCase("ConRefs")) {
                                 parseConRefs(childnode);
-                            } else if (typenode.getNodeValue()
-                                    .equalsIgnoreCase("Public_user_identity_List")) {
+                            } else if (typenode.getNodeValue().equalsIgnoreCase(
+                                    "Public_user_identity_List")) {
                                 parsePublicUserIdentity(childnode);
                             } else if (typenode.getNodeValue().equalsIgnoreCase("Ext")) {
                                 parseExt(childnode);
                             } else if (typenode.getNodeValue().equalsIgnoreCase("ICSI_List")) {
                                 parseICSI(childnode);
-                            } else if (typenode.getNodeValue()
-                                    .equalsIgnoreCase("LBO_P-CSCF_Address")) {
+                            } else if (typenode.getNodeValue().equalsIgnoreCase(
+                                    "LBO_P-CSCF_Address")) {
                                 parsePcscfAddress(childnode);
                             } else if (typenode.getNodeValue()
                                     .equalsIgnoreCase("PhoneContext_List")) {
@@ -2016,8 +1976,9 @@ public class ProvisioningParser {
                 if (privateUserIdentity == null) {
                     if ((privateUserIdentity = getValueByParamName("Private_User_Identity",
                             childnode, TYPE_TXT)) != null) {
-                        mRcsSettings.setUserProfileImsPrivateId(
-                                "".equals(privateUserIdentity) ? null : privateUserIdentity);
+                        mRcsSettings
+                                .setUserProfileImsPrivateId("".equals(privateUserIdentity) ? null
+                                        : privateUserIdentity);
                         continue;
                     }
                 }
@@ -2025,8 +1986,8 @@ public class ProvisioningParser {
                 if (homeDomain == null) {
                     if ((homeDomain = getValueByParamName("Home_network_domain_name", childnode,
                             TYPE_TXT)) != null) {
-                        mRcsSettings
-                                .setUserProfileImsDomain("".equals(homeDomain) ? null : homeDomain);
+                        mRcsSettings.setUserProfileImsDomain("".equals(homeDomain) ? null
+                                : homeDomain);
                         continue;
                     }
                 }
@@ -2078,19 +2039,17 @@ public class ProvisioningParser {
      * @return Value or null
      */
     private String getValueByParamName(String paramName, Node node, int type) {
-        Node nameNode;
-        Node valueNode;
         if ((node == null)
                 || !(node.getNodeName().equals("parm") || node.getNodeName().equals("param"))) {
             return null;
         }
 
         if (node.getAttributes().getLength() > 0) {
-            nameNode = node.getAttributes().getNamedItem("name");
+            Node nameNode = node.getAttributes().getNamedItem("name");
             if (nameNode == null) {
                 return null;
             }
-            valueNode = node.getAttributes().getNamedItem("value");
+            Node valueNode = node.getAttributes().getNamedItem("value");
             if (valueNode == null) {
                 return null;
             }
@@ -2139,7 +2098,7 @@ public class ProvisioningParser {
      * @return SIP-URI
      */
     private Uri formatSipUri(String path) {
-        return path.startsWith(PhoneUtils.SIP_URI_HEADER) ? Uri.parse(path)
-                : Uri.parse(PhoneUtils.SIP_URI_HEADER + path);
+        return path.startsWith(PhoneUtils.SIP_URI_HEADER) ? Uri.parse(path) : Uri
+                .parse(PhoneUtils.SIP_URI_HEADER + path);
     }
 }

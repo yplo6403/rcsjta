@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.core.ims.protocol.msrp;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession.TypeMsrpChunk;
@@ -31,6 +31,7 @@ import com.gsma.rcs.core.ims.protocol.sdp.MediaDescription;
 import com.gsma.rcs.core.ims.protocol.sdp.SdpParser;
 import com.gsma.rcs.core.ims.protocol.sdp.SdpUtils;
 import com.gsma.rcs.core.ims.service.ImsService;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.InetAddressUtils;
 import com.gsma.rcs.utils.logger.Logger;
@@ -64,7 +65,7 @@ public class MsrpManager {
      * 
      * @param localMsrpAddress Local MSRP address
      * @param localMsrpPort Local MSRP port
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     public MsrpManager(String localMsrpAddress, int localMsrpPort, RcsSettings rcsSettings) {
         mLocalMsrpAddress = localMsrpAddress;
@@ -73,20 +74,23 @@ public class MsrpManager {
         mRcsSettings = rcsSettings;
     }
 
-    // Changed by Deutsche Telekom
     /**
      * Constructor
      * 
      * @param localMsrpAddress Local MSRP address
      * @param localMsrpPort Local MSRP port
      * @param service ImsService
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      */
     public MsrpManager(String localMsrpAddress, int localMsrpPort, ImsService service,
             RcsSettings rcsSettings) {
         this(localMsrpAddress, localMsrpPort, rcsSettings);
-        if (service.getImsModule().isConnectedToWifiAccess()) {
+        ImsModule imsModule = service.getImsModule();
+        if (imsModule.isConnectedToWifiAccess()) {
             mSecured = rcsSettings.isSecureMsrpOverWifi();
+
+        } else if (imsModule.isConnectedToMobileAccess()) {
+            mSecured = rcsSettings.isSecureMsrpOverMobile();
         }
     }
 
@@ -202,7 +206,7 @@ public class MsrpManager {
         String remoteMsrpPath = pathAttribute.getValue();
 
         // Create the MSRP session
-        MsrpSession session = null;
+        MsrpSession session;
         MediaAttribute setupAttribute = mediaDesc.getMediaAttribute("setup");
         String setup = null;
         if (setupAttribute != null) {
@@ -238,14 +242,13 @@ public class MsrpManager {
      * @param remotePort Remote port
      * @param remoteMsrpPath Remote MSRP path
      * @param listener Event listener
-     * @param fingerprint
+     * @param fingerprint the finger print
      * @return Created session
      */
     public MsrpSession createMsrpClientSession(String remoteHost, int remotePort,
             String remoteMsrpPath, MsrpEventListener listener, String fingerprint) {
         if (logger.isActivated()) {
-            logger.info(new StringBuilder("Create MSRP client end point at ").append(remoteHost)
-                    .append(":").append(remotePort).toString());
+            logger.info("Create MSRP client end point at " + remoteHost + ":" + remotePort);
         }
 
         /* Create a new MSRP session */
@@ -254,7 +257,6 @@ public class MsrpManager {
         mMsrpSession.setTo(remoteMsrpPath);
 
         /* Create a MSRP client connection */
-        /* Changed by Deutsche Telekom */
         MsrpConnection connection = new MsrpClientConnection(mMsrpSession, remoteHost, remotePort,
                 mSecured, fingerprint);
         mMsrpSession.setConnection(connection);
@@ -293,7 +295,6 @@ public class MsrpManager {
         return mMsrpSession;
     }
 
-    // Changed by Deutsche Telekom
     /**
      * Send data chunks
      * 
@@ -337,10 +338,7 @@ public class MsrpManager {
      * @return true If the empty packet was sent successfully
      */
     public boolean isEstablished() {
-        if (mMsrpSession == null) {
-            return false;
-        }
-        return mMsrpSession.isEstablished();
+        return mMsrpSession != null && mMsrpSession.isEstablished();
     }
 
 }

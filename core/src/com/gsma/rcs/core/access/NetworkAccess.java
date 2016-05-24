@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,8 @@
  ******************************************************************************/
 
 package com.gsma.rcs.core.access;
+
+import com.gsma.rcs.provider.settings.RcsSettings;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -43,9 +45,15 @@ public abstract class NetworkAccess {
     protected String mType;
 
     /**
+     * rcs settings
+     */
+    protected final RcsSettings mRcsSettings;
+
+    /**
      * Constructor
      */
-    public NetworkAccess() {
+    public NetworkAccess(RcsSettings rcsSettings) {
+        mRcsSettings = rcsSettings;
     }
 
     /**

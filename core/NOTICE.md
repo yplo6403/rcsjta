@@ -7,12 +7,14 @@
 
 News:
 
+	* Core: refactor provisioning tool
 	* Manage permissions for Android Marshmallow
 	* CMS RI: manage accept/reject of file transfer within talk views
 	* CMS RI: replace subject by body text for MMS in TalkListView
 
 Bugs fixed:
 
+	* Core: Added support for psMedia & psRTMedia
 	* Core: Added ApplyBatch for resetting setting.db to default values
 	* Core: Handling configuration error management in Receipt of SMS (OTP)
 	* Core: Do not start Keep Alive when registration is not successful
