@@ -440,7 +440,7 @@ public class RegistrationManager extends PeriodicRefresher {
             }
             LauncherUtils.stopRcsService(appContext);
             /* As registration is not successful with current configuration, reset to default */
-            mRcsSettings.resetUserProfile();
+            mRcsSettings.resetConfigParameters();
             /* Set the configuration validity flag to false */
             mRcsSettings.setConfigurationValid(false);
             /* Reset to default value */

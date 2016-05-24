@@ -1,21 +1,21 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
- *
- * Copyright (C) 2010 France Telecom S.A.
+ * <p/>
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
- *
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
+ * <p/>
  * NOTE: This file has been modified by Sony Mobile Communications Inc.
  * Modifications are licensed under the License.
  ******************************************************************************/
@@ -33,11 +33,14 @@ import android.net.Uri;
 import android.os.Environment;
 import android.util.SparseArray;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax2.sip.ListeningPoint;
 
 /**
  * RCS settings data constants
- * 
+ *
  * @author jexa7410
  * @author yplo6403
  */
@@ -79,18 +82,53 @@ public class RcsSettingsData {
         /**
          * GIBA authentication
          */
-        GIBA,
+        GIBA(0),
         /**
          * Digest authentication
          */
-        DIGEST
+        DIGEST(1);
+
+        private final int mValue;
+
+        private static SparseArray<AuthenticationProcedure> mValueToEnum = new SparseArray<>();
+
+        static {
+            for (AuthenticationProcedure entry : AuthenticationProcedure.values()) {
+                mValueToEnum.put(entry.toInt(), entry);
+            }
+        }
+
+        AuthenticationProcedure(int value) {
+            mValue = value;
+        }
+
+        /**
+         * @return value
+         */
+        public final int toInt() {
+            return mValue;
+        }
+
+        /**
+         * @param value the value representing the authentication procedure
+         * @return AuthenticationProcedure
+         */
+        public static AuthenticationProcedure valueOf(int value) {
+            AuthenticationProcedure entry = mValueToEnum.get(value);
+            if (entry != null) {
+                return entry;
+            }
+            throw new IllegalArgumentException("No enum const class "
+                    + AuthenticationProcedure.class.getName() + "." + value);
+        }
+
     }
 
     /**
      * Option for what ux-operation to react on when handling manual acceptance of one2one and group
      * chat invitations.
      */
-    public static enum ImSessionStartMode {
+    public enum ImSessionStartMode {
 
         /**
          * Group chat session is accepted when opening conversation
@@ -107,7 +145,7 @@ public class RcsSettingsData {
 
         private final int mValue;
 
-        private static SparseArray<ImSessionStartMode> mValueToEnum = new SparseArray<ImSessionStartMode>();
+        private static SparseArray<ImSessionStartMode> mValueToEnum = new SparseArray<>();
 
         static {
             for (ImSessionStartMode entry : ImSessionStartMode.values()) {
@@ -115,7 +153,7 @@ public class RcsSettingsData {
             }
         }
 
-        private ImSessionStartMode(int value) {
+        ImSessionStartMode(int value) {
             mValue = value;
         }
 
@@ -127,28 +165,27 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the value representing the IM session start mode
          * @return ImSessionStartMode
          */
-        public final static ImSessionStartMode valueOf(int value) {
+        public static ImSessionStartMode valueOf(int value) {
             ImSessionStartMode entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ImSessionStartMode.class.getName()).append(".").append(value)
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + ImSessionStartMode.class.getName() + "." + value);
         }
 
     }
 
-    public static enum TermsAndConditionsResponse {
+    public enum TermsAndConditionsResponse {
 
         NO_ANSWER(0), DECLINED(1), ACCEPTED(2);
 
         private final int mValue;
 
-        private static SparseArray<TermsAndConditionsResponse> mValueToEnum = new SparseArray<TermsAndConditionsResponse>();
+        private static SparseArray<TermsAndConditionsResponse> mValueToEnum = new SparseArray<>();
 
         static {
             for (TermsAndConditionsResponse entry : TermsAndConditionsResponse.values()) {
@@ -156,7 +193,7 @@ public class RcsSettingsData {
             }
         }
 
-        private TermsAndConditionsResponse(int value) {
+        TermsAndConditionsResponse(int value) {
             mValue = value;
         }
 
@@ -168,22 +205,21 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the value representing the Terms and Condition response
          * @return TermAndConditionsResponse
          */
-        public final static TermsAndConditionsResponse valueOf(int value) {
+        public static TermsAndConditionsResponse valueOf(int value) {
             TermsAndConditionsResponse entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(TermsAndConditionsResponse.class.getName()).append(".").append(value)
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + TermsAndConditionsResponse.class.getName() + "." + value);
         }
 
     }
 
-    public static enum ImMsgTech {
+    public enum ImMsgTech {
 
         SIMPLE_IM(0),
 
@@ -191,7 +227,7 @@ public class RcsSettingsData {
 
         private final int mValue;
 
-        private static SparseArray<ImMsgTech> mValueToEnum = new SparseArray<ImMsgTech>();
+        private static SparseArray<ImMsgTech> mValueToEnum = new SparseArray<>();
 
         static {
             for (ImMsgTech entry : ImMsgTech.values()) {
@@ -199,7 +235,7 @@ public class RcsSettingsData {
             }
         }
 
-        private ImMsgTech(int value) {
+        ImMsgTech(int value) {
             mValue = value;
         }
 
@@ -211,16 +247,16 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
-         * @return ImSessionStartMode
+         * @param value the value representing the IM message tech
+         * @return ImMsgTech
          */
-        public final static ImMsgTech valueOf(int value) {
+        public static ImMsgTech valueOf(int value) {
             ImMsgTech entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ImMsgTech.class.getName()).append(".").append(value).toString());
+            throw new IllegalArgumentException("No enum const class " + ImMsgTech.class.getName()
+                    + "." + value);
         }
 
     }
@@ -244,7 +280,7 @@ public class RcsSettingsData {
 
         private int mValue;
 
-        private static SparseArray<NetworkAccessType> mValueToEnum = new SparseArray<NetworkAccessType>();
+        private static SparseArray<NetworkAccessType> mValueToEnum = new SparseArray<>();
 
         static {
             for (NetworkAccessType entry : NetworkAccessType.values()) {
@@ -252,7 +288,7 @@ public class RcsSettingsData {
             }
         }
 
-        private NetworkAccessType(int value) {
+        NetworkAccessType(int value) {
             mValue = value;
         }
 
@@ -264,7 +300,7 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the value representing the network access type.
          * @return NetworkAccessType
          */
         public static NetworkAccessType valueOf(int value) {
@@ -272,9 +308,8 @@ public class RcsSettingsData {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(NetworkAccessType.class.getName()).append(".").append(value)
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + NetworkAccessType.class.getName() + "." + value);
         }
 
     }
@@ -298,7 +333,7 @@ public class RcsSettingsData {
 
         private int mValue;
 
-        private static SparseArray<EnableRcseSwitch> mValueToEnum = new SparseArray<EnableRcseSwitch>();
+        private static SparseArray<EnableRcseSwitch> mValueToEnum = new SparseArray<>();
 
         static {
             for (EnableRcseSwitch entry : EnableRcseSwitch.values()) {
@@ -306,7 +341,7 @@ public class RcsSettingsData {
             }
         }
 
-        private EnableRcseSwitch(int value) {
+        EnableRcseSwitch(int value) {
             mValue = value;
         }
 
@@ -318,16 +353,16 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
-         * @return NetworkAccessType
+         * @param value the value representing the enable RCSe switch
+         * @return EnableRcseSwitch
          */
         public static EnableRcseSwitch valueOf(int value) {
             EnableRcseSwitch entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(EnableRcseSwitch.class.getName()).append(".").append(value).toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + EnableRcseSwitch.class.getName() + "." + value);
         }
 
     }
@@ -347,7 +382,7 @@ public class RcsSettingsData {
 
         private int mValue;
 
-        private static SparseArray<ConfigurationMode> mValueToEnum = new SparseArray<ConfigurationMode>();
+        private static SparseArray<ConfigurationMode> mValueToEnum = new SparseArray<>();
 
         static {
             for (ConfigurationMode entry : ConfigurationMode.values()) {
@@ -355,7 +390,7 @@ public class RcsSettingsData {
             }
         }
 
-        private ConfigurationMode(int value) {
+        ConfigurationMode(int value) {
             mValue = value;
         }
 
@@ -367,7 +402,7 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the value representing the configuration mode
          * @return ConfigurationMode
          */
         public static ConfigurationMode valueOf(int value) {
@@ -375,9 +410,8 @@ public class RcsSettingsData {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(ConfigurationMode.class.getName()).append(".").append(value)
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + ConfigurationMode.class.getName() + "." + value);
         }
     }
 
@@ -414,7 +448,7 @@ public class RcsSettingsData {
 
         private int mValue;
 
-        private static SparseArray<GsmaRelease> mValueToEnum = new SparseArray<GsmaRelease>();
+        private static SparseArray<GsmaRelease> mValueToEnum = new SparseArray<>();
 
         static {
             for (GsmaRelease entry : GsmaRelease.values()) {
@@ -422,7 +456,7 @@ public class RcsSettingsData {
             }
         }
 
-        private GsmaRelease(int value) {
+        GsmaRelease(int value) {
             mValue = value;
         }
 
@@ -434,7 +468,7 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the value representing the GSMA release
          * @return GsmaRelease
          */
         public static GsmaRelease valueOf(int value) {
@@ -442,8 +476,8 @@ public class RcsSettingsData {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(GsmaRelease.class.getName()).append(".").append(value).toString());
+            throw new IllegalArgumentException("No enum const class " + GsmaRelease.class.getName()
+                    + "." + value);
         }
 
     }
@@ -462,9 +496,8 @@ public class RcsSettingsData {
          */
         ENABLED(1),
         /**
-         * TODO FGI:
-         * Should be removed when the SIP Event reporting will be fully implemented
-         * Event reporting framework with IMAP protocol only
+         * TODO FGI: Should be removed when the SIP Event reporting will be fully implemented Event
+         * reporting framework with IMAP protocol only
          */
         IMAP_ONLY(2);
 
@@ -490,17 +523,16 @@ public class RcsSettingsData {
         }
 
         /**
-         * @param value
+         * @param value the event framework configuration value
          * @return EventFrameworkConfiguration
          */
-        public final static EventReportingFrameworkConfig valueOf(int value) {
+        public static EventReportingFrameworkConfig valueOf(int value) {
             EventReportingFrameworkConfig entry = mValueToEnum.get(value);
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException(new StringBuilder("No enum const class ")
-                    .append(EventReportingFrameworkConfig.class.getName()).append(".").append(value)
-                    .toString());
+            throw new IllegalArgumentException("No enum const class "
+                    + EventReportingFrameworkConfig.class.getName() + "." + value);
         }
 
     }
@@ -689,14 +721,14 @@ public class RcsSettingsData {
     /**
      * Convergent messaging UX option
      */
-    public static final String KEY_MESSAGING_MODE = "MessagingMode";
+    public static final String MESSAGING_MODE = "MessagingMode";
     /* package private */static final Integer DEFAULT_KEY_MESSAGING_MODE = MessagingMode.NONE
             .toInt();
 
     /**
      * Default messaging method
      */
-    public static final String KEY_DEFAULT_MESSAGING_METHOD = "DefaultMessagingMethod";
+    public static final String DEFAULT_MESSAGING_METHOD = "DefaultMessagingMethod";
     /* package private */static final Integer DEFAULT_KEY_DEFAULT_MESSAGING_METHOD = MessagingMethod.AUTOMATIC
             .toInt();
 
@@ -1405,7 +1437,7 @@ public class RcsSettingsData {
      * RCS stack can be activated/deactivated by client applications
      */
     public static final String ENABLE_RCS_SWITCH = "enableRcseSwitch";
-    /* package private */static final int DEFAULT_ENABLE_RCS_SWITCH = EnableRcseSwitch.ALWAYS_SHOW
+    /* package private */static final Integer DEFAULT_ENABLE_RCS_SWITCH = EnableRcseSwitch.ALWAYS_SHOW
             .toInt();
 
     public static final String IM_MSG_TECH = "ImMsgTech";
@@ -1418,7 +1450,7 @@ public class RcsSettingsData {
     /* package private */static final Boolean DEFAULT_REQUEST_AND_RESPOND_TO_GROUP_DISPLAY_REPORTS = false;
 
     public static final String MAX_ALLOWED_DISPLAY_NAME_CHARS = "MaxAllowedDisplayNameChars";
-    /* package private */static final int DEFAULT_MAX_ALLOWED_DISPLAY_NAME_CHARS = 256;
+    /* package private */static final Integer DEFAULT_MAX_ALLOWED_DISPLAY_NAME_CHARS = 256;
 
     /**
      * Provisioning optional user message content associated with the result of the configuration
@@ -1518,6 +1550,344 @@ public class RcsSettingsData {
     /* package private */static final long DEFAULT_NTP_LOCAL_OFFSET = 0L;
 
     public static final String NTP_CACHE_VALIDITY = "ntpCacheValidity";
-    /* package private */static final long DEFAULT_NTP_CACHE_VALIDITY = 24 * 60 * 60 * 1000L; //one day
+    /* package private */static final long DEFAULT_NTP_CACHE_VALIDITY = 24 * 60 * 60 * 1000L; // one
+    // day
 
+    /* package private */final static Map<String, Object> sSettingsKeyDefaultValue;
+    static {
+        sSettingsKeyDefaultValue = new HashMap<>();
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SERVICE_ACTIVATED,
+                RcsSettingsData.DEFAULT_SERVICE_ACTIVATED);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CHAT_RESPOND_TO_DISPLAY_REPORTS,
+                RcsSettingsData.DEFAULT_CHAT_RESPOND_TO_DISPLAY_REPORTS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MIN_BATTERY_LEVEL,
+                RcsSettingsData.DEFAULT_MIN_BATTERY_LEVEL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_FILE_ICON_SIZE,
+                RcsSettingsData.DEFAULT_MAX_FILE_ICON_SIZE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_PHOTO_ICON_SIZE,
+                RcsSettingsData.DEFAULT_MAX_PHOTO_ICON_SIZE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_FREETXT_LENGTH,
+                RcsSettingsData.DEFAULT_MAX_FREETXT_LENGTH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_GEOLOC_LABEL_LENGTH,
+                RcsSettingsData.DEFAULT_MAX_GEOLOC_LABEL_LENGTH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.GEOLOC_EXPIRATION_TIME,
+                RcsSettingsData.DEFAULT_GEOLOC_EXPIRATION_TIME);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CHAT_PARTICIPANTS,
+                RcsSettingsData.DEFAULT_MAX_CHAT_PARTICIPANTS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CHAT_MSG_LENGTH,
+                RcsSettingsData.DEFAULT_MAX_CHAT_MSG_LENGTH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_GROUPCHAT_MSG_LENGTH,
+                RcsSettingsData.DEFAULT_MAX_GC_MSG_LENGTH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CHAT_IDLE_DURATION,
+                RcsSettingsData.DEFAULT_CHAT_IDLE_DURATION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_FILE_TRANSFER_SIZE,
+                RcsSettingsData.DEFAULT_MAX_FT_SIZE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.WARN_FILE_TRANSFER_SIZE,
+                RcsSettingsData.DEFAULT_WARN_FT_SIZE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_IMAGE_SHARE_SIZE,
+                RcsSettingsData.DEFAULT_MAX_ISH_SIZE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_VIDEO_SHARE_DURATION,
+                RcsSettingsData.DEFAULT_MAX_VSH_DURATION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CHAT_SESSIONS,
+                RcsSettingsData.DEFAULT_MAX_CHAT_SESSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_FILE_TRANSFER_SESSIONS,
+                RcsSettingsData.DEFAULT_MAX_FT_SESSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CONCURRENT_OUTGOING_FILE_TRANSFERS,
+                RcsSettingsData.DEFAULT_MAX_CONCURRENT_OUTGOING_FT_SESSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_IP_CALL_SESSIONS,
+                RcsSettingsData.DEFAULT_MAX_IP_CALL_SESSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SMS_FALLBACK_SERVICE,
+                RcsSettingsData.DEFAULT_SMS_FALLBACK_SERVICE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.WARN_SF_SERVICE,
+                RcsSettingsData.DEFAULT_WARN_SF_SERVICE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_CHAT,
+                RcsSettingsData.DEFAULT_AUTO_ACCEPT_CHAT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_GROUP_CHAT,
+                RcsSettingsData.DEFAULT_AUTO_ACCEPT_GC);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_FILE_TRANSFER,
+                RcsSettingsData.DEFAULT_AUTO_ACCEPT_FT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IM_SESSION_START,
+                RcsSettingsData.DEFAULT_IM_SESSION_START);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_USERNAME,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_USERNAME);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_DISPLAY_NAME,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_DISPLAY_NAME);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_HOME_DOMAIN,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_HOME_DOMAIN);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_PRIVATE_ID,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_PRIVATE_ID);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_PASSWORD,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_PASSWORD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USERPROFILE_IMS_REALM,
+                RcsSettingsData.DEFAULT_USERPROFILE_IMS_REALM);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_PROXY_ADDR_MOBILE,
+                RcsSettingsData.DEFAULT_IMS_PROXY_ADDR_MOBILE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_PROXY_PORT_MOBILE,
+                RcsSettingsData.DEFAULT_IMS_PROXY_PORT_MOBILE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_PROXY_ADDR_WIFI,
+                RcsSettingsData.DEFAULT_IMS_PROXY_ADDR_WIFI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_PROXY_PORT_WIFI,
+                RcsSettingsData.DEFAULT_IMS_PROXY_PORT_WIFI);
+        sSettingsKeyDefaultValue
+                .put(RcsSettingsData.XDM_SERVER, RcsSettingsData.DEFAULT_XDM_SERVER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.XDM_LOGIN, RcsSettingsData.DEFAULT_XDM_LOGIN);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.XDM_PASSWORD,
+                RcsSettingsData.DEFAULT_XDM_PASSWORD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_HTTP_SERVER,
+                RcsSettingsData.DEFAULT_FT_HTTP_SERVER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_HTTP_LOGIN,
+                RcsSettingsData.DEFAULT_FT_HTTP_LOGIN);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_HTTP_PASSWORD,
+                RcsSettingsData.DEFAULT_FT_HTTP_PASSWORD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_PROTOCOL,
+                RcsSettingsData.DEFAULT_FT_PROTOCOL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IM_CONF_URI,
+                RcsSettingsData.DEFAULT_IM_CONF_URI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.ENDUSER_CONFIRMATION_URI,
+                RcsSettingsData.DEFAULT_ENDUSER_CONFIRMATION_URI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.UUID, RcsSettingsData.DEFAULT_UUID);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_CS_VIDEO,
+                RcsSettingsData.DEFAULT_CAPABILITY_CS_VIDEO);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_IMAGE_SHARING,
+                RcsSettingsData.DEFAULT_CAPABILITY_ISH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_VIDEO_SHARING,
+                RcsSettingsData.DEFAULT_CAPABILITY_VSH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_IP_VOICE_CALL,
+                RcsSettingsData.DEFAULT_CAPABILITY_IP_VOICE_CALL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_IP_VIDEO_CALL,
+                RcsSettingsData.DEFAULT_CAPABILITY_IP_VIDEO_CALL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_IM_SESSION,
+                RcsSettingsData.DEFAULT_CAPABILITY_IM_SESSION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_IM_GROUP_SESSION,
+                RcsSettingsData.DEFAULT_CAPABILITY_IM_GROUP_SESSION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_FILE_TRANSFER,
+                RcsSettingsData.DEFAULT_CAPABILITY_FT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_FILE_TRANSFER_HTTP,
+                RcsSettingsData.DEFAULT_CAPABILITY_FT_HTTP);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_PRESENCE_DISCOVERY,
+                RcsSettingsData.DEFAULT_CAPABILITY_PRESENCE_DISCOVERY);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_SOCIAL_PRESENCE,
+                RcsSettingsData.DEFAULT_CAPABILITY_SOCIAL_PRESENCE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_GEOLOCATION_PUSH,
+                RcsSettingsData.DEFAULT_CAPABILITY_GEOLOCATION_PUSH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_FILE_TRANSFER_THUMBNAIL,
+                RcsSettingsData.DEFAULT_CAPABILITY_FT_THUMBNAIL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_GROUP_CHAT_SF,
+                RcsSettingsData.DEFAULT_CAPABILITY_GC_SF);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_FILE_TRANSFER_SF,
+                RcsSettingsData.DEFAULT_CAPABILITY_FT_SF);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_RCS_EXTENSIONS,
+                RcsSettingsData.DEFAULT_CAPABILITY_RCS_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_SERVICE_POLLING_PERIOD,
+                RcsSettingsData.DEFAULT_IMS_SERVICE_POLLING_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_DEFAULT_PORT,
+                RcsSettingsData.DEFAULT_SIP_DEFAULT_PORT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_DEFAULT_PROTOCOL_FOR_MOBILE,
+                RcsSettingsData.DEFAULT_SIP_DEFAULT_PROTOCOL_FOR_MOBILE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_DEFAULT_PROTOCOL_FOR_WIFI,
+                RcsSettingsData.DEFAULT_SIP_DEFAULT_PROTOCOL_FOR_WIFI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TLS_CERTIFICATE_ROOT,
+                RcsSettingsData.DEFAULT_TLS_CERTIFICATE_ROOT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TLS_CERTIFICATE_INTERMEDIATE,
+                RcsSettingsData.DEFAULT_TLS_CERTIFICATE_INTERMEDIATE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TRANSACTION_TIMEOUT,
+                RcsSettingsData.DEFAULT_SIP_TRANSACTION_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MSRP_DEFAULT_PORT,
+                RcsSettingsData.DEFAULT_MSRP_DEFAULT_PORT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.RTP_DEFAULT_PORT,
+                RcsSettingsData.DEFAULT_RTP_DEFAULT_PORT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MSRP_TRANSACTION_TIMEOUT,
+                RcsSettingsData.DEFAULT_MSRP_TRANSACTION_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.REGISTER_EXPIRE_PERIOD,
+                RcsSettingsData.DEFAULT_REGISTER_EXPIRE_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.REGISTER_RETRY_BASE_TIME,
+                RcsSettingsData.DEFAULT_REGISTER_RETRY_BASE_TIME);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.REGISTER_RETRY_MAX_TIME,
+                RcsSettingsData.DEFAULT_REGISTER_RETRY_MAX_TIME);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PUBLISH_EXPIRE_PERIOD,
+                RcsSettingsData.DEFAULT_PUBLISH_EXPIRE_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.REVOKE_TIMEOUT,
+                RcsSettingsData.DEFAULT_REVOKE_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_AUTHENT_PROCEDURE_MOBILE,
+                RcsSettingsData.DEFAULT_IMS_AUTHENT_PROCEDURE_MOBILE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_AUTHENT_PROCEDURE_WIFI,
+                RcsSettingsData.DEFAULT_IMS_AUTHENT_PROCEDURE_WIFI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TEL_URI_FORMAT,
+                RcsSettingsData.DEFAULT_TEL_URI_FORMAT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.RINGING_SESSION_PERIOD,
+                RcsSettingsData.DEFAULT_RINGING_SESSION_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SUBSCRIBE_EXPIRE_PERIOD,
+                RcsSettingsData.DEFAULT_SUBSCRIBE_EXPIRE_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IS_COMPOSING_TIMEOUT,
+                RcsSettingsData.DEFAULT_IS_COMPOSING_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SESSION_REFRESH_EXPIRE_PERIOD,
+                RcsSettingsData.DEFAULT_SESSION_REFRESH_EXPIRE_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PERMANENT_STATE_MODE,
+                RcsSettingsData.DEFAULT_PERMANENT_STATE_MODE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TRACE_ACTIVATED,
+                RcsSettingsData.DEFAULT_TRACE_ACTIVATED);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TRACE_LEVEL,
+                RcsSettingsData.DEFAULT_TRACE_LEVEL);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TRACE_ACTIVATED,
+                RcsSettingsData.DEFAULT_SIP_TRACE_ACTIVATED);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TRACE_FILE,
+                RcsSettingsData.DEFAULT_SIP_TRACE_FILE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MEDIA_TRACE_ACTIVATED,
+                RcsSettingsData.DEFAULT_MEDIA_TRACE_ACTIVATED);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_REFRESH_TIMEOUT,
+                RcsSettingsData.DEFAULT_CAPABILITY_REFRESH_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_EXPIRY_TIMEOUT,
+                RcsSettingsData.DEFAULT_CAPABILITY_EXPIRY_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_POLLING_PERIOD,
+                RcsSettingsData.DEFAULT_CAPABILITY_POLLING_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IM_CAPABILITY_ALWAYS_ON,
+                RcsSettingsData.DEFAULT_IM_CAPABILITY_ALWAYS_ON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.GROUP_CHAT_INVITE_ONLY_FULL_SF,
+                RcsSettingsData.DEFAULT_GC_INVITE_ONLY_FULL_SF);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_CAPABILITY_ALWAYS_ON,
+                RcsSettingsData.DEFAULT_FT_CAPABILITY_ALWAYS_ON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FT_HTTP_CAP_ALWAYS_ON,
+                RcsSettingsData.DEFAULT_FT_HTTP_CAP_ALWAYS_ON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MSG_DELIVERY_TIMEOUT,
+                RcsSettingsData.DEFAULT_MSG_DELIVERY_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MSG_CAP_VALIDITY_PERIOD,
+                RcsSettingsData.DEFAULT_MSG_CAP_VALIDITY_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IM_USE_REPORTS,
+                RcsSettingsData.DEFAULT_IM_USE_REPORTS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.NETWORK_ACCESS,
+                RcsSettingsData.DEFAULT_NETWORK_ACCESS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TIMER_T1,
+                RcsSettingsData.DEFAULT_SIP_TIMER_T1);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TIMER_T2,
+                RcsSettingsData.DEFAULT_SIP_TIMER_T2);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_TIMER_T4,
+                RcsSettingsData.DEFAULT_SIP_TIMER_T4);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_KEEP_ALIVE,
+                RcsSettingsData.DEFAULT_SIP_KEEP_ALIVE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_KEEP_ALIVE_PERIOD,
+                RcsSettingsData.DEFAULT_SIP_KEEP_ALIVE_PERIOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.RCS_APN, RcsSettingsData.DEFAULT_RCS_APN);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.RCS_OPERATOR,
+                RcsSettingsData.DEFAULT_RCS_OPERATOR);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CHAT_LOG_ENTRIES,
+                RcsSettingsData.DEFAULT_MAX_CHAT_LOG_ENTRIES);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_RICHCALL_LOG_ENTRIES,
+                RcsSettingsData.DEFAULT_MAX_RICHCALL_LOG_ENTRIES);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_IPCALL_LOG_ENTRIES,
+                RcsSettingsData.DEFAULT_MAX_IPCALL_LOG_ENTRIES);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.GRUU, RcsSettingsData.DEFAULT_GRUU);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.USE_IMEI_AS_DEVICE_ID,
+                RcsSettingsData.DEFAULT_USE_IMEI_AS_DEVICE_ID);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CPU_ALWAYS_ON,
+                RcsSettingsData.DEFAULT_CPU_ALWAYS_ON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CONFIG_MODE,
+                RcsSettingsData.DEFAULT_CONFIG_MODE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TC_RESPONSE,
+                RcsSettingsData.DEFAULT_TC_RESPONSE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROVISIONING_VERSION,
+                RcsSettingsData.DEFAULT_PROVISIONING_VERSION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROVISIONING_TOKEN,
+                RcsSettingsData.DEFAULT_PROVISIONING_TOKEN);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SECONDARY_PROVISIONING_ADDRESS,
+                RcsSettingsData.DEFAULT_SECONDARY_PROV_ADDR);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SECONDARY_PROVISIONING_ADDRESS_ONLY,
+                RcsSettingsData.DEFAULT_SECONDARY_PROV_ADDR_ONLY);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_PHOTOS,
+                RcsSettingsData.DEFAULT_DIRECTORY_PATH_PHOTOS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_VIDEOS,
+                RcsSettingsData.DEFAULT_DIRECTORY_PATH_VIDEOS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_FILES,
+                RcsSettingsData.DEFAULT_DIRECTORY_PATH_FILES);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_FILEICONS,
+                RcsSettingsData.DEFAULT_DIRECTORY_PATH_FILEICONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SECURE_MSRP_OVER_WIFI,
+                RcsSettingsData.DEFAULT_SECURE_MSRP_OVER_WIFI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.SECURE_RTP_OVER_WIFI,
+                RcsSettingsData.DEFAULT_SECURE_RTP_OVER_WIFI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGING_MODE,
+                RcsSettingsData.DEFAULT_KEY_MESSAGING_MODE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_SIP_AUTOMATA,
+                RcsSettingsData.DEFAULT_CAPABILITY_SIP_AUTOMATA);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.KEY_GSMA_RELEASE,
+                RcsSettingsData.DEFAULT_KEY_GSMA_RELEASE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IPVOICECALL_BREAKOUT_AA,
+                RcsSettingsData.DEFAULT_IPVOICECALL_BREAKOUT_AA);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IPVOICECALL_BREAKOUT_CS,
+                RcsSettingsData.DEFAULT_IPVOICECALL_BREAKOUT_CS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IPVIDEOCALL_UPGRADE_FROM_CS,
+                RcsSettingsData.DEFAULT_IPVIDEOCALL_UPGRADE_FROM_CS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IPVIDEOCALL_UPGRADE_ON_CAPERROR,
+                RcsSettingsData.DEFAULT_IPVIDEOCALL_UPGRADE_ON_CAPERROR);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IPVIDEOCALL_UPGRADE_ATTEMPT_EARLY,
+                RcsSettingsData.DEFAULT_IPVIDEOCALL_UPGRADE_ATTEMPT_EARLY);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.TCP_FALLBACK,
+                RcsSettingsData.DEFAULT_TCP_FALLBACK);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CONTROL_EXTENSIONS,
+                RcsSettingsData.DEFAULT_CONTROL_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.ALLOW_EXTENSIONS,
+                RcsSettingsData.DEFAULT_ALLOW_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_MSRP_SIZE_EXTENSIONS,
+                RcsSettingsData.DEFAULT_MAX_MSRP_SIZE_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CONFIGURATION_VALID,
+                RcsSettingsData.DEFAULT_CONFIGURATION_VALID);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_FT_IN_ROAMING,
+                RcsSettingsData.DEFAULT_AUTO_ACCEPT_FT_IN_ROAMING);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_FT_CHANGEABLE,
+                RcsSettingsData.DEFAULT_AUTO_ACCEPT_FT_CHANGEABLE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DEFAULT_MESSAGING_METHOD,
+                RcsSettingsData.DEFAULT_KEY_DEFAULT_MESSAGING_METHOD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.KEY_IMAGE_RESIZE_OPTION,
+                RcsSettingsData.DEFAULT_KEY_IMAGE_RESIZE_OPTION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.ENABLE_RCS_SWITCH,
+                RcsSettingsData.DEFAULT_ENABLE_RCS_SWITCH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.IM_MSG_TECH,
+                RcsSettingsData.DEFAULT_IM_MSG_TECH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.FIRST_MESSAGE_INVITE,
+                RcsSettingsData.DEFAULT_FIRST_MESSAGE_INVITE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.REQUEST_AND_RESPOND_TO_GROUP_DISPLAY_REPORTS,
+                RcsSettingsData.DEFAULT_REQUEST_AND_RESPOND_TO_GROUP_DISPLAY_REPORTS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_ALLOWED_DISPLAY_NAME_CHARS,
+                RcsSettingsData.DEFAULT_MAX_ALLOWED_DISPLAY_NAME_CHARS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROV_USER_MSG_CONTENT,
+                RcsSettingsData.DEFAULT_PROV_USER_MSG_CONTENT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROV_USER_MSG_TITLE,
+                RcsSettingsData.DEFAULT_PROV_USER_MSG_TITLE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MOBILE_COUNTRY_CODE,
+                RcsSettingsData.DEFAULT_MOBILE_COUNTRY_CODE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MOBILE_NETWORK_CODE,
+                RcsSettingsData.DEFAULT_MOBILE_NETWORK_CODE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROV_ACCEPT_BUTTON,
+                RcsSettingsData.DEFAULT_PROV_ACCEPT_BUTTON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.PROV_REJECT_BUTTON,
+                RcsSettingsData.DEFAULT_PROV_REJECT_BUTTON);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.LOCAL_DISPLAY_LANGUAGE,
+                RcsSettingsData.DEFAULT_LOCAL_DISPLAY_LANGUAGE);
+        // message store
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_URI,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_URI);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_AUTH,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_AUTH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_USER,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_USER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_PWD,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_PWD);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_PUSH_SMS,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_SMS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_PUSH_MMS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
+                RcsSettingsData.DEFAULT_EVENT_REPORTING_FRAMEWORK.toInt());
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DATA_CONNECTION_SYNC_TIMER,
+                RcsSettingsData.DEFAULT_DATA_CONNECTION_SYNC_TIMER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_SYNC_TIMER,
+                RcsSettingsData.DEFAULT_MESSAGE_STORE_SYNC_TIMER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.NTP_SERVERS,
+                RcsSettingsData.DEFAULT_NTP_SERVERS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.NTP_SERVER_TIMEOUT,
+                RcsSettingsData.DEFAULT_NTP_SERVER_TIMEOUT);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.NTP_LOCAL_OFFSET,
+                RcsSettingsData.DEFAULT_NTP_LOCAL_OFFSET);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.NTP_CACHE_VALIDITY,
+                RcsSettingsData.DEFAULT_NTP_CACHE_VALIDITY);
+    }
 }

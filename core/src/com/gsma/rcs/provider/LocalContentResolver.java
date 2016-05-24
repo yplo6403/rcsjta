@@ -38,7 +38,7 @@ import java.util.ArrayList;
  * protected for external use like from applications accessing the terminal api while still allowing
  * internal write access to the same providers by the service implementations.
  */
-@SuppressWarnings("ConstantConditions")
+
 public class LocalContentResolver {
 
     private final ContentResolver mContentResolver;
@@ -63,7 +63,7 @@ public class LocalContentResolver {
 
     /**
      * Handles query requests from clients
-     *
+     * 
      * @param uri the URI to query
      * @param projection The list of columns to put into the cursor of null if all
      * @param selection A selection criteria to apply when filtering rows
@@ -88,7 +88,7 @@ public class LocalContentResolver {
 
     /**
      * Handles requests to insert a new row.
-     *
+     * 
      * @param uri the URI
      * @param values A set of column_name/value pairs to add to the database.
      * @return The URI for the newly inserted item
@@ -108,7 +108,7 @@ public class LocalContentResolver {
 
     /**
      * Handle requests to update one or more rows.
-     *
+     * 
      * @param uri the URI
      * @param values A set of column_name/value pairs to update
      * @param selection A selection criteria to apply when filtering rows
@@ -131,7 +131,7 @@ public class LocalContentResolver {
 
     /**
      * Handles requests to delete one or more rows.
-     *
+     * 
      * @param uri the URI
      * @param selection A selection criteria to apply when filtering rows
      * @param selectionArgs The array of arguments for the selection or null if no argument.
@@ -211,7 +211,6 @@ public class LocalContentResolver {
         try {
             contentProviderClient = mContentResolver.acquireContentProviderClient(uri);
             return contentProviderClient.getLocalContentProvider().applyBatch(operations);
-
         } finally {
             if (contentProviderClient != null) {
                 contentProviderClient.release();

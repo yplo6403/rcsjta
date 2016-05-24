@@ -13,6 +13,7 @@ News:
 
 Bugs fixed:
 
+	* Core: Added ApplyBatch for resetting setting.db to default values
 	* Core: Handling configuration error management in Receipt of SMS (OTP)
 	* Core: Do not start Keep Alive when registration is not successful
 	* Core: Core: Fix for NPE while parsing the configuration file
