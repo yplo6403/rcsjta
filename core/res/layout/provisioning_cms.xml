@@ -1,0 +1,183 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/material_blue_grey_800"
+            android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_url_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/message_store_url"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:inputType="textUri"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_auth_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/message_store_auth"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_user_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/message_store_user"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_pwd_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/message_store_pwd"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatCheckBox
+            android:id="@+id/message_store_push_sms"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/message_store_push_sms_label"/>
+
+        <android.support.v7.widget.AppCompatCheckBox
+            android:id="@+id/message_store_push_mms"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/message_store_push_mms_label"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_event_framework_label"/>
+
+        <android.support.v7.widget.AppCompatSpinner
+            android:id="@+id/message_store_event_framework_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/data_connection_sync_timer_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/data_connection_sync_timer"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/message_store_sync_timer_label"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/message_store_sync_timer"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/ntp_servers"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/ntp_servers"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/ntp_server_timeout"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/ntp_server_timeout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/ntp_cache_validity"/>
+
+        <android.support.v7.widget.AppCompatEditText
+            android:id="@+id/ntp_cache_validity"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:lines="1"
+            android:maxLength="100"
+            android:singleLine="true"/>
+
+    </LinearLayout>
+
+</ScrollView>

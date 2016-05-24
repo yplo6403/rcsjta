@@ -235,14 +235,15 @@
         <!-- Local provisioning (only for debug) -->
         <activity
             android:name=".provisioning.local.Provisioning"
-            android:label="@string/provisioning_app_name">
+            android:icon="@drawable/rcs_icon"
+            android:label="@string/provisioning_app_name"
+            android:theme="@style/Theme.AppCompat">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            >
         </activity>
-        <activity
-            android:name=".provisioning.local.ProfileProvisioning"/>
-        <activity android:name=".provisioning.local.StackProvisioning"/>
-        <activity android:name=".provisioning.local.ServiceProvisioning"/>
-        <activity android:name=".provisioning.local.LoggerProvisioning"/>
-        <activity android:name=".provisioning.local.CmsProvisioning"/>
 
         <service
             android:name=".service.api.OneToOneDeliveryExpirationService"
@@ -252,14 +253,6 @@
             android:name=".service.permissions.PermissionsAlertDialog"
             android:theme="@style/Theme.Transparent"/>
 
-        <activity
-            android:name=".service.permissions.PermissionsActivity"
-            android:icon="@drawable/rcs_icon">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>

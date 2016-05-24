@@ -1,8 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
- * Copyright (C) 2014 Sony Mobile Communications AB.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,47 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * NOTE: This file has been modified by Sony Mobile Communications AB.
- * Modifications are licensed under the License.
  ******************************************************************************/
 
 package com.gsma.rcs.provisioning.local;
 
-import static com.gsma.rcs.provisioning.local.Provisioning.saveCheckBoxParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.saveLongEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.saveStringEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.saveUriEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setCheckBoxParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setLongEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setSpinnerParameter;
-import static com.gsma.rcs.provisioning.local.Provisioning.setStringEditTextParam;
-import static com.gsma.rcs.provisioning.local.Provisioning.setUriEditTextParam;
-
 import com.gsma.rcs.R;
-import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventReportingFrameworkConfig;
+import com.gsma.rcs.utils.logger.Logger;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
-import android.widget.Toast;
 
 /**
  * Cms parameters provisioning File
  */
-public class CmsProvisioning extends Activity {
+public class CmsProvisioning extends Fragment implements IProvisioningFragment {
 
-    private RcsSettings mRcsSettings;
+    private static final Logger sLogger = Logger.getLogger(StackProvisioning.class.getName());
+
+    private static RcsSettings sRcsSettings;
 
     private String[] mEventFramework = new String[] {
             EventReportingFrameworkConfig.DISABLED.toString(),
@@ -64,125 +52,94 @@ public class CmsProvisioning extends Activity {
             EventReportingFrameworkConfig.IMAP_ONLY.toString()
     };
 
-    private boolean mInFront;
     private CmsLog mCmsLog;
 
-    @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
-        // Set layout
-        setContentView(R.layout.rcs_provisioning_cms);
-        // Set buttons callback
-        Button btn = (Button) findViewById(R.id.save_btn);
-        btn.setOnClickListener(saveBtnListener);
-        mRcsSettings = RcsSettings.getInstance(new LocalContentResolver(this));
-        mCmsLog = CmsLog.getInstance(this);
-        updateView(bundle);
-        mInFront = true;
-    }
+    private View mRootView;
+    private ProvisioningHelper mHelper;
 
-    @Override
-    protected void onSaveInstanceState(Bundle bundle) {
-        super.onSaveInstanceState(bundle);
-        saveInstanceState(bundle);
+    public static CmsProvisioning newInstance(RcsSettings rcsSettings) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("new instance");
+        }
+        CmsProvisioning f = new CmsProvisioning();
+        /*
+         * If Android decides to recreate your Fragment later, it's going to call the no-argument
+         * constructor of your fragment. So overloading the constructor is not a solution. A way to
+         * pass argument to new fragment is to store it as static.
+         */
+        sRcsSettings = rcsSettings;
+        return f;
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        if (!mInFront) {
-            mInFront = true;
-            // Update UI (from DB)
-            updateView(null);
-        }
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        mRootView = inflater.inflate(R.layout.provisioning_cms, container, false);
+        mHelper = new ProvisioningHelper(mRootView, sRcsSettings);
+        mCmsLog = CmsLog.getInstance(getContext());
+        displayRcsSettings();
+        return mRootView;
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mInFront = false;
-    }
-
-    /**
-     * Save parameters either in bundle or in RCS settings
-     */
-    private void saveInstanceState(Bundle bundle) {
-        ProvisioningHelper helper = new ProvisioningHelper(this, mRcsSettings, bundle);
-        saveUriEditTextParam(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URI, helper);
-        saveStringEditTextParam(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH, helper);
-        saveStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
-        saveStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
-        saveCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS,
-                helper);
-        // TODO manage screen rotation for CMS parameters
-        if (!((CheckBox) findViewById(R.id.message_store_push_sms)).isChecked()) {
-            mCmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
+    public void displayRcsSettings() {
+        if (sLogger.isActivated()) {
+            sLogger.debug("displayRcsSettings");
         }
-        saveCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
-                helper);
-        if (!((CheckBox) findViewById(R.id.message_store_push_mms)).isChecked()) {
-            mCmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
-        }
-        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_spinner);
-        String selected = (String) spinner.getSelectedItem();
-        if (bundle != null) {
-            bundle.putInt(RcsSettingsData.EVENT_REPORTING_FRAMEWORK, EventReportingFrameworkConfig
-                    .valueOf(selected).toInt());
-        } else {
-            mRcsSettings.writeInteger(RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
-                    EventReportingFrameworkConfig.valueOf(selected).toInt());
-        }
-        saveLongEditTextParam(R.id.data_connection_sync_timer,
-                RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
-        saveLongEditTextParam(R.id.message_store_sync_timer,
-                RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
-        saveStringEditTextParam(R.id.ntp_servers, RcsSettingsData.NTP_SERVERS, helper);
-        saveLongEditTextParam(R.id.ntp_server_timeout, RcsSettingsData.NTP_SERVER_TIMEOUT, helper);
-        saveLongEditTextParam(R.id.ntp_cache_validity, RcsSettingsData.NTP_CACHE_VALIDITY, helper);
+        mHelper.setUriEditText(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URI);
+        mHelper.setStringEditText(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH);
+        mHelper.setStringEditText(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER);
+        mHelper.setStringEditText(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD);
 
-    }
-
-    /**
-     * Update UI (upon creation, rotation, tab switch...)
-     * 
-     * @param bundle the bundle to get saved provisioning parameters
-     */
-    private void updateView(Bundle bundle) {
-        ProvisioningHelper helper = new ProvisioningHelper(this, mRcsSettings, bundle);
-        setUriEditTextParam(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URI, helper);
-        setStringEditTextParam(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH, helper);
-        setStringEditTextParam(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER, helper);
-        setStringEditTextParam(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD, helper);
-
-        setCheckBoxParam(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS,
-                helper);
-        setCheckBoxParam(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS,
-                helper);
-        Spinner spinner = (Spinner) findViewById(R.id.message_store_event_framework_spinner);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(CmsProvisioning.this,
+        mHelper.setBoolCheckBox(R.id.message_store_push_sms, RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
+        mHelper.setBoolCheckBox(R.id.message_store_push_mms, RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
+        Spinner spinner = (Spinner) mRootView
+                .findViewById(R.id.message_store_event_framework_spinner);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
                 android.R.layout.simple_spinner_item, mEventFramework);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
-        setSpinnerParameter(spinner, RcsSettingsData.EVENT_REPORTING_FRAMEWORK, true,
-                mEventFramework, helper);
-        setLongEditTextParam(R.id.data_connection_sync_timer,
-                RcsSettingsData.DATA_CONNECTION_SYNC_TIMER, helper);
-        setLongEditTextParam(R.id.message_store_sync_timer,
-                RcsSettingsData.MESSAGE_STORE_SYNC_TIMER, helper);
-        setStringEditTextParam(R.id.ntp_servers, RcsSettingsData.NTP_SERVERS, helper);
-        setLongEditTextParam(R.id.ntp_server_timeout, RcsSettingsData.NTP_SERVER_TIMEOUT, helper);
-        setLongEditTextParam(R.id.ntp_cache_validity, RcsSettingsData.NTP_CACHE_VALIDITY, helper);
+        mHelper.setSpinnerParameter(spinner, RcsSettingsData.EVENT_REPORTING_FRAMEWORK, true,
+                mEventFramework);
+        mHelper.setLongEditText(R.id.data_connection_sync_timer,
+                RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
+        mHelper.setLongEditText(R.id.message_store_sync_timer,
+                RcsSettingsData.MESSAGE_STORE_SYNC_TIMER);
+        mHelper.setStringEditText(R.id.ntp_servers, RcsSettingsData.NTP_SERVERS);
+        mHelper.setLongEditText(R.id.ntp_server_timeout, RcsSettingsData.NTP_SERVER_TIMEOUT);
+        mHelper.setLongEditText(R.id.ntp_cache_validity, RcsSettingsData.NTP_CACHE_VALIDITY);
     }
 
-    /**
-     * Save button listener
-     */
-    private OnClickListener saveBtnListener = new OnClickListener() {
-        public void onClick(View v) {
-            // Save parameters
-            saveInstanceState(null);
-            Toast.makeText(CmsProvisioning.this, getString(R.string.message_store_save_ok_label),
-                    Toast.LENGTH_LONG).show();
+    @Override
+    public void persistRcsSettings() {
+        if (sLogger.isActivated()) {
+            sLogger.debug("persistRcsSettings");
         }
-    };
+        mHelper.saveUriEditText(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URI);
+        mHelper.saveStringEditText(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH);
+        mHelper.saveStringEditText(R.id.message_store_user, RcsSettingsData.MESSAGE_STORE_USER);
+        mHelper.saveStringEditText(R.id.message_store_pwd, RcsSettingsData.MESSAGE_STORE_PWD);
+        mHelper.saveBoolCheckBox(R.id.message_store_push_sms,
+                RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
+        if (!((CheckBox) mRootView.findViewById(R.id.message_store_push_sms)).isChecked()) {
+            mCmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
+        }
+        mHelper.saveBoolCheckBox(R.id.message_store_push_mms,
+                RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
+        if (!((CheckBox) mRootView.findViewById(R.id.message_store_push_mms)).isChecked()) {
+            mCmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
+        }
+        Spinner spinner = (Spinner) mRootView
+                .findViewById(R.id.message_store_event_framework_spinner);
+        String selected = (String) spinner.getSelectedItem();
+        sRcsSettings.writeInteger(RcsSettingsData.EVENT_REPORTING_FRAMEWORK,
+                EventReportingFrameworkConfig.valueOf(selected).toInt());
+        mHelper.saveLongEditText(R.id.data_connection_sync_timer,
+                RcsSettingsData.DATA_CONNECTION_SYNC_TIMER);
+        mHelper.saveLongEditText(R.id.message_store_sync_timer,
+                RcsSettingsData.MESSAGE_STORE_SYNC_TIMER);
+        mHelper.saveStringEditText(R.id.ntp_servers, RcsSettingsData.NTP_SERVERS);
+        mHelper.saveLongEditText(R.id.ntp_server_timeout, RcsSettingsData.NTP_SERVER_TIMEOUT);
+        mHelper.saveLongEditText(R.id.ntp_cache_validity, RcsSettingsData.NTP_CACHE_VALIDITY);
+    }
+
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,58 +18,116 @@
 
 package com.gsma.rcs.provisioning.local;
 
-import android.app.Activity;
-import android.os.Bundle;
-
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.services.rcs.contact.ContactId;
+
+import android.net.Uri;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.Spinner;
 
 /**
- * A class to encapsulate parameters for the provisioning of settings.
+ * A class to bind RCS settings with UI.
+ * 
+ * @author Philippe LEMORDANT
  */
 public class ProvisioningHelper {
 
+    private final View mRootView;
     private final RcsSettings mRcsSettings;
-    private final Bundle mBundle;
-    private final Activity mActivity;
 
-    /**
-     * Gets the instance of activity
-     * 
-     * @return mActivity
-     */
-    public Activity getActivity() {
-        return mActivity;
-    }
-
-    /**
-     * Gets instance of RcsSettings
-     * 
-     * @return mRcsSettings
-     */
-    public RcsSettings getRcsSettings() {
-        return mRcsSettings;
-    }
-
-    /**
-     * Gets instance of bundle
-     * 
-     * @return mBundle
-     */
-    public Bundle getBundle() {
-        return mBundle;
-    }
-
-    /**
-     * Constructor
-     * 
-     * @param activity The activity
-     * @param rcsSettings the RCS settings accessor
-     * @param bundle the bundle to save provisioning settings
-     */
-    public ProvisioningHelper(Activity activity, RcsSettings rcsSettings, Bundle bundle) {
-        mActivity = activity;
+    public ProvisioningHelper(View view, RcsSettings rcsSettings) {
+        mRootView = view;
         mRcsSettings = rcsSettings;
-        mBundle = bundle;
     }
 
+    public void setStringEditText(int resViewTextId, String settingsKey) {
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        editText.setText(mRcsSettings.readString(settingsKey));
+    }
+
+    public void setIntEditText(int resViewTextId, String settingsKey) {
+        String value = Integer.toString(mRcsSettings.readInteger((settingsKey)));
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        editText.setText(value);
+    }
+
+    public void setLongEditText(int resViewTextId, String settingsKey) {
+        String parameter = Long.toString(mRcsSettings.readLong((settingsKey)));
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        editText.setText(parameter);
+    }
+
+    public void setUriEditText(int resViewTextId, String settingsKey) {
+        Uri dbValue = mRcsSettings.readUri(settingsKey);
+        String parameter = (dbValue == null ? "" : dbValue.toString());
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        editText.setText(parameter);
+    }
+
+    public void setBoolCheckBox(int resViewTextId, String settingsKey) {
+        Boolean parameter = mRcsSettings.readBoolean((settingsKey));
+        CheckBox box = (CheckBox) mRootView.findViewById(resViewTextId);
+        box.setChecked(parameter);
+    }
+
+    public void setContactIdEditText(int resViewTextId, String settingsKey) {
+        ContactId dbValue = mRcsSettings.readContactId(settingsKey);
+        String parameter = (dbValue == null ? "" : dbValue.toString());
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        editText.setText(parameter);
+    }
+
+    int setSpinnerParameter(final Spinner spinner, String settingsKey, boolean isSettingInteger,
+                            final String[] selection) {
+        Integer parameter;
+        if (isSettingInteger) {
+            parameter = mRcsSettings.readInteger(settingsKey);
+        } else {
+            String selected = mRcsSettings.readString(settingsKey);
+            parameter = java.util.Arrays.asList(selection).indexOf(selected);
+        }
+        spinner.setSelection(parameter % selection.length);
+        return parameter;
+    }
+
+    public void saveContactIdEditText(int resViewTextId, String settingsKey) {
+        EditText txt = (EditText) mRootView.findViewById(resViewTextId);
+        String text = txt.getText().toString();
+        ContactUtil.PhoneNumber number = ContactUtil.getValidPhoneNumberFromUri(text);
+        if (number == null) {
+            txt.setText("");
+        }
+        mRcsSettings.writeContactId(settingsKey,
+                "".equals(text) ? null : ContactUtil.createContactIdFromValidatedData(number));
+    }
+
+    public void saveLongEditText(int resViewTextId, String settingsKey) {
+        EditText txt = (EditText) mRootView.findViewById(resViewTextId);
+        mRcsSettings.writeLong(settingsKey, Long.parseLong(txt.getText().toString()));
+    }
+
+    public void saveIntEditText(int resViewTextId, String settingsKey) {
+        EditText txt = (EditText) mRootView.findViewById(resViewTextId);
+        mRcsSettings.writeInteger(settingsKey, Integer.parseInt(txt.getText().toString()));
+    }
+
+    public void saveStringEditText(int resViewTextId, String settingsKey) {
+        EditText editText = (EditText) mRootView.findViewById(resViewTextId);
+        String text = editText.getText().toString().trim();
+        mRcsSettings.writeString(settingsKey, "".equals(text) ? null : text);
+    }
+
+    public void saveBoolCheckBox(int resViewTextId, String settingsKey) {
+        CheckBox box = (CheckBox) mRootView.findViewById(resViewTextId);
+        mRcsSettings.writeBoolean(settingsKey, box.isChecked());
+    }
+
+    public void saveUriEditText(int resViewTextId, String settingsKey) {
+        EditText txt = (EditText) mRootView.findViewById(resViewTextId);
+        String text = txt.getText().toString();
+        mRcsSettings.writeUri(settingsKey, "".equals(text) ? null : Uri.parse(text));
+    }
 }

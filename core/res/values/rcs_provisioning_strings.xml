@@ -9,6 +9,7 @@
     <string name="label_no_certificate">No certificate</string>
     <string name="label_parse_failed">Cannot parse provisioning</string>
     <string name="label_load_failed">Cannot load provisioning</string>
+    <string name="label_sdcard_permission_not_granted">SDCARD read permission not granted!</string>
     <string name="label_no_xml_file">No provisioning file</string>
     <!-- rcs_provisioning_logger.xml -->
     <string name="Application_traces">Application traces</string>
@@ -21,7 +22,6 @@
     <string name="user_msg_content">User message content:</string>
     <string name="GSMA_release">GSMA release:</string>
     <string name="IMS_authentication_procedure_for_Mobile_access">IMS authentication procedure for Mobile access:</string>
-    <string name="IMS_authentication_procedure_for_Wi_Fi_access">IMS authentication procedure for Wi-Fi access:</string>
     <string name="IMS_username">IMS username:</string>
     <string name="IMS_display_name">IMS display name:</string>
     <string name="IMS_home_domain">IMS home domain:</string>
@@ -41,7 +41,6 @@
     <string name="IM_conference_URI">IM conference URI:</string>
     <string name="End_user_confirmation_URI">End user confirmation URI:</string>
     <string name="APN">APN:</string>
-    <string name="Capabilities">Capabilities:</string>
     <string name="Image_sharing">Image sharing</string>
     <string name="Video_sharing">Video sharing</string>
     <string name="File_transfer_MSRP">File transfer MSRP</string>
@@ -58,7 +57,7 @@
     <string name="File_transfer_Store_Forward">File transfer Store &amp; Forward</string>
     <string name="Group_chat_Store_Forward">Group chat Store &amp; Forward</string>
     <string name="SIP_automata">SIP automata</string>
-    <!-- rcs_provisioning_service.xml -->
+    <!-- provisioning_service.xml -->
     <string name="Max_photo_icon_size">Max photo-icon size:</string>
     <string name="Max_length_of_the_freetext">Max length of the freetext:</string>
     <string name="Max_number_of_participants_in_a_group_chat">Max number of participants in a group chat:</string>
@@ -82,7 +81,6 @@
     <string name="Directory_path_to_store_photos">Directory path to store photos:</string>
     <string name="Directory_path_to_store_videos">Directory path to store videos:</string>
     <string name="Directory_path_to_store_files">Directory path to store files:</string>
-    <string name="Directory_path_to_store_mms">Directory path to store mms:</string>
     <string name="Directory_path_to_store_fileicons">Directory path to store file icons:</string>
     <string name="SMS_fallback_service">SMS fallback service</string>
     <string name="Store_and_Forward_service_warning">Store and Forward service warning</string>
@@ -143,7 +141,9 @@
     <string name="IMEI_as_device_ID">IMEI as device ID</string>
     <string name="Control_extensions">Control extensions</string>
     <string name="Allow_extensions">Allow extensions</string>
-    <!-- rcs_provisioning_cms.xml -->
+    <string name="load">Load</string>
+    <string name="save">Save</string>
+    <!-- provisioning_cms.xml -->
     <string name="message_store_url_label">Message store url</string>
     <string name="message_store_auth_label">Message store authentication</string>
     <string name="message_store_user_label">Message store user</string>
@@ -153,11 +153,8 @@
     <string name="message_store_event_framework_label">Event Reporting Framework</string>
     <string name="data_connection_sync_timer_label">Data connection sync timer (ms)</string>
     <string name="message_store_sync_timer_label">Periodic syn timer (ms)</string>
-    <string name="message_store_save_ok_label">Changes have been taken into account</string>
     <string name="ntp_servers">NTP servers (comma separated list)</string>
     <string name="ntp_server_timeout">Timeout for NTP server (milliseconds)</string>
     <string name="ntp_cache_validity">NTP cache validity (milliseconds)</string>
-
-    <string name="label_ungranted_permission">Below permissions are not granted!</string>
 
 </resources>
