@@ -18,12 +18,12 @@
 
 package com.gsma.rcs.provider.cms;
 
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
-import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.provider.LocalContentResolver;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -34,10 +34,18 @@ import java.util.Map;
 
 public class CmsLogTestIntegration {
 
-    private static final String SORT_BY_UID_ASC = new StringBuilder(CmsObject.KEY_UID).append(
-            " ASC").toString();
+    private static final String SORT_BY_UID_ASC = CmsObject.KEY_UID + " ASC";
 
     protected final LocalContentResolver mLocalContentResolver;
+
+    private static final String SELECTION_MESSAGE_ID = CmsObject.KEY_MESSAGE_ID + "=?";
+    private static final String SELECTION_SMS = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.SMS
+            + "'";
+    private static final String SELECTION_MMS = CmsObject.KEY_MESSAGE_TYPE + "='" + MessageType.MMS
+            + "'";
+    private static final String SELECTION_XMS = "(" + SELECTION_SMS + " OR " + SELECTION_MMS + ")";
+    private static final String SELECTION_XMS_MESSAGEID = SELECTION_XMS + " AND "
+            + SELECTION_MESSAGE_ID;
 
     /**
      * Current instance
@@ -63,12 +71,12 @@ public class CmsLogTestIntegration {
     /**
      * Get messages by folderName
      *
-     * @param folderName
+     * @param folderName the folder
      * @return CmsObject
      */
     public Map<Integer, CmsObject> getMessages(String folderName) {
         Cursor cursor = null;
-        Map<Integer, CmsObject> messages = new HashMap<Integer, CmsObject>();
+        Map<Integer, CmsObject> messages = new HashMap<>();
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
                     CmsLog.Message.SELECTION_FOLDER_NAME, new String[] {
@@ -107,7 +115,7 @@ public class CmsLogTestIntegration {
     /**
      * Get folder by name
      *
-     * @param folderName
+     * @param folderName the folder
      * @return CmsFolder
      */
     public CmsFolder getFolder(String folderName) {
@@ -134,8 +142,8 @@ public class CmsLogTestIntegration {
     /**
      * Get message by folderName and messageId
      *
-     * @param folderName
-     * @param messageId
+     * @param folderName the folder
+     * @param messageId the message ID
      * @return CmsObject
      */
     public CmsObject getMessage(String folderName, String messageId) {
@@ -215,8 +223,8 @@ public class CmsLogTestIntegration {
     /**
      * Remove a message
      *
-     * @param folderName
-     * @param uid
+     * @param folderName the folder
+     * @param uid the message UID
      * @return int
      */
     public int removeMessage(String folderName, Integer uid) {
@@ -224,5 +232,30 @@ public class CmsLogTestIntegration {
                 CmsLog.Message.SELECTION_FOLDER_NAME_UID, new String[] {
                         folderName, String.valueOf(uid)
                 });
+    }
+
+    /**
+     * Gets uid by messageId
+     *
+     * @param messageId the message ID
+     * @return uid
+     */
+    public Integer getUidForXmsMessage(String messageId) {
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
+                    SELECTION_XMS_MESSAGEID, new String[] {
+                        messageId
+                    }, null);
+            CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
+            int uidIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_UID);
+            if (cursor.moveToFirst()) {
+                return cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx);
+            }
+            return null;
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
     }
 }

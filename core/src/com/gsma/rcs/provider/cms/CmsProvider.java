@@ -122,7 +122,7 @@ public class CmsProvider extends ContentProvider {
             
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' +
                     BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
-                    CmsObject.KEY_FOLDER_NAME + " TEXT," + 
+                    CmsObject.KEY_FOLDER_NAME + " TEXT NOT NULL," +
                     CmsObject.KEY_UID + " INTEGER," + 
                     CmsObject.KEY_READ_STATUS + " INTEGER NOT NULL," + 
                     CmsObject.KEY_DELETE_STATUS + " INTEGER NOT NULL," + 
@@ -136,9 +136,12 @@ public class CmsProvider extends ContentProvider {
             db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_"
                     + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
                     + CmsObject.KEY_FOLDER_NAME + "," + CmsObject.KEY_UID + ')');
-
-            // TODO
-            // define another index
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MESSAGE_ID + "_" +
+                    CmsObject.KEY_MESSAGE_TYPE + "_idx" + " ON " + TABLE_MESSAGE +
+                    '(' + CmsObject.KEY_MESSAGE_ID + "," + CmsObject.KEY_MESSAGE_TYPE + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MESSAGE_ID + "_"
+                    + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
+                    + CmsObject.KEY_MESSAGE_ID + "," + CmsObject.KEY_UID + ')');
         }
         // @formatter:on
 

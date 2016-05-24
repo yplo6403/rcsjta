@@ -57,8 +57,8 @@ public class CmsLogTest extends AndroidTestCase {
                         1234, 1),
                 new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(contact3), 1,
                         12345, 1),
-                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId4, chatId4), 1,
-                        123456, 1)
+                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId4,
+                        chatId4), 1, 123456, 1)
         };
         mMessages = new CmsObject[] {
                 new CmsObject(mFolders[0].getName(), 1, ReadStatus.UNREAD,
@@ -219,21 +219,18 @@ public class CmsLogTest extends AndroidTestCase {
         assertEquals(mMessages[5], messages.get(mMessages[5].getUid()));
 
         for (CmsObject mMessage : mMessages) {
-            assertEquals(mMessage,
-                    mCmsLog.getMessage(mMessage.getFolder(), mMessage.getUid()));
+            assertEquals(mMessage, mCmsLog.getMessage(mMessage.getFolder(), mMessage.getUid()));
         }
         for (CmsObject mMessage : mMessages) {
-            assertEquals(
-                    mMessage,
-                    mCmsLogTestIntegration.getMessage(mMessage.getFolder(),
-                            mMessage.getMessageId()));
+            assertEquals(mMessage, mCmsLogTestIntegration.getMessage(mMessage.getFolder(),
+                    mMessage.getMessageId()));
         }
         for (CmsObject mMessage : mMessages) {
             assertTrue(mCmsLog.getMessageId(mMessage.getFolder(), mMessage.getUid()) != CmsLog.INVALID_ID);
         }
         for (CmsObject mMessage : mMessages) {
             assertEquals(mMessage.getUid(),
-                    mCmsLog.getUidForXmsMessage(mMessage.getMessageId()));
+                    mCmsLogTestIntegration.getUidForXmsMessage(mMessage.getMessageId()));
         }
     }
 
