@@ -159,6 +159,10 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     private final static int SELECT_GEOLOCATION = 0;
 
+    private enum MessagingMode {
+        RCS, XMS, XMS_REQUESTED
+    }
+
     /**
      * The adapter that binds data to the ListView
      */
@@ -185,7 +189,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private IsComposingManager mComposingManager;
     private CapabilityService mCapabilityService;
     private CapabilitiesListener mCapabilitiesListener;
-    private boolean mRcsMode;
     private Button mSendBtn;
     private boolean mSaveDoNotAskAgainResend;
     private RiSettings.PreferenceResendRcs mPreferenceResendChat;
@@ -207,6 +210,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private boolean mChatListenerSet;
     private boolean mCapabilitiesListenerSet;
     private boolean mRcsRegistered;
+    private MessagingMode mMessagingMode;
 
     /**
      * Forge intent to start XmsView activity
@@ -270,7 +274,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             return;
         }
         try {
-            if (mRcsMode && mChat != null) {
+            if (MessagingMode.RCS == mMessagingMode && mChat != null) {
                 mChat.sendMessage(text);
             } else {
                 mCmsService.sendTextMessage(mContact, text);
@@ -411,7 +415,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             @Override
             public void onComposingEvent(ContactId contact, boolean status) {
                 /* Discard event if not for current contact */
-                if (!mContact.equals(contact)) {
+                if (!contact.equals(mContact)) {
                     return;
                 }
                 if (LogUtils.isActive) {
@@ -450,15 +454,24 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                             + capabilities.isImSessionSupported());
                 }
                 try {
+                    if (MessagingMode.XMS_REQUESTED == mMessagingMode) {
+                        /*
+                         * User required XMS mode explicitly: discard RCS capabilities.
+                         */
+                        return;
+                    }
                     /*
                      * We received new capabilities for current contact: re-evaluate the composer
                      * capabilities.
                      */
                     final boolean allowedToSendRcsMessage = mChat.isAllowedToSendMessage();
+                    if (mRcsRegistered && allowedToSendRcsMessage) {
+                        mMessagingMode = MessagingMode.RCS;
+                    }
                     // Execute on UI handler since callback is executed from service
                     mHandler.post(new Runnable() {
                         public void run() {
-                            setRcsMode(mRcsRegistered && allowedToSendRcsMessage);
+                            setSendButtonInRcsMode(mRcsRegistered && allowedToSendRcsMessage);
                         }
                     });
 
@@ -492,7 +505,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         IsComposingManager.INotifyComposing iNotifyComposing = new IsComposingManager.INotifyComposing() {
             public void setTypingStatus(boolean isTyping) {
                 try {
-                    if (mChat == null || !mRcsMode) {
+                    if (mChat == null || MessagingMode.RCS != mMessagingMode) {
                         return;
                     }
                     mChat.setComposingStatus(isTyping);
@@ -547,15 +560,24 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             public void onServiceRegistered() {
                 mRcsRegistered = true;
                 try {
+                    if (MessagingMode.XMS_REQUESTED == mMessagingMode) {
+                        /*
+                         * User required XMS mode explicitly: discard RCS capabilities.
+                         */
+                        return;
+                    }
                     /*
                      * We received new capabilities for current contact: re-evaluate the composer
                      * capabilities.
                      */
                     final boolean allowedToSendRcsMessage = mChat.isAllowedToSendMessage();
+                    if (allowedToSendRcsMessage) {
+                        mMessagingMode = MessagingMode.RCS;
+                    }
                     // Execute on UI handler since callback is executed from service
                     mHandler.post(new Runnable() {
                         public void run() {
-                            setRcsMode(allowedToSendRcsMessage);
+                            setSendButtonInRcsMode(allowedToSendRcsMessage);
                         }
                     });
 
@@ -567,14 +589,22 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             @Override
             public void onServiceUnregistered(RcsServiceRegistration.ReasonCode reasonCode) {
                 mRcsRegistered = false;
+                if (MessagingMode.XMS_REQUESTED == mMessagingMode) {
+                    /*
+                     * User required XMS mode explicitly: discard RCS capabilities.
+                     */
+                    return;
+                }
+                mMessagingMode = MessagingMode.XMS;
                 // Execute on UI handler since callback is executed from service
                 mHandler.post(new Runnable() {
                     public void run() {
-                        setRcsMode(false);
+                        setSendButtonInRcsMode(false);
                     }
                 });
             }
         };
+        mMessagingMode = MessagingMode.XMS;
     }
 
     private boolean processIntent(Intent intent) {
@@ -632,7 +662,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
                 case XmsMessageIntent.ACTION_NEW_XMS_MESSAGE:
                     /* If we receive a XMS, it is a criteria to switch to XMS */
-                    setRcsMode(false);
+                    mMessagingMode = MessagingMode.XMS;
+                    setSendButtonInRcsMode(false);
                     break;
             }
             return true;
@@ -662,8 +693,14 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         mChat = mChatService.getOneToOneChat(mContact);
         setCursorLoader(firstLoad);
         RI.sChatIdOnForeground = mContact.toString();
-        setRcsMode(mChat.isAllowedToSendMessage() && mRcsRegistered);
 
+        if (mChat.isAllowedToSendMessage() && mRcsRegistered) {
+            mMessagingMode = MessagingMode.RCS;
+            setSendButtonInRcsMode(true);
+        } else {
+            mMessagingMode = MessagingMode.XMS;
+            setSendButtonInRcsMode(false);
+        }
         if (RiSettings.isSyncAutomatic(this)) {
             try {
                 /* Perform CMS synchronization */
@@ -673,8 +710,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 Log.w(LOGTAG, "Cannot sync: service is not available!");
             }
         }
-        if (!mRcsMode) {
-            /* Request for capabilities ony if they are not available or expired */
+        if (MessagingMode.XMS == mMessagingMode) {
+        /* Request for capabilities ony if they are not available or expired */
             requestCapabilities(mContact);
         }
     }
@@ -769,10 +806,11 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
-        menu.findItem(R.id.menu_send_geoloc).setVisible(mRcsMode);
-        menu.findItem(R.id.menu_send_rcs_file).setVisible(mRcsMode);
-        menu.findItem(R.id.menu_switch_to_rcs).setVisible(!mRcsMode);
-        menu.findItem(R.id.menu_switch_to_sms).setVisible(mRcsMode);
+        boolean rcsModeEstablished = MessagingMode.RCS == mMessagingMode;
+        menu.findItem(R.id.menu_send_geoloc).setVisible(rcsModeEstablished);
+        menu.findItem(R.id.menu_send_rcs_file).setVisible(rcsModeEstablished);
+        menu.findItem(R.id.menu_switch_to_rcs).setVisible(!rcsModeEstablished);
+        menu.findItem(R.id.menu_switch_to_sms).setVisible(rcsModeEstablished);
         menu.findItem(R.id.menu_sync_cms).setVisible(!RiSettings.isSyncAutomatic(this));
         return true;
     }
@@ -786,7 +824,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             case SELECT_GEOLOCATION:
                 Geoloc geoloc = data.getParcelableExtra(EditGeoloc.EXTRA_GEOLOC);
                 try {
-                    if (mRcsMode && mChat != null) {
+                    if (MessagingMode.RCS == mMessagingMode && mChat != null) {
                         mChat.sendMessage(geoloc);
                     } else {
                         mCmsService.sendTextMessage(mContact, geoloc.toString());
@@ -861,14 +899,18 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
                 case R.id.menu_switch_to_rcs:
                     if (mRcsRegistered && mChat.isAllowedToSendMessage()) {
-                        setRcsMode(true);
+                        mMessagingMode = MessagingMode.RCS;
+                        setSendButtonInRcsMode(true);
+
                     } else {
+                        mMessagingMode = MessagingMode.XMS;
                         requestCapabilities(mContact);
                     }
                     break;
 
                 case R.id.menu_switch_to_sms:
-                    setRcsMode(false);
+                    mMessagingMode = MessagingMode.XMS_REQUESTED;
+                    setSendButtonInRcsMode(false);
                     break;
 
                 case R.id.menu_sync_cms:
@@ -1249,13 +1291,12 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         return builder.show();
     }
 
-    private void setRcsMode(boolean mode) {
+    private void setSendButtonInRcsMode(boolean allowSendRcs) {
         if (LogUtils.isActive) {
-            Log.d(LOGTAG, "setButtonSendMode to RCS: " + mode);
+            Log.d(LOGTAG, "setButtonSendMode to RCS: " + allowSendRcs);
         }
-        mRcsMode = mode;
-        mSendBtn.setCompoundDrawablesWithIntrinsicBounds(0, 0, mode ? R.drawable.action_send_rcs
-                : R.drawable.action_send_xms, 0);
+        mSendBtn.setCompoundDrawablesWithIntrinsicBounds(0, 0,
+                allowSendRcs ? R.drawable.action_send_rcs : R.drawable.action_send_xms, 0);
     }
 
     private String getMyDisplayName() throws RcsGenericException, RcsServiceNotAvailableException {

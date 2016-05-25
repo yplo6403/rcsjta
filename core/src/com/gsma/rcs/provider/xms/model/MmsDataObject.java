@@ -166,8 +166,8 @@ public class MmsDataObject extends XmsDataObject {
 
     @Override
     public String toString() {
-        return "MmsDataObject{" + "ID='" + mMmsId + '\'' + ", subject='" + mSubject + '\''
-                + ", transId='" + mTransId + '\'' + ", parts=" + mMmsParts + '}';
+        return "MmsDataObject{" + super.toString() + " ID=" + mMmsId + ", subject='" + mSubject
+                + "', parts=" + mMmsParts + '}';
     }
 
     public static class MmsPart {
@@ -254,10 +254,8 @@ public class MmsDataObject extends XmsDataObject {
 
         @Override
         public String toString() {
-            return "MmsPart{" + "messageId='" + mMessageId + '\'' + ", mimeType='" + mMimeType
-                    + '\'' + ", contentText='" + mContentText + '\'' + ", file=" + mFile
-                    + ", fileName='" + mFileName + '\'' + ", fileSize=" + mFileSize + ", contact="
-                    + mContact + '}';
+            return "MmsPart{mimeType=" + mMimeType + ", fileName=" + mFileName + ", fileSize="
+                    + mFileSize + '}';
         }
     }
 }

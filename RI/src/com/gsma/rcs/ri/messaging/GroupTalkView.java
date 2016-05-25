@@ -230,7 +230,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
             // Callback called when an Is-composing event has been received
             public void onComposingEvent(String chatId, ContactId contact, boolean status) {
                 // Discard event if not for current chatId
-                if (!mChatId.equals(chatId)) {
+                if (!chatId.equals(mChatId)) {
                     return;
                 }
                 displayComposingEvent(contact, status);
@@ -492,8 +492,10 @@ public class GroupTalkView extends RcsFragmentActivity implements
     protected void onResume() {
         super.onResume();
         RI.sChatIdOnForeground = mChatId;
-        ChatPendingIntentManager.getChatPendingIntentManager(this).clearNotification(
-                mChatId);
+        if (mChatId != null) {
+            ChatPendingIntentManager.getChatPendingIntentManager(this).clearNotification(
+                    mChatId);
+        }
         try {
             if (mChatListener != null && mChatService != null && !mChatListnerSet) {
                 mChatService.addEventListener(mChatListener);

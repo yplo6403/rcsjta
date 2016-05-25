@@ -132,4 +132,10 @@ public abstract class XmsDataObject {
     public String getChatId() {
         return mChatId;
     }
+
+    @Override
+    public String toString() {
+        return "ChatId=" + mChatId + ", MessageId=" + mMessageId + ", Dir=" + mDirection
+                + ", Timestamp=" + mTimestamp + ", NativeId=" + mNativeProviderId;
+    }
 }

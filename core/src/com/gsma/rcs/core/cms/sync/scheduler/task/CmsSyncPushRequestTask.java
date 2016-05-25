@@ -39,6 +39,7 @@ import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
+import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -61,6 +62,7 @@ import java.util.UUID;
  */
 public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
 
+    private static Logger sLogger = Logger.getLogger(CmsSyncPushRequestTask.class.getName());
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final XmsLog mXmsLog;
@@ -169,6 +171,9 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
         });
         String prevSelectedFolder = "";
         for (XmsDataObject message : messages) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("Push " + message.toString());
+            }
             List<Flag> flags = new ArrayList<>();
             ContactId remote = message.getContact();
             switch (message.getDirection()) {
@@ -196,9 +201,9 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
                         sms.getMessageId());
             } else if (message instanceof MmsDataObject) {
                 MmsDataObject mms = (MmsDataObject) message;
-                imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction, mms.getTimestamp(),
-                        mms.getSubject(), UUID.randomUUID().toString(), UUID.randomUUID()
-                                .toString(), mms.getMessageId(), mms.getMmsId(),
+                imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction,
+                        mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(), UUID
+                                .randomUUID().toString(), mms.getMessageId(), mms.getMmsId(),
                         mms.getMmsParts());
             }
             String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());
@@ -245,8 +250,7 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
                                 Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
                         if (uid != null) {
                             cmsObject.setUid(uid);
-                            mCmsLog.updateUid(messageType,
-                                    cmsObject.getMessageId(), uid);
+                            mCmsLog.updateUid(messageType, cmsObject.getMessageId(), uid);
                         }
                         break;
                     case SMS:

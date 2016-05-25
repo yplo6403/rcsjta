@@ -67,4 +67,9 @@ public class SmsDataObject extends XmsDataObject {
     public String getBody() {
         return mBody;
     }
+
+    @Override
+    public String toString() {
+        return "SmsDataObject{" + super.toString() + " Body='" + mBody + "'}";
+    }
 }
