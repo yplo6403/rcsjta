@@ -14,6 +14,8 @@ News:
 
 Bugs fixed:
 
+
+	* CMS: bad intitial state for synchronaized GC
 	* Core: Added support for psMedia & psRTMedia
 	* Core: Added ApplyBatch for resetting setting.db to default values
 	* Core: Handling configuration error management in Receipt of SMS (OTP)

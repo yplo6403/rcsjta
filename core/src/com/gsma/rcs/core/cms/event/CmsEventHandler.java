@@ -475,9 +475,14 @@ public class CmsEventHandler implements CmsEventListener {
         for (ContactId contact : imapCpmSessionMessage.getParticipants()) {
             participants.put(contact, ParticipantStatus.CONNECTED);
         }
+        /*
+         * Insert Group Chat in the state ABORTED (BY_INACTIVITY) so that session will not be
+         * started autonomously.
+         */
         if (!mMessagingLog.isGroupChatPersisted(chatId)) {
             mMessagingLog.addGroupChat(chatId, null, imapCpmSessionMessage.getSubject(),
-                    participants, GroupChat.State.STARTED, GroupChat.ReasonCode.UNSPECIFIED,
+                    participants, GroupChat.State.ABORTED,
+                    GroupChat.ReasonCode.ABORTED_BY_INACTIVITY,
                     imapCpmSessionMessage.getDirection(), imapCpmSessionMessage.getTimestamp());
         }
         return chatId;

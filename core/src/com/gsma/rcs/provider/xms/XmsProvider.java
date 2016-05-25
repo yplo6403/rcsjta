@@ -35,6 +35,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.io.FileNotFoundException;
@@ -42,6 +43,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+@SuppressWarnings("ConstantConditions")
 public class XmsProvider extends ContentProvider {
 
     /**
@@ -121,7 +123,7 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         switch (sUriMatcher.match(uri)) {
             case UriType.Xms.XMS:
                 /* Intentional fall through */
@@ -211,8 +213,8 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-            String sort) {
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
+            String[] selectionArgs, String sort) {
         Cursor cursor = null;
         try {
             switch (sUriMatcher.match(uri)) {
@@ -298,7 +300,8 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection,
+            String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
             case UriType.InternalXms.XMS_WITH_ID:
                 String xmsId = uri.getLastPathSegment();
@@ -340,7 +343,7 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues initialValues) {
+    public Uri insert(@NonNull Uri uri, ContentValues initialValues) {
         switch (sUriMatcher.match(uri)) {
             case UriType.InternalXms.XMS_WITH_ID:
                 //$FALL-THROUGH$
@@ -386,7 +389,7 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
             case UriType.InternalXms.XMS_WITH_ID:
                 String xmsId = uri.getLastPathSegment();
@@ -444,7 +447,8 @@ public class XmsProvider extends ContentProvider {
     }
 
     @Override
-    public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+    public ParcelFileDescriptor openFile(@NonNull Uri uri, @NonNull String mode)
+            throws FileNotFoundException {
         return openFileHelper(uri, mode);
     }
 

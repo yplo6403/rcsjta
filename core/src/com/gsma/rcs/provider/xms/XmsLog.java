@@ -514,16 +514,6 @@ public class XmsLog {
         });
     }
 
-    private void deleteXmsMessage(String messageId) {
-        String mimeType = getMimeType(messageId);
-        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-            deleteMmsParts(messageId, getDirection(messageId));
-        }
-        mLocalContentResolver.delete(XmsData.CONTENT_URI, SELECTION_XMS_MESSAGE_ID, new String[] {
-            messageId
-        });
-    }
-
     public Cursor getXmsMessage(long nativeId, String mimeType) {
         Cursor cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
                 SELECTION_XMS_NATIVE_ID_MIME_TYPE, new String[] {
