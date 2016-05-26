@@ -341,7 +341,9 @@ public class XmsLog {
     public void addIncomingMms(MmsDataObject mms) {
         String contact = mms.getContact().toString();
         ContentValues values = new ContentValues();
-
+        if (sLogger.isActivated()) {
+            sLogger.debug("Insert mms: " + mms);
+        }
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getContentText();
@@ -349,9 +351,6 @@ public class XmsLog {
                 content = mmsPart.getFile().toString();
             }
             values.clear();
-            if (sLogger.isActivated()) {
-                sLogger.debug("Insert part: " + mmsPart);
-            }
             values.put(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId());
             values.put(PartData.KEY_CONTACT, contact);
             values.put(PartData.KEY_MIME_TYPE, mimeType);
@@ -394,15 +393,14 @@ public class XmsLog {
     public void addOutgoingMms(MmsDataObject mms) throws FileAccessException {
         String contact = mms.getContact().toString();
         ContentValues values = new ContentValues();
-
+        if (sLogger.isActivated()) {
+            sLogger.debug("Insert mms: " + mms);
+        }
         for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
             String mimeType = mmsPart.getMimeType();
             String content = mmsPart.getContentText();
 
             values.clear();
-            if (sLogger.isActivated()) {
-                sLogger.debug("Insert part: " + mmsPart);
-            }
             values.put(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId());
             values.put(PartData.KEY_CONTACT, contact);
             values.put(PartData.KEY_MIME_TYPE, mimeType);
@@ -439,7 +437,7 @@ public class XmsLog {
                             values.put(PartData.KEY_FILESIZE, pdu.length);
                         }
                     } catch (IOException e) {
-                        //Nothing to do
+                        // Nothing to do
                     }
                 } else {
                     values.put(PartData.KEY_CONTENT, fileUri.toString());
@@ -452,7 +450,6 @@ public class XmsLog {
             }
             mLocalContentResolver.insert(PartData.CONTENT_URI, values);
         }
-
         values.clear();
         values.put(XmsData.KEY_MESSAGE_ID, mms.getMessageId());
         values.put(XmsData.KEY_CONTACT, contact);

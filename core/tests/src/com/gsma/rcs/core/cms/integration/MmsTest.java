@@ -59,13 +59,10 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
-import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
-import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;

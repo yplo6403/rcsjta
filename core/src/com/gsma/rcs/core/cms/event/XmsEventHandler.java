@@ -87,11 +87,13 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             sLogger.debug("onIncomingSms: ".concat(message.toString()));
         }
         mXmsLog.addSms(message);
+        String folder = CmsUtils.contactToCmsFolder(message.getContact());
         String messageId = message.getMessageId();
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(message.getContact()),
-                CmsObject.ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.SMS, messageId, message.getNativeProviderId()));
+        PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+                : PushStatus.PUSHED;
+        mCmsLog.addMessage(new CmsObject(folder, CmsObject.ReadStatus.UNREAD,
+                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS, messageId, message
+                        .getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), messageId);
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(message.getContact());
@@ -104,10 +106,12 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
             sLogger.debug("onOutgoingSms ".concat(message.toString()));
         }
         mXmsLog.addSms(message);
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(message.getContact()),
-                CmsObject.ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.SMS,  message.getMessageId(), message.getNativeProviderId()));
+        String folder = CmsUtils.contactToCmsFolder(message.getContact());
+        PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+                : PushStatus.PUSHED;
+        mCmsLog.addMessage(new CmsObject(folder, CmsObject.ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS, message
+                        .getMessageId(), message.getNativeProviderId()));
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(message.getContact());
         }
@@ -137,10 +141,12 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
         mXmsLog.addIncomingMms(message);
         String msgId = message.getMessageId();
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(message.getContact()),
-                ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                .getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS, msgId, message.getNativeProviderId()));
+        String folder = CmsUtils.contactToCmsFolder(message.getContact());
+        PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                : PushStatus.PUSHED;
+        mCmsLog.addMessage(new CmsObject(folder, ReadStatus.UNREAD,
+                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId, message
+                        .getNativeProviderId()));
         mCmsService.broadcastNewMessage(message.getMimeType(), msgId);
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(message.getContact());
@@ -158,11 +164,12 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
          */
         if (!mXmsLog.isMessagePersisted(message.getTransId())) {
             mXmsLog.addOutgoingMms(message);
-            mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(message.getContact()),
-                    ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                    .getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
-                    : PushStatus.PUSHED, MessageType.MMS, message.getMessageId(), message
-                    .getNativeProviderId()));
+            String folder = CmsUtils.contactToCmsFolder(message.getContact());
+            PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                    : PushStatus.PUSHED;
+            mCmsLog.addMessage(new CmsObject(folder, ReadStatus.READ,
+                    CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, message
+                            .getMessageId(), message.getNativeProviderId()));
             if (mCmsSyncScheduler != null) {
                 mCmsSyncScheduler.schedulePushMessages(message.getContact());
             }

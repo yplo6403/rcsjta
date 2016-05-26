@@ -209,36 +209,37 @@ public class XmsSynchronizer implements Runnable {
                 SmsDataObject smsData = getSmsFromNativeProvider(id);
                 if (smsData != null) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug(" Importing new SMS message :" + id);
+                        sLogger.debug("Import new SMS message Id=" + id);
                     }
                     mXmsLog.addSms(smsData);
-                    mCmsLog.addMessage(new CmsObject(
-                            CmsUtils.contactToCmsFolder(smsData.getContact()),
-                            smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                                    : CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                            CmsObject.DeleteStatus.NOT_DELETED,
-                            mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
-                                    : PushStatus.PUSHED, MessageType.SMS, smsData.getMessageId(),
-                            smsData.getNativeProviderId()));
+                    String folder = CmsUtils.contactToCmsFolder(smsData.getContact());
+                    CmsObject.ReadStatus readStatus = smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
+                            : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                    PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+                            : PushStatus.PUSHED;
+                    mCmsLog.addMessage(new CmsObject(folder, readStatus,
+                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS,
+                            smsData.getMessageId(), smsData.getNativeProviderId()));
                 }
             } else if (MessageType.MMS == messageType) {
                 for (MmsDataObject mmsData : getMmsFromNativeProvider(id)) {
                     if (sLogger.isActivated()) {
-                        sLogger.debug(" Importing new MMS message :" + id);
+                        sLogger.debug("Import new MMS message Id=" + id + " mmsId="
+                                + mmsData.getMmsId());
                     }
                     if (Direction.OUTGOING == mmsData.getDirection()) {
                         mXmsLog.addOutgoingMms(mmsData);
                     } else {
                         mXmsLog.addIncomingMms(mmsData);
                     }
-                    mCmsLog.addMessage(new CmsObject(
-                            CmsUtils.contactToCmsFolder(mmsData.getContact()),
-                            mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                                    : CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                            CmsObject.DeleteStatus.NOT_DELETED,
-                            mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
-                                    : PushStatus.PUSHED, MessageType.MMS, mmsData.getMessageId(),
-                            mmsData.getNativeProviderId()));
+                    String folder = CmsUtils.contactToCmsFolder(mmsData.getContact());
+                    CmsObject.ReadStatus readStatus = mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
+                            : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                    PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                            : PushStatus.PUSHED;
+                    mCmsLog.addMessage(new CmsObject(folder, readStatus,
+                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS,
+                            mmsData.getMessageId(), mmsData.getNativeProviderId()));
                 }
             }
         }

@@ -224,12 +224,13 @@ public class LocalStorage {
                 try {
                     String messageId = mCmsEventListener.onRemoteNewMessage(messageType,
                             resolvedMessage, remote);
+                    ReadStatus readStatus = resolvedMessage.isSeen() ? ReadStatus.READ
+                            : ReadStatus.UNREAD;
+                    DeleteStatus delStatus = resolvedMessage.isDeleted() ? DeleteStatus.DELETED
+                            : DeleteStatus.NOT_DELETED;
                     CmsObject cmsObject = new CmsObject(resolvedMessage.getFolder(),
-                            resolvedMessage.getUid(), resolvedMessage.isSeen() ? ReadStatus.READ
-                                    : ReadStatus.UNREAD,
-                            resolvedMessage.isDeleted() ? DeleteStatus.DELETED
-                                    : DeleteStatus.NOT_DELETED, PushStatus.PUSHED, messageType,
-                            messageId, null);
+                            resolvedMessage.getUid(), readStatus, delStatus, PushStatus.PUSHED,
+                            messageType, messageId, null);
                     mCmsLog.addMessage(cmsObject);
 
                 } catch (CmsSyncException e) {

@@ -122,26 +122,26 @@ public class CmsProvider extends ContentProvider {
             
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' +
                     BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
-                    CmsObject.KEY_FOLDER_NAME + " TEXT NOT NULL," +
+                    CmsObject.KEY_FOLDER + " TEXT NOT NULL," +
                     CmsObject.KEY_UID + " INTEGER," + 
                     CmsObject.KEY_READ_STATUS + " INTEGER NOT NULL," + 
-                    CmsObject.KEY_DELETE_STATUS + " INTEGER NOT NULL," + 
+                    CmsObject.KEY_DEL_STATUS + " INTEGER NOT NULL," +
                     CmsObject.KEY_PUSH_STATUS + " INTEGER NOT NULL," + 
-                    CmsObject.KEY_MESSAGE_TYPE + " TEXT NOT NULL," + 
-                    CmsObject.KEY_MESSAGE_ID + " TEXT NOT NULL," + 
-                    CmsObject.KEY_NATIVE_PROVIDER_ID + " INTEGER)");
+                    CmsObject.KEY_MSG_TYPE + " TEXT NOT NULL," +
+                    CmsObject.KEY_MSG_ID + " TEXT NOT NULL," +
+                    CmsObject.KEY_NATIVE_ID + " INTEGER)");
             
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_idx"
-                    + " ON " + TABLE_MESSAGE + '(' + CmsObject.KEY_FOLDER_NAME + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER_NAME + "_"
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER + "_idx"
+                    + " ON " + TABLE_MESSAGE + '(' + CmsObject.KEY_FOLDER + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER + "_"
                     + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
-                    + CmsObject.KEY_FOLDER_NAME + "," + CmsObject.KEY_UID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MESSAGE_ID + "_" +
-                    CmsObject.KEY_MESSAGE_TYPE + "_idx" + " ON " + TABLE_MESSAGE +
-                    '(' + CmsObject.KEY_MESSAGE_ID + "," + CmsObject.KEY_MESSAGE_TYPE + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MESSAGE_ID + "_"
+                    + CmsObject.KEY_FOLDER + "," + CmsObject.KEY_UID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MSG_ID + "_" +
+                    CmsObject.KEY_MSG_TYPE + "_idx" + " ON " + TABLE_MESSAGE +
+                    '(' + CmsObject.KEY_MSG_ID + "," + CmsObject.KEY_MSG_TYPE + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MSG_ID + "_"
                     + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
-                    + CmsObject.KEY_MESSAGE_ID + "," + CmsObject.KEY_UID + ')');
+                    + CmsObject.KEY_MSG_ID + "," + CmsObject.KEY_UID + ')');
         }
         // @formatter:on
 

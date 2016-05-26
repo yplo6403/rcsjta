@@ -36,7 +36,7 @@ public final class CmsObject {
     /**
      * Mailbox name
      */
-    /* package private */static final String KEY_FOLDER_NAME = "foldername";
+    /* package private */static final String KEY_FOLDER = "folder";
 
     /**
      * UID IMAP counter
@@ -46,32 +46,32 @@ public final class CmsObject {
     /**
      * IMAP Flag Seen
      */
-    /* package private */static final String KEY_READ_STATUS = "read_status";
+    /* package private */static final String KEY_READ_STATUS = "readStatus";
 
     /**
      * IMAP Flag Deleted
      */
-    /* package private */static final String KEY_DELETE_STATUS = "delete_status";
+    /* package private */static final String KEY_DEL_STATUS = "delStatus";
 
     /**
      * Push status
      */
-    /* package private */static final String KEY_PUSH_STATUS = "push_status";
+    /* package private */static final String KEY_PUSH_STATUS = "pushStatus";
 
     /**
-     * RCS Message Type
+     * Message Type
      */
-    /* package private */static final String KEY_MESSAGE_TYPE = "messageType";
+    /* package private */static final String KEY_MSG_TYPE = "msgType";
 
     /**
-     * RCS Message Id
+     * Message Id
      */
-    /* package private */static final String KEY_MESSAGE_ID = "messageId";
+    /* package private */static final String KEY_MSG_ID = "msgId";
 
     /**
-     * RCS Message Id
+     * Native provider Id
      */
-    /* package private */static final String KEY_NATIVE_PROVIDER_ID = "nativeProviderId";
+    /* package private */static final String KEY_NATIVE_ID = "nativeId";
 
     public enum MessageType {
         SMS, MMS, MESSAGE_CPIM, CHAT_MESSAGE, IMDN, CPM_SESSION, GROUP_STATE, FILE_TRANSFER
@@ -353,10 +353,9 @@ public final class CmsObject {
 
     @Override
     public String toString() {
-        return "CmsObject{" + "mFolder='" + mFolder + '\'' + ", mUid=" + mUid + ", mReadStatus="
-                + mReadStatus + ", mDeleteStatus=" + mDeleteStatus + ", mPushStatus=" + mPushStatus
-                + ", mMessageType=" + mMessageType + ", mMessageId='" + mMessageId + '\''
-                + ", mNativeProviderId=" + mNativeProviderId + '}';
+        return "CmsObject{Folder=" + mFolder + ", uid=" + mUid + ", readStatus=" + mReadStatus
+                + ", delStatus=" + mDeleteStatus + ", pushStatus=" + mPushStatus + ", Type="
+                + mMessageType + ", msgId=" + mMessageId + ", mNativeId=" + mNativeProviderId + '}';
     }
 
     @Override

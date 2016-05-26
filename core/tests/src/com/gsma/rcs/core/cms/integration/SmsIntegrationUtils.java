@@ -55,17 +55,29 @@ public class SmsIntegrationUtils {
     public static class Test2 {
 
         public static CmsObject[] cmsObjectReadRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "2", null),
-                new CmsObject(Test1.folderName, 3, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "3", null),
-                new CmsObject(Test1.folderName, 4, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "4", null),
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ_REPORT_REQUESTED,
+                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ_REPORT_REQUESTED,
+                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "2", null),
+                new CmsObject(Test1.folderName, 3, ReadStatus.READ_REPORT_REQUESTED,
+                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "3", null),
+                new CmsObject(Test1.folderName, 4, ReadStatus.READ_REPORT_REQUESTED,
+                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "4", null),
         };
 
         public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "2", null),
-                new CmsObject(Test1.folderName, 3, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "3", null),
-                new CmsObject(Test1.folderName, 4, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "4", null),
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "2", null),
+                new CmsObject(Test1.folderName, 3, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "3", null),
+                new CmsObject(Test1.folderName, 4, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "4", null),
         };
 
     }
@@ -75,19 +87,26 @@ public class SmsIntegrationUtils {
         public static ContactId contactId = ContactUtil
                 .createContactIdFromTrustedData("+33640332858");
         public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS, "2", null),
+                new CmsObject(Test1.folderName, 1, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "1", null),
+                new CmsObject(Test1.folderName, 2, ReadStatus.READ,
+                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
+                        "2", null),
         };
 
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.READ;
 
         public static SmsDataObject[] conversation = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "How are you?",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000,
+                        2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Fine, and you?",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000, 3l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000,
+                        3l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Fine, thanks",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4l, 1l),
         };
@@ -104,11 +123,14 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
-                        Direction.OUTGOING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000, 3l, 1l),
+                        Direction.OUTGOING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000,
+                        3l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000,
+                        2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4l, 1l),
         };
@@ -122,18 +144,23 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_remote = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
+                        2l, 1l),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
+                        2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 3l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000,
+                        3l, 1l),
 
         };
     }
@@ -146,16 +173,20 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_remote = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000,
+                        2l, 1l),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
+                        2l, 1l),
         };
 
     }
@@ -177,7 +208,8 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_1 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hello 1!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hi 1",
                         Direction.INCOMING, RcsService.ReadStatus.READ,
                         NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
@@ -185,7 +217,8 @@ public class SmsIntegrationUtils {
                         Direction.OUTGOING, RcsService.ReadStatus.READ,
                         NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Bye 1",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
+                        2l, 1l),
         };
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[] {
@@ -199,9 +232,11 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_3 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Hello 3!",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 1l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Bye 3",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2l, 1l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
+                        2l, 1l),
         };
     }
 
@@ -218,7 +253,8 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_1 = new SmsDataObject[] {
             new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hello !",
-                    Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 1l),
+                    Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l,
+                    1l),
         };
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[] {
@@ -232,9 +268,11 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_3 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Hello",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1l, 3l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        1l, 3l),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Bye",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 2l, 3l),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
+                        2l, 3l),
         };
     }
 }
