@@ -35,6 +35,7 @@ import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -380,11 +381,12 @@ public class CmsSyncScheduler {
     private boolean executePushRequest() {
         CmsSyncPushRequestTask.ICmsSyncPushRequestTask callback = new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
             @Override
-            public void onMessagesPushed(Map<String, Integer> uids) {
-                for (Entry<String, Integer> entry : uids.entrySet()) {
-                    String baseId = entry.getKey();
+            public void onMessagesPushed(Map<XmsDataObject, Integer> uids) {
+                for (Entry<XmsDataObject, Integer> entry : uids.entrySet()) {
+                    XmsDataObject message = entry.getKey();
                     Integer uid = entry.getValue();
-                    mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                    mCmsLog.updateXmsPushStatus(uid, message.getContact(), message.getMessageId(),
+                            PushStatus.PUSHED);
                 }
             }
 

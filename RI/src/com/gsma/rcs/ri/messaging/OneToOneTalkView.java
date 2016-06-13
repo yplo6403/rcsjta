@@ -29,7 +29,6 @@ import com.gsma.rcs.ri.cms.messaging.InitiateMmsTransfer;
 import com.gsma.rcs.ri.cms.messaging.SendMmsInBackground;
 import com.gsma.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.gsma.rcs.ri.messaging.chat.ChatCursorObserver;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager;
 import com.gsma.rcs.ri.messaging.chat.single.SendSingleFile;
 import com.gsma.rcs.ri.messaging.chat.single.SingleChatIntentService;
@@ -441,6 +440,11 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 }
             }
 
+            @Override
+            public void onMessageRead(ContactId contact, String msgId) {
+
+            }
+
         };
         mCapabilitiesListener = new CapabilitiesListener() {
             @Override
@@ -675,8 +679,8 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     }
 
     private void clearNotification() {
-        ChatPendingIntentManager pendingIntentManager = ChatPendingIntentManager
-                .getChatPendingIntentManager(this);
+        TalkPendingIntentManager pendingIntentManager = TalkPendingIntentManager
+                .getTalkPendingIntentManager(this);
         pendingIntentManager.clearNotification(mContact.toString());
     }
 
@@ -711,7 +715,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             }
         }
         if (MessagingMode.XMS == mMessagingMode) {
-        /* Request for capabilities ony if they are not available or expired */
+            /* Request for capabilities ony if they are not available or expired */
             requestCapabilities(mContact);
         }
     }
@@ -1044,7 +1048,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                 case R.id.menu_delete_message:
                     switch (providerId) {
                         case XmsMessageLog.HISTORYLOG_MEMBER_ID:
-                            mCmsService.deleteXmsMessage(id);
+                            mCmsService.deleteXmsMessage(mContact, id);
                             break;
 
                         case ChatLog.Message.HISTORYLOG_MEMBER_ID:

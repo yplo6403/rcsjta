@@ -42,12 +42,11 @@ public class GeolocSharingDeleteTask extends DeleteTask.GroupedByContactId {
      * @param geolocSharingService the geoloc service impl
      * @param richcallService the rich call service
      * @param contentResolver the local content resolver
-     * @param imsLock the ims operation lock
      */
     public GeolocSharingDeleteTask(GeolocSharingServiceImpl geolocSharingService,
             RichcallService richcallService, LocalContentResolver contentResolver) {
         super(contentResolver, GeolocSharingData.CONTENT_URI, GeolocSharingData.KEY_SHARING_ID,
-                GeolocSharingData.KEY_CONTACT, (String) null);
+                true, GeolocSharingData.KEY_CONTACT, false, null);
         mGeolocSharingService = geolocSharingService;
         mRichcallService = richcallService;
     }
@@ -58,14 +57,12 @@ public class GeolocSharingDeleteTask extends DeleteTask.GroupedByContactId {
      * @param geolocSharingService the geoloc service impl
      * @param richcallService the rich call service
      * @param contentResolver the local content resolver
-     * @param imsLock the ims operation lock
      * @param contact the contact id
      */
     public GeolocSharingDeleteTask(GeolocSharingServiceImpl geolocSharingService,
-            RichcallService richcallService, LocalContentResolver contentResolver,
-            ContactId contact) {
-        super(contentResolver, GeolocSharingData.CONTENT_URI,
-                GeolocSharingData.KEY_SHARING_ID, GeolocSharingData.KEY_CONTACT, contact);
+            RichcallService richcallService, LocalContentResolver contentResolver, ContactId contact) {
+        super(contentResolver, GeolocSharingData.CONTENT_URI, GeolocSharingData.KEY_SHARING_ID,
+                true, GeolocSharingData.KEY_CONTACT, contact);
         mGeolocSharingService = geolocSharingService;
         mRichcallService = richcallService;
     }
@@ -76,14 +73,12 @@ public class GeolocSharingDeleteTask extends DeleteTask.GroupedByContactId {
      * @param geolocSharingService the geoloc service impl
      * @param richcallService the rich call service
      * @param contentResolver the local content resolver
-     * @param imsLock the ims operation lock
      * @param transferId the transfer id
      */
     public GeolocSharingDeleteTask(GeolocSharingServiceImpl geolocSharingService,
-            RichcallService richcallService, LocalContentResolver contentResolver,
-            String transferId) {
+            RichcallService richcallService, LocalContentResolver contentResolver, String transferId) {
         super(contentResolver, GeolocSharingData.CONTENT_URI, GeolocSharingData.KEY_SHARING_ID,
-                GeolocSharingData.KEY_CONTACT, null, transferId);
+                true, GeolocSharingData.KEY_CONTACT, true, null, transferId);
         mGeolocSharingService = geolocSharingService;
         mRichcallService = richcallService;
     }

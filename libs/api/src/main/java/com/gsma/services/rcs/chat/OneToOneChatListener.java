@@ -65,4 +65,12 @@ public abstract class OneToOneChatListener {
      * @param msgIds message ids of those deleted messages
      */
     public abstract void onMessagesDeleted(ContactId contact, Set<String> msgIds);
+
+    /**
+     * Callback called when a read operation completed.
+     *
+     * @param contact contact id of this read message
+     * @param msgId message id of the read message
+     */
+    public abstract void onMessageRead(ContactId contact, String msgId);
 }

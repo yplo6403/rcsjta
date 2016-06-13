@@ -169,13 +169,13 @@ public class InitiateMmsTransfer extends RcsActivity {
         FileUtils.openFiles(this, mMimeType, PICK_IMAGE_REQUEST);
     }
 
-    private void addImagePart(List<MmsPartDataObject> mmsParts, ContactId contact, Uri uri) {
+    private void addImagePart(List<MmsPartDataObject> mmsParts, Uri uri) {
         String filename = FileUtils.getFileName(this, uri);
         Long fileSize = FileUtils.getFileSize(this, uri);
         String mimeType = FileUtils.getMimeType(this, uri);
         if (mimeType != null && Utils.isImageType(mimeType)) {
             takePersistableContentUriPermission(this, uri);
-            mmsParts.add(new MmsPartDataObject(mimeType, uri, filename, fileSize, contact));
+            mmsParts.add(new MmsPartDataObject(mimeType, uri, filename, fileSize));
         }
     }
 
@@ -189,12 +189,12 @@ public class InitiateMmsTransfer extends RcsActivity {
             if (clipData != null) {
                 for (int i = 0; i < clipData.getItemCount(); i++) {
                     ClipData.Item item = clipData.getItemAt(i);
-                    addImagePart(mMmsParts, mContact, item.getUri());
+                    addImagePart(mMmsParts, item.getUri());
                 }
             } else {
                 Uri uri = data.getData();
                 if (uri != null) {
-                    addImagePart(mMmsParts, mContact, uri);
+                    addImagePart(mMmsParts, uri);
                 } else {
                     return;
                 }

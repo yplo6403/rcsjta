@@ -26,7 +26,7 @@ import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.messaging.GroupTalkView;
 import com.gsma.rcs.ri.messaging.OneToOneTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.gsma.rcs.ri.messaging.TalkPendingIntentManager;
 import com.gsma.rcs.ri.settings.RiSettings;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsContactUtil;
@@ -75,7 +75,8 @@ public class FileTransferIntentService extends IntentService {
 
     private static final String SEL_UNDELIVERED_FTS = FileTransferLog.CHAT_ID + "=? AND "
             + FileTransferLog.EXPIRED_DELIVERY + "='1'";
-    private ChatPendingIntentManager mPendingIntentManager;
+
+    private TalkPendingIntentManager mPendingIntentManager;
 
     /**
      * Constructor
@@ -87,7 +88,7 @@ public class FileTransferIntentService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mPendingIntentManager = ChatPendingIntentManager.getChatPendingIntentManager(this);
+        mPendingIntentManager = TalkPendingIntentManager.getTalkPendingIntentManager(this);
     }
 
     @Override
@@ -177,7 +178,7 @@ public class FileTransferIntentService extends IntentService {
          * flags it will be replaced. Invitation should be notified individually so we use a random
          * generator to provide a unique request code and reuse it for the notification.
          */
-        Integer uniqueId = mPendingIntentManager.tryContinueChatConversation(intent, chatId);
+        Integer uniqueId = mPendingIntentManager.tryContinueConversation(intent, chatId);
         if (uniqueId != null) {
             PendingIntent pi = PendingIntent.getActivity(this, uniqueId, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
@@ -233,10 +234,9 @@ public class FileTransferIntentService extends IntentService {
 
     private void forwardUndeliveredFileTransferToUi(Intent undeliveredIntent, ContactId contact) {
         Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, undeliveredIntent);
-        ChatPendingIntentManager pendingIntentmanager = ChatPendingIntentManager
-                .getChatPendingIntentManager(this);
-        Integer uniqueId = pendingIntentmanager.tryContinueChatConversation(intent,
-                contact.toString());
+        TalkPendingIntentManager pendingIntentmanager = TalkPendingIntentManager
+                .getTalkPendingIntentManager(this);
+        Integer uniqueId = pendingIntentmanager.tryContinueConversation(intent, contact.toString());
         if (uniqueId != null) {
             PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);

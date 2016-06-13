@@ -16,7 +16,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.gsma.rcs.ri.messaging.chat;
+package com.gsma.rcs.ri.messaging;
 
 import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.utils.Utils;
@@ -34,17 +34,17 @@ import android.util.LruCache;
  * 
  * @author Philippe LEMORDANT
  */
-public class ChatPendingIntentManager {
+public class TalkPendingIntentManager {
 
-    private static volatile ChatPendingIntentManager sChatPendingIntentManager;
+    private static volatile TalkPendingIntentManager sTalkPendingIntentManager;
 
     private final IForegroundInfo mForegroundInfo;
 
-    private static final int MAX_CHAT_HAVING_PENDING_MESSAGE = 10;
+    private static final int MAX_TALK_HAVING_PENDING_MESSAGE = 10;
 
     /*
-     * A cache of notification ID associated with each chat conversation having pending message. The
-     * key is the chat ID and the value is the notification ID.
+     * A cache of notification ID associated with each conversation having pending message. The key
+     * is the chat ID and the value is the notification ID.
      */
     private final LruCache<String, Integer> mPendingNotificationIdCache;
 
@@ -56,11 +56,11 @@ public class ChatPendingIntentManager {
         boolean isConversationOnForeground(String chatId);
     }
 
-    private ChatPendingIntentManager(Context ctx, IForegroundInfo foregroundInfo) {
+    private TalkPendingIntentManager(Context ctx, IForegroundInfo foregroundInfo) {
         mCtx = ctx;
         mForegroundInfo = foregroundInfo;
         mNotifManager = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        mPendingNotificationIdCache = new LruCache<String, Integer>(MAX_CHAT_HAVING_PENDING_MESSAGE) {
+        mPendingNotificationIdCache = new LruCache<String, Integer>(MAX_TALK_HAVING_PENDING_MESSAGE) {
 
             @Override
             protected void entryRemoved(boolean evicted, String key, Integer oldValue,
@@ -74,14 +74,14 @@ public class ChatPendingIntentManager {
     }
 
     /**
-     * Try to continue chat conversation
+     * Try to continue conversation
      * 
-     * @param continueChat the intent to continue the chat conversation
+     * @param continueTalk the intent to continue the conversation
      * @param chatId the chat ID
-     * @return the unique ID to be used to create the pending intent if chat conversation is not on
+     * @return the unique ID to be used to create the pending intent if conversation is not on
      *         foreground or null if continuing the conversation succeeded
      */
-    public Integer tryContinueChatConversation(Intent continueChat, String chatId) {
+    public Integer tryContinueConversation(Intent continueTalk, String chatId) {
         if (mForegroundInfo.isConversationOnForeground(chatId)) {
             /*
              * Do not display notification if activity is on foreground for this chatId
@@ -92,7 +92,7 @@ public class ChatPendingIntentManager {
                 mNotifManager.cancel(pendingIntentId);
             }
             /* This will trigger onNewIntent for the target activity */
-            mCtx.startActivity(continueChat);
+            mCtx.startActivity(continueTalk);
             return null;
         }
         Integer uniquePendingIntentId = mPendingNotificationIdCache.get(chatId);
@@ -121,21 +121,21 @@ public class ChatPendingIntentManager {
     }
 
     /**
-     * Gets Chat pending intent manager
+     * Gets talk pending intent manager
      * 
      * @param ctx the context
      * @return the instance
      */
-    public static ChatPendingIntentManager getChatPendingIntentManager(Context ctx) {
+    public static TalkPendingIntentManager getTalkPendingIntentManager(Context ctx) {
         /* "Double-Checked Locking" idiom for singleton creation */
-        if (sChatPendingIntentManager != null) {
-            return sChatPendingIntentManager;
+        if (sTalkPendingIntentManager != null) {
+            return sTalkPendingIntentManager;
         }
-        synchronized (ChatPendingIntentManager.class) {
-            if (sChatPendingIntentManager == null) {
-                sChatPendingIntentManager = new ChatPendingIntentManager(
+        synchronized (TalkPendingIntentManager.class) {
+            if (sTalkPendingIntentManager == null) {
+                sTalkPendingIntentManager = new TalkPendingIntentManager(
                         ctx.getApplicationContext(),
-                        new ChatPendingIntentManager.IForegroundInfo() {
+                        new TalkPendingIntentManager.IForegroundInfo() {
 
                             @Override
                             public boolean isConversationOnForeground(String chatId) {
@@ -144,7 +144,7 @@ public class ChatPendingIntentManager {
                             }
                         });
             }
-            return sChatPendingIntentManager;
+            return sTalkPendingIntentManager;
         }
     }
 

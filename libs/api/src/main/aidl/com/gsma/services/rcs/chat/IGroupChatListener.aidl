@@ -22,4 +22,6 @@ interface IGroupChatListener {
 	void onDeleted(in List<String> chatIds);
 
 	void onMessagesDeleted(in String chatId, in List<String> msgIds);
+
+	void onMessageRead(in String chatId, in String msgId);
 }

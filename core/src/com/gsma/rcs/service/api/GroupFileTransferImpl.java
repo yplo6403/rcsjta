@@ -18,7 +18,7 @@
 package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -79,7 +79,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
 
     private final MessagingLog mMessagingLog;
 
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
 
     private String mChatId;
 
@@ -87,8 +87,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
 
     private final ContactManager mContactManager;
 
-    private final static Logger sLogger = Logger.getLogger(GroupFileTransferImpl.class
-            .getSimpleName());
+    private final static Logger sLogger = Logger.getLogger(GroupFileTransferImpl.class.getName());
 
     /**
      * Constructor
@@ -102,14 +101,14 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
      * @param messagingLog The messaging log accessor
      * @param contactManager The contact manager accessor
      * @param chatId Chat Id
-     * @param cmsManager The CMS manager
+     * @param cmsSessionCtrl The CMS session controller
      */
     public GroupFileTransferImpl(InstantMessagingService imService, String transferId,
             GroupFileTransferBroadcaster broadcaster,
             FileTransferPersistedStorageAccessor persistedStorage,
             FileTransferServiceImpl fileTransferService, RcsSettings rcsSettings,
             MessagingLog messagingLog, ContactManager contactManager, String chatId,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionCtrl) {
         mImService = imService;
         mFileTransferId = transferId;
         mBroadcaster = broadcaster;
@@ -119,7 +118,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
         mMessagingLog = messagingLog;
         mContactManager = contactManager;
         mChatId = chatId;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
     }
 
     private State getRcsState(FileSharingSession session) {
@@ -1089,7 +1088,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
             mPersistedStorage.addIncomingGroupFileTransfer(mChatId, contact, file, fileIcon,
                     State.INVITED, ReasonCode.UNSPECIFIED, timestamp, timestampSent,
                     fileExpiration, fileIconExpiration);
-            mCmsManager.getFileTransferEventHandler().onNewGroupFileTransfer(mChatId,
+            mCmsSessionCtrl.getFileTransferEventHandler().onNewGroupFileTransfer(mChatId,
                     Direction.INCOMING, mFileTransferId);
         }
         mBroadcaster.broadcastInvitation(mFileTransferId);
@@ -1105,7 +1104,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
             mPersistedStorage.addIncomingGroupFileTransfer(mChatId, contact, file, fileIcon,
                     State.ACCEPTING, ReasonCode.UNSPECIFIED, timestamp, timestampSent,
                     fileExpiration, fileIconExpiration);
-            mCmsManager.getFileTransferEventHandler().onNewGroupFileTransfer(mChatId,
+            mCmsSessionCtrl.getFileTransferEventHandler().onNewGroupFileTransfer(mChatId,
                     Direction.INCOMING, mFileTransferId);
         }
         mBroadcaster.broadcastInvitation(mFileTransferId);

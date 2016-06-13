@@ -87,4 +87,10 @@ public class ImapSmsMessage extends ImapCpimMessage {
     public long getDate() {
         return mDate;
     }
+
+    @Override
+    public String toString() {
+        return "ImapSmsMessage{remote=" + getContact() + ",uid=" + getUid() + ",dir="
+                + getDirection() + ",correlator='" + mCorrelator + '\'' + ",date=" + mDate + '}';
+    }
 }

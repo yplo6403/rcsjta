@@ -349,7 +349,7 @@ public class FileTransferLog implements IFileTransferLog {
     }
 
     @Override
-    public int markFileTransferAsRead(String fileTransferId, long displayedTimestamp) {
+    public boolean markFileTransferAsRead(String fileTransferId, long displayedTimestamp) {
         if (sLogger.isActivated()) {
             sLogger.debug("Mark file transfer as read ID=" + fileTransferId);
         }
@@ -358,7 +358,7 @@ public class FileTransferLog implements IFileTransferLog {
         values.put(FileTransferData.KEY_TIMESTAMP_DISPLAYED, displayedTimestamp);
         return mLocalContentResolver.update(
                 Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId), values,
-                SELECTION_BY_NOT_READ, null);
+                SELECTION_BY_NOT_READ, null) > 0;
     }
 
     @Override

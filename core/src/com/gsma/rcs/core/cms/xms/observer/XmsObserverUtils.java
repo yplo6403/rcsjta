@@ -21,7 +21,9 @@ package com.gsma.rcs.core.cms.xms.observer;
 
 import com.gsma.services.rcs.cms.XmsMessage.State;
 
+import android.annotation.TargetApi;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.TextBasedSmsColumns;
@@ -29,6 +31,7 @@ import android.provider.Telephony.TextBasedSmsColumns;
 import java.util.Arrays;
 import java.util.List;
 
+@TargetApi(Build.VERSION_CODES.KITKAT)
 public class XmsObserverUtils {
 
     public static class Sms {
@@ -42,7 +45,7 @@ public class XmsObserverUtils {
                 Telephony.TextBasedSmsColumns.ADDRESS, Telephony.TextBasedSmsColumns.DATE,
                 Telephony.TextBasedSmsColumns.DATE_SENT, Telephony.TextBasedSmsColumns.PROTOCOL,
                 Telephony.TextBasedSmsColumns.STATUS, Telephony.TextBasedSmsColumns.TYPE,
-                Telephony.TextBasedSmsColumns.BODY
+                Telephony.TextBasedSmsColumns.BODY, Telephony.TextBasedSmsColumns.READ
         };
 
         static final String[] PROJECTION_ID = new String[] {
@@ -58,12 +61,6 @@ public class XmsObserverUtils {
 
         static final String[] PROJECTION_MMS_ID = new String[] {
             Telephony.BaseMmsColumns.MESSAGE_ID
-        };
-        public static final String[] PROJECTION = new String[] {
-                Telephony.BaseMmsColumns._ID, Telephony.BaseMmsColumns.SUBJECT,
-                Telephony.BaseMmsColumns.MESSAGE_ID, Telephony.BaseMmsColumns.MESSAGE_TYPE,
-                Telephony.BaseMmsColumns.THREAD_ID, Telephony.BaseMmsColumns.DATE,
-                Telephony.BaseMmsColumns.TRANSACTION_ID
         };
 
         private static final String WHERE_INBOX = Telephony.BaseMmsColumns.MESSAGE_BOX + "="
@@ -109,7 +106,6 @@ public class XmsObserverUtils {
         if (type == TextBasedSmsColumns.MESSAGE_TYPE_FAILED) {
             return State.FAILED;
         }
-
         if (type == TextBasedSmsColumns.MESSAGE_TYPE_SENT) {
             if (status == TextBasedSmsColumns.STATUS_COMPLETE) {
                 return State.DELIVERED;

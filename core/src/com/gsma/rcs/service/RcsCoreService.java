@@ -27,8 +27,7 @@ import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.TerminalInfo;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.core.cms.service.CmsManager;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.ims.ImsError;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -299,24 +298,23 @@ public class RcsCoreService extends Service implements CoreListener {
             RichcallService richCallService = core.getRichcallService();
             SipService sipService = core.getSipService();
             CapabilityService capabilityService = core.getCapabilityService();
-            CmsService cmsService = core.getCmsService();
-            CmsManager cmsManager = cmsService.getCmsManager();
+            CmsSessionController cmsSessionCtrl = core.getCmsSessionCtrl();
             mContactApi = new ContactServiceImpl(mContactManager, mRcsSettings);
             mCapabilityApi = new CapabilityServiceImpl(capabilityService, mContactManager,
                     mRcsSettings);
             mChatApi = new ChatServiceImpl(imService, mMessagingLog, mHistoryLog, mRcsSettings,
-                    mContactManager, cmsManager);
+                    mContactManager, cmsSessionCtrl);
 
             mFtApi = new FileTransferServiceImpl(imService, mChatApi, mMessagingLog, mRcsSettings,
-                    mContactManager, mCtx, cmsManager);
+                    mContactManager, mCtx, cmsSessionCtrl);
             mVshApi = new VideoSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mIshApi = new ImageSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mGshApi = new GeolocSharingServiceImpl(richCallService, mRichCallHistory, mRcsSettings);
             mHistoryApi = new HistoryServiceImpl(mCtx);
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
-            mCmsApi = new CmsServiceImpl(mCtx, cmsService, mChatApi, mFtApi, mXmsLog, mRcsSettings,
-                    core.getXmsManager(), mLocalContentResolver, cmsManager);
+            mCmsApi = new CmsServiceImpl(mCtx, cmsSessionCtrl, mChatApi, mFtApi, imService,
+                    mXmsLog, mRcsSettings, core.getXmsManager(), mLocalContentResolver);
             // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
             XmsEventHandler xmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings,
                     mCmsApi);
@@ -596,7 +594,7 @@ public class RcsCoreService extends Service implements CoreListener {
         Core core = Core.getInstance();
         core.getImService().onCoreLayerStarted();
         core.getRichcallService().onCoreLayerStarted();
-        core.getCmsService().onCoreLayerStarted();
+        core.getCmsSessionCtrl().onCoreLayerStarted();
         IntentUtils.sendBroadcastEvent(mCtx, RcsService.ACTION_SERVICE_UP);
     }
 

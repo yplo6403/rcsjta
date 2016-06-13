@@ -65,20 +65,20 @@ public class CmsSyncHandler {
     }
 
     /**
-     * Synchronize IMAP headers between local and remote folders
+     * Gets the IMAP unSynchronized headers of the remote folder
      *
-     * @param localFolder the local folder
+     * @param maxLocalUid the max UID of the local folder
      * @param remoteFolder the remote folder
      * @return List<ImapMessage>
      * @throws IOException
      * @throws ImapException
      */
-    public List<ImapMessage> syncRemoteHeaders(CmsFolder localFolder, ImapFolder remoteFolder)
+    public List<ImapMessage> getRemoteUnSyncHeaders(int maxLocalUid, ImapFolder remoteFolder)
             throws ImapException, IOException {
-        List<ImapMessage> messages = mImapService.fetchHeaders(localFolder.getMaxUid() + 1,
+        List<ImapMessage> messages = mImapService.fetchHeaders(maxLocalUid + 1,
                 remoteFolder.getUidNext());
-        for (ImapMessage imapMessage : messages) {
-            imapMessage.setFolderPath(remoteFolder.getName());
+        for (ImapMessage message : messages) {
+            message.setFolderPath(remoteFolder.getName());
         }
         return messages;
     }

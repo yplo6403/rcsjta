@@ -17,7 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -25,6 +25,8 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.DeliveryExpirationManager;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -36,90 +38,124 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
     private static final Logger sLogger = Logger.getLogger(OneToOneChatMessageDeleteTask.class
             .getName());
 
-    private static final String SELECTION_ONETOONE_CHATMESSAGES = MessageData.KEY_CHAT_ID + "="
+    private static final String SEL_ONETOONE_CHATMESSAGES = MessageData.KEY_CHAT_ID + "="
             + MessageData.KEY_CONTACT;
 
-    private static final String SELECTION_ONETOONE_CHATMESSAGES_BY_CHATID = MessageData.KEY_CHAT_ID
+    private static final String SEL_ONETOONE_CHATMESSAGES_BY_CHATID = MessageData.KEY_CHAT_ID
             + "=?";
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
+    private final CmsLog mCmsLog;
 
     /**
-     * Deletion of all one to one chat messages.
+     * Constructor to delete all one to one chat messages.
      * 
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            CmsManager cmsManager) {
-        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CONTACT, SELECTION_ONETOONE_CHATMESSAGES);
+            CmsSessionController cmsSessionCtrl) {
+        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID, true,
+                MessageData.KEY_CONTACT, false, SEL_ONETOONE_CHATMESSAGES);
         mChatService = chatService;
         mImService = imService;
         setAllAtOnce(true);
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
+        if (sLogger.isActivated()) {
+            sLogger.debug("OneToOneChatMessageDeleteTask delete all messages");
+        }
     }
 
     /**
-     * Deletion of a specific chat message.
+     * Constructor to delete a specific chat message.
      * 
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param messageId the message id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            String messageId, CmsManager cmsManager) {
-        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CONTACT, null, messageId);
+            String messageId, CmsSessionController cmsSessionController) {
+        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID, true,
+                MessageData.KEY_CONTACT, true, null, messageId);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
+        mCmsLog = null;
+        if (sLogger.isActivated()) {
+            sLogger.debug("OneToOneChatMessageDeleteTask delete ID=" + messageId);
+        }
     }
 
     /**
-     * Deletion of a specific one to one conversation.
+     * Constructor to process event of deletion for a specific message ID
      * 
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param contact the contact
-     * @param cmsManager the CMS manager
+     * @param messageId the message id
+     * @param cmsLog the CMS log accessor
      */
     public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            ContactId contact, CmsManager cmsManager) {
-        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CONTACT, SELECTION_ONETOONE_CHATMESSAGES_BY_CHATID, contact
+            String messageId, CmsLog cmsLog) {
+        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID, true,
+                MessageData.KEY_CONTACT, true, null, messageId);
+        mChatService = chatService;
+        mImService = imService;
+        mCmsSessionCtrl = null;
+        mCmsLog = cmsLog;
+        if (sLogger.isActivated()) {
+            sLogger.debug("OneToOneChatMessageDeleteTask delete ID=" + messageId);
+        }
+    }
+
+    /**
+     * Constructor to delete a specific one to one conversation.
+     * 
+     * @param chatService the chat service impl
+     * @param imService the IM service
+     * @param contentResolver the content resolver
+     * @param cmsSessionController the CMS session controller
+     */
+    public OneToOneChatMessageDeleteTask(ChatServiceImpl chatService,
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            ContactId contact, CmsSessionController cmsSessionController) {
+        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID, true,
+                MessageData.KEY_CONTACT, false, SEL_ONETOONE_CHATMESSAGES_BY_CHATID, contact
                         .toString());
         mChatService = chatService;
         mImService = imService;
         setAllAtOnce(true);
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
+        mCmsLog = null;
+        if (sLogger.isActivated()) {
+            sLogger.debug("OneToOneChatMessageDeleteTask delete messages with contact " + contact);
+        }
     }
 
     @Override
     protected void onRowDelete(ContactId contact, String msgId) throws PayloadException {
         if (isSingleRowDelete()) {
             return;
-
         }
         ChatSession session = mImService.getOneToOneChatSession(contact);
         if (session == null) {
             mChatService.removeOneToOneChat(contact);
             return;
-
         }
         try {
             session.deleteSession();
+
         } catch (NetworkException e) {
             /*
              * If network is lost during a delete operation the remaining part of the delete
@@ -139,7 +175,14 @@ public class OneToOneChatMessageDeleteTask extends DeleteTask.GroupedByContactId
         for (String messageId : msgIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(messageId);
         }
-        mCmsManager.getChatEventHandler().onDeleteChatMessages(contact, msgIds);
+        if (mCmsSessionCtrl != null) {
+            mCmsSessionCtrl.getChatEventHandler().onDeleteChatMessages(contact, msgIds);
+        } else {
+            for (String delId : msgIds) {
+                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.CHAT_MESSAGE, delId,
+                        CmsObject.DeleteStatus.DELETED, null);
+            }
+        }
         mChatService.broadcastOneToOneMessagesDeleted(contact, msgIds);
     }
 }

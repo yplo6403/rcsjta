@@ -110,4 +110,12 @@ public abstract class GroupChatListener {
      * @param msgIds message ids of those deleted messages
      */
     public abstract void onMessagesDeleted(String chatId, Set<String> msgIds);
+
+    /**
+     * Callback called when a read operation completed.
+     *
+     * @param chatId chat id of this read message
+     * @param msgId message id of the read message
+     */
+    public abstract void onMessageRead(String chatId, String msgId);
 }

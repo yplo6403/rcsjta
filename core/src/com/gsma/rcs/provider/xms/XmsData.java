@@ -43,7 +43,8 @@ public class XmsData {
     public static final String KEY_BASECOLUMN_ID = XmsMessageLog.BASECOLUMN_ID;
 
     /**
-     * Unique XMS identifier.
+     * XMS identifier. There may have several occurrences of the same msg_id in the log but only one
+     * per contact.
      */
     public static final String KEY_MESSAGE_ID = XmsMessageLog.MESSAGE_ID;
 
@@ -112,11 +113,6 @@ public class XmsData {
      * Message correlator
      */
     public static final String KEY_MESSAGE_CORRELATOR = "correlator";
-
-    /**
-     * Multimedia Message ID.
-     */
-    public static final String KEY_MMS_ID = "mms_id";
 
     /**
      * Chat Id (column contains the contact Id).

@@ -21,8 +21,8 @@ package com.gsma.rcs.ri.messaging.chat.group;
 import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.messaging.GroupTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
+import com.gsma.rcs.ri.messaging.TalkPendingIntentManager;
 import com.gsma.rcs.ri.messaging.chat.ChatMessageDAO;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsContactUtil;
 import com.gsma.services.rcs.chat.ChatLog;
@@ -46,10 +46,9 @@ import android.util.Log;
  */
 public class GroupChatIntentService extends IntentService {
 
-    private ChatPendingIntentManager mChatPendingIntentManager;
+    private TalkPendingIntentManager mPendingIntentManager;
 
-    private static final String LOGTAG = LogUtils.getTag(GroupChatIntentService.class
-            .getSimpleName());
+    private static final String LOGTAG = LogUtils.getTag(GroupChatIntentService.class.getName());
 
     /**
      * Creates an IntentService.
@@ -61,7 +60,7 @@ public class GroupChatIntentService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mChatPendingIntentManager = ChatPendingIntentManager.getChatPendingIntentManager(this);
+        mPendingIntentManager = TalkPendingIntentManager.getTalkPendingIntentManager(this);
     }
 
     @Override
@@ -149,7 +148,7 @@ public class GroupChatIntentService extends IntentService {
         String chatId = message.getChatId();
         Intent intent = GroupTalkView.forgeIntentNewMessage(this, newGroupChatMessage, chatId);
         String content = message.getContent();
-        Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent, chatId);
+        Integer uniqueId = mPendingIntentManager.tryContinueConversation(intent, chatId);
         if (uniqueId != null) {
             PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
@@ -175,7 +174,7 @@ public class GroupChatIntentService extends IntentService {
             }
             Notification notif = buildNotification(contentIntent, title, msg);
             /* Send notification */
-            mChatPendingIntentManager.postNotification(uniqueId, notif);
+            mPendingIntentManager.postNotification(uniqueId, notif);
         }
     }
 
@@ -187,7 +186,7 @@ public class GroupChatIntentService extends IntentService {
          * flags it will be replaced. Invitation should be notified individually so we use a random
          * generator to provide a unique request code and reuse it for the notification.
          */
-        Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent, chatId);
+        Integer uniqueId = mPendingIntentManager.tryContinueConversation(intent, chatId);
         if (uniqueId != null) {
             PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
@@ -206,7 +205,7 @@ public class GroupChatIntentService extends IntentService {
             String msg = getString(R.string.label_subject_notif, subject);
             Notification notif = buildNotification(contentIntent, title, msg);
             /* Send notification */
-            mChatPendingIntentManager.postNotification(uniqueId, notif);
+            mPendingIntentManager.postNotification(uniqueId, notif);
         } else {
             if (LogUtils.isActive) {
                 Log.w(LOGTAG, "Received invitation for an existing group chat conversation chatId="

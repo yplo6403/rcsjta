@@ -25,7 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.Multipart;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -70,13 +70,13 @@ public class OriginatingOneToOneChatSession extends OneToOneChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager the contact manager
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public OriginatingOneToOneChatSession(InstantMessagingService imService, ContactId contact,
             ChatMessage msg, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager, CmsManager cmsManager) {
+            ContactManager contactManager, CmsSessionController cmsSessionCtrl) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), msg, rcsSettings,
-                messagingLog, timestamp, contactManager, cmsManager, null);
+                messagingLog, timestamp, contactManager, cmsSessionCtrl, null);
         // Create dialog path
         createOriginatingDialogPath();
         // Set contribution ID

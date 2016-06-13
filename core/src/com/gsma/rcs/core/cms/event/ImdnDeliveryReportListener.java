@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.core.cms.event;
 
+import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.services.rcs.contact.ContactId;
 
 /**
@@ -29,29 +30,32 @@ public interface ImdnDeliveryReportListener {
     /**
      * A delivery report message was received or sent
      *
-     * @param contact
-     * @param messageId the chat message ID
-     * @param imdnMessageId the IMDN message ID
+     * @param contact the remote contact
+     * @param msId the chat message ID
+     * @param imdnMsgId the IMDN message ID
      */
-    void onDeliveryReport(ContactId contact, String messageId, String imdnMessageId);
+    void onDeliveryReport(ContactId contact, String msId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status);
 
     /**
      * A delivery report message was received or sent
      *
-     * @param chatId
-     * @param messageId the chat message ID
-     * @param imdnMessageId the message ID
+     * @param chatId the chat ID
+     * @param mssId the chat message ID
+     * @param imdnMsgId the message ID
      */
-    void onDeliveryReport(String chatId, String messageId, String imdnMessageId);
+    void onDeliveryReport(String chatId, String mssId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status);
 
     /**
      * A delivery report message was received or sent
      * 
-     * @param contact
-     * @param chatId
-     * @param messageId the chat message ID
-     * @param imdnMessageId the message ID
+     * @param contact the remote contact
+     * @param chatId the chat ID
+     * @param msgId the chat message ID
+     * @param imdnMsgId the message ID
      */
-    void onDeliveryReport(String chatId, ContactId contact, String messageId, String imdnMessageId);
+    void onDeliveryReport(String chatId, ContactId contact, String msgId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status);
 
 }

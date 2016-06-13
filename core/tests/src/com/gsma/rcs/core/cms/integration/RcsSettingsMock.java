@@ -38,30 +38,34 @@ public class RcsSettingsMock {
     private static String mOriUserLogin;
     private static String mOriUserPwd;
     private static ContactId mOriContact;
+    private static RcsSettings sSettings;
 
     public static RcsSettings getMockSettings(Context context) throws RcsPermissionDeniedException {
-        RcsSettings settings = RcsSettings.getInstance(new LocalContentResolver(context));
-        AndroidFactory.setApplicationContext(context, settings);
-        mOriServerUri = settings.getMessageStoreUri();
-        mOriUserLogin = settings.getMessageStoreUser();
-        mOriUserPwd = settings.getMessageStorePwd();
-        mOriContact = settings.getUserProfileImsUserName();
+        sSettings = RcsSettings.getInstance(new LocalContentResolver(context));
+        AndroidFactory.setApplicationContext(context, sSettings);
+        mOriServerUri = sSettings.getMessageStoreUri();
+        mOriUserLogin = sSettings.getMessageStoreUser();
+        mOriUserPwd = sSettings.getMessageStorePwd();
+        mOriContact = sSettings.getUserProfileImsUserName();
 
-        settings.setMessageStoreUri(mServerAddress);
-        settings.setMessageStoreUser(mUserLogin);
-        settings.setMessageStorePwd(mUserPwd);
+        sSettings.setMessageStoreUri(mServerAddress);
+        sSettings.setMessageStoreUser(mUserLogin);
+        sSettings.setMessageStorePwd(mUserPwd);
 
-        settings.setUserProfileImsUserName(ContactUtil
+        sSettings.setUserProfileImsUserName(ContactUtil
                 .createContactIdFromTrustedData("+33601020304"));
-        return settings;
+        return sSettings;
     }
 
     public static void restoreSettings() {
-        RcsSettings settings = RcsSettings.getInstance(null);
-        settings.setMessageStoreUri(mOriServerUri);
-        settings.setMessageStoreUser(mOriUserLogin);
-        settings.setMessageStorePwd(mOriUserPwd);
-        settings.setUserProfileImsUserName(mOriContact);
+        sSettings.setMessageStoreUri(mOriServerUri);
+        sSettings.setMessageStoreUser(mOriUserLogin);
+        sSettings.setMessageStorePwd(mOriUserPwd);
+        sSettings.setUserProfileImsUserName(mOriContact);
+    }
+
+    public static void setInvalidCmsServer() {
+        sSettings.setMessageStoreUri(null);
     }
 
 }

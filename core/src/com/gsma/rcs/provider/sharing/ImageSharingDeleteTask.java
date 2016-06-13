@@ -45,8 +45,8 @@ public class ImageSharingDeleteTask extends DeleteTask.GroupedByContactId {
      */
     public ImageSharingDeleteTask(ImageSharingServiceImpl imageSharingService,
             RichcallService richcallService, LocalContentResolver contentResolver) {
-        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID,
-                ImageSharingData.KEY_CONTACT, (String) null);
+        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID, true,
+                ImageSharingData.KEY_CONTACT, false, null);
         mImageSharingService = imageSharingService;
         mRichcallService = richcallService;
     }
@@ -61,8 +61,8 @@ public class ImageSharingDeleteTask extends DeleteTask.GroupedByContactId {
      */
     public ImageSharingDeleteTask(ImageSharingServiceImpl imageSharingService,
             RichcallService richcallService, LocalContentResolver contentResolver, String sharingId) {
-        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID,
-                ImageSharingData.KEY_CONTACT, null, sharingId);
+        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID, true,
+                ImageSharingData.KEY_CONTACT, true, null, sharingId);
         mImageSharingService = imageSharingService;
         mRichcallService = richcallService;
     }
@@ -77,7 +77,7 @@ public class ImageSharingDeleteTask extends DeleteTask.GroupedByContactId {
      */
     public ImageSharingDeleteTask(ImageSharingServiceImpl imageSharingService,
             RichcallService richcallService, LocalContentResolver contentResolver, ContactId contact) {
-        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID,
+        super(contentResolver, ImageSharingData.CONTENT_URI, ImageSharingData.KEY_SHARING_ID, true,
                 ImageSharingData.KEY_CONTACT, contact);
         mImageSharingService = imageSharingService;
         mRichcallService = richcallService;

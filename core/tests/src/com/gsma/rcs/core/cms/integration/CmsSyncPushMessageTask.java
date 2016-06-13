@@ -93,7 +93,8 @@ public class CmsSyncPushMessageTask extends CmsSyncSchedulerTask {
             PayloadException, FileAccessException {
         List<XmsDataObject> messagesToPush = new ArrayList<>();
         for (CmsObject cmsObject : mObjectsToPush) {
-            XmsDataObject xms = mXmsLog.getXmsDataObject(cmsObject.getMessageId());
+            ContactId contact = CmsUtils.cmsFolderToContact(cmsObject.getFolder());
+            XmsDataObject xms = mXmsLog.getXmsDataObject(contact, cmsObject.getMessageId());
             if (xms != null) {
                 messagesToPush.add(xms);
             }
@@ -156,11 +157,12 @@ public class CmsSyncPushMessageTask extends CmsSyncSchedulerTask {
                     imapMessage = new ImapSmsMessage(remote, from, to, direction,
                             sms.getTimestamp(), sms.getBody(), UUID.randomUUID().toString(), UUID
                                     .randomUUID().toString(), message.getMessageId());
+
                 } else if (message instanceof MmsDataObject) {
                     MmsDataObject mms = (MmsDataObject) message;
                     imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction,
                             mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), mms.getMessageId(), mms.getMmsId(),
+                            UUID.randomUUID().toString(), mms.getMessageId(), mms.getMessageId(),
                             mms.getMmsParts());
                 }
                 String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());

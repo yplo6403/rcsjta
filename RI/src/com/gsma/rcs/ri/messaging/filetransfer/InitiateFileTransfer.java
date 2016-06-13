@@ -577,6 +577,11 @@ public class InitiateFileTransfer extends RcsActivity {
                     Log.w(LOGTAG, "onDeleted contact=" + contact + " transferIds=" + transferIds);
                 }
             }
+
+            @Override
+            public void onRead(ContactId contact, String transferId) {
+
+            }
         };
     }
 

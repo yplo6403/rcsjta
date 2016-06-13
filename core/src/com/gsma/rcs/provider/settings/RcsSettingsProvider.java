@@ -174,13 +174,7 @@ public class RcsSettingsProvider extends ContentProvider {
     }
 
     private String[] getSelectionArgsWithKey(String[] selectionArgs, String key) {
-        String[] keySelectionArg = new String[] {
-            key
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+        return DatabaseUtils.appendIdWithSelectionArgs(key, selectionArgs);
     }
 
     @Override

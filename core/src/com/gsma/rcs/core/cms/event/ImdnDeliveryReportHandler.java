@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
@@ -44,45 +45,56 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
     }
 
     @Override
-    public void onDeliveryReport(String chatId, ContactId remote, String messageId,
-            String imdnMessageId) {
+    public void onDeliveryReport(String chatId, ContactId remote, String msgId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeliveryReport: " + chatId + ", " + remote.toString() + ", "
-                    + imdnMessageId);
+            sLogger.debug("onDeliveryReport: ID= " + msgId + " status=" + status + " chatId="
+                    + chatId + " contact=" + remote + " imdnId=" + imdnMsgId);
         }
         if (chatId.equals(remote.toString())) { // OneToOne
-            onDeliveryReport(remote, messageId, imdnMessageId);
+            onOneToOneDeliveryReport(remote, msgId, imdnMsgId);
         } else { // GC
-            onDeliveryReport(chatId, messageId, imdnMessageId);
+            onGroupDeliveryReport(chatId, msgId, imdnMsgId);
         }
     }
 
     @Override
-    public void onDeliveryReport(String chatId, String messageId, String imdnMessageId) {
+    public void onDeliveryReport(String chatId, String msgId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeliveryReport: " + chatId + ", " + imdnMessageId);
+            sLogger.debug("onDeliveryReport: ID= " + msgId + " status=" + status + " chatId="
+                    + chatId + " imdnId=" + imdnMsgId);
         }
-        if (mCmsLog.getChatData(messageId) == null) {
+        onGroupDeliveryReport(chatId, msgId, imdnMsgId);
+    }
+
+    @Override
+    public void onDeliveryReport(ContactId contact, String msgId, String imdnMsgId,
+            ImdnDocument.DeliveryStatus status) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("onDeliveryReport: ID= " + msgId + " status=" + status + " contact="
+                    + contact + " imdnId=" + imdnMsgId);
+        }
+        onOneToOneDeliveryReport(contact, msgId, imdnMsgId);
+    }
+
+    private void onOneToOneDeliveryReport(ContactId contact, String msgId, String imdnMsgId) {
+        if (mCmsLog.getChatData(msgId) == null) {
+            // Do not persist IMDN if chat message is not present
+            return;
+        }
+        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.IMDN, imdnMsgId,
+                null));
+    }
+
+    private void onGroupDeliveryReport(String chatId, String msgId, String imdnMsgId) {
+        if (mCmsLog.getChatData(msgId) == null) {
             // do not persist IMDN if chat message is not present
             return;
         }
         mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
                 ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.IMDN, imdnMessageId, null));
+                MessageType.IMDN, imdnMsgId, null));
     }
-
-    @Override
-    public void onDeliveryReport(ContactId contact, String messageId, String imdnMessageId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onDeliveryReport: " + contact + ", " + imdnMessageId);
-        }
-        if (mCmsLog.getChatData(messageId) == null) {
-            // Do not persist IMDN if chat message is not present
-            return;
-        }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.IMDN,
-                imdnMessageId, null));
-    }
-
 }

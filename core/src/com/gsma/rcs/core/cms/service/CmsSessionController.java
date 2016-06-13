@@ -20,17 +20,29 @@
 package com.gsma.rcs.core.cms.service;
 
 import com.gsma.rcs.core.Core;
+import com.gsma.rcs.core.cms.event.ChatEventHandler;
+import com.gsma.rcs.core.cms.event.CmsEventHandler;
+import com.gsma.rcs.core.cms.event.FileTransferEventHandler;
+import com.gsma.rcs.core.cms.event.GroupChatEventHandler;
+import com.gsma.rcs.core.cms.event.ImdnDeliveryReportHandler;
+import com.gsma.rcs.core.cms.event.MmsSessionHandler;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
+import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.event.framework.TerminatingEventFrameworkSession;
+import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
+import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTaskType;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
+import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.UpdateMmsStateAfterUngracefulTerminationTask;
@@ -56,49 +68,70 @@ import java.util.Set;
 import javax2.sip.message.Response;
 
 /**
- * Created by Philippe LEMORDANT on 12/11/2015.
+ * CMS session controller<br>
+ * <ul>
+ * <li>Control the access to the IMS session for CMS synchronization</li>
+ * <li>Control the access to the IMS session for Event Reporting</li>
+ * <li>Provide access to XMS handlers to other IMS services</li>
+ * </ul>
+ * 
+ * @author Philippe LEMORDANT
  */
-public class CmsService extends ImsService {
+public class CmsSessionController extends ImsService {
+
     private static final String CMS_OPERATION_THREAD_NAME = "CmsOperations";
-    private final static Logger sLogger = Logger.getLogger(CmsService.class.getSimpleName());
+    private final static Logger sLogger = Logger.getLogger(CmsSessionController.class
+            .getSimpleName());
+
     private final Handler mOperationHandler;
     private final XmsLog mXmsLog;
     private final CmsLog mCmsLog;
-    private CmsServiceImpl mCmsServiceImpl;
-    private FileTransferServiceImpl mFileTransferServiceImpl;
-    private ChatServiceImpl mChatServiceImpl;
+    private final ImdnDeliveryReportHandler mImdnDeliveryReportHandler;
+    private final Context mCtx;
     private final Core mCore;
-    private final Context mContext;
-    private final CmsManager mCmsManager;
     private final RcsSettings mRcsSettings;
     private final ImsModule mImsModule;
     private final MessagingLog mMessagingLog;
+    private final LocalContentResolver mLocalContentResolver;
+    private CmsServiceImpl mCmsServiceImpl;
+    private FileTransferServiceImpl mFileTransferServiceImpl;
+    private ChatServiceImpl mChatServiceImpl;
     private XmsEventHandler mXmsEventHandler;
+    private LocalStorage mLocalStorage;
+    private CmsSyncScheduler mSyncScheduler;
+    private EventFrameworkManager mEventFrameworkManager;
+    private ChatEventHandler mChatEventHandler;
+    private GroupChatEventHandler mGroupChatEventHandler;
+    private MmsSessionHandler mMmsSessionHandler;
+    private FileTransferEventHandler mFileTransferEventHandler;
+    private InstantMessagingService mImService;
 
     /**
      * Constructor
      *
+     * @param ctx the context
      * @param core The core service
      * @param parent IMS module
-     * @param context The context
      * @param rcsSettings The RCS settings accessor
+     * @param localContentResolver the local content resolver
      * @param xmsLog The XMS log accessor
      * @param messagingLog The Chat log accessor
      * @param cmsLog The Imap log accessor
      */
-    public CmsService(Core core, ImsModule parent, Context context, RcsSettings rcsSettings,
-            XmsLog xmsLog, MessagingLog messagingLog, CmsLog cmsLog) {
+    public CmsSessionController(Context ctx, Core core, ImsModule parent, RcsSettings rcsSettings,
+            LocalContentResolver localContentResolver, XmsLog xmsLog, MessagingLog messagingLog,
+            CmsLog cmsLog) {
         super(parent, true);
+        mCtx = ctx;
         mImsModule = parent;
-        mContext = context;
         mRcsSettings = rcsSettings;
+        mLocalContentResolver = localContentResolver;
         mXmsLog = xmsLog;
         mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
         mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
-        mCmsManager = new CmsManager(context, mImsModule, mCmsLog, xmsLog, mMessagingLog,
-                mRcsSettings);
+        mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -108,14 +141,20 @@ public class CmsService extends ImsService {
     }
 
     public void register(CmsServiceImpl cmsService, ChatServiceImpl chatService,
-            FileTransferServiceImpl fileTransferService) {
+            FileTransferServiceImpl fileTransferService, InstantMessagingService imService) {
         mCmsServiceImpl = cmsService;
         mChatServiceImpl = chatService;
         mFileTransferServiceImpl = fileTransferService;
+        mImService = imService;
     }
 
     public void initialize(XmsEventHandler xmsEventHandler) {
         mXmsEventHandler = xmsEventHandler;
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mCtx, mLocalContentResolver, mCmsLog,
+                mXmsLog, mMessagingLog, mChatServiceImpl, mFileTransferServiceImpl,
+                mCmsServiceImpl, mImService, mRcsSettings);
+        // instantiate LocalStorage in charge of handling events relatives to IMAP sync
+        mLocalStorage = new LocalStorage(mRcsSettings, mCmsLog, cmsEventHandler);
     }
 
     @Override
@@ -124,8 +163,42 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(true);
-        mCmsManager.start(mCmsServiceImpl, mChatServiceImpl, mFileTransferServiceImpl,
-                mXmsEventHandler);
+        // start scheduler for sync
+        if (mRcsSettings.getMessageStoreUri() != null) {
+            mSyncScheduler = new CmsSyncScheduler(mCtx, mRcsSettings, mLocalStorage, mCmsLog,
+                    mXmsLog);
+            mSyncScheduler.registerListener(CmsSyncSchedulerTaskType.SYNC_FOR_USER_ACTIVITY,
+                    mCmsServiceImpl);
+            mXmsEventHandler.setCmsSyncScheduler(mSyncScheduler);
+            mSyncScheduler.start();
+            /*
+             * instantiate EventReportingFrameworkManager in charge of Pushing messages and updating
+             * flags on the message store.
+             */
+            mEventFrameworkManager = new EventFrameworkManager(mSyncScheduler,
+                    mImsModule.getInstantMessagingService(), mCmsLog, mRcsSettings);
+            mEventFrameworkManager.start();
+        }
+        /*
+         * instantiate ChatEventHandler in charge of handling events from ChatSession,read or
+         * deletion of messages.
+         */
+        mChatEventHandler = new ChatEventHandler(mEventFrameworkManager, mCmsLog, mMessagingLog,
+                mRcsSettings, mImdnDeliveryReportHandler);
+        /*
+         * instantiate GroupChatEventHandler in charge of handling events from ChatSession,read or
+         * deletion of messages.
+         */
+        mGroupChatEventHandler = new GroupChatEventHandler(mEventFrameworkManager, mCmsLog,
+                mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
+
+        mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mRcsSettings, mSyncScheduler);
+        /*
+         * instantiate FileTransferEventHandler in charge of handling events from
+         * FileSharingSession, read or deletion of file transfer.
+         */
+        mFileTransferEventHandler = new FileTransferEventHandler(mEventFrameworkManager, mCmsLog,
+                mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
         // must be started before trying to dequeue MMS messages
         tryToDequeueMmsMessages();
     }
@@ -136,7 +209,15 @@ public class CmsService extends ImsService {
             return;
         }
         setServiceStarted(false);
-        mCmsManager.stop();
+        if (mSyncScheduler != null) {
+            mXmsEventHandler.setCmsSyncScheduler(null);
+            mSyncScheduler.stop();
+            mSyncScheduler = null;
+        }
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.stop();
+            mEventFrameworkManager = null;
+        }
         if (ImsServiceSession.TerminationReason.TERMINATION_BY_SYSTEM == reasonCode) {
             mOperationHandler.getLooper().quit();
         }
@@ -170,8 +251,7 @@ public class CmsService extends ImsService {
                      * background handler. So it does not interact with other operations of this API
                      * impacting the calling UI.
                      */
-                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
-                    if (scheduler != null && !scheduler.scheduleSync()) {
+                    if (mSyncScheduler != null && !mSyncScheduler.scheduleSync()) {
                         if (logActivated) {
                             sLogger.debug("Cannot schedule a syncAll operation");
                         }
@@ -205,9 +285,8 @@ public class CmsService extends ImsService {
                      * background handler. So it does not interact with other operations of this API
                      * impacting the calling UI.
                      */
-                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
-                    if (scheduler != null
-                            && !scheduler.scheduleSyncForOneToOneConversation(contact)) {
+                    if (mSyncScheduler != null
+                            && !mSyncScheduler.scheduleSyncForOneToOneConversation(contact)) {
                         if (logActivated) {
                             sLogger.debug("Cannot schedule a syncOneToOneConversation operation: "
                                     .concat(msisdn));
@@ -241,8 +320,8 @@ public class CmsService extends ImsService {
                      * background handler. So it does not interact with other operations of this API
                      * impacting the calling UI.
                      */
-                    CmsSyncScheduler scheduler = mCmsManager.getSyncScheduler();
-                    if (scheduler != null && !scheduler.scheduleSyncForGroupConversation(chatId)) {
+                    if (mSyncScheduler != null
+                            && !mSyncScheduler.scheduleSyncForGroupConversation(chatId)) {
                         if (logActivated) {
                             sLogger.debug("Cannot schedule a syncGroupConversation operation: "
                                     .concat(chatId));
@@ -271,7 +350,7 @@ public class CmsService extends ImsService {
                     if (logActivated) {
                         sLogger.debug("Execute task to dequeue MMS");
                     }
-                    if (!ServerApiUtils.isMmsConnectionAvailable(mContext)) {
+                    if (!ServerApiUtils.isMmsConnectionAvailable(mCtx)) {
                         if (logActivated) {
                             sLogger.debug("MMS mobile connection not available, exiting dequeue task to dequeue MMS");
                         }
@@ -330,26 +409,8 @@ public class CmsService extends ImsService {
         return mCore.isStopping() || !mCore.isStarted();
     }
 
-    public void markXmsMessageAsRead(final String messageId) {
-        mCmsManager.onReadXmsMessage(messageId);
-    }
-
-    /**
-     * Updates deleted flag in CMS provider and synchronizes
-     *
-     * @param contact the message ID
-     * @param messageIds the set of message ID
-     */
-    public void updateDeletedFlag(ContactId contact, Set<String> messageIds) {
-        mCmsManager.onDeleteXmsMessage(contact, messageIds);
-    }
-
     public void deleteCmsData() {
         mCmsLog.removeFolders(true);
-    }
-
-    public CmsManager getCmsManager() {
-        return mCmsManager;
     }
 
     /**
@@ -382,5 +443,43 @@ public class CmsService extends ImsService {
                 }
             }
         });
+    }
+
+    public ChatEventHandler getChatEventHandler() {
+        return mChatEventHandler;
+    }
+
+    public ImdnDeliveryReportHandler getImdnDeliveryReportHandler() {
+        return mImdnDeliveryReportHandler;
+    }
+
+    public GroupChatEventHandler getGroupChatEventHandler() {
+        return mGroupChatEventHandler;
+    }
+
+    public MmsSessionHandler getMmsSessionHandler() {
+        return mMmsSessionHandler;
+    }
+
+    public FileTransferEventHandler getFileTransferEventHandler() {
+        return mFileTransferEventHandler;
+    }
+
+    public void onDeleteXmsMessages(ContactId contact, Set<String> deletedIds) {
+        for (String messageId : deletedIds) {
+            mCmsLog.updateXmsDeleteStatus(contact, messageId,
+                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED, null);
+        }
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForXms(contact);
+        }
+    }
+
+    public void onReadXmsMessage(ContactId contact, String messageId) {
+        mCmsLog.updateXmsReadStatus(contact, messageId, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
+                null);
+        if (mEventFrameworkManager != null) {
+            mEventFrameworkManager.updateFlagsForXms(contact);
+        }
     }
 }

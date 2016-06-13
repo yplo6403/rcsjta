@@ -23,15 +23,11 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;
 
 public class EventFrameworkDocument {
-
-    private static final Logger sLogger = Logger.getLogger(EventFrameworkDocument.class
-            .getSimpleName());
 
     private final static String XML_OBJECT_WITH_UID = "<object uid=\"%1$s\" folder-path=\"%2$s/\">"
             + "<message-id>%3$s</message-id>" + "</object>";
@@ -109,21 +105,21 @@ public class EventFrameworkDocument {
                     object.getMessageId());
         }
         MessageType messageType = object.getMessageType();
-        if (MessageType.SMS == messageType || MessageType.MMS == messageType) {
-            if (sLogger.isActivated()) {
-                sLogger.debug("Event reporting framework not implemented for XMS messages having no uid");
-            }
-            return "";
+        switch (messageType) {
+            case CHAT_MESSAGE:
+            case FILE_TRANSFER:
+            case MMS:
+            case SMS:
+                String folder = object.getFolder();
+                ContactId contact = CmsUtils.cmsFolderToContact(folder);
+                /*
+                 * For GC, contact is null.
+                 */
+                return objectToXml(contact, mContributionId, mContributionId, object.getMessageId());
+
+            default:
+                return "";
         }
-        if (MessageType.CHAT_MESSAGE == messageType || MessageType.FILE_TRANSFER == messageType) {
-            String folder = object.getFolder();
-            ContactId contact = CmsUtils.cmsFolderToContact(folder);
-            /*
-             * For GC, contact is null.
-             */
-            return objectToXml(contact, mContributionId, mContributionId, object.getMessageId());
-        }
-        return "";
     }
 
     public List<CmsObject> getDeletedObject() {

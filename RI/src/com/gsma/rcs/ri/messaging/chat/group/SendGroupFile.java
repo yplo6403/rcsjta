@@ -204,6 +204,11 @@ public class SendGroupFile extends SendFile {
                 }
             }
 
+            @Override
+            public void onRead(String chatId, String transferId) {
+
+            }
+
         };
     }
 

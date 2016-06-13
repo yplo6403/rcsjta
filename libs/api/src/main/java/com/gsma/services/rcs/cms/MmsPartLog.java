@@ -41,7 +41,7 @@ public class MmsPartLog {
      */
     public static final String BASECOLUMN_ID = BaseColumns._ID;
     /**
-     * The name of the column containing the message ID.
+     * The name of the column containing the message ID (primary key).
      * <p/>
      * Type: TEXT
      * </P>
@@ -85,13 +85,6 @@ public class MmsPartLog {
      * </P>
      */
     public static final String FILEICON = "fileicon";
-    /**
-     * The name of the column containing the MSISDN of the remote contact.
-     * <p/>
-     * Type: TEXT
-     * </P>
-     */
-    public static final String CONTACT = "contact";
 
     /**
      * Message MIME-types

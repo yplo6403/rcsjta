@@ -23,7 +23,7 @@ interface ICmsService {
 
 	void syncAll();
 
-	IXmsMessage getXmsMessage(in String messageId);
+	IXmsMessage getXmsMessage(in ContactId contact, in String messageId);
 
 	void sendTextMessage(in ContactId contact, String text);
 
@@ -31,7 +31,7 @@ interface ICmsService {
 
 	IXmsMessage sendMultimediaMessage(in ContactId contact, in List<Uri> files, in String subject, in String body);
 
-    void markXmsMessageAsRead(in String messageId);
+    void markXmsMessageAsRead(in ContactId contact, in String messageId);
 
 	void addEventListener2(in IXmsMessageListener listener);
 
@@ -41,7 +41,7 @@ interface ICmsService {
 
     void deleteXmsMessages2(in ContactId contact);
 
-    void deleteXmsMessage(in String messageId);
+    void deleteXmsMessage(in ContactId contact, in String messageId);
 
     void deleteImapData();
 }

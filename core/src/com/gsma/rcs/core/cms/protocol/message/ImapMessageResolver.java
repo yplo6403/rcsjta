@@ -116,18 +116,25 @@ public class ImapMessageResolver {
         switch (messageType) {
             case SMS:
                 return new ImapSmsMessage(imapMessage, remote);
+
             case MMS:
                 return new ImapMmsMessage(imapMessage, remote);
+
             case MESSAGE_CPIM:
                 return new ImapCpimMessage(imapMessage, remote);
+
             case CHAT_MESSAGE:
                 return new ImapChatMessage(imapMessage, remote);
+
             case IMDN:
                 return new ImapImdnMessage(imapMessage, remote);
+
             case FILE_TRANSFER:
                 return new ImapFileTransferMessage(mRcsSettings, imapMessage, remote);
+
             case CPM_SESSION:
                 return new ImapCpmSessionMessage(mRcsSettings, imapMessage);
+
             case GROUP_STATE:
                 return new ImapGroupStateMessage(mRcsSettings, imapMessage);
         }

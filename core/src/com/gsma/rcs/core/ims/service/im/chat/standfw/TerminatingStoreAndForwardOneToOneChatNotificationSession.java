@@ -24,7 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.standfw;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -78,14 +78,14 @@ public class TerminatingStoreAndForwardOneToOneChatNotificationSession extends O
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager The contact manager accessor
-     * @param cmsManager The CMS manager
+     * @param cmsSessionCtrl The CMS session controller
      */
     public TerminatingStoreAndForwardOneToOneChatNotificationSession(
             InstantMessagingService imService, SipRequest invite, ContactId contact,
             String remoteSipInstance, RcsSettings rcsSettings, MessagingLog messagingLog,
-            long timestamp, ContactManager contactManager, CmsManager cmsManager) {
+            long timestamp, ContactManager contactManager, CmsSessionController cmsSessionCtrl) {
         super(imService, contact, PhoneUtils.formatContactIdToUri(contact), null, rcsSettings,
-                messagingLog, timestamp, contactManager, cmsManager, remoteSipInstance);
+                messagingLog, timestamp, contactManager, cmsSessionCtrl, remoteSipInstance);
         int localMsrpPort = NetworkRessourceManager.generateLocalMsrpPort(rcsSettings);
         String localIpAddress = imService.getImsModule().getCurrentNetworkInterface()
                 .getNetworkAccess().getIpAddress();

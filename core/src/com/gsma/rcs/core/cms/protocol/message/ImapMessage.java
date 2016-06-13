@@ -44,11 +44,7 @@ public abstract class ImapMessage implements IImapMessage {
 
     @Override
     public String toPayload() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(mHeaderPart);
-        sb.append(Constants.CRLF);
-        sb.append(mBodyPart.getPayload());
-        return sb.toString();
+        return String.valueOf(mHeaderPart) + Constants.CRLF + mBodyPart.getPayload();
     }
 
     protected abstract void parsePayload(String payload);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,8 +25,9 @@ package com.gsma.rcs.core;
 import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.addressbook.LocaleManager;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
+import com.gsma.rcs.core.cms.xms.XmsSynchronizer;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -194,8 +195,12 @@ public class Core {
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
         mXmsManager = new XmsManager(ctx, contentResolver);
 
+        XmsSynchronizer xmsSynchronizer = new XmsSynchronizer(ctx.getContentResolver(),
+                rcsSettings, xmsLog, cmsLog);
+        // Synchronize with native XMS content providers (not performed in background)
+        xmsSynchronizer.execute();
         // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(ctx);
+        mXmsObserver = new XmsObserver(contentResolver, rcsSettings);
 
         /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
@@ -294,20 +299,17 @@ public class Core {
         if (logActivated) {
             sLogger.info("Stop the RCS core service");
         }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             mBackgroundHandler.getLooper().quitSafely();
         } else {
             mBackgroundHandler.getLooper().quit();
         }
-
         mLocaleManager.stop();
         mAddressBookManager.stop();
         mXmsManager.stop();
         mImsModule.stop();
         mNtpManager.stop();
         mXmsObserver.stop();
-
         mStopping = false;
         mStarted = false;
         if (logActivated) {
@@ -335,12 +337,12 @@ public class Core {
     }
 
     /**
-     * Returns the CMS service
+     * Returns the CMS session controller
      *
-     * @return CMS service
+     * @return CMS session controller
      */
-    public CmsService getCmsService() {
-        return getImsModule().getCmsService();
+    public CmsSessionController getCmsSessionCtrl() {
+        return getImsModule().getCmsSessionController();
     }
 
     /**

@@ -23,7 +23,6 @@
 package com.gsma.rcs.service;
 
 import com.gsma.rcs.core.Core;
-import com.gsma.rcs.core.cms.service.CmsService;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -103,7 +102,7 @@ public class RcsServiceControlReceiver extends BroadcastReceiver {
         sServiceCompatibilityMap.put(MultimediaSessionService.class.getSimpleName(),
                 sRcsCompatibility);
         sServiceCompatibilityMap.put(VideoSharingService.class.getSimpleName(), sRcsCompatibility);
-        sServiceCompatibilityMap.put(CmsService.class.getSimpleName(), sRcsCompatibility);
+        sServiceCompatibilityMap.put("CmsService", sRcsCompatibility);
     }
 
     private boolean getActivationModeChangeable(Context ctx) {

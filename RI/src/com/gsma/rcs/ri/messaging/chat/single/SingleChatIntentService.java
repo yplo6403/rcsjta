@@ -23,8 +23,8 @@ import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.messaging.OneToOneTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
+import com.gsma.rcs.ri.messaging.TalkPendingIntentManager;
 import com.gsma.rcs.ri.messaging.chat.ChatMessageDAO;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.gsma.rcs.ri.settings.RiSettings;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsContactUtil;
@@ -64,10 +64,9 @@ public class SingleChatIntentService extends IntentService {
     private static final String SEL_UNDELIVERED_MESSAGES = ChatLog.Message.CHAT_ID + "=? AND "
             + ChatLog.Message.EXPIRED_DELIVERY + "='1'";
 
-    private ChatPendingIntentManager mChatPendingIntentManager;
+    private TalkPendingIntentManager mPendingIntentManager;
 
-    private static final String LOGTAG = LogUtils.getTag(SingleChatIntentService.class
-            .getSimpleName());
+    private static final String LOGTAG = LogUtils.getTag(SingleChatIntentService.class.getName());
 
     /**
      * Creates an IntentService.
@@ -79,7 +78,7 @@ public class SingleChatIntentService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mChatPendingIntentManager = ChatPendingIntentManager.getChatPendingIntentManager(this);
+        mPendingIntentManager = TalkPendingIntentManager.getTalkPendingIntentManager(this);
     }
 
     @Override
@@ -177,7 +176,7 @@ public class SingleChatIntentService extends IntentService {
         ContactId contact = message.getContact();
         String content = message.getContent();
         Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, messageIntent);
-        Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent,
+        Integer uniqueId = mPendingIntentManager.tryContinueConversation(intent,
                 message.getChatId());
         if (uniqueId != null) {
             PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
@@ -202,7 +201,7 @@ public class SingleChatIntentService extends IntentService {
                     return;
             }
             Notification notif = buildNotification(contentIntent, title, msg);
-            mChatPendingIntentManager.postNotification(uniqueId, notif);
+            mPendingIntentManager.postNotification(uniqueId, notif);
             TalkList.notifyNewConversationEvent(this,
                     OneToOneChatIntent.ACTION_NEW_ONE_TO_ONE_CHAT_MESSAGE);
         }
@@ -211,8 +210,8 @@ public class SingleChatIntentService extends IntentService {
     private void forwardUndeliveredMessage2UI(Intent undeliveredMessageIntent, ContactId contact) {
         Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact,
                 undeliveredMessageIntent);
-        Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent,
-                contact.toString());
+        Integer uniqueId = mPendingIntentManager
+                .tryContinueConversation(intent, contact.toString());
         if (uniqueId != null) {
             PendingIntent contentIntent = PendingIntent.getActivity(this, uniqueId, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
@@ -220,7 +219,7 @@ public class SingleChatIntentService extends IntentService {
             String title = getString(R.string.title_undelivered_message);
             String msg = getString(R.string.label_undelivered_message, displayName);
             Notification notif = buildNotification(contentIntent, title, msg);
-            mChatPendingIntentManager.postNotification(uniqueId, notif);
+            mPendingIntentManager.postNotification(uniqueId, notif);
         }
     }
 

@@ -152,6 +152,10 @@ public class SendMultiFileSingleChat extends SendMultiFile implements ISendMulti
                 }
             }
 
+            @Override
+            public void onRead(ContactId contact, String transferId) {
+            }
+
         };
     }
 }

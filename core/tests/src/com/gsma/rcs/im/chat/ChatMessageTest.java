@@ -22,12 +22,12 @@
 
 package com.gsma.rcs.im.chat;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.userprofile.UserProfile;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessageData;
@@ -57,9 +57,7 @@ import java.util.Random;
 
 public class ChatMessageTest extends AndroidTestCase {
     private ContactId mContact;
-    private Context mContext;
     private ContentResolver mContentResolver;
-    private RcsSettings mRcsSettings;
     private Random mRandom = new Random();
     private long mTimestamp;
     private long mTimestampSent;
@@ -74,10 +72,10 @@ public class ChatMessageTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        mContext = getContext();
+        Context mContext = getContext();
         mContentResolver = mContext.getContentResolver();
         mLocalContentResolver = new LocalContentResolver(mContentResolver);
-        mRcsSettings = RcsSettings.getInstance(mLocalContentResolver);
+        RcsSettings mRcsSettings = RcsSettings.getInstance(mLocalContentResolver);
         PhoneUtils.initialize(mRcsSettings);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mRcsSettings);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
@@ -102,12 +100,13 @@ public class ChatMessageTest extends AndroidTestCase {
         mMessagingLog.addOutgoingOneToOneChatMessage(msg, Message.Content.Status.SENT,
                 Message.Content.ReasonCode.UNSPECIFIED, 0);
 
-        String where = new StringBuilder(Message.MESSAGE_ID).append("=?").toString();
+        String where = Message.MESSAGE_ID + "=?";
         String[] whereArgs = new String[] {
             msgId
         };
         Cursor cursor = mContentResolver.query(Message.CONTENT_URI, SELECTION, where, whereArgs,
                 Message.TIMESTAMP + " ASC");
+        assertNotNull(cursor);
         assertEquals(cursor.getCount(), 1);
         assertTrue(cursor.moveToNext());
         Direction direction = Direction.valueOf(cursor.getInt(cursor
@@ -120,7 +119,7 @@ public class ChatMessageTest extends AndroidTestCase {
         long readTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(Message.TIMESTAMP));
         long readTimestampSent = cursor.getLong(cursor
                 .getColumnIndexOrThrow(Message.TIMESTAMP_SENT));
-
+        cursor.close();
         assertEquals(Direction.OUTGOING, direction);
         assertEquals(mContact.toString(), contact);
         assertEquals(mText, content);
@@ -146,6 +145,7 @@ public class ChatMessageTest extends AndroidTestCase {
         Uri uri = Uri.withAppendedPath(Message.CONTENT_URI, msgId);
         Cursor cursor = mContentResolver.query(uri, SELECTION, null, null, Message.TIMESTAMP
                 + " ASC");
+        assertNotNull(cursor);
         assertEquals(cursor.getCount(), 1);
         assertTrue(cursor.moveToNext());
         Direction direction = Direction.valueOf(cursor.getInt(cursor
@@ -159,7 +159,7 @@ public class ChatMessageTest extends AndroidTestCase {
         String id = cursor.getString(cursor.getColumnIndex(Message.MESSAGE_ID));
         long readTimestamp = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP));
         long readTimestampSent = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP_SENT));
-
+        cursor.close();
         assertEquals(Direction.OUTGOING, direction);
         assertEquals(mContact.toString(), contact);
         assertEquals(readGeoloc.getLabel(), geoloc.getLabel());
@@ -184,7 +184,7 @@ public class ChatMessageTest extends AndroidTestCase {
      */
     private Uri formatSipUri(String path) {
         return path.startsWith(PhoneUtils.SIP_URI_HEADER) ? Uri.parse(path) : Uri
-                .parse(new StringBuilder(PhoneUtils.SIP_URI_HEADER).append(path).toString());
+                .parse(PhoneUtils.SIP_URI_HEADER + path);
     }
 
     public void testChatMessageDeliveryExpiration() throws PayloadException {
@@ -210,7 +210,7 @@ public class ChatMessageTest extends AndroidTestCase {
     }
 
     public void testClearChatMessageDeliveryExpiration() throws PayloadException {
-        List<String> msgIds = new ArrayList<String>();
+        List<String> msgIds = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             msgIds.add(Long.toString(mRandom.nextLong()));
         }

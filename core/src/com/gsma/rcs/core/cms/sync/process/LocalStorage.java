@@ -124,8 +124,7 @@ public class LocalStorage {
                 } else if (seenFlag) {
                     mCmsEventListener.onRemoteReadEvent(msg);
                 }
-                mCmsLog.updateMessage(msg.getMessageType(), msg.getMessageId(), msg.getFolder(),
-                        msg.getUid(), seenFlag, deleteFlag);
+                mCmsLog.updateMessage(msg.getMessageId(), folder, uid, seenFlag, deleteFlag);
             }
         }
     }
@@ -144,44 +143,156 @@ public class LocalStorage {
      * Return messages that are not already present in local storage. The content of these messages
      * should be downloaded from CMS server
      *
-     * @param messages the list of messages
+     * @param unSyncImapHeaders the list of un-synchronized IMAP headers
      * @param remote the remote contact or null for group chat
      * @return uids of new messages
      */
-    public Set<Integer> filterNewMessages(List<ImapMessage> messages, ContactId remote) {
+    public Set<Integer> filterNewMessages(List<ImapMessage> unSyncImapHeaders, ContactId remote) {
         Set<Integer> uids = new TreeSet<>();
-        for (ImapMessage msg : messages) {
+        for (ImapMessage header : unSyncImapHeaders) {
             try {
-                MessageType messageType = mMessageResolver.resolveType(msg);
-                if (!checkMessageType(messageType)) {
+                MessageType msgType = mMessageResolver.resolveType(header);
+                if (!checkMessageType(msgType)) {
                     continue;
                 }
-                IImapMessage resolvedMessage = mMessageResolver.resolveMessage(messageType, msg,
+                IImapMessage resolvedMessage = mMessageResolver.resolveMessage(msgType, header,
                         remote);
-                CmsObject imapData = mCmsEventListener.searchLocalMessage(messageType,
-                        resolvedMessage);
-                boolean isDeleted = msg.getMetadata().getFlags().contains(Flag.Deleted);
-                if (imapData == null) { // message not present in local storage
-                    if (!isDeleted) { // prevent from downloading a new deleted message
-                        uids.add(msg.getUid());
+                CmsObject imapData = mCmsEventListener.searchLocalMessage(msgType, resolvedMessage);
+                boolean isDeleted = header.getMetadata().getFlags().contains(Flag.Deleted);
+                if (imapData == null) {
+                    // message not present in local storage
+                    if (!isDeleted) {
+                        // prevent from downloading a new deleted message
+                        uids.add(header.getUid());
                     }
                 } else {
-                    // update flag for local message
-                    boolean isSeen = msg.getMetadata().getFlags().contains(Flag.Seen);
-                    if (isDeleted) {
-                        mCmsEventListener.onRemoteDeleteEvent(imapData);
-                    } else if (isSeen) {
-                        mCmsEventListener.onRemoteReadEvent(imapData);
+                    // If we are here, this means that local message is pushed
+                    boolean isSeen = header.getMetadata().getFlags().contains(Flag.Seen);
+                    switch (imapData.getDeleteStatus()) {
+                        case NOT_DELETED:
+                            if (isDeleted) {
+                                // Remote is deleted but local is not: report deletion event
+                                imapData.setUid(header.getUid());
+                                mCmsEventListener.onRemoteDeleteEvent(imapData);
+                                continue;
+
+                            } else {
+                                /*
+                                 * Both remote and local are not deleted. Check if local is seen as
+                                 * pushed.
+                                 */
+                                if (imapData.getUid() == null && !isSeen) {
+                                    // Update local with UID and set state to pushed.
+                                    mCmsLog.updateUid(header.getFolderPath(),
+                                            imapData.getMessageId(), header.getUid());
+                                    continue;
+                                }
+                            }
+                            break;
+
+                        case DELETED_REPORT_REQUESTED:
+                        case DELETED_REPORTED:
+                            if (isDeleted) {
+                                // Remote is deleted but local is in progress: complete deletion.
+                                mCmsLog.updateMessage(imapData.getMessageId(),
+                                        header.getFolderPath(), header.getUid(), true, true);
+                            } else {
+                                /*
+                                 * Remote is not deleted and local is in progress. Check if local is
+                                 * seen as pushed.
+                                 */
+                                if (imapData.getUid() == null) {
+                                    // Update local with UID and set state to pushed.
+                                    mCmsLog.updateUid(header.getFolderPath(),
+                                            imapData.getMessageId(), header.getUid());
+                                }
+                            }
+                            continue;
+
+                        case DELETED:
+                            // Check if local is seen as pushed.
+                            if (imapData.getUid() == null) {
+                                if (sLogger.isActivated()) {
+                                    sLogger.warn("CMS message should have already been resolved="
+                                            + imapData);
+                                }
+                                // Update local with UID and set state to pushed.
+                                mCmsLog.updateUid(header.getFolderPath(), imapData.getMessageId(),
+                                        header.getUid());
+                            }
+                            if (!isDeleted) {
+                                // Local is deleted but remote not: state is impossible.
+                                if (sLogger.isActivated()) {
+                                    sLogger.warn("CMS message should have already been deleted="
+                                            + imapData);
+                                }
+                            }
+                            continue;
                     }
-                    mCmsLog.updateMessage(imapData.getMessageType(), imapData.getMessageId(),
-                            msg.getFolderPath(), msg.getUid(), isSeen, isDeleted);
+                    /*
+                     * If we arrive here, the message is not deleted and deletion is not in
+                     * progress.
+                     */
+                    switch (imapData.getReadStatus()) {
+                        case UNREAD:
+                            if (isSeen) {
+                                // Remote is seen but local is not: report event.
+                                imapData.setUid(header.getUid());
+                                mCmsEventListener.onRemoteReadEvent(imapData);
+
+                            } else {
+                                /*
+                                 * Both remote and local are not seen. Check if local is seen as
+                                 * pushed.
+                                 */
+                                if (imapData.getUid() == null) {
+                                    // Update local with UID and set state to pushed.
+                                    mCmsLog.updateUid(header.getFolderPath(),
+                                            imapData.getMessageId(), header.getUid());
+                                }
+                            }
+                            break;
+
+                        case READ_REPORT_REQUESTED:
+                        case READ_REPORTED:
+                            if (isSeen) {
+                                // Remote is seen but local is in progress: update local.
+                                mCmsLog.updateMessage(imapData.getMessageId(),
+                                        header.getFolderPath(), header.getUid(), true, false);
+                            } else {
+                                /*
+                                 * Remote is not seen and local is in progress. Check if local is
+                                 * seen as pushed.
+                                 */
+                                if (imapData.getUid() == null) {
+                                    // Local has just been resolved
+                                    mCmsLog.updateUid(header.getFolderPath(),
+                                            imapData.getMessageId(), header.getUid());
+                                }
+                            }
+                            break;
+
+                        case READ:
+                            if (imapData.getUid() == null) {
+                                // Local has just been resolved
+                                mCmsLog.updateUid(header.getFolderPath(), imapData.getMessageId(),
+                                        header.getUid());
+                            }
+                            if (!isSeen) {
+                                // Local is seen but remote not
+                                if (sLogger.isActivated()) {
+                                    sLogger.warn("CMS message should have already been seen="
+                                            + imapData);
+                                }
+                            }
+                    }
                 }
             } catch (CmsSyncException e) {
                 /*
                  * There is a wrongly formatted IMAP message on the CMS server. Keep processing
                  * remaining IMAP messages but log error since it MUST be fixed on CMS server.
                  */
-                sLogger.warn("FIX ME: badly formatted CMS message! [" + msg + "]", e);
+                sLogger.warn("FIX ME: badly formatted CMS message! [" + header + "]", e);
 
             } catch (RuntimeException e) {
                 /*
@@ -265,7 +376,7 @@ public class LocalStorage {
         for (ImapMessage msg : rawMessages) {
             try {
                 MessageType messageType = mMessageResolver.resolveType(msg);
-                List msgList = mapOfMessages.get(messageType);
+                List<IImapMessage> msgList = mapOfMessages.get(messageType);
                 if (msgList == null) {
                     if (sLogger.isActivated()) {
                         sLogger.debug("This type of message is not synchronized : " + messageType);

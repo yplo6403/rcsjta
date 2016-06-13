@@ -17,7 +17,7 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -25,6 +25,8 @@ import com.gsma.rcs.core.ims.service.im.chat.imdn.DeliveryExpirationManager;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -36,16 +38,17 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
     private static final Logger sLogger = Logger.getLogger(OneToOneFileTransferDeleteTask.class
             .getName());
 
-    private static final String SELECTION_ALL_ONETOONE_FILETRANSFERS = FileTransferData.KEY_CHAT_ID
-            + "=" + FileTransferData.KEY_CONTACT;
+    private static final String SEL_ALL_ONETOONE_FILETRANSFERS = FileTransferData.KEY_CHAT_ID + "="
+            + FileTransferData.KEY_CONTACT;
 
-    private static final String SELECTION_ONETOONE_FILETRANSFER_BY_CHATID = FileTransferData.KEY_CHAT_ID
+    private static final String SEL_ONETOONE_FILETRANSFER_BY_CHATID = FileTransferData.KEY_CHAT_ID
             + "=?";
 
     private final FileTransferServiceImpl mFileTransferService;
 
     private final InstantMessagingService mImService;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
+    private final CmsLog mCmsLog;
 
     /**
      * Deletion of all one to one file transfers.
@@ -53,35 +56,57 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
      * @param fileTransferService the file transfer service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            CmsManager cmsManager) {
-        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CONTACT, SELECTION_ALL_ONETOONE_FILETRANSFERS);
+            CmsSessionController cmsSessionCtrl) {
+        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID, true,
+                FileTransferData.KEY_CONTACT, false, SEL_ALL_ONETOONE_FILETRANSFERS);
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
     }
 
     /**
-     * Deletion of a specific file transfer.
+     * Constructor to process action of deletion for a specific file transfer ID
      * 
      * @param fileTransferService the file transfer service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param transferId the transfer id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            String transferId, CmsManager cmsManager) {
-        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CONTACT, null, transferId);
+            String transferId, CmsSessionController cmsSessionCtrl) {
+        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID, true,
+                FileTransferData.KEY_CONTACT, true, null, transferId);
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
+    }
+
+    /**
+     * Constructor to process event of deletion for a specific file transfer ID
+     * 
+     * @param fileTransferService the file transfer service impl
+     * @param imService the IM service
+     * @param contentResolver the content resolver
+     * @param transferId the transfer id
+     * @param cmsLog the CMS log accessor
+     */
+    public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            String transferId, CmsLog cmsLog) {
+        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID, true,
+                FileTransferData.KEY_CONTACT, true, null, transferId);
+        mFileTransferService = fileTransferService;
+        mImService = imService;
+        mCmsSessionCtrl = null;
+        mCmsLog = cmsLog;
     }
 
     /**
@@ -91,17 +116,18 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param contact the contact id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public OneToOneFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            ContactId contact, CmsManager cmsManager) {
-        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CONTACT, SELECTION_ONETOONE_FILETRANSFER_BY_CHATID, contact
+            ContactId contact, CmsSessionController cmsSessionCtrl) {
+        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID, true,
+                FileTransferData.KEY_CONTACT, false, SEL_ONETOONE_FILETRANSFER_BY_CHATID, contact
                         .toString());
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
     }
 
     @Override
@@ -112,7 +138,6 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
             mFileTransferService.ensureFileCopyIsDeletedIfExisting(transferId);
             mFileTransferService.removeOneToOneFileTransfer(transferId);
             return;
-
         }
         try {
             session.deleteSession();
@@ -137,7 +162,15 @@ public class OneToOneFileTransferDeleteTask extends DeleteTask.GroupedByContactI
         for (String transferId : transferIds) {
             expirationManager.cancelDeliveryTimeoutAlarm(transferId);
         }
-        mCmsManager.getFileTransferEventHandler().onDeleteFileTransfer(contact, transferIds);
+        if (mCmsSessionCtrl != null) {
+            mCmsSessionCtrl.getFileTransferEventHandler()
+                    .onDeleteFileTransfer(contact, transferIds);
+        } else {
+            for (String delId : transferIds) {
+                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.FILE_TRANSFER, delId,
+                        CmsObject.DeleteStatus.DELETED, null);
+            }
+        }
         mFileTransferService.broadcastOneToOneFileTransferDeleted(contact, transferIds);
     }
 }

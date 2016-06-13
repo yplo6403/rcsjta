@@ -267,18 +267,19 @@ public final class CmsService extends RcsService {
     /**
      * Gets current XMS message from its unique ID
      *
+     * @param remote the remote contact
      * @param messageId The message ID
      * @return XMS message or null if not found
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage getXmsMessage(String messageId) throws RcsGenericException,
+    public XmsMessage getXmsMessage(ContactId remote, String messageId) throws RcsGenericException,
             RcsServiceNotAvailableException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return new XmsMessage(mApi.getXmsMessage(messageId));
+            return new XmsMessage(mApi.getXmsMessage(remote, messageId));
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -362,18 +363,20 @@ public final class CmsService extends RcsService {
     /**
      * Marks a received message as read (ie. displayed in the UI)
      *
+     * @param remote the remote contact ID
      * @param msgId The message ID.
      * @throws RcsServiceNotAvailableException
      * @throws RcsPersistentStorageException
      * @throws RcsGenericException
      */
-    public void markMessageAsRead(String msgId) throws RcsServiceNotAvailableException,
-            RcsPersistentStorageException, RcsGenericException {
+    public void markMessageAsRead(ContactId remote, String msgId)
+            throws RcsServiceNotAvailableException, RcsPersistentStorageException,
+            RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            mApi.markXmsMessageAsRead(msgId);
+            mApi.markXmsMessageAsRead(remote, msgId);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
@@ -476,17 +479,18 @@ public final class CmsService extends RcsService {
     /**
      * Deletes a XMS message specified by its unique ID from history.
      *
+     * @param remote the remote contact
      * @param msgId The message ID.
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public void deleteXmsMessage(String msgId) throws RcsServiceNotAvailableException,
-            RcsGenericException {
+    public void deleteXmsMessage(ContactId remote, String msgId)
+            throws RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            mApi.deleteXmsMessage(msgId);
+            mApi.deleteXmsMessage(remote, msgId);
 
         } catch (Exception e) {
             throw new RcsGenericException(e);

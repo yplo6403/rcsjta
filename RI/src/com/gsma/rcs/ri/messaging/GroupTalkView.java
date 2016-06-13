@@ -26,7 +26,6 @@ import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.RiApplication;
 import com.gsma.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.gsma.rcs.ri.messaging.chat.ChatCursorObserver;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager.INotifyComposing;
 import com.gsma.rcs.ri.messaging.chat.group.SendGroupFile;
@@ -311,6 +310,11 @@ public class GroupTalkView extends RcsFragmentActivity implements
                 }
             }
 
+            @Override
+            public void onMessageRead(String chatId, String msgId) {
+
+            }
+
         };
         mChatService = getChatApi();
         mFileTransferService = getFileTransferApi();
@@ -409,7 +413,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
                         showMessageThenExit(R.string.label_session_not_found);
                         return false;
                     }
-                    ChatPendingIntentManager.getChatPendingIntentManager(this).clearNotification(
+                    TalkPendingIntentManager.getTalkPendingIntentManager(this).clearNotification(
                             mChatId);
                     setCursorLoader(oldChatId == null);
                     RI.sChatIdOnForeground = mChatId;
@@ -493,8 +497,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
         super.onResume();
         RI.sChatIdOnForeground = mChatId;
         if (mChatId != null) {
-            ChatPendingIntentManager.getChatPendingIntentManager(this).clearNotification(
-                    mChatId);
+            TalkPendingIntentManager.getTalkPendingIntentManager(this).clearNotification(mChatId);
         }
         try {
             if (mChatListener != null && mChatService != null && !mChatListnerSet) {

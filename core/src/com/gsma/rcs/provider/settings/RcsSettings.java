@@ -63,7 +63,7 @@ import java.util.Set;
  * RCS settings
  * 
  * @author jexa7410
- * @author yplo6403
+ * @author Philippe LEMORDANT
  */
 public class RcsSettings {
 
@@ -346,9 +346,6 @@ public class RcsSettings {
      * @return the number of rows updated
      */
     private int writeParameter(String key, String value) {
-        if (value == null) {
-            return 0;
-        }
         ContentValues values = new ContentValues();
         values.put(RcsSettingsData.KEY_VALUE, value);
         String[] whereArgs = new String[] {
@@ -2276,11 +2273,11 @@ public class RcsSettings {
         writeString(RcsSettingsData.MESSAGE_STORE_PWD, messageStorePwd);
     }
 
-    public Boolean getMessageStorePushSms() {
+    public Boolean shouldPushSms() {
         return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
     }
 
-    public Boolean getMessageStorePushMms() {
+    public Boolean shouldPushMms() {
         return readBoolean(RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
     }
 

@@ -179,7 +179,7 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public int markMessageAsRead(String msgId, long timestampDisplayed) {
+    public boolean markMessageAsRead(String msgId, long timestampDisplayed) {
         return mMessageLog.markMessageAsRead(msgId, timestampDisplayed);
     }
 
@@ -256,7 +256,7 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     }
 
     @Override
-    public int markFileTransferAsRead(String fileTransferId, long displayedTimestamp) {
+    public boolean markFileTransferAsRead(String fileTransferId, long displayedTimestamp) {
         return mFileTransferLog.markFileTransferAsRead(fileTransferId, displayedTimestamp);
     }
 
@@ -685,4 +685,5 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     public String getFileTransferSipInstance(String fileTransferId) {
         return mFileTransferLog.getFileTransferSipInstance(fileTransferId);
     }
+
 }

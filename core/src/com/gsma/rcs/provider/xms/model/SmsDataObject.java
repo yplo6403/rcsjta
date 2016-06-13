@@ -31,24 +31,18 @@ public class SmsDataObject extends XmsDataObject {
     private final String mBody;
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, long timestamp, Long nativeId, Long nativeThreadId) {
+            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
+            Long nativeThreadId) {
         super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId,
                 nativeThreadId);
         mBody = body;
         mCorrelator = HeaderCorrelatorUtils.buildHeader(mBody);
-    }
-
-    public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
-            Long nativeThreadId) {
-        this(messageId, contact, body, dir, timestamp, nativeId, nativeThreadId);
         mReadStatus = readStatus;
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
             RcsService.Direction dir, long timestamp, ReadStatus readStatus) {
-        this(messageId, contact, body, dir, timestamp, (Long) null, null);
-        mReadStatus = readStatus;
+        this(messageId, contact, body, dir, readStatus, timestamp, null, null);
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
@@ -70,6 +64,7 @@ public class SmsDataObject extends XmsDataObject {
 
     @Override
     public String toString() {
-        return "SmsDataObject{" + super.toString() + " Body='" + mBody + "'}";
+        return "SmsDataObject{" + super.toString() + " Body='" + mBody + "' correlator='"
+                + mCorrelator + "'}";
     }
 }

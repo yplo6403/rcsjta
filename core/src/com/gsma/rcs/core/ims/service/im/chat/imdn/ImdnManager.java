@@ -24,7 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat.imdn;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.FeatureTags;
@@ -63,7 +63,7 @@ public class ImdnManager extends Thread {
 
     private final InstantMessagingService mImService;
     private final MessagingLog mMessagingLog;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
     private FifoBuffer mBuffer = new FifoBuffer();
 
     private final RcsSettings mRcsSettings;
@@ -76,13 +76,14 @@ public class ImdnManager extends Thread {
      * @param imService IM service
      * @param rcsSettings the RCS settings accessor
      * @param messagingLog the messaging log accessor
+     * @param cmsSessionController the CMS session controller
      */
     public ImdnManager(InstantMessagingService imService, RcsSettings rcsSettings,
-            MessagingLog messagingLog, CmsManager cmsManager) {
+            MessagingLog messagingLog, CmsSessionController cmsSessionController) {
         mImService = imService;
         mRcsSettings = rcsSettings;
         mMessagingLog = messagingLog;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
     }
 
     /**
@@ -269,25 +270,28 @@ public class ImdnManager extends Thread {
         SipManager sipManager = imsModule.getSipManager();
         SipInterface sipInterface = sipManager.getSipStack();
         String msgId = deliveryStatus.getMsgId();
+        String imdnMsgId = deliveryStatus.getImdnMessageId();
+        ImdnDocument.DeliveryStatus status = deliveryStatus.getStatus();
+        ContactId remote = deliveryStatus.getRemote();
         try {
             if (sLogger.isActivated()) {
-                sLogger.debug("Send delivery status " + deliveryStatus.getStatus() + " for ID "
-                        + msgId + " (SIP instance=" + remoteInstanceId + ")");
+                sLogger.debug("Send delivery status " + status + " for ID " + msgId + " (remote="
+                        + remote + ") (SIP instance=" + remoteInstanceId + ")");
             }
             // Create CPIM/IDMN document
             String from = ChatUtils.ANONYMOUS_URI;
             String to = ChatUtils.ANONYMOUS_URI;
             /* Timestamp for IMDN datetime */
-            String imdn = ChatUtils.buildImdnDeliveryReport(msgId, deliveryStatus.getStatus(),
+            String imdn = ChatUtils.buildImdnDeliveryReport(msgId, status,
                     deliveryStatus.getTimestamp());
             /* Timestamp for CPIM DateTime */
-            String cpim = ChatUtils.buildOneToOneChatCpimDeliveryReport(from, to,
-                    deliveryStatus.getImdnMessageId(), imdn, NtpTrustedTime.currentTimeMillis());
+            String cpim = ChatUtils.buildOneToOneChatCpimDeliveryReport(from, to, imdnMsgId, imdn,
+                    NtpTrustedTime.currentTimeMillis());
             // Create authentication agent
             SessionAuthenticationAgent authenticationAgent = new SessionAuthenticationAgent(
                     imsModule);
             // @FIXME: This should be an URI instead of String
-            String toUri = PhoneUtils.formatContactIdToUri(deliveryStatus.getRemote()).toString();
+            String toUri = PhoneUtils.formatContactIdToUri(remote).toString();
             // Create a dialog path
             SipDialogPath dialogPath = new SipDialogPath(sipInterface,
                     sipInterface.generateCallId(), 1, toUri, ImsModule.getImsUserProfile()
@@ -304,10 +308,8 @@ public class ImdnManager extends Thread {
             SipTransactionContext ctx = sipManager.sendSipMessageAndWait(msg);
             // Analyze received message
             analyzeSipResponse(ctx, authenticationAgent, dialogPath, cpim);
-
-            mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(
-                    deliveryStatus.getChatId(), deliveryStatus.getRemote(), msgId,
-                    deliveryStatus.getImdnMessageId());
+            mCmsSessionCtrl.getImdnDeliveryReportHandler().onDeliveryReport(
+                    deliveryStatus.getChatId(), remote, msgId, imdnMsgId, status);
 
         } catch (InvalidArgumentException | ParseException e) {
             throw new PayloadException("Unable to set authorization header for remoteInstanceId : "

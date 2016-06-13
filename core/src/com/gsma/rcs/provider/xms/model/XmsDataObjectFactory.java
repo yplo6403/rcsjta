@@ -19,6 +19,7 @@
 
 package com.gsma.rcs.provider.xms.model;
 
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.protocol.message.ImapMmsMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapSmsMessage;
@@ -27,7 +28,6 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody.Part;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
-import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
@@ -38,7 +38,6 @@ import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
-import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.MmsPartLog.MimeType;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
@@ -55,7 +54,6 @@ public class XmsDataObjectFactory {
             .getSimpleName());
 
     public static SmsDataObject createSmsDataObject(ImapSmsMessage imapSmsMessage) {
-
         ContactId contact = imapSmsMessage.getContact();
         Direction direction = imapSmsMessage.getDirection();
         ReadStatus readStatus = imapSmsMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
@@ -66,14 +64,13 @@ public class XmsDataObjectFactory {
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contact,
                 content, direction, imapSmsMessage.getDate(), readStatus,
                 imapSmsMessage.getCorrelator());
-        smsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT );
+        smsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT);
         return smsDataObject;
     }
 
     public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
             ImapMmsMessage imapMmsMessage) throws FileAccessException {
-
-        String messageId = IdGenerator.generateMessageID();
+        String messageId = imapMmsMessage.getMmsId();
         ContactId contactId = imapMmsMessage.getContact();
         Direction direction = imapMmsMessage.getDirection();
         MultipartCpimBody multipartCpimBody = imapMmsMessage.getCpimBody();
@@ -93,12 +90,12 @@ public class XmsDataObjectFactory {
                 long maxIconSize = rcsSettings.getMaxFileIconSize();
                 String imagePath = FileUtils.getPath(context, uri);
                 byte[] fileIcon = ImageUtils.tryGetThumbnail(imagePath, maxIconSize);
-                mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, fileName, fileLength,
+                mmsParts.add(new MmsDataObject.MmsPart(messageId, fileName, fileLength,
                         contentType, uri, fileIcon));
 
             } else if (MimeManager.isTextType(contentType)) {
                 String content = part.getContent();
-                mmsParts.add(new MmsDataObject.MmsPart(messageId, contactId, MimeType.TEXT_MESSAGE, content));
+                mmsParts.add(new MmsDataObject.MmsPart(messageId, MimeType.TEXT_MESSAGE, content));
             } else {
                 if (sLogger.isActivated()) {
                     sLogger.warn("Discard part having type " + contentType);
@@ -109,7 +106,7 @@ public class XmsDataObjectFactory {
         MmsDataObject mmsDataObject = new MmsDataObject(imapMmsMessage.getMmsId(), messageId,
                 contactId, imapMmsMessage.getSubject(), direction, readStatus,
                 imapMmsMessage.getDate(), null, null, mmsParts);
-        mmsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT );
+        mmsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT);
         return mmsDataObject;
     }
 }

@@ -23,7 +23,7 @@
 package com.gsma.rcs.core.ims.service.im.chat;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -50,8 +50,7 @@ import javax2.sip.header.SubjectHeader;
  */
 public class RejoinGroupChatSession extends GroupChatSession {
 
-    private final static Logger sLogger = Logger.getLogger(RejoinGroupChatSession.class
-            .getSimpleName());
+    private final static Logger sLogger = Logger.getLogger(RejoinGroupChatSession.class.getName());
 
     /**
      * Constructor
@@ -62,13 +61,13 @@ public class RejoinGroupChatSession extends GroupChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager the contact manager
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public RejoinGroupChatSession(InstantMessagingService imService, GroupChatInfo groupChatInfo,
             RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager, CmsManager cmsManager) {
+            ContactManager contactManager, CmsSessionController cmsSessionCtrl) {
         super(imService, null, groupChatInfo.getRejoinId(), groupChatInfo.getParticipants(),
-                rcsSettings, messagingLog, timestamp, contactManager, cmsManager);
+                rcsSettings, messagingLog, timestamp, contactManager, cmsSessionCtrl);
 
         if (!TextUtils.isEmpty(groupChatInfo.getSubject())) {
             setSubject(groupChatInfo.getSubject());

@@ -39,6 +39,11 @@ public class CmsLogTest extends AndroidTestCase {
 
     private CmsFolder[] mFolders;
     private CmsObject[] mMessages;
+    private ContactId mContact1;
+    private ContactId mContact2;
+    private String mFolder1;
+    private String mFolder2;
+    private String mFolder3;
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -46,39 +51,34 @@ public class CmsLogTest extends AndroidTestCase {
         mCmsLog = CmsLog.getInstance(context);
         mCmsLogTestIntegration = CmsLogTestIntegration.getInstance(context);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(context));
-        ContactId contact1 = contactUtils.formatContact("+330000000001");
-        ContactId contact2 = contactUtils.formatContact("+330000000002");
-        ContactId contact3 = contactUtils.formatContact("+330000000003");
+        mContact1 = contactUtils.formatContact("+330000000001");
+        mContact2 = contactUtils.formatContact("+330000000002");
+        ContactId mContact3 = contactUtils.formatContact("+330000000003");
         String chatId4 = "chatId4";
+        mFolder1 = com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(mContact1);
+        mFolder2 = com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(mContact2);
+        mFolder3 = com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(mContact3);
+        String mFolder4 = com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId4,
+                chatId4);
         mFolders = new CmsFolder[] {
-                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(contact1), 1,
-                        123, 1),
-                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(contact2), 1,
-                        1234, 1),
-                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.contactToCmsFolder(contact3), 1,
-                        12345, 1),
-                new CmsFolder(com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId4,
-                        chatId4), 1, 123456, 1)
+                new CmsFolder(mFolder1, 1, 123, 1), new CmsFolder(mFolder2, 1, 1234, 1),
+                new CmsFolder(mFolder3, 1, 12345, 1), new CmsFolder(mFolder4, 1, 123456, 1)
         };
         mMessages = new CmsObject[] {
-                new CmsObject(mFolders[0].getName(), 1, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId1",
-                        null),
-                new CmsObject(mFolders[1].getName(), 1, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId1",
-                        null),
-                new CmsObject(mFolders[1].getName(), 2, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId2",
-                        null),
-                new CmsObject(mFolders[2].getName(), 1, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId1",
-                        null),
-                new CmsObject(mFolders[2].getName(), 2, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId2",
-                        null),
-                new CmsObject(mFolders[2].getName(), 3, ReadStatus.UNREAD,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "messageId3",
-                        null)
+                new CmsObject(mFolder1, 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId1", null),
+                new CmsObject(mFolder2, 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId1", null),
+                new CmsObject(mFolder2, 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId2", null),
+                new CmsObject(mFolder3, 1, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId1", null),
+                new CmsObject(mFolder3, 2, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId2", null),
+                new CmsObject(mFolder3, 3, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.SMS, "messageId3", null),
+                new CmsObject(mFolder4, 3, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                        PushStatus.PUSHED, MessageType.CHAT_MESSAGE, "messageId1", 1L)
         };
         mCmsLog.removeFolders(false);
         mCmsLog.removeMessages();
@@ -91,25 +91,29 @@ public class CmsLogTest extends AndroidTestCase {
     }
 
     public void testAddFolder() {
-        CmsFolder folder;
-        mCmsLog.addFolder(mFolders[0]);
-        folder = mCmsLogTestIntegration.getFolder(mFolders[0].getName());
-        assertEquals(mFolders[0], folder);
+        CmsFolder folder = mFolders[0];
+        mCmsLog.addFolder(folder);
+        CmsFolder folderFromLog = mCmsLogTestIntegration.getFolder(folder.getName());
+        assertEquals(folder, folderFromLog);
+        folderFromLog = mCmsLogTestIntegration.getFolder("dummy");
+        assertNull(folderFromLog);
+    }
 
-        folder = mCmsLogTestIntegration.getFolder("dummy");
-        assertNull(folder);
+    public void testIsFolderPersisted() {
+        CmsFolder folder = mFolders[0];
+        mCmsLog.addFolder(folder);
+        assertTrue(mCmsLog.isFolderPersisted(folder.getName()));
     }
 
     public void testAddMessage() {
-        CmsObject message;
-        assertEquals(Integer.valueOf(0), mCmsLog.getMaxUidForMessages(mMessages[0].getFolder()));
-        mCmsLog.addMessage(mMessages[0]);
-        assertEquals(Integer.valueOf(1), mCmsLog.getMaxUidForMessages(mMessages[0].getFolder()));
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(mMessages[0], message);
-
-        message = mCmsLog.getMessage("dummy", 0);
-        assertNull(message);
+        CmsObject message = mMessages[0];
+        assertEquals((Integer) 0, mCmsLog.getMaxUidForMessages(message.getFolder()));
+        mCmsLog.addMessage(message);
+        assertEquals((Integer) 1, mCmsLog.getMaxUidForMessages(message.getFolder()));
+        CmsObject msgFromLog = mCmsLog.getMessage(mFolder1, message.getUid());
+        assertEquals(message, msgFromLog);
+        msgFromLog = mCmsLog.getMessage("dummy", 0);
+        assertNull(msgFromLog);
     }
 
     public void testGetFolders() {
@@ -119,61 +123,59 @@ public class CmsLogTest extends AndroidTestCase {
         mCmsLog.addFolder(mFolders[0]);
         folders = mCmsLog.getFolders();
         assertEquals(1, folders.size());
-        assertTrue(folders.containsKey(mFolders[0].getName()));
+        assertTrue(folders.containsKey(mFolder1));
 
         mCmsLog.addFolder(mFolders[0]);
         folders = mCmsLog.getFolders();
         assertEquals(1, folders.size());
-        assertTrue(folders.containsKey(mFolders[0].getName()));
+        assertTrue(folders.containsKey(mFolder1));
 
         mCmsLog.addFolder(mFolders[1]);
         folders = mCmsLog.getFolders();
         assertEquals(2, folders.size());
-        assertTrue(folders.containsKey(mFolders[0].getName()));
-        assertTrue(folders.containsKey(mFolders[1].getName()));
+        assertTrue(folders.containsKey(mFolder1));
+        assertTrue(folders.containsKey(mFolder2));
 
         mCmsLog.addFolder(mFolders[2]);
         folders = mCmsLog.getFolders();
         assertEquals(3, folders.size());
-        assertTrue(folders.containsKey(mFolders[0].getName()));
-        assertTrue(folders.containsKey(mFolders[1].getName()));
-        assertTrue(folders.containsKey(mFolders[2].getName()));
+        assertTrue(folders.containsKey(mFolder1));
+        assertTrue(folders.containsKey(mFolder2));
+        assertTrue(folders.containsKey(mFolder3));
     }
 
     public void testUpdateFolderSingle() {
-        CmsFolder folder;
-        mCmsLog.addFolder(mFolders[0]);
-        assertTrue(mCmsLog.isFolderPersisted(mFolders[0].getName()));
+        CmsFolder folder = mFolders[0];
+        mCmsLog.addFolder(folder);
+        assertTrue(mCmsLog.isFolderPersisted(folder.getName()));
 
-        folder = mCmsLogTestIntegration.getFolder(mFolders[0].getName());
-        assertEquals(mFolders[0], folder);
+        CmsFolder folderFromLog = mCmsLogTestIntegration.getFolder(folder.getName());
+        assertEquals(folder, folderFromLog);
 
-        mCmsLog.updateFolder(new CmsFolder(mFolders[0].getName(), 0, 0, 0));
-
-        folder = mCmsLogTestIntegration.getFolder(mFolders[0].getName());
+        mCmsLog.updateFolder(new CmsFolder(folder.getName(), 0, 0, 0));
+        folderFromLog = mCmsLogTestIntegration.getFolder(folder.getName());
         assertEquals(1, mCmsLog.getFolders().size());
-        assertEquals(Integer.valueOf(0), folder.getModseq());
-        assertEquals(Integer.valueOf(0), folder.getNextUid());
-        assertEquals(Integer.valueOf(0), folder.getUidValidity());
+        assertEquals((Integer) 0, folderFromLog.getModseq());
+        assertEquals((Integer) 0, folderFromLog.getNextUid());
+        assertEquals((Integer) 0, folderFromLog.getUidValidity());
     }
 
     public void testUpdateFolderGroup() {
-        CmsFolder folder;
         CmsFolder groupFolder = mFolders[3];
         String folderName = groupFolder.getName();
         mCmsLog.addFolder(groupFolder);
         assertTrue(mCmsLog.isFolderPersisted(folderName));
 
-        folder = mCmsLogTestIntegration.getFolder(folderName);
-        assertEquals(groupFolder, folder);
+        CmsFolder folderFromLog = mCmsLogTestIntegration.getFolder(folderName);
+        assertEquals(groupFolder, folderFromLog);
 
         mCmsLog.updateFolder(new CmsFolder(folderName, 0, 0, 0));
 
-        folder = mCmsLogTestIntegration.getFolder(folderName);
+        folderFromLog = mCmsLogTestIntegration.getFolder(folderName);
         assertEquals(1, mCmsLog.getFolders().size());
-        assertEquals(Integer.valueOf(0), folder.getModseq());
-        assertEquals(Integer.valueOf(0), folder.getNextUid());
-        assertEquals(Integer.valueOf(0), folder.getUidValidity());
+        assertEquals((Integer) 0, folderFromLog.getModseq());
+        assertEquals((Integer) 0, folderFromLog.getNextUid());
+        assertEquals((Integer) 0, folderFromLog.getUidValidity());
     }
 
     public void testRemoveFolder() {
@@ -203,16 +205,16 @@ public class CmsLogTest extends AndroidTestCase {
             mCmsLog.addMessage(mMessages[i]);
             assertEquals(i + 1, mCmsLogTestIntegration.getMessages().size());
         }
-        messages = mCmsLogTestIntegration.getMessages(mFolders[0].getName());
+        messages = mCmsLogTestIntegration.getMessages(mFolder1);
         assertEquals(1, messages.size());
         assertEquals(mMessages[0], messages.get(mMessages[0].getUid()));
 
-        messages = mCmsLogTestIntegration.getMessages(mFolders[1].getName());
+        messages = mCmsLogTestIntegration.getMessages(mFolder2);
         assertEquals(2, messages.size());
         assertEquals(mMessages[1], messages.get(mMessages[1].getUid()));
         assertEquals(mMessages[2], messages.get(mMessages[2].getUid()));
 
-        messages = mCmsLogTestIntegration.getMessages(mFolders[2].getName());
+        messages = mCmsLogTestIntegration.getMessages(mFolder3);
         assertEquals(3, messages.size());
         assertEquals(mMessages[3], messages.get(mMessages[3].getUid()));
         assertEquals(mMessages[4], messages.get(mMessages[4].getUid()));
@@ -228,30 +230,24 @@ public class CmsLogTest extends AndroidTestCase {
         for (CmsObject mMessage : mMessages) {
             assertTrue(mCmsLog.getMessageId(mMessage.getFolder(), mMessage.getUid()) != CmsLog.INVALID_ID);
         }
-        for (CmsObject mMessage : mMessages) {
-            assertEquals(mMessage.getUid(),
-                    mCmsLogTestIntegration.getUidForXmsMessage(mMessage.getMessageId()));
-        }
     }
 
     public void testUpdateMessage() {
-        CmsObject message;
-        mCmsLog.addMessage(mMessages[0]);
-
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(mMessages[0], message);
-
-        mCmsLog.addMessage(new CmsObject(mMessages[0].getFolder(), 1, ReadStatus.READ,
+        CmsObject message = mMessages[0];
+        mCmsLog.addMessage(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(message, msgFromLog);
+        mCmsLog.addMessage(new CmsObject(message.getFolder(), 1, ReadStatus.READ,
                 DeleteStatus.DELETED, PushStatus.PUSHED, MessageType.MMS, "messageId1", null));
-
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
+        msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
         assertEquals(1, mCmsLogTestIntegration.getMessages().size());
-        assertEquals(DeleteStatus.DELETED, message.getDeleteStatus());
-        assertEquals(ReadStatus.READ, message.getReadStatus());
-        assertEquals(MessageType.MMS, message.getMessageType());
+        assertEquals(DeleteStatus.DELETED, msgFromLog.getDeleteStatus());
+        assertEquals(ReadStatus.READ, msgFromLog.getReadStatus());
+        assertEquals(MessageType.MMS, msgFromLog.getMessageType());
+        assertNull(msgFromLog.getNativeProviderId());
     }
 
-    public void testRemoveMessages() {
+    public void testRemoveMessage() {
         for (CmsObject message : mMessages) {
             mCmsLog.addMessage(message);
         }
@@ -262,37 +258,79 @@ public class CmsLogTest extends AndroidTestCase {
         }
     }
 
+    public void testRemoveMessages() {
+        for (CmsObject message : mMessages) {
+            mCmsLog.addMessage(message);
+        }
+        assertEquals(1, mCmsLog.removeMessages(mFolder1));
+        assertEquals(2, mCmsLog.removeMessages(mFolder2));
+        assertEquals(3, mCmsLog.removeMessages(mFolder3));
+    }
+
+    public void testPurgeMessages() {
+        for (CmsObject message : mMessages) {
+            mCmsLog.addMessage(message);
+        }
+        assertEquals(1, mCmsLog.updateDeleteStatus(mFolder1, DeleteStatus.DELETED));
+        assertEquals(1,
+                mCmsLog.updateXmsDeleteStatus(mContact2, "messageId1", DeleteStatus.DELETED, null));
+        assertEquals(1, mCmsLog.updateDeleteStatus(mFolder3, 1, DeleteStatus.DELETED));
+        assertEquals(1, mCmsLog.updateDeleteStatus(mFolder3, 3, DeleteStatus.DELETED));
+        assertEquals(4, mCmsLog.purgeDeletedMessages());
+    }
+
     public void testRemoveAllMessages() {
         for (CmsObject message : mMessages) {
             mCmsLog.addMessage(message);
         }
         assertEquals(mMessages.length, mCmsLogTestIntegration.getMessages().size());
-        mCmsLog.removeMessages();
+        assertEquals(mMessages.length, mCmsLog.removeMessages());
         assertEquals(0, mCmsLogTestIntegration.getMessages().size());
     }
 
-    public void testUpdateDeleteStatus() {
-        CmsObject message;
-        mCmsLog.addMessage(mMessages[0]);
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(DeleteStatus.NOT_DELETED, message.getDeleteStatus());
-
-        mCmsLog.updateDeleteStatus(mMessages[0].getMessageType(), mMessages[0].getMessageId(),
-                DeleteStatus.DELETED_REPORT_REQUESTED);
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, message.getDeleteStatus());
+    public void testUpdateRcsDeleteStatus() {
+        CmsObject message = mMessages[6];
+        mCmsLog.addMessage(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(DeleteStatus.NOT_DELETED, msgFromLog.getDeleteStatus());
+        assertEquals(1, mCmsLog.updateRcsDeleteStatus(message.getMessageType(),
+                message.getMessageId(), DeleteStatus.DELETED_REPORT_REQUESTED, null));
+        msgFromLog = mCmsLog.getMessage(message.getFolder(), msgFromLog.getUid());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, msgFromLog.getDeleteStatus());
     }
 
     public void testUpdateReadStatus() {
-        CmsObject message;
-        mCmsLog.addMessage(mMessages[0]);
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(ReadStatus.UNREAD, message.getReadStatus());
+        CmsObject message = mMessages[0];
+        mCmsLog.addMessage(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(ReadStatus.UNREAD, msgFromLog.getReadStatus());
+        assertEquals(message.getFolder(), msgFromLog.getFolder());
+        assertEquals(1,
+                mCmsLog.updateReadStatus(message.getFolder(), message.getUid(), ReadStatus.READ));
+        message = mCmsLog.getMessage(message.getFolder(), msgFromLog.getUid());
+        assertEquals(ReadStatus.READ, message.getReadStatus());
+    }
 
-        mCmsLog.updateReadStatus(mMessages[0].getMessageType(), mMessages[0].getMessageId(),
-                ReadStatus.READ_REPORT_REQUESTED);
-        message = mCmsLog.getMessage(mMessages[0].getFolder(), mMessages[0].getUid());
-        assertEquals(ReadStatus.READ_REPORT_REQUESTED, message.getReadStatus());
+    public void testUpdateXmsReadStatus() {
+        CmsObject message = mMessages[0];
+        mCmsLog.addMessage(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(ReadStatus.UNREAD, msgFromLog.getReadStatus());
+        assertEquals(1, mCmsLog.updateXmsReadStatus(mContact1, message.getMessageId(),
+                ReadStatus.READ_REPORT_REQUESTED, null));
+        msgFromLog = mCmsLog.getMessage(message.getFolder(), msgFromLog.getUid());
+        assertEquals(ReadStatus.READ_REPORT_REQUESTED, msgFromLog.getReadStatus());
+    }
+
+    public void testUpdateRcsReadStatus() {
+        CmsObject message = mMessages[6];
+        mCmsLog.addMessage(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(ReadStatus.UNREAD, msgFromLog.getReadStatus());
+        assertEquals(1, mCmsLog.updateRcsReadStatus(MessageType.CHAT_MESSAGE,
+                message.getMessageId(), ReadStatus.READ_REPORT_REQUESTED, null));
+        msgFromLog = mCmsLog.getMessage(msgFromLog.getFolder(), msgFromLog.getUid());
+        assertEquals(ReadStatus.READ_REPORT_REQUESTED, msgFromLog.getReadStatus());
     }
 
     public void testResetReportedStatus() {
@@ -314,8 +352,8 @@ public class CmsLogTest extends AndroidTestCase {
         mCmsLog.addMessage(obj3);
 
         ContentProviderResult[] result = mCmsLog.resetReportedStatus();
-        assertEquals(Integer.valueOf(2), result[0].count);
-        assertEquals(Integer.valueOf(2), result[1].count);
+        assertEquals((Integer) 2, result[0].count);
+        assertEquals((Integer) 2, result[1].count);
 
         CmsObject message = mCmsLog.getMessage(obj0.getFolder(), obj0.getUid());
         assertEquals(ReadStatus.UNREAD, message.getReadStatus());
@@ -353,20 +391,20 @@ public class CmsLogTest extends AndroidTestCase {
         mCmsLog.addMessage(obj3);
 
         ContentProviderResult[] result = mCmsLog.updateStatusesWhereReported(obj0.getMessageId());
-        assertEquals(Integer.valueOf(0), result[0].count);
-        assertEquals(Integer.valueOf(0), result[1].count);
+        assertEquals((Integer) 0, result[0].count);
+        assertEquals((Integer) 0, result[1].count);
 
         result = mCmsLog.updateStatusesWhereReported(obj1.getMessageId());
-        assertEquals(Integer.valueOf(1), result[0].count);
-        assertEquals(Integer.valueOf(0), result[1].count);
+        assertEquals((Integer) 1, result[0].count);
+        assertEquals((Integer) 0, result[1].count);
 
         result = mCmsLog.updateStatusesWhereReported(obj2.getMessageId());
-        assertEquals(Integer.valueOf(0), result[0].count);
-        assertEquals(Integer.valueOf(1), result[1].count);
+        assertEquals((Integer) 0, result[0].count);
+        assertEquals((Integer) 1, result[1].count);
 
         result = mCmsLog.updateStatusesWhereReported(obj3.getMessageId());
-        assertEquals(Integer.valueOf(1), result[0].count);
-        assertEquals(Integer.valueOf(1), result[1].count);
+        assertEquals((Integer) 1, result[0].count);
+        assertEquals((Integer) 1, result[1].count);
 
         CmsObject message = mCmsLog.getMessage(obj0.getFolder(), obj0.getUid());
         assertEquals(ReadStatus.UNREAD, message.getReadStatus());
@@ -383,5 +421,38 @@ public class CmsLogTest extends AndroidTestCase {
         message = mCmsLog.getMessage(obj3.getFolder(), obj3.getUid());
         assertEquals(ReadStatus.READ, message.getReadStatus());
         assertEquals(DeleteStatus.DELETED, message.getDeleteStatus());
+    }
+
+    public void testGetNativeMessages() {
+        for (CmsObject message : mMessages) {
+            mCmsLog.addMessage(message);
+        }
+        Map<Long, CmsObject> cmsObjets = mCmsLog.getNativeMessages(MessageType.SMS);
+        assertTrue(cmsObjets.isEmpty());
+        cmsObjets = mCmsLog.getNativeMessages(MessageType.CHAT_MESSAGE);
+        assertEquals(1, cmsObjets.size());
+        Map.Entry<Long, CmsObject> entry = cmsObjets.entrySet().iterator().next();
+        assertEquals((Long) 1L, entry.getValue().getNativeProviderId());
+    }
+
+    public void testUpdateXmsPushStatus() {
+        CmsObject message = new CmsObject(mFolder1, null, ReadStatus.UNREAD,
+                DeleteStatus.NOT_DELETED, PushStatus.PUSH_REQUESTED, MessageType.SMS, "messageId1",
+                null);
+        mCmsLog.addMessage(message);
+        assertEquals(1, mCmsLog.updateXmsPushStatus(1, mContact1, message.getMessageId(),
+                PushStatus.PUSHED));
+        assertNull(mCmsLog.getMmsData(mContact1, message.getMessageId()));
+        CmsObject msgFromLog = mCmsLog.getSmsData(mContact1, message.getMessageId());
+        assertEquals(PushStatus.PUSHED, msgFromLog.getPushStatus());
+    }
+
+    public void testUpdateSmsMessageId() {
+        CmsObject message = mMessages[0];
+        mCmsLog.addMessage(message);
+        assertTrue(mCmsLog.updateSmsMessageId(mContact1, message.getMessageId(), "new-message-id"));
+        CmsObject msgFromLog = mCmsLog.getSmsData(mContact1, "new-message-id");
+        assertEquals("new-message-id", msgFromLog.getMessageId());
+        assertEquals(message.getUid(), msgFromLog.getUid());
     }
 }

@@ -124,8 +124,8 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     @SmallTest
     public void testToPayload() {
         List<MmsPart> parts = new ArrayList<>();
-        parts.add(new MmsPart("myMmsId", mRemote, "text/plain", "myContent"));
-        parts.add(new MmsPart("myMmsId", mRemote, "text/plain; charset=utf-8", "1"));
+        parts.add(new MmsPart("myMmsId", "text/plain", "myContent"));
+        parts.add(new MmsPart("myMmsId", "text/plain; charset=utf-8", "1"));
         ImapMmsMessage imapMmsMessage = new ImapMmsMessage(getContext(), mRemote, "+33642575779",
                 "+33640332859", "received", mDate, null, "1443517760826", "1443517760826",
                 "1443517760826", "myMmsId", parts);

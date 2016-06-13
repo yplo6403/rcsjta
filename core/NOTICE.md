@@ -5,6 +5,14 @@
 > Installation:
 > The RCS\_core.apk must be first installed on the device. Client applications (i.e. RCS_RI.apk, RCS_settings.apk and cmsToolKit.apk) must be installed afterwards otherwise permission to bind to the core service is denied.
 
+Limitations :
+
+	* MMS received while mobile data is OFF are converted by the network into indirect notification. 
+	Those messages are not discovered by the RCS stack. They are retrieved once the data network is recovered.
+	* Group chat is not tested since group chat messages are not correctly pushed on CMS.
+	* RCS File transfer is not tested since object is not correctly pushed on CMS.
+	
+
 News:
 
 	* Core: refactor provisioning tool
@@ -14,7 +22,8 @@ News:
 
 Bugs fixed:
 
-
+	* CMS: MMS are duplicated if already pushed on CMS and resolved locally.
+	* FO 60 SMS corelation issue (SMS stored via the SMS-C) in the stack.
 	* CMS: bad intitial state for synchronaized GC
 	* Core: Added support for psMedia & psRTMedia
 	* Core: Added ApplyBatch for resetting setting.db to default values

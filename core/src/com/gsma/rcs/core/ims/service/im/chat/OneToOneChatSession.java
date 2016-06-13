@@ -25,7 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -76,7 +76,8 @@ public abstract class OneToOneChatSession extends ChatSession {
 
     private static final Logger sLogger = Logger.getLogger(OneToOneChatSession.class
             .getSimpleName());
-    private final CmsManager mCmsManager;
+
+    private final CmsSessionController mCmsSessionCtrl;
 
     private String mRemoteSipInstance;
 
@@ -91,15 +92,15 @@ public abstract class OneToOneChatSession extends ChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager Contact manager accessor
-     * @param cmsManager The CMS manager
+     * @param cmsSessionController The CMS session controller
      */
     public OneToOneChatSession(InstantMessagingService imService, ContactId contact,
             Uri remoteContact, ChatMessage firstMsg, RcsSettings rcsSettings,
             MessagingLog messagingLog, long timestamp, ContactManager contactManager,
-            CmsManager cmsManager, String remoteSipInstance) {
+            CmsSessionController cmsSessionController, String remoteSipInstance) {
         super(imService, contact, remoteContact, rcsSettings, messagingLog, firstMsg, timestamp,
                 contactManager);
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
         mRemoteSipInstance = remoteSipInstance;
         List<String> featureTags = ChatUtils.getSupportedFeatureTagsForChat(rcsSettings);
         setFeatureTags(featureTags);
@@ -347,8 +348,8 @@ public abstract class OneToOneChatSession extends ChatSession {
                 }
             }
         }
-        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(getRemoteContact(), msgId,
-                imdnMessageId);
+        mCmsSessionCtrl.getImdnDeliveryReportHandler().onDeliveryReport(getRemoteContact(), msgId,
+                imdnMessageId, status);
     }
 
     @Override

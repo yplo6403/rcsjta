@@ -13,4 +13,6 @@ interface IOneToOneChatListener {
 	void onComposingEvent(in ContactId contact, in boolean status);
 
 	void onMessagesDeleted(in ContactId contact, in List<String> msgIds);
+
+	void onMessageRead(in ContactId contact, in String msgId);
 }

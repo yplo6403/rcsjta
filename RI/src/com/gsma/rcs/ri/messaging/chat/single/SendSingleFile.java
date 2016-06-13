@@ -190,6 +190,10 @@ public class SendSingleFile extends SendFile {
                 }
             }
 
+            @Override
+            public void onRead(ContactId contact, String transferId) {
+            }
+
         };
     }
 }

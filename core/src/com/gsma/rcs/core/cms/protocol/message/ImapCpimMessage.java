@@ -108,4 +108,9 @@ public class ImapCpimMessage extends ImapMessage {
     public ContactId getContact() {
         return mRemote;
     }
+
+    @Override
+    public String toString() {
+        return "ImapCpim{" + "remote=" + mRemote + ",dir=" + mDirection + '}';
+    }
 }

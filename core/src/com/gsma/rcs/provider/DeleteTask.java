@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -18,12 +19,14 @@ package com.gsma.rcs.provider;
 
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.DatabaseUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.database.Cursor;
 import android.net.Uri;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,11 +50,13 @@ public abstract class DeleteTask<T> implements Runnable {
 
     private static final Logger sLogger = Logger.getLogger(DeleteTask.class.getName());
 
-    private final String mColumnPrimaryKey;
-
     private final String mColumnGroupBy;
 
     private final boolean mPathAppended;
+
+    private final boolean mPrimaryKey;
+
+    private final String mColumnKey;
 
     private boolean mDeleteAllAtOnce;
 
@@ -61,25 +66,42 @@ public abstract class DeleteTask<T> implements Runnable {
 
         private final ContactId mContact;
 
+        /**
+         * Delete a specific item or all
+         * 
+         * @param contentResolver the content resolver
+         * @param contentUri the content URI
+         * @param columnKey the column of the message ID
+         * @param primaryKey true if the message ID is a primary key
+         * @param columnGroupBy the column to group (either the contact or chat ID)
+         * @param singleItem true to delete a single item
+         * @param selection the selection scope executed in the database. If null, all are eligible
+         *            for delete or one exactly (in that case selectionArgs must have one value,
+         *            unique id of the item).
+         * @param selectionArgs the selection arguments of the scope
+         */
         public GroupedByContactId(LocalContentResolver contentResolver, Uri contentUri,
-                String columnPrimaryKey, String columnGroupBy, String selection,
-                String... selectionArgs) {
-            super(contentResolver, contentUri, columnPrimaryKey, columnGroupBy, selection,
-                    selectionArgs);
+                String columnKey, boolean primaryKey, String columnGroupBy, boolean singleItem,
+                String selection, String... selectionArgs) {
+            super(contentResolver, contentUri, columnKey, primaryKey, columnGroupBy, singleItem,
+                    selection, selectionArgs);
             mContact = null;
         }
 
         /**
-         * @param contentResolver
-         * @param contentUri
-         * @param columnPrimaryKey
-         * @param columnContact
-         * @param contact
+         * Delete a conversation
+         * 
+         * @param contentResolver the content resolver
+         * @param contentUri the content URI
+         * @param columnKey the primary key column
+         * @param primaryKey true if key is primary
+         * @param columnContact the contact column
+         * @param contact the contact
          */
-        public GroupedByContactId(LocalContentResolver contentResolver,
-                Uri contentUri, String columnPrimaryKey, String columnContact, ContactId contact) {
-            super(contentResolver, contentUri, columnPrimaryKey, columnContact,
-                    new StringBuilder(columnContact).append("=?").toString(), contact.toString());
+        public GroupedByContactId(LocalContentResolver contentResolver, Uri contentUri,
+                String columnKey, boolean primaryKey, String columnContact, ContactId contact) {
+            super(contentResolver, contentUri, columnKey, primaryKey, columnContact, false,
+                    columnContact + "=?", contact.toString());
             mContact = contact;
         }
 
@@ -100,10 +122,10 @@ public abstract class DeleteTask<T> implements Runnable {
     public abstract static class GroupedByChatId extends DeleteTask<String> {
 
         public GroupedByChatId(LocalContentResolver contentResolver, Uri contentUri,
-                String columnPrimaryKey, String columnGroupBy, String selection,
-                String... selectionArgs) {
-            super(contentResolver, contentUri, columnPrimaryKey, columnGroupBy, selection,
-                    selectionArgs);
+                String columnPrimaryKey, String columnGroupBy, boolean singleItem,
+                String selection, String... selectionArgs) {
+            super(contentResolver, contentUri, columnPrimaryKey, true, columnGroupBy, singleItem,
+                    selection, selectionArgs);
         }
 
         @Override
@@ -117,9 +139,9 @@ public abstract class DeleteTask<T> implements Runnable {
 
         private static final String DEFAULT_KEY = "";
 
-        public NotGrouped(LocalContentResolver contentResolver, Uri contentUri,
-                String columnPrimaryKey, String selection, String... selectionArgs) {
-            super(contentResolver, contentUri, columnPrimaryKey, null, selection,
+        public NotGrouped(LocalContentResolver contentResolver, Uri contentUri, String columnKey,
+                boolean primaryKey, boolean singleItem, String selection, String... selectionArgs) {
+            super(contentResolver, contentUri, columnKey, primaryKey, null, singleItem, selection,
                     selectionArgs);
         }
 
@@ -147,10 +169,11 @@ public abstract class DeleteTask<T> implements Runnable {
     /**
      * This constructor requires the scope of the deletion as a database query selection, and its
      * dependencies.
-     * 
+     *
      * @param contentResolver the local content resolver
      * @param contentUri the content uri (not path appended)
-     * @param columnPrimaryKey the primary key of the item to delete
+     * @param columnKey the key of the item to delete
+     * @param primaryKey True if the key is primary
      * @param columnGroupBy the column by which to group (chat id, contact id) the selection of the
      *            scope or null if it doesnt apply
      * @param selection the selection scope executed in the database. If null, all are eligible for
@@ -158,40 +181,60 @@ public abstract class DeleteTask<T> implements Runnable {
      *            of the item).
      * @param selectionArgs the selection arguments of the scope
      */
-    public DeleteTask(LocalContentResolver contentResolver, Uri contentUri,
-            String columnPrimaryKey, String columnGroupBy, String selection,
+    public DeleteTask(LocalContentResolver contentResolver, Uri contentUri, String columnKey,
+            boolean primaryKey, String columnGroupBy, boolean singleItem, String selection,
             String... selectionArgs) {
         mLocalContentResolver = contentResolver;
-        if (selection == null && selectionArgs != null && selectionArgs.length == 1) {
-            mContentUri = contentUri.buildUpon().appendPath(selectionArgs[0].toString()).build();
+        mPrimaryKey = primaryKey;
+        if (!primaryKey) {
+            mContentUri = contentUri;
+            mPathAppended = false;
+            mSelection = selection;
+            mSelectionArgs = selectionArgs;
+            mColumnGroupBy = columnGroupBy;
+            mProjection = new String[] {
+                    columnKey, columnGroupBy
+            };
+            if (singleItem) {
+                mDeleteAllAtOnce = true;
+            }
+            mColumnKey = columnKey;
+
+        } else if (selection == null && selectionArgs != null && selectionArgs.length == 1) {
+            mContentUri = contentUri.buildUpon().appendPath(selectionArgs[0]).build();
             mPathAppended = true;
-            selectionArgs = null;
+            mSelection = null;
+            mSelectionArgs = null;
+            mColumnGroupBy = columnGroupBy;
+            mProjection = new String[] {
+                    columnKey, columnGroupBy
+            };
+            mDeleteAllAtOnce = true;
+            mColumnKey = columnKey;
+
         } else {
             mContentUri = contentUri;
             mPathAppended = false;
-        }
-        mSelection = selection;
-        if (selectionArgs == null || selectionArgs.length == 0) {
-            mSelectionArgs = null;
-        } else {
             mSelectionArgs = selectionArgs;
+            mSelection = selection;
+            mColumnGroupBy = columnGroupBy;
+            if (mColumnGroupBy == null) {
+                mProjection = new String[] {
+                    columnKey
+                };
+            } else {
+                mProjection = new String[] {
+                        columnKey, columnGroupBy
+                };
+            }
+            mColumnKey = columnKey;
         }
-        mColumnPrimaryKey = columnPrimaryKey;
-        mColumnGroupBy = columnGroupBy;
-        if (mColumnGroupBy == null) {
-            mProjection = new String[] {
-                mColumnPrimaryKey
-            };
-        } else {
-            mProjection = new String[] {
-                    mColumnPrimaryKey, mColumnGroupBy
-            };
-        }
+
     }
 
     /**
      * Queries all the ids of the scope and group them by the "group" column.
-     * 
+     *
      * @return the map of the ids grouped by the keys returned by the group column
      */
     private Map<T, Set<String>> getGroupedItemIds() {
@@ -204,7 +247,7 @@ public abstract class DeleteTask<T> implements Runnable {
             while (cursor.moveToNext()) {
                 String key = cursor.getString(0);
                 T groupId = null;
-                if (mColumnGroupBy != null) {
+                if (mColumnGroupBy != null || !mPrimaryKey) {
                     groupId = getGroupAsKey(cursor.getString(1));
                 }
                 Set<String> ids = null;
@@ -212,9 +255,9 @@ public abstract class DeleteTask<T> implements Runnable {
                     ids = result.get(groupId);
                 }
                 if (ids == null) {
-                    ids = new HashSet<String>();
+                    ids = new HashSet<>();
                     if (result == null) {
-                        result = new HashMap<T, Set<String>>();
+                        result = new HashMap<>();
                     }
                     result.put(groupId, ids);
                 }
@@ -229,7 +272,7 @@ public abstract class DeleteTask<T> implements Runnable {
 
     /**
      * Execution can be run several times as incoming items can be deleted.
-     * 
+     *
      * @return the result of the execution as map (deleted ids mapped by group column)
      * @throws PayloadException
      */
@@ -240,9 +283,29 @@ public abstract class DeleteTask<T> implements Runnable {
         }
         for (T groupId : items.keySet()) {
             for (String itemKey : items.get(groupId)) {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("onRowDelete groupId=" + groupId + " item=" + itemKey);
+                }
                 onRowDelete(groupId, itemKey);
                 if (!mDeleteAllAtOnce) {
-                    mLocalContentResolver.delete(getAppendedPathUri(itemKey), null, null);
+                    if (mPrimaryKey) {
+                        mLocalContentResolver.delete(getAppendedPathUri(itemKey), null, null);
+                    } else {
+                        String[] newSelectionArgs;
+                        String newSelection;
+                        if (mSelection == null) {
+                            newSelection = mColumnKey + "=? AND " + mColumnGroupBy + "=?";
+                            newSelectionArgs = DatabaseUtils.appendIdWithSelectionArgs(itemKey,
+                                    new String[] {
+                                        groupId.toString()
+                                    });
+                        } else {
+                            newSelectionArgs = DatabaseUtils.appendIdWithSelectionArgs(itemKey,
+                                    mSelectionArgs);
+                            newSelection = mColumnKey + "=? AND " + mSelection;
+                        }
+                        mLocalContentResolver.delete(mContentUri, newSelection, newSelectionArgs);
+                    }
                 }
             }
             if (mDeleteAllAtOnce) {
@@ -267,15 +330,15 @@ public abstract class DeleteTask<T> implements Runnable {
 
     /**
      * @param groupId key of the group
-     * @param itemId
+     * @param itemId the item ID
      * @throws PayloadException
      */
     protected abstract void onRowDelete(T groupId, String itemId) throws PayloadException;
 
     /**
      * Called after the delete is completed to report the ids deleted per group chatId or contact.
-     * 
-     * @param chatOrContactId the key by which the ids are grouped by.
+     *
+     * @param groupId the key by which the ids are grouped by.
      * @param deletedIds as a {@link Set} as required by the listeners.
      */
     protected abstract void onCompleted(T groupId, Set<String> deletedIds);
@@ -283,7 +346,7 @@ public abstract class DeleteTask<T> implements Runnable {
     /**
      * Set to true if delete on all the scope range at once. False is default. If not set, the task
      * will delete each row one by one.
-     * 
+     *
      * @param deleteAllAtOnce true if delete all at once
      */
     public void setAllAtOnce(boolean deleteAllAtOnce) {
@@ -307,24 +370,26 @@ public abstract class DeleteTask<T> implements Runnable {
                     }
                 }
             }
-        } catch (PayloadException e) {
+        } catch (PayloadException | RuntimeException e) {
             sLogger.error("Exception occurred while deleting!", e);
-        } catch (RuntimeException e) {
-            /*
-             * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
-             * which should be handled/fixed within the code. However the cases when we are
-             * executing operations on a thread unhandling such exceptions will eventually lead to
-             * exit the system and thus can bring the whole system down, which is not intended.
-             */
-            sLogger.error("Exception occurred while deleting!", e);
+
         } finally {
-            if (deletedIds == null) {
-                return;
-            }
-            for (T groupId : deletedIds.keySet()) {
-                onCompleted(groupId, deletedIds.get(groupId));
+            if (deletedIds != null) {
+                for (Map.Entry<T, Set<String>> entry : deletedIds.entrySet()) {
+                    T groupId = entry.getKey();
+                    Set<String> delIds = entry.getValue();
+                    if (sLogger.isActivated()) {
+                        if (delIds.size() <= 5) {
+                            sLogger.debug("onCompleted groupId=" + groupId + " IDs="
+                                    + Arrays.toString(delIds.toArray()));
+                        } else {
+                            sLogger.debug("onCompleted groupId=" + groupId + " IDs size="
+                                    + delIds.size());
+                        }
+                    }
+                    onCompleted(groupId, delIds);
+                }
             }
         }
     }
-
 }

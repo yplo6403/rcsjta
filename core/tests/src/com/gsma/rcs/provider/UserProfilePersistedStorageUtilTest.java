@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 package com.gsma.rcs.provider;
 
 import com.gsma.rcs.addressbook.RcsAccountException;
-import com.gsma.rcs.provider.UserProfilePersistedStorageUtil;
 import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -39,8 +38,8 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
     private static final Logger sLogger = Logger.getLogger(UserProfilePersistedStorageUtilTest.class
             .getSimpleName());
 
-    private static final String DB_PATH = new StringBuilder(Environment.getDataDirectory()
-            .toString()).append(UserProfilePersistedStorageUtil.DATABASE_LOCATION).toString();
+    private static final String DB_PATH = Environment.getDataDirectory()
+            .toString() + UserProfilePersistedStorageUtil.DATABASE_LOCATION;
 
     private File mSrcdir = new File(DB_PATH);
 
@@ -104,8 +103,8 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
 
         mSavedAccounts = listOfSavedAccounts(mSrcdir);
         for (File file : mSavedAccounts) {
-            sLogger.info(new StringBuilder("Account ").append(file.getName())
-                    .append(" last modified=").append(file.lastModified()).toString());
+            sLogger.info("Account " + file.getName() +
+                    " last modified=" + file.lastModified());
         }
         assertTrue("listOfSavedAccounts failed", mSavedAccounts.length == 4);
 
@@ -134,8 +133,8 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
         UserProfilePersistedStorageUtil.normalizeFileBackup("3333");
         mSavedAccounts = listOfSavedAccounts(mSrcdir);
         for (File file : mSavedAccounts) {
-            sLogger.info(new StringBuilder("Account ").append(file.getName())
-                    .append(" last modified=").append(file.lastModified()).toString());
+            sLogger.info("Account " + file.getName() +
+                    " last modified=" + file.lastModified());
         }
         assertTrue("listOfSavedAccounts MAX_SAVED_ACCOUNT failed",
                 mSavedAccounts.length == MAX_SAVED_ACCOUNT);

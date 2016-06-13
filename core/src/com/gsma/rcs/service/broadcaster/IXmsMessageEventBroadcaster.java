@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,4 +34,6 @@ public interface IXmsMessageEventBroadcaster {
     void broadcastNewMessage(String mimeType, String msgId);
 
     void broadcastMessageDeleted(ContactId contact, Set<String> messageIds);
+
+    void broadcastMessageRead(ContactId contact, String msgId);
 }

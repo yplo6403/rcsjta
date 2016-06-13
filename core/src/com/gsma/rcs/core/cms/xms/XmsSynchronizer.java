@@ -22,9 +22,7 @@ package com.gsma.rcs.core.cms.xms;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Mms;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserverUtils.Mms.Part;
+import com.gsma.rcs.core.cms.utils.SmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
@@ -34,58 +32,42 @@ import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.utils.ContactUtil;
-import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
-import com.gsma.rcs.utils.IdGenerator;
-import com.gsma.rcs.utils.ImageUtils;
-import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
-import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
-import android.provider.Telephony;
-import android.provider.Telephony.BaseMmsColumns;
 import android.provider.Telephony.TextBasedSmsColumns;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 /**
  * Synchronizes the native content provider with the RCS XMS local content provider.<br>
  * Synchronization is only performed once upon start up.
  */
-public class XmsSynchronizer implements Runnable {
+public class XmsSynchronizer {
 
     private static final Logger sLogger = Logger.getLogger(XmsSynchronizer.class.getSimpleName());
 
     private final static Uri sSmsUri = Uri.parse("content://sms/");
     private final static Uri sMmsUri = Uri.parse("content://mms/");
 
-    private final String[] PROJECTION_SMS = new String[] {
+    private static final String[] PROJECTION_SMS = new String[] {
             BaseColumns._ID, TextBasedSmsColumns.THREAD_ID, TextBasedSmsColumns.ADDRESS,
             TextBasedSmsColumns.DATE, TextBasedSmsColumns.DATE_SENT, TextBasedSmsColumns.PROTOCOL,
             TextBasedSmsColumns.BODY, TextBasedSmsColumns.READ, TextBasedSmsColumns.TYPE,
             TextBasedSmsColumns.STATUS
     };
 
-    private static final String WHERE_INBOX_OR_SENT_WITH_ID = XmsObserverUtils.Mms.WHERE_INBOX_OR_SENT
-            + " AND " + BaseColumns._ID + "=?";
-
-    private final String[] PROJECTION_ID_READ = new String[] {
+    private static final String[] PROJECTION_ID_READ = new String[] {
             BaseColumns._ID, TextBasedSmsColumns.READ
     };
 
@@ -101,7 +83,6 @@ public class XmsSynchronizer implements Runnable {
 
     private Set<Long> mNativeIds;
     private Set<Long> mNativeReadIds;
-    private final static int MMS_TYPE_SEND_REQUEST = 128;
 
     public XmsSynchronizer(ContentResolver resolver, RcsSettings settings, XmsLog xmsLog,
             CmsLog cmsLog) {
@@ -170,7 +151,7 @@ public class XmsSynchronizer implements Runnable {
     }
 
     private void purgeDeletedMessages() {
-        int nb = mCmsLog.purgeMessages();
+        int nb = mCmsLog.purgeDeletedMessages();
         if (sLogger.isActivated()) {
             sLogger.debug(nb + " messages have been removed from Imap data");
         }
@@ -193,7 +174,8 @@ public class XmsSynchronizer implements Runnable {
                 }
                 deleteStatus = DeleteStatus.DELETED_REPORT_REQUESTED;
             }
-            mCmsLog.updateDeleteStatus(messageType, id, deleteStatus);
+            mCmsLog.updateXmsDeleteStatus(CmsUtils.cmsFolderToContact(cmsObject.getFolder()),
+                    cmsObject.getMessageId(), deleteStatus, null);
         }
     }
 
@@ -204,42 +186,53 @@ public class XmsSynchronizer implements Runnable {
         }
         Set<Long> newIds = new HashSet<>(mNativeIds);
         newIds.removeAll(rcsMessages.keySet());
+        long ntpTimeOffset = mSettings.getNtpLocalOffset();
         for (Long id : newIds) {
             if (MessageType.SMS == messageType) {
-                SmsDataObject smsData = getSmsFromNativeProvider(id);
+                SmsDataObject smsData = getSmsFromNativeProvider(id, ntpTimeOffset);
                 if (smsData != null) {
+                    ContactId remote = smsData.getContact();
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Import new SMS message Id=" + id);
+                        sLogger.debug("Import SMS message native Id=" + id + " contact=" + remote);
                     }
                     mXmsLog.addSms(smsData);
-                    String folder = CmsUtils.contactToCmsFolder(smsData.getContact());
-                    CmsObject.ReadStatus readStatus = smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                            : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
-                    PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+                    String folder = CmsUtils.contactToCmsFolder(remote);
+                    CmsObject.ReadStatus readStatus = CmsObject.ReadStatus.READ;
+                    if (Direction.INCOMING == smsData.getDirection()) {
+                        readStatus = smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
+                                : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                    }
+                    PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED;
                     mCmsLog.addMessage(new CmsObject(folder, readStatus,
                             CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS,
                             smsData.getMessageId(), smsData.getNativeProviderId()));
                 }
             } else if (MessageType.MMS == messageType) {
-                for (MmsDataObject mmsData : getMmsFromNativeProvider(id)) {
+                for (MmsDataObject mmsData : MmsUtils.getMmsFromNativeProvider(mContentResolver,
+                        id, ntpTimeOffset)) {
+                    String msgId = mmsData.getMessageId();
+                    ContactId remote = mmsData.getContact();
                     if (sLogger.isActivated()) {
-                        sLogger.debug("Import new MMS message Id=" + id + " mmsId="
-                                + mmsData.getMmsId());
+                        sLogger.debug("Import MMS message native Id=" + id + " contact=" + remote
+                                + " mmsId=" + msgId);
                     }
                     if (Direction.OUTGOING == mmsData.getDirection()) {
                         mXmsLog.addOutgoingMms(mmsData);
                     } else {
                         mXmsLog.addIncomingMms(mmsData);
                     }
-                    String folder = CmsUtils.contactToCmsFolder(mmsData.getContact());
-                    CmsObject.ReadStatus readStatus = mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                            : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
-                    PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+                    String folder = CmsUtils.contactToCmsFolder(remote);
+                    CmsObject.ReadStatus readStatus = CmsObject.ReadStatus.READ;
+                    if (Direction.INCOMING == mmsData.getDirection()) {
+                        readStatus = mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
+                                : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                    }
+                    PushStatus pushStatus = mSettings.shouldPushMms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED;
                     mCmsLog.addMessage(new CmsObject(folder, readStatus,
-                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS,
-                            mmsData.getMessageId(), mmsData.getNativeProviderId()));
+                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId,
+                            mmsData.getNativeProviderId()));
                 }
             }
         }
@@ -253,18 +246,19 @@ public class XmsSynchronizer implements Runnable {
         Set<Long> readIds = new HashSet<>(mNativeReadIds);
         readIds.retainAll(rcsMessages.keySet());
         for (Long id : readIds) {
-            if (CmsObject.ReadStatus.UNREAD == rcsMessages.get(id).getReadStatus()) {
+            CmsObject cmsObject = rcsMessages.get(id);
+            if (CmsObject.ReadStatus.UNREAD == cmsObject.getReadStatus()) {
                 if (sLogger.isActivated()) {
                     sLogger.debug(messageType.toString()
                             + " message is marked as READ_REPORT_REQUESTED :" + id);
                 }
-                mCmsLog.updateReadStatus(messageType, id,
-                        CmsObject.ReadStatus.READ_REPORT_REQUESTED);
+                mCmsLog.updateXmsReadStatus(CmsUtils.cmsFolderToContact(cmsObject.getFolder()),
+                        cmsObject.getMessageId(), CmsObject.ReadStatus.READ_REPORT_REQUESTED, null);
             }
         }
     }
 
-    private SmsDataObject getSmsFromNativeProvider(Long id) {
+    private SmsDataObject getSmsFromNativeProvider(Long id, long ntpTimeOffset) {
         Cursor cursor = null;
         try {
             cursor = mContentResolver.query(sSmsUri, PROJECTION_SMS, SELECTION_BASE_ID,
@@ -272,204 +266,19 @@ public class XmsSynchronizer implements Runnable {
                         String.valueOf(id)
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
-            if (!cursor.moveToFirst()) {
+            List<SmsDataObject> smsDataObjects = SmsUtils.getSmsFromNativeProvider(cursor,
+                    ntpTimeOffset);
+            if (smsDataObjects.isEmpty()) {
                 return null;
             }
-            Long _id = cursor.getLong(cursor.getColumnIndexOrThrow(BaseColumns._ID));
-            Long threadId = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(TextBasedSmsColumns.THREAD_ID));
-            String address = cursor.getString(cursor
-                    .getColumnIndexOrThrow(TextBasedSmsColumns.ADDRESS));
-            PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
-            if (phoneNumber == null) {
-                return null;
-            }
-            ContactId contactId = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-            long ntpLocalOffset = mSettings.getNtpLocalOffset();
-            long date = cursor.getLong(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.DATE))
-                    + ntpLocalOffset;
-            long date_sent = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(TextBasedSmsColumns.DATE_SENT)) + ntpLocalOffset;
-            String protocol = cursor.getString(cursor
-                    .getColumnIndexOrThrow(TextBasedSmsColumns.PROTOCOL));
-            String body = cursor.getString(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.BODY));
-            int read = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ));
-            int type = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.TYPE));
-            int status = cursor.getInt(cursor.getColumnIndexOrThrow(TextBasedSmsColumns.STATUS));
-            Direction direction = Direction.OUTGOING;
-            if (protocol != null) {
-                direction = Direction.INCOMING;
-            }
-            ReadStatus readStatus = ReadStatus.READ;
-            if (read == 0) {
-                readStatus = ReadStatus.UNREAD;
-            }
-            SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(),
-                    contactId, body, direction, readStatus, date, _id, threadId);
-            smsDataObject.setTimestampDelivered(date_sent);
-            if (Direction.INCOMING == direction) {
-                State state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
-                smsDataObject.setState(state);
-            } else {
-                State state = XmsObserverUtils.getSmsState(type, status);
-                if (state != null) {
-                    smsDataObject.setState(state);
-                }
-            }
-            return smsDataObject;
+            return smsDataObjects.get(0);
+
         } finally {
             CursorUtil.close(cursor);
         }
     }
 
-    private Collection<MmsDataObject> getMmsFromNativeProvider(Long id) {
-        List<MmsDataObject> mmsDataObject = new ArrayList<>();
-        Long threadId, date;
-        date = -1L;
-        String mmsId;
-        String subject;
-        Direction direction = Direction.INCOMING;
-        Set<ContactId> contacts = new HashSet<>();
-        ReadStatus readStatus;
-        Cursor cursor = null;
-        try {
-            cursor = mContentResolver.query(XmsObserverUtils.Mms.URI, null,
-                    WHERE_INBOX_OR_SENT_WITH_ID, new String[] {
-                        String.valueOf(id)
-                    }, Telephony.BaseMmsColumns._ID);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsObserverUtils.Mms.URI);
-            if (!cursor.moveToNext()) {
-                return mmsDataObject;
-            }
-            threadId = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.THREAD_ID));
-            mmsId = cursor.getString(cursor
-                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.MESSAGE_ID));
-
-            readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.READ)) == 0 ? ReadStatus.UNREAD
-                    : ReadStatus.READ;
-            int messageType = cursor.getInt(cursor
-                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.MESSAGE_TYPE));
-            subject = cursor.getString(cursor.getColumnIndexOrThrow(BaseMmsColumns.SUBJECT));
-            if (MMS_TYPE_SEND_REQUEST == messageType) {
-                direction = Direction.OUTGOING;
-            }
-            date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.DATE)) * 1000;
-        } finally {
-            CursorUtil.close(cursor);
-        }
-        /* Get recipients and associate a message Id */
-        Map<ContactId, String> messageIds = new HashMap<>();
-        try {
-            int type = XmsObserverUtils.Mms.Addr.FROM;
-            if (direction == Direction.OUTGOING) {
-                type = XmsObserverUtils.Mms.Addr.TO;
-            }
-            cursor = mContentResolver.query(
-                    Uri.parse(String.format(XmsObserverUtils.Mms.Addr.URI, id)),
-                    XmsObserverUtils.Mms.Addr.PROJECTION, XmsObserverUtils.Mms.Addr.WHERE,
-                    new String[] {
-                        String.valueOf(type)
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsObserverUtils.Mms.Addr.URI);
-            int adressIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Addr.ADDRESS);
-            while (cursor.moveToNext()) {
-                String address = cursor.getString(adressIdx);
-                PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromAndroid(address);
-                if (phoneNumber == null) {
-                    if (sLogger.isActivated()) {
-                        sLogger.info("Bad format for contact : ".concat(address));
-                    }
-                    continue;
-                }
-                ContactId contact = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-                messageIds.put(contact, IdGenerator.generateMessageID());
-                contacts.add(contact);
-            }
-        } finally {
-            CursorUtil.close(cursor);
-        }
-        /* Get parts and duplicate for all recipients */
-        Map<ContactId, List<MmsPart>> mmsParts = new HashMap<>();
-        try {
-            cursor = mContentResolver.query(Uri.parse(Mms.Part.URI), Mms.Part.PROJECTION,
-                    Mms.Part.WHERE, new String[] {
-                        String.valueOf(id)
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, Mms.Part.URI);
-            int _idIdx = cursor.getColumnIndexOrThrow(BaseMmsColumns._ID);
-            int filenameIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_LOCATION);
-            int contentTypeIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.CONTENT_TYPE);
-            int textIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part.TEXT);
-            int dataIdx = cursor.getColumnIndexOrThrow(Telephony.Mms.Part._DATA);
-
-            while (cursor.moveToNext()) {
-                String contentType = cursor.getString(contentTypeIdx);
-                String text = cursor.getString(textIdx);
-                String filename = cursor.getString(filenameIdx);
-                String data = cursor.getString(dataIdx);
-                if (contentType == null) { // skip MMS with null content type
-                    return mmsDataObject;
-                }
-                if (data != null) {
-                    Uri file = Uri.parse(Part.URI.concat(cursor.getString(_idIdx)));
-                    byte[] bytes;
-                    try {
-                        bytes = MmsUtils.getContent(mContentResolver, file);
-
-                    } catch (FileAccessException e) {
-                        if (sLogger.isActivated()) {
-                            sLogger.warn(
-                                    "Failed to read MMS part from native provider URI=" + file, e);
-                        }
-                        /* Skip invalid record */
-                        continue;
-                    }
-                    Long fileSize = (long) bytes.length;
-                    byte[] fileIcon = null;
-                    if (MimeManager.isImageType(contentType)) {
-                        fileIcon = ImageUtils.tryGetThumbnail(mContentResolver, file);
-                    }
-                    for (ContactId contact : contacts) {
-                        List<MmsPart> mmsPart = mmsParts.get(contact);
-                        if (mmsPart == null) {
-                            mmsPart = new ArrayList<>();
-                            mmsParts.put(contact, mmsPart);
-                        }
-                        mmsPart.add(new MmsPart(messageIds.get(contact), contact, filename,
-                                fileSize, contentType, file, fileIcon));
-                    }
-                } else {
-                    for (ContactId contact : contacts) {
-                        List<MmsPart> mmsPart = mmsParts.get(contact);
-                        if (mmsPart == null) {
-                            mmsPart = new ArrayList<>();
-                            mmsParts.put(contact, mmsPart);
-                        }
-                        mmsPart.add(new MmsPart(messageIds.get(contact), contact, contentType, text));
-                    }
-                }
-            }
-        } finally {
-            CursorUtil.close(cursor);
-        }
-        for (Entry<ContactId, List<MmsPart>> entry : mmsParts.entrySet()) {
-            ContactId contact = entry.getKey();
-            mmsDataObject.add(new MmsDataObject(mmsId, messageIds.get(contact), contact, subject,
-                    direction, readStatus, date, id, threadId, entry.getValue()));
-        }
-        State state = State.DISPLAYED;
-        if (Direction.INCOMING == direction) {
-            state = (readStatus == ReadStatus.READ ? State.DISPLAYED : State.RECEIVED);
-        }
-        for (MmsDataObject mms : mmsDataObject) {
-            mms.setState(state);
-        }
-        return mmsDataObject;
-    }
-
-    @Override
-    public void run() {
+    public void execute() {
         try {
             boolean isActivated = sLogger.isActivated();
             if (isActivated) {

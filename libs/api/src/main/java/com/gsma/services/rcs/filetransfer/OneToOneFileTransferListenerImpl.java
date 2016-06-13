@@ -71,4 +71,9 @@ public class OneToOneFileTransferListenerImpl extends IOneToOneFileTransferListe
     public void onDeleted(ContactId contact, List<String> transferIds) throws RemoteException {
         mListener.onDeleted(contact, new HashSet<>(transferIds));
     }
+
+    @Override
+    public void onRead(ContactId contact, String transferId) throws RemoteException {
+        mListener.onRead(contact, transferId);
+    }
 }

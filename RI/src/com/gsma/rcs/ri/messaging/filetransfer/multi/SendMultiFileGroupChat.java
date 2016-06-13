@@ -156,6 +156,11 @@ public class SendMultiFileGroupChat extends SendMultiFile implements ISendMultiF
                 }
             }
 
+            @Override
+            public void onRead(String chatId, String transferId) {
+
+            }
+
         };
     }
 

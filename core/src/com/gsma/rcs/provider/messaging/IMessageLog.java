@@ -112,7 +112,7 @@ public interface IMessageLog {
      * @param timestampDisplayed Displayed time
      * @return the number of rows affected.
      */
-    int markMessageAsRead(String msgId, long timestampDisplayed);
+    boolean markMessageAsRead(String msgId, long timestampDisplayed);
 
     /**
      * Set chat message status and reason code. Note that this method should not be used for

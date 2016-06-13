@@ -25,7 +25,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
@@ -81,7 +81,7 @@ import javax2.sip.message.Response;
  * Abstract Group chat session
  * 
  * @author Jean-Marc AUFFRET
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public abstract class GroupChatSession extends ChatSession {
 
@@ -93,7 +93,7 @@ public abstract class GroupChatSession extends ChatSession {
      * times.
      */
     private final Map<ContactId, ParticipantStatus> mParticipants;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
 
     /**
      * Boolean variable indicating that the session is no longer marked as the active one for
@@ -124,19 +124,19 @@ public abstract class GroupChatSession extends ChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager the contact manager
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public GroupChatSession(InstantMessagingService imService, ContactId contact, Uri conferenceId,
             Map<ContactId, ParticipantStatus> participants, RcsSettings rcsSettings,
             MessagingLog messagingLog, long timestamp, ContactManager contactManager,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionController) {
         super(imService, contact, conferenceId, rcsSettings, messagingLog, null, timestamp,
                 contactManager);
         mMaxParticipants = rcsSettings.getMaxChatParticipants();
         mParticipants = participants;
         mConferenceSubscriber = new ConferenceEventSubscribeManager(this, rcsSettings, messagingLog);
         mImsModule = imService.getImsModule();
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
         mFrom = rcsSettings.getUserProfileImsUserName();
         mLocalSipInstance = DeviceUtils.getInstanceId(AndroidFactory.getApplicationContext(),
                 rcsSettings);
@@ -415,9 +415,8 @@ public abstract class GroupChatSession extends ChatSession {
                 }
             }
         }
-        mCmsManager.getImdnDeliveryReportListener().onDeliveryReport(getContributionID(), msgId,
-                imdnMessageId);
-
+        mCmsSessionCtrl.getImdnDeliveryReportHandler().onDeliveryReport(getContributionID(), msgId,
+                imdnMessageId, status);
     }
 
     /**

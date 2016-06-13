@@ -21,6 +21,8 @@ package com.gsma.rcs.provider.cms;
 
 import android.net.Uri;
 
+import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
+
 /**
  * CMS IMAP data constants
  */
@@ -196,4 +198,8 @@ public final class CmsFolder {
         return true;
     }
 
+    public static CmsFolder toCmsFolder(ImapFolder imapFolder) {
+        return new CmsFolder(imapFolder.getName(), imapFolder.getUidNext(),
+                imapFolder.getHighestModseq(), imapFolder.getUidValidity());
+    }
 }

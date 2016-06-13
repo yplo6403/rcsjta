@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -118,22 +118,22 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
      * Lock used for synchronization
      */
     private final Object mLock = new Object();
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSesionCtrl;
 
     /**
      * Constructor
-     * 
+     *
      * @param imService Instant Messaging Service
      * @param chatService Chat service
      * @param messagingLog Messaging Log
      * @param rcsSettings Rcs Settings
      * @param contactManager Contact Manager
      * @param ctx the context
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public FileTransferServiceImpl(InstantMessagingService imService, ChatServiceImpl chatService,
             MessagingLog messagingLog, RcsSettings rcsSettings, ContactManager contactManager,
-            Context ctx, CmsManager cmsManager) {
+            Context ctx, CmsSessionController cmsSessionCtrl) {
         if (sLogger.isActivated()) {
             sLogger.info("File transfer service API is loaded");
         }
@@ -144,7 +144,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         mRcsSettings = rcsSettings;
         mContactManager = contactManager;
         mCtx = ctx;
-        mCmsManager = cmsManager;
+        mCmsSesionCtrl = cmsSessionCtrl;
     }
 
     private ReasonCode imdnToFileTransferFailedReasonCode(ImdnDocument imdn) {
@@ -169,7 +169,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     /**
      * Ensure copy of file if existing is deleted
-     * 
+     *
      * @param transferId Unique Id of file transfer
      */
     public void ensureFileCopyIsDeletedIfExisting(String transferId) {
@@ -197,7 +197,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     /**
      * Remove a 1-2-1 file transfer from the list
-     * 
+     *
      * @param fileTransferId File transfer ID
      */
     public void removeOneToOneFileTransfer(String fileTransferId) {
@@ -211,7 +211,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     /**
      * Remove a group file transfer from the list
-     * 
+     *
      * @param fileTransferId File transfer ID
      */
     public void removeGroupFileTransfer(String fileTransferId) {
@@ -247,7 +247,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                     transferId, mMessagingLog);
             groupFileTransfer = new GroupFileTransferImpl(mImService, transferId,
                     mGroupFileTransferBroadcaster, persistedStorage, this, mRcsSettings,
-                    mMessagingLog, mContactManager, chatId, mCmsManager);
+                    mMessagingLog, mContactManager, chatId, mCmsSesionCtrl);
             mGroupFileTransferCache.put(transferId, groupFileTransfer);
         }
         return groupFileTransfer;
@@ -255,7 +255,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     /**
      * Get or create one-one file transfer
-     * 
+     *
      * @param transferId th file transfer ID
      * @return OneToOneFileTransferImpl
      */
@@ -266,7 +266,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
                     transferId, mMessagingLog);
             oneToOneFileTransfer = new OneToOneFileTransferImpl(mImService, transferId,
                     mOneToOneFileTransferBroadcaster, persistedStorage, this, mRcsSettings,
-                    mMessagingLog, mContactManager, mCmsManager);
+                    mMessagingLog, mContactManager, mCmsSesionCtrl);
             mOneToOneFileTransferCache.put(transferId, oneToOneFileTransfer);
         }
         return oneToOneFileTransfer;
@@ -664,7 +664,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             /* Always insert with State QUEUED */
             addOutgoingOneToOneFileTransfer(fileTransferId, contact, content, fileIconContent,
                     State.QUEUED, timestamp, timestampSent);
-            mCmsManager.getFileTransferEventHandler().onNewFileTransfer(contact,
+            mCmsSesionCtrl.getFileTransferEventHandler().onNewFileTransfer(contact,
                     Direction.OUTGOING, fileTransferId);
 
             OneToOneFileTransferImpl oneToOneFileTransfer = getOrCreateOneToOneFileTransfer(fileTransferId);
@@ -841,7 +841,7 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
             /* Always insert file transfer with status QUEUED */
             addOutgoingGroupFileTransfer(fileTransferId, chatId, content, fileIconContent,
                     State.QUEUED, timestamp, timestamp);
-            mCmsManager.getFileTransferEventHandler().onNewGroupFileTransfer(chatId,
+            mCmsSesionCtrl.getFileTransferEventHandler().onNewGroupFileTransfer(chatId,
                     Direction.OUTGOING, fileTransferId);
             if (!mChatService.isGroupChatActive(chatId)) {
                 /*
@@ -1225,8 +1225,16 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
         try {
             long now = NtpTrustedTime.currentTimeMillis();
             /* No notification type corresponds currently to mark as read */
-            mMessagingLog.markFileTransferAsRead(transferId, now);
-            mCmsManager.getFileTransferEventHandler().onReadFileTransfer(transferId);
+            if (!mMessagingLog.markFileTransferAsRead(transferId, now)) {
+                /* no reporting towards the network if ft is already marked as read */
+                if (sLogger.isActivated()) {
+                    sLogger.info("File transfer with ID " + transferId
+                            + " is already marked as read!");
+                }
+                return;
+            }
+            // TODO perform in background handler
+            mCmsSesionCtrl.getFileTransferEventHandler().onReadFileTransfer(transferId);
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {
@@ -1434,5 +1442,17 @@ public class FileTransferServiceImpl extends IFileTransferService.Stub {
 
     public void broadcastGroupFileTransfersDeleted(String chatId, Set<String> transferIds) {
         mGroupFileTransferBroadcaster.broadcastFileTransfersDeleted(chatId, transferIds);
+    }
+
+    public void broadcastFileTransferRead(String transferId) {
+        if (mMessagingLog.isGroupFileTransfer(transferId)) {
+            String chatId = mMessagingLog.getFileTransferChatId(transferId);
+            mGroupFileTransferBroadcaster.broadcastFileTransferRead(chatId, transferId);
+
+        } else {
+            ContactId contact = mMessagingLog.getFileTransferContact(transferId);
+            mOneToOneFileTransferBroadcaster.broadcastFileTransferRead(contact, transferId);
+        }
+
     }
 }

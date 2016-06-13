@@ -310,7 +310,7 @@ public class MessageLog implements IMessageLog {
     }
 
     @Override
-    public int markMessageAsRead(String msgId, long timestampDisplayed) {
+    public boolean markMessageAsRead(String msgId, long timestampDisplayed) {
         if (sLogger.isActivated()) {
             sLogger.debug("Mark chat message as read ID=" + msgId);
         }
@@ -318,7 +318,7 @@ public class MessageLog implements IMessageLog {
         values.put(MessageData.KEY_READ_STATUS, ReadStatus.READ.toInt());
         values.put(MessageData.KEY_TIMESTAMP_DISPLAYED, timestampDisplayed);
         return mLocalContentResolver.update(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
-                values, SELECTION_BY_NOT_READ, null);
+                values, SELECTION_BY_NOT_READ, null) > 0;
     }
 
     @Override

@@ -19,14 +19,12 @@
 package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
@@ -45,9 +43,10 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.database.Cursor;
 
+import java.util.Map;
 import java.util.Set;
 
-public class XmsEventHandler implements XmsMessageListener, XmsObserverListener {
+public class XmsEventHandler implements XmsObserverListener {
 
     private static final Logger sLogger = Logger.getLogger(XmsEventHandler.class.getSimpleName());
     private final XmsLog mXmsLog;
@@ -55,7 +54,6 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     private final RcsSettings mSettings;
     private final CmsServiceImpl mCmsService;
     private CmsSyncScheduler mCmsSyncScheduler;
-    private EventFrameworkManager mEventFrameworkManager;
 
     /**
      * Default constructor
@@ -77,10 +75,6 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mCmsSyncScheduler = cmsSyncScheduler;
     }
 
-    public void setEventFrameworkManager(EventFrameworkManager eventFrameworkManager) {
-        mEventFrameworkManager = eventFrameworkManager;
-    }
-
     @Override
     public void onIncomingSms(SmsDataObject message) {
         if (sLogger.isActivated()) {
@@ -89,7 +83,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         mXmsLog.addSms(message);
         String folder = CmsUtils.contactToCmsFolder(message.getContact());
         String messageId = message.getMessageId();
-        PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+        PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
                 : PushStatus.PUSHED;
         mCmsLog.addMessage(new CmsObject(folder, CmsObject.ReadStatus.UNREAD,
                 CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS, messageId, message
@@ -107,7 +101,7 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         }
         mXmsLog.addSms(message);
         String folder = CmsUtils.contactToCmsFolder(message.getContact());
-        PushStatus pushStatus = mSettings.getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED
+        PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
                 : PushStatus.PUSHED;
         mCmsLog.addMessage(new CmsObject(folder, CmsObject.ReadStatus.READ,
                 CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS, message
@@ -115,20 +109,21 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(message.getContact());
         }
-
     }
 
     @Override
     public void onDeleteSmsFromNativeApp(long nativeProviderId) {
         Cursor cursor = null;
         try {
-            cursor = mXmsLog.getXmsMessage(nativeProviderId, MimeType.TEXT_MESSAGE);
+            cursor = mXmsLog.getSmsMessage(nativeProviderId);
             if (!cursor.moveToNext()) {
                 return;
             }
-            String messageId = cursor.getString(cursor
-                    .getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
-            mCmsService.deleteXmsMessageById(messageId);
+            String msgId = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
+            String number = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT));
+            ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
+            mCmsService.deleteXmsMessageByIdAndContact(contact, msgId);
+
         } finally {
             CursorUtil.close(cursor);
         }
@@ -136,42 +131,56 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
 
     @Override
     public void onIncomingMms(MmsDataObject message) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onIncomingMms ".concat(message.toString()));
-        }
-        mXmsLog.addIncomingMms(message);
         String msgId = message.getMessageId();
-        String folder = CmsUtils.contactToCmsFolder(message.getContact());
-        PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
-                : PushStatus.PUSHED;
-        mCmsLog.addMessage(new CmsObject(folder, ReadStatus.UNREAD,
-                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId, message
-                        .getNativeProviderId()));
-        mCmsService.broadcastNewMessage(message.getMimeType(), msgId);
-        if (mCmsSyncScheduler != null) {
-            mCmsSyncScheduler.schedulePushMessages(message.getContact());
+        ContactId remote = message.getContact();
+        if (!mXmsLog.isMessagePersisted(remote, msgId)) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("onIncomingMms ID=" + msgId + " contact=" + remote);
+            }
+            mXmsLog.addIncomingMms(message);
+            PushStatus pushStatus = mSettings.shouldPushMms() ? PushStatus.PUSH_REQUESTED
+                    : PushStatus.PUSHED;
+            String folder = CmsUtils.contactToCmsFolder(remote);
+            mCmsLog.addMessage(new CmsObject(folder, ReadStatus.UNREAD,
+                    CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId, message
+                            .getNativeProviderId()));
+            mCmsService.broadcastNewMessage(message.getMimeType(), msgId);
+            if (mCmsSyncScheduler != null) {
+                mCmsSyncScheduler.schedulePushMessages(message.getContact());
+            }
+        } else {
+            if (sLogger.isActivated()) {
+                sLogger.warn("onIncomingMms is already persisted ID=" + msgId + " contact="
+                        + remote);
+            }
         }
     }
 
     @Override
     public void onOutgoingMms(MmsDataObject message) throws FileAccessException {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onOutgoingMms ".concat(message.toString()));
-        }
         /*
-         * Checks if an outgoing MMS already exists in local provider having a messageId equals to
-         * the transactionId.
+         * Checks if an outgoing MMS already exists in local provider
          */
-        if (!mXmsLog.isMessagePersisted(message.getTransId())) {
+        ContactId contact = message.getContact();
+        String msgId = message.getMessageId();
+        if (!mXmsLog.isMessagePersisted(contact, msgId)) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("onOutgoingMms ID=" + msgId + " contact=" + contact);
+            }
             mXmsLog.addOutgoingMms(message);
-            String folder = CmsUtils.contactToCmsFolder(message.getContact());
-            PushStatus pushStatus = mSettings.getMessageStorePushMms() ? PushStatus.PUSH_REQUESTED
+            String folder = CmsUtils.contactToCmsFolder(contact);
+            PushStatus pushStatus = mSettings.shouldPushMms() ? PushStatus.PUSH_REQUESTED
                     : PushStatus.PUSHED;
             mCmsLog.addMessage(new CmsObject(folder, ReadStatus.READ,
-                    CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, message
-                            .getMessageId(), message.getNativeProviderId()));
+                    CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId, message
+                            .getNativeProviderId()));
             if (mCmsSyncScheduler != null) {
-                mCmsSyncScheduler.schedulePushMessages(message.getContact());
+                mCmsSyncScheduler.schedulePushMessages(contact);
+            }
+        } else {
+            if (sLogger.isActivated()) {
+                sLogger.debug("onOutgoingMms is already persisted ID=" + msgId + " contact="
+                        + contact);
             }
         }
     }
@@ -181,40 +190,30 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeMms ".concat(mmsId));
         }
-        Cursor cursor = null;
-        try {
-            cursor = mXmsLog.getMmsMessage(mmsId);
-            if (!cursor.moveToNext()) {
-                return;
-            }
-            String messageId = cursor.getString(cursor
-                    .getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
-            mCmsService.deleteXmsMessageById(messageId);
-
-        } finally {
-            CursorUtil.close(cursor);
+        Set<ContactId> contacts = mXmsLog.getContactsForXmsId(mmsId);
+        for (ContactId contact : contacts) {
+            mCmsService.deleteXmsMessageByIdAndContact(contact, mmsId);
         }
     }
 
     @Override
-    public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+    public void onSmsMessageStateChanged(Long nativeProviderId, State state) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onXmsMessageStateChanged:" + nativeProviderId + "," + mimeType + ","
-                    + state);
+            sLogger.debug("onSmsMessageStateChanged ID=" + nativeProviderId + ", state=" + state);
         }
         Cursor cursor = null;
         try {
-            cursor = mXmsLog.getXmsMessage(nativeProviderId, mimeType);
+            cursor = mXmsLog.getSmsMessage(nativeProviderId);
             if (!cursor.moveToNext()) {
                 return;
             }
             String messageId = cursor.getString(cursor
                     .getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
             String number = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT));
-            mXmsLog.updateState(messageId, state);
             ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
-            mCmsService.broadcastMessageStateChanged(contact, mimeType, messageId, state,
-                    ReasonCode.UNSPECIFIED);
+            mXmsLog.updateState(contact, messageId, state);
+            mCmsService.broadcastMessageStateChanged(contact, MimeType.TEXT_MESSAGE, messageId,
+                    state, ReasonCode.UNSPECIFIED);
 
         } finally {
             CursorUtil.close(cursor);
@@ -222,117 +221,33 @@ public class XmsEventHandler implements XmsMessageListener, XmsObserverListener 
     }
 
     @Override
-    public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
+    public void onReadMmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onReadNativeConversation " + nativeThreadId);
         }
-        Cursor cursor = null;
-        ContactId contact = null;
-        try {
-            cursor = mXmsLog.getUnreadXmsMessages(nativeThreadId);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
-            int mimeTypeIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
-            int contactIdIx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
-            while (cursor.moveToNext()) {
-                String number = cursor.getString(contactIdIx);
-                String messageId = cursor.getString(messageIdIdx);
-                String mimeType = cursor.getString(mimeTypeIdx);
-                MessageType messageType = MessageType.SMS;
-                if (MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-                    messageType = MessageType.MMS;
-                }
-
-                mCmsLog.updateReadStatus(messageType, messageId, ReadStatus.READ_REPORT_REQUESTED);
-                mXmsLog.markMessageAsRead(messageId);
-                contact = ContactUtil.createContactIdFromTrustedData(number);
-                mCmsService.broadcastMessageStateChanged(contact, mimeType, messageId,
-                        State.DISPLAYED, ReasonCode.UNSPECIFIED);
+        Map<ContactId, Set<String>> unreads = mXmsLog.getUnreadMms(nativeThreadId);
+        for (Map.Entry<ContactId, Set<String>> entry : unreads.entrySet()) {
+            ContactId contact = entry.getKey();
+            Set<String> mmsIds = entry.getValue();
+            for (String mmsId : mmsIds) {
+                mCmsService.markXmsMessageAsRead_(contact, mmsId);
             }
-        } finally {
-            CursorUtil.close(cursor);
-        }
-        if (mEventFrameworkManager != null && contact != null) {
-            mEventFrameworkManager.updateFlagsForXms(contact);
         }
     }
 
     @Override
-    public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
+    public void onDeleteMmsConversationFromNativeApp(long nativeThreadId) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteNativeConversation " + nativeThreadId);
         }
-        Cursor cursor = null;
-        try {
-            cursor = mXmsLog.getXmsMessages(nativeThreadId);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
-            while (cursor.moveToNext()) {
-                String messageId = cursor.getString(messageIdIdx);
-                mCmsService.deleteXmsMessageById(messageId);
-            }
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    @Override
-    public void onReadXmsMessage(String messageId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onReadXmsMessage ".concat(messageId));
-        }
-        MessageType messageType = MessageType.SMS;
-        String mimeType = mXmsLog.getMimeType(messageId);
-        if (MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-            messageType = MessageType.MMS;
-        }
-        mCmsLog.updateReadStatus(messageType, messageId, ReadStatus.READ_REPORT_REQUESTED);
-        mXmsLog.markMessageAsRead(messageId);
-        if (mEventFrameworkManager != null) {
-            String number = mXmsLog.getContact(messageId);
-            if (number != null) {
-                mEventFrameworkManager.updateFlagsForXms(ContactUtil
-                        .createContactIdFromTrustedData(number));
+        Map<ContactId, Set<String>> mmss = mXmsLog.getMmsMessages(nativeThreadId);
+        for (Map.Entry<ContactId, Set<String>> entry : mmss.entrySet()) {
+            ContactId contact = entry.getKey();
+            Set<String> mmsIds = entry.getValue();
+            for (String mmsId : mmsIds) {
+                mCmsService.deleteXmsMessageByIdAndContact(contact, mmsId);
             }
         }
     }
 
-    @Override
-    public void onReadXmsConversation(ContactId contactId) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onReadXmsConversation ".concat(contactId.toString()));
-        }
-        Cursor cursor = null;
-        try {
-            cursor = mXmsLog.getXmsMessages(contactId);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
-            int mimeTypeIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE);
-            while (cursor.moveToNext()) {
-                String messageId = cursor.getString(messageIdIdx);
-                String mimeType = cursor.getString(mimeTypeIdx);
-                MessageType messageType = MessageType.SMS;
-                if (MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-                    messageType = MessageType.MMS;
-                }
-                mCmsLog.updateReadStatus(messageType, messageId, ReadStatus.READ_REPORT_REQUESTED);
-            }
-        } finally {
-            CursorUtil.close(cursor);
-        }
-        mXmsLog.markConversationAsRead(contactId);
-        if (mEventFrameworkManager != null) {
-            mEventFrameworkManager.updateFlagsForXms(contactId);
-        }
-    }
-
-    @Override
-    public void onDeleteXmsMessage(ContactId contact, Set<String> messageIds) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("onDeleteXmsMessage :" + contact);
-        }
-        for (String messageId : messageIds) {
-            mCmsLog.updateXmsDeleteStatus(messageId, DeleteStatus.DELETED_REPORT_REQUESTED);
-        }
-        if (mEventFrameworkManager != null) {
-            mEventFrameworkManager.updateFlagsForXms(contact);
-        }
-    }
 }

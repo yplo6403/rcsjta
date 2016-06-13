@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -55,6 +56,7 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
         mOneToOneFileTransferListeners.unregister(listener);
     }
 
+    @Override
     public void broadcastStateChanged(ContactId contact, String transferId, State state,
             ReasonCode reasonCode) {
         final int N = mOneToOneFileTransferListeners.beginBroadcast();
@@ -73,6 +75,7 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
         mOneToOneFileTransferListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastProgressUpdate(ContactId contact, String transferId, long currentSize,
             long totalSize) {
         final int N = mOneToOneFileTransferListeners.beginBroadcast();
@@ -89,6 +92,7 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
         mOneToOneFileTransferListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastInvitation(String fileTransferId) {
         Intent invitation = new Intent(FileTransferIntent.ACTION_NEW_INVITATION);
         invitation.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
@@ -97,6 +101,7 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
         AndroidFactory.getApplicationContext().sendBroadcast(invitation);
     }
 
+    @Override
     public void broadcastResumeFileTransfer(String filetransferId) {
         Intent resumeFileTransfer = new Intent(FileTransferIntent.ACTION_RESUME);
         resumeFileTransfer.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
@@ -105,12 +110,29 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
         AndroidFactory.getApplicationContext().sendBroadcast(resumeFileTransfer);
     }
 
+    @Override
     public void broadcastFileTransferDeleted(ContactId contact, Set<String> filetransferIds) {
         List<String> ids = new ArrayList<>(filetransferIds);
         final int N = mOneToOneFileTransferListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {
             try {
                 mOneToOneFileTransferListeners.getBroadcastItem(i).onDeleted(contact, ids);
+            } catch (RemoteException e) {
+                if (logger.isActivated()) {
+                    logger.error("Can't notify listener", e);
+                }
+            }
+        }
+        mOneToOneFileTransferListeners.finishBroadcast();
+    }
+
+    @Override
+    public void broadcastFileTransferRead(ContactId contact, String filetransferId) {
+        final int N = mOneToOneFileTransferListeners.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            try {
+                mOneToOneFileTransferListeners.getBroadcastItem(i).onRead(contact, filetransferId);
+
             } catch (RemoteException e) {
                 if (logger.isActivated()) {
                     logger.error("Can't notify listener", e);

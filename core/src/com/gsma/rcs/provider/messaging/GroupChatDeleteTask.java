@@ -17,13 +17,15 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.GroupChatSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -36,12 +38,14 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
 
     private static final Logger sLogger = Logger.getLogger(GroupChatDeleteTask.class.getName());
 
-    private static final String SELECTION_GROUPDELIVERY_BY_CHATID = GroupDeliveryInfoData.KEY_CHAT_ID + "=?";
+    private static final String SEL_GROUPDELIVERY_BY_CHATID = GroupDeliveryInfoData.KEY_CHAT_ID
+            + "=?";
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
+    private final CmsLog mCmsLog;
 
     /**
      * Deletion of all group chats.
@@ -49,32 +53,54 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public GroupChatDeleteTask(ChatServiceImpl chatService, InstantMessagingService imService,
-            LocalContentResolver contentResolver, CmsManager cmsManager) {
-        super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, null);
+            LocalContentResolver contentResolver, CmsSessionController cmsSessionController) {
+        super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, true, false,
+                null);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
+        mCmsLog = null;
     }
 
     /**
-     * Deletion of a specific group chat.
+     * Constructor to process delete action of a specific group chat.
      * 
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param chatId the group chat id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public GroupChatDeleteTask(ChatServiceImpl chatService, InstantMessagingService imService,
-            LocalContentResolver contentResolver, String chatId, CmsManager cmsManager) {
-        super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, null,
-                chatId);
+            LocalContentResolver contentResolver, String chatId, CmsSessionController cmsSessionCtrl) {
+        super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, true, true,
+                null, chatId);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
+    }
+
+    /**
+     * Constructor to process delete event of a specific group chat.
+     * 
+     * @param chatService the chat service impl
+     * @param imService the IM service
+     * @param contentResolver the content resolver
+     * @param chatId the group chat id
+     * @param cmsLog the CMS log accessor
+     */
+    public GroupChatDeleteTask(ChatServiceImpl chatService, InstantMessagingService imService,
+            LocalContentResolver contentResolver, String chatId, CmsLog cmsLog) {
+        super(contentResolver, GroupChatData.CONTENT_URI, GroupChatData.KEY_CHAT_ID, true, true,
+                null, chatId);
+        mChatService = chatService;
+        mImService = imService;
+        mCmsSessionCtrl = null;
+        mCmsLog = cmsLog;
     }
 
     @Override
@@ -82,14 +108,14 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
         GroupChatSession session = mImService.getGroupChatSession(chatId);
         if (session == null) {
             mLocalContentResolver.delete(GroupDeliveryInfoData.CONTENT_URI,
-                    SELECTION_GROUPDELIVERY_BY_CHATID, new String[] {
+                    SEL_GROUPDELIVERY_BY_CHATID, new String[] {
                         chatId
                     });
             return;
-
         }
         try {
             session.deleteSession();
+
         } catch (NetworkException e) {
             /*
              * If network is lost during a delete operation the remaining part of the delete
@@ -101,7 +127,7 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
             }
         }
         mLocalContentResolver.delete(GroupDeliveryInfoData.CONTENT_URI,
-                SELECTION_GROUPDELIVERY_BY_CHATID, new String[] {
+                SEL_GROUPDELIVERY_BY_CHATID, new String[] {
                     chatId
                 });
     }
@@ -109,8 +135,13 @@ public class GroupChatDeleteTask extends DeleteTask.NotGrouped {
     @Override
     protected void onCompleted(Set<String> deletedIds) {
         mChatService.broadcastGroupChatsDeleted(deletedIds);
-        for(String deletedId : deletedIds){
-            mCmsManager.getGroupChatEventHandler().onDeleteGroupChat(deletedId);
+        for (String deletedId : deletedIds) {
+            if (mCmsSessionCtrl != null) {
+                mCmsSessionCtrl.getGroupChatEventHandler().onDeleteGroupChat(deletedId);
+            } else {
+                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.GROUP_STATE, deletedId,
+                        CmsObject.DeleteStatus.DELETED, null);
+            }
         }
     }
 

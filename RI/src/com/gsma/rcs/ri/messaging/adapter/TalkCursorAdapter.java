@@ -611,10 +611,12 @@ public class TalkCursorAdapter extends CursorAdapter {
                     .getColumnReadStatusIdx()));
             if (RcsService.ReadStatus.UNREAD == readStatus) {
                 String msgId = cursor.getString(holder.getColumnIdIdx());
+                String number = cursor.getString(holder.getColumnContactIdx());
+                ContactId contact = ContactUtil.formatContact(number);
                 if (LogUtils.isActive) {
-                    Log.d(LOGTAG, "Mark message " + msgId + " as read");
+                    Log.d(LOGTAG, "Mark message " + msgId + " as read (contact=" + contact + ")");
                 }
-                mCmsService.markMessageAsRead(msgId);
+                mCmsService.markMessageAsRead(contact, msgId);
             }
         } catch (RcsServiceNotAvailableException e) {
             if (LogUtils.isActive) {

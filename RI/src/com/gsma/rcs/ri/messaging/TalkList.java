@@ -321,16 +321,13 @@ public class TalkList extends RcsActivity {
     private void initialize() {
         mCtx = this;
         mMessageLogs = new ArrayList<>();
-
         mCmsService = getCmsApi();
         mChatService = getChatApi();
         mFileTransferService = getFileTransferApi();
-
         ListView listView = (ListView) findViewById(android.R.id.list);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
         listView.setEmptyView(emptyView);
         registerForContextMenu(listView);
-
         mAdapter = new TalkListArrayAdapter(this, mMessageLogs);
         listView.setAdapter(mAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -352,7 +349,6 @@ public class TalkList extends RcsActivity {
                 }
             }
         });
-
         mOneToOneFileTransferListener = new OneToOneFileTransferListener() {
             @Override
             public void onStateChanged(ContactId contact, String transferId,
@@ -368,6 +364,14 @@ public class TalkList extends RcsActivity {
             public void onDeleted(final ContactId contact, Set<String> transferIds) {
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "onDeleted contact=" + contact + " FT IDs=" + transferIds);
+                }
+                updateView();
+            }
+
+            @Override
+            public void onRead(ContactId contact, String transferId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onRead contact=" + contact + " FT ID=" + transferId);
                 }
                 updateView();
             }
@@ -387,6 +391,14 @@ public class TalkList extends RcsActivity {
             public void onMessagesDeleted(final ContactId contact, Set<String> msgIds) {
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "onMessagesDeleted contact=" + contact + " msg IDs=" + msgIds);
+                }
+                updateView();
+            }
+
+            @Override
+            public void onMessageRead(ContactId contact, String msgId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onMessageRead contact=" + contact + " msg ID=" + msgId);
                 }
                 updateView();
             }
@@ -414,8 +426,15 @@ public class TalkList extends RcsActivity {
                 }
                 updateView();
             }
-        };
 
+            @Override
+            public void onRead(String chatId, String transferId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onRead ftIds=" + transferId);
+                }
+                updateView();
+            }
+        };
         mGroupChatListener = new GroupChatListener() {
             @Override
             public void onStateChanged(String chatId, GroupChat.State state,
@@ -453,6 +472,19 @@ public class TalkList extends RcsActivity {
 
             @Override
             public void onMessagesDeleted(final String chatId, Set<String> msgIds) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onMessagesDeleted msgIds=" + msgIds);
+                }
+                updateView();
+            }
+
+            @Override
+            public void onMessageRead(String chatId, String msgId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onMessageRead msgId=" + msgId);
+                }
+                updateView();
+
             }
         };
         mXmsMessageListener = new XmsMessageListener() {
@@ -466,11 +498,18 @@ public class TalkList extends RcsActivity {
             }
 
             @Override
+            public void onRead(ContactId contact, String msgId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onRead contact=" + contact + " XMS IDs=" + msgId);
+                }
+                updateView();
+            }
+
+            @Override
             public void onStateChanged(ContactId contact, String mimeType, String messageId,
                     XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
             }
         };
-
         mCmsSynchronizationListener = new CmsSynchronizationListener() {
             @Override
             public void onAllSynchronized() {
@@ -496,18 +535,27 @@ public class TalkList extends RcsActivity {
                 updateView();
             }
         };
-
         mUpdateTalkListListener = new TalkListUpdate.TaskCompleted() {
             @Override
-            public void onTaskComplete(Collection<TalkListArrayItem> result) {
+            public void onTaskComplete(Collection<TalkListArrayItem> talks) {
                 mMessageLogs.clear();
-                mMessageLogs.addAll(result);
+                mMessageLogs.addAll(talks);
                 /* Sort by descending timestamp */
                 Collections.sort(mMessageLogs);
                 mAdapter.notifyDataSetChanged();
+                TalkPendingIntentManager talkPendingIntentManager = TalkPendingIntentManager
+                        .getTalkPendingIntentManager(mCtx);
+                for (TalkListArrayItem talk : talks) {
+                    if (talk.getUnreadCount() == 0) {
+                        /*
+                         * TODO check that if invitation is pending, there is always at least one
+                         * unread message (assertion may be false)
+                         */
+                        talkPendingIntentManager.clearNotification(talk.getChatId());
+                    }
+                }
             }
         };
-
     }
 
     /**

@@ -24,7 +24,7 @@ package com.gsma.rcs.core.ims.service.im.chat;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
@@ -81,15 +81,15 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
      * @param messagingLog Messaging log
      * @param timestamp Local timestamp for the session
      * @param contactManager Contact manager accessor
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS ssion controller
      * @throws PayloadException Thrown if constructor fails to get information from payload
      */
     public TerminatingAdhocGroupChatSession(InstantMessagingService imService, SipRequest invite,
             ContactId contact, Map<ContactId, ParticipantStatus> participantsFromInvite,
             Uri remoteContact, RcsSettings rcsSettings, MessagingLog messagingLog, long timestamp,
-            ContactManager contactManager, CmsManager cmsManager) throws PayloadException {
+            ContactManager contactManager, CmsSessionController cmsSessionCtrl) throws PayloadException {
         super(imService, contact, remoteContact, participantsFromInvite, rcsSettings, messagingLog,
-                timestamp, contactManager, cmsManager);
+                timestamp, contactManager, cmsSessionCtrl);
         String subject = ChatUtils.getSubject(invite);
         setSubject(subject);
         createTerminatingDialogPath(invite);

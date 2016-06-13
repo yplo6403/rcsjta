@@ -14,4 +14,6 @@ interface IGroupFileTransferListener {
 	void onProgressUpdate(in String chatId, in String transferId, in long currentSize, in long totalSize);
 
 	void onDeleted(in String chatId, in List<String> transferIds);
+
+	void onRead(in String chatId, in String transferId);
 }

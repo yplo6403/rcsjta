@@ -18,11 +18,13 @@
 
 package com.gsma.rcs.core.cms.xms;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
@@ -30,7 +32,6 @@ import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.Context;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
@@ -42,33 +43,22 @@ import java.util.Map;
 
 public class SmsObserverTest extends AndroidTestCase {
 
-    private ContactId contact1;
-    private ContactId contact2;
-    private ContactId contact3;
     private SmsDataObject incomingSms;
     private SmsDataObject outgoingSms;
-    private SmsDataObject sms;
-    private SmsDataObject sms2;
-
     private XmsObserver mXmsObserver;
     private NativeSmsListenerMock mNativeSmsListenerMock;
 
     protected void setUp() throws Exception {
         super.setUp();
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
-        contact1 = contactUtils.formatContact("+33600000001");
-        contact2 = contactUtils.formatContact("+33600000002");
-        contact3 = contactUtils.formatContact("+33600000003");
+        ContactId contact1 = contactUtils.formatContact("+33600000001");
+        ContactId contact2 = contactUtils.formatContact("+33600000002");
         incomingSms = new SmsDataObject("messageId1", contact1, "myContent1", Direction.INCOMING,
-                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 1l, 1l);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 1L, 1L);
         outgoingSms = new SmsDataObject("messageId2", contact2, "myContent2", Direction.OUTGOING,
-                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 2l, 1l);
-        sms = new SmsDataObject("messageId3", contact3, "myContent3", Direction.INCOMING,
-                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 3l, 1l);
-        sms2 = new SmsDataObject("messageId4", contact3, "myContent3", Direction.OUTGOING,
-                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 4l, 1l);
-
-        mXmsObserver = new XmsObserver(mContext);
+                ReadStatus.UNREAD, NtpTrustedTime.currentTimeMillis(), 2L, 1L);
+        RcsSettings settings = RcsSettingsMock.getMockSettings(mContext);
+        mXmsObserver = new XmsObserver(mContext.getContentResolver(), settings);
         mNativeSmsListenerMock = new NativeSmsListenerMock();
         mXmsObserver.registerListener(mNativeSmsListenerMock);
     }
@@ -82,33 +72,33 @@ public class SmsObserverTest extends AndroidTestCase {
     public void testIncoming() {
         mXmsObserver.onIncomingSms(incomingSms);
         Assert.assertEquals(1, mNativeSmsListenerMock.getMessage().size());
-        Assert.assertEquals(incomingSms, mNativeSmsListenerMock.getMessage().get(1l));
+        Assert.assertEquals(incomingSms, mNativeSmsListenerMock.getMessage().get(1L));
     }
 
     public void testOutgoing() {
         mXmsObserver.onOutgoingSms(outgoingSms);
         Assert.assertEquals(1, mNativeSmsListenerMock.getMessage().size());
-        Assert.assertEquals(outgoingSms, mNativeSmsListenerMock.getMessage().get(2l));
+        Assert.assertEquals(outgoingSms, mNativeSmsListenerMock.getMessage().get(2L));
     }
 
     public void testReadNativeConversation() {
         mXmsObserver.onIncomingSms(incomingSms);
-        mXmsObserver.onReadXmsConversationFromNativeApp(1l);
-        Assert.assertEquals(ReadStatus.READ, mNativeSmsListenerMock.getMessage().get(1l)
+        mXmsObserver.onReadMmsConversationFromNativeApp(1L);
+        Assert.assertEquals(ReadStatus.READ, mNativeSmsListenerMock.getMessage().get(1L)
                 .getReadStatus());
     }
 
     public void testDeleteSms() {
         mXmsObserver.onIncomingSms(outgoingSms);
-        mXmsObserver.onDeleteSmsFromNativeApp(2l);
-        Assert.assertNull(mNativeSmsListenerMock.getMessage().get(2l));
+        mXmsObserver.onDeleteSmsFromNativeApp(2L);
+        Assert.assertNull(mNativeSmsListenerMock.getMessage().get(2L));
     }
 
     public void testDeleteConversation() {
         mXmsObserver.onIncomingSms(incomingSms);
         mXmsObserver.onOutgoingSms(outgoingSms);
-        mXmsObserver.onDeleteXmsConversationFromNativeApp(1l);
-        Assert.assertNull(mNativeSmsListenerMock.getMessages(1l));
+        mXmsObserver.onDeleteMmsConversationFromNativeApp(1L);
+        Assert.assertNull(mNativeSmsListenerMock.getMessages(1L));
     }
 
     public void testUnregister() {
@@ -180,19 +170,19 @@ public class SmsObserverTest extends AndroidTestCase {
         }
 
         @Override
-        public void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state) {
+        public void onSmsMessageStateChanged(Long nativeProviderId, State state) {
             smsById.get(nativeProviderId).setState(state);
         }
 
         @Override
-        public void onReadXmsConversationFromNativeApp(long nativeThreadId) {
+        public void onReadMmsConversationFromNativeApp(long nativeThreadId) {
             for (SmsDataObject smsData : smsByThreadId.get(nativeThreadId)) {
                 smsData.setReadStatus(ReadStatus.READ);
             }
         }
 
         @Override
-        public void onDeleteXmsConversationFromNativeApp(long nativeThreadId) {
+        public void onDeleteMmsConversationFromNativeApp(long nativeThreadId) {
             for (SmsDataObject smsData : smsByThreadId.get(nativeThreadId)) {
                 smsById.remove(smsData.getNativeProviderId());
             }

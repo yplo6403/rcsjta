@@ -74,8 +74,8 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
     @Override
     public void onDeleteGroupChatMessages(String chatId, Set<String> msgIds) {
         for (String msgId : msgIds) {
-            mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
-                    DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForGroupChat(chatId);
@@ -124,32 +124,28 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mImdnDeliveryReportListener
-                .onDeliveryReport(contributionId, imdn.getMsgId(), imdnMessageId);
+        mImdnDeliveryReportListener.onDeliveryReport(contributionId, imdn.getMsgId(),
+                imdnMessageId, imdn.getStatus());
     }
 
     @Override
     public void onConferenceEventReceived(ContactId contact, ParticipantStatus status,
             long timestamp) {
-
     }
 
     @Override
     public void onSessionInvited(ContactId contact, String subject,
             Map<ContactId, ParticipantStatus> participants, long timestamp) {
-
     }
 
     @Override
     public void onSessionAutoAccepted(ContactId contact, String subject,
             Map<ContactId, ParticipantStatus> participants, long timestamp) {
-
     }
 
     @Override
     public void onParticipantsUpdated(Map<ContactId, ParticipantStatus> updatedParticipants,
             Map<ContactId, ParticipantStatus> allParticipants) {
-
     }
 
     @Override
@@ -159,6 +155,5 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
 
     @Override
     public void onImError(ChatError error) {
-
     }
 }

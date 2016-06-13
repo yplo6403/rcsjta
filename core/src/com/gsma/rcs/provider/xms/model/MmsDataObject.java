@@ -48,7 +48,6 @@ public class MmsDataObject extends XmsDataObject {
     /**
      * The MMS Identifier created by the native SMS/MMS application.
      */
-    private final String mMmsId;
     private final String mSubject;
     /**
      * The transaction ID to be used by the content observer of the native provider. If an outgoing
@@ -57,36 +56,33 @@ public class MmsDataObject extends XmsDataObject {
      */
     private final String mTransId;
 
-    public MmsDataObject(String mmsId, String transId, String messageId, ContactId contact,
-            String subject, RcsService.Direction dir, ReadStatus readStatus, long timestamp,
-            Long nativeId, Long nativeThreadId, List<MmsPart> mmsParts) {
+    public MmsDataObject(String transId, String messageId, ContactId contact, String subject,
+            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
+            Long nativeThreadId, List<MmsPart> mmsParts) {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, nativeThreadId);
-        mMmsId = mmsId;
         mReadStatus = readStatus;
         mMmsParts = mmsParts;
         mSubject = subject;
         mTransId = transId;
     }
 
-    public MmsDataObject(String mmsId, String messageId, ContactId contact, String subject,
+    public MmsDataObject(String messageId, ContactId contact, String subject,
             RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
             Long nativeThreadId, List<MmsPart> mmsParts) {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, nativeThreadId);
-        mMmsId = mmsId;
         mReadStatus = readStatus;
         mMmsParts = mmsParts;
         mSubject = subject;
         mTransId = null;
     }
 
-    public MmsDataObject(Context ctx, String mmsId, String messageId, ContactId contact,
-            String subject, String body, RcsService.Direction dir, long timestamp, List<Uri> files,
-            Long nativeId, long maxFileIconSize) throws FileAccessException, MmsFileSizeException {
+    public MmsDataObject(Context ctx, String messageId, ContactId contact, String subject,
+            String body, RcsService.Direction dir, long timestamp, List<Uri> files, Long nativeId,
+            long maxFileIconSize) throws FileAccessException, MmsFileSizeException {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
                 nativeId, null);
-        mMmsId = mmsId;
         mTransId = null;
         mSubject = subject;
         mMmsParts = new ArrayList<>();
@@ -100,14 +96,12 @@ public class MmsDataObject extends XmsDataObject {
                 String imageFilename = FileUtils.getPath(ctx, file);
                 fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxFileIconSize);
             }
-            mMmsParts.add(new MmsPart(messageId, contact, filename, fileSize, mimeType, file,
-                    fileIcon));
+            mMmsParts.add(new MmsPart(messageId, filename, fileSize, mimeType, file, fileIcon));
         }
         long availableSize = MMS_PARTS_MAX_FILE_SIZE;
         /* Remove size of the body text */
         if (body != null) {
-            mMmsParts
-                    .add(new MmsPart(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, body));
+            mMmsParts.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, body));
             availableSize -= body.length();
         }
         /* remove size of the un-compressible parts */
@@ -148,10 +142,6 @@ public class MmsDataObject extends XmsDataObject {
         }
     }
 
-    public String getMmsId() {
-        return mMmsId;
-    }
-
     public String getSubject() {
         return mSubject;
     }
@@ -166,8 +156,8 @@ public class MmsDataObject extends XmsDataObject {
 
     @Override
     public String toString() {
-        return "MmsDataObject{" + super.toString() + " ID=" + mMmsId + ", subject='" + mSubject
-                + "', parts=" + mMmsParts + '}';
+        return "MmsDataObject{" + super.toString() + ", subject='" + mSubject + "', parts="
+                + mMmsParts + '}';
     }
 
     public static class MmsPart {
@@ -182,12 +172,10 @@ public class MmsDataObject extends XmsDataObject {
 
         private final String mFileName;
         private final Long mFileSize;
-        private final ContactId mContact;
 
-        public MmsPart(String messageId, ContactId contact, String fileName, Long fileSize,
-                String mimeType, Uri file, byte[] fileIcon) {
+        public MmsPart(String messageId, String fileName, Long fileSize, String mimeType, Uri file,
+                byte[] fileIcon) {
             mMessageId = messageId;
-            mContact = contact;
             mFileName = fileName;
             mFileSize = fileSize;
             mFile = file;
@@ -196,9 +184,8 @@ public class MmsDataObject extends XmsDataObject {
             mFileIcon = fileIcon;
         }
 
-        public MmsPart(String messageId, ContactId contact, String mimeType, String content) {
+        public MmsPart(String messageId, String mimeType, String content) {
             mMessageId = messageId;
-            mContact = contact;
             mMimeType = mimeType;
             mContentText = content;
             mFileName = null;
@@ -210,10 +197,6 @@ public class MmsDataObject extends XmsDataObject {
 
         public String getMessageId() {
             return mMessageId;
-        }
-
-        public ContactId getContact() {
-            return mContact;
         }
 
         public String getMimeType() {

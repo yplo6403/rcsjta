@@ -138,4 +138,23 @@ public abstract class XmsDataObject {
         return "ChatId=" + mChatId + ", MessageId=" + mMessageId + ", Dir=" + mDirection
                 + ", Timestamp=" + mTimestamp + ", NativeId=" + mNativeProviderId;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof XmsDataObject)) {
+            return false;
+        }
+        XmsDataObject that = (XmsDataObject) o;
+        return mMessageId.equals(that.mMessageId) && mContact.equals(that.mContact);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mMessageId.hashCode();
+        result = 31 * result + mContact.hashCode();
+        return result;
+    }
 }

@@ -20,7 +20,7 @@
 package com.gsma.rcs.provisioning.local;
 
 import com.gsma.rcs.R;
-import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -28,6 +28,8 @@ import com.gsma.rcs.provider.settings.RcsSettingsData;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventReportingFrameworkConfig;
 import com.gsma.rcs.utils.logger.Logger;
 
+import android.content.ContentValues;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -46,16 +48,19 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
 
     private static RcsSettings sRcsSettings;
 
+    private static final Uri CONTENT_URI = Uri.parse("content://com.gsma.rcs.cms.imap/message");
+    private static final String KEY_PUSH_STATUS = "pushStatus";
+    private static final String SEL_TYPE = "msgType=?";
+
     private String[] mEventFramework = new String[] {
             EventReportingFrameworkConfig.DISABLED.toString(),
             EventReportingFrameworkConfig.ENABLED.toString(),
             EventReportingFrameworkConfig.IMAP_ONLY.toString()
     };
 
-    private CmsLog mCmsLog;
-
     private View mRootView;
     private ProvisioningHelper mHelper;
+    private LocalContentResolver mLocalContentResolver;
 
     public static CmsProvisioning newInstance(RcsSettings rcsSettings) {
         if (sLogger.isActivated()) {
@@ -75,7 +80,7 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.provisioning_cms, container, false);
         mHelper = new ProvisioningHelper(mRootView, sRcsSettings);
-        mCmsLog = CmsLog.getInstance(getContext());
+        mLocalContentResolver = new LocalContentResolver(getContext().getContentResolver());
         displayRcsSettings();
         return mRootView;
     }
@@ -121,12 +126,12 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
         mHelper.saveBoolCheckBox(R.id.message_store_push_sms,
                 RcsSettingsData.MESSAGE_STORE_PUSH_SMS);
         if (!((CheckBox) mRootView.findViewById(R.id.message_store_push_sms)).isChecked()) {
-            mCmsLog.updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
+            updatePushStatus(MessageType.SMS, PushStatus.PUSHED);
         }
         mHelper.saveBoolCheckBox(R.id.message_store_push_mms,
                 RcsSettingsData.MESSAGE_STORE_PUSH_MMS);
         if (!((CheckBox) mRootView.findViewById(R.id.message_store_push_mms)).isChecked()) {
-            mCmsLog.updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
+            updatePushStatus(MessageType.MMS, PushStatus.PUSHED);
         }
         Spinner spinner = (Spinner) mRootView
                 .findViewById(R.id.message_store_event_framework_spinner);
@@ -142,4 +147,17 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
         mHelper.saveLongEditText(R.id.ntp_cache_validity, RcsSettingsData.NTP_CACHE_VALIDITY);
     }
 
+    /**
+     * Updates push status by messageType
+     *
+     * @param messageType the type
+     * @param pushStatus the push status
+     */
+    public void updatePushStatus(MessageType messageType, PushStatus pushStatus) {
+        ContentValues values = new ContentValues();
+        values.put(KEY_PUSH_STATUS, pushStatus.toInt());
+        mLocalContentResolver.update(CONTENT_URI, values, SEL_TYPE, new String[] {
+            messageType.toString()
+        });
+    }
 }

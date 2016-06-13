@@ -604,6 +604,10 @@ public class ReceiveFileTransfer extends RcsActivity {
                     Log.w(LOGTAG, "onDeleted chatId=" + chatId + " transferIds=" + transferIds);
                 }
             }
+
+            @Override
+            public void onRead(String chatId, String transferId) {
+            }
         };
         mAcceptBtnListener = new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
@@ -688,6 +692,10 @@ public class ReceiveFileTransfer extends RcsActivity {
                 if (LogUtils.isActive) {
                     Log.w(LOGTAG, "onDeleted contact=" + contact + " transferIds=" + transferIds);
                 }
+            }
+
+            @Override
+            public void onRead(ContactId contact, String transferId) {
             }
         };
         /* Set pause and resume button */

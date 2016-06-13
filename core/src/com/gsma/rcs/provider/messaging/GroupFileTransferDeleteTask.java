@@ -17,13 +17,15 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -34,17 +36,16 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
     private static final Logger sLogger = Logger.getLogger(GroupFileTransferDeleteTask.class
             .getName());
 
-    private static final String SELECTION_ALL_GROUP_FILETRANSFERS = FileTransferData.KEY_CHAT_ID
-            + "<>" + FileTransferData.KEY_CONTACT + " OR " + FileTransferData.KEY_CONTACT
-            + " IS NULL";
+    private static final String SEL_ALL_GROUP_FILETRANSFERS = FileTransferData.KEY_CHAT_ID + "<>"
+            + FileTransferData.KEY_CONTACT + " OR " + FileTransferData.KEY_CONTACT + " IS NULL";
 
-    private static final String SELECTION_FILETRANSFER_BY_CHATID = FileTransferData.KEY_CHAT_ID
-            + "=?";
+    private static final String SEL_FILETRANSFER_BY_CHATID = FileTransferData.KEY_CHAT_ID + "=?";
 
     private final FileTransferServiceImpl mFileTransferService;
 
     private final InstantMessagingService mImService;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
+    private final CmsLog mCmsLog;
 
     /**
      * Deletion of all group file transfers.
@@ -52,16 +53,17 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
      * @param fileTransferService the file transfer service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public GroupFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionController) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CHAT_ID, SELECTION_ALL_GROUP_FILETRANSFERS);
+                FileTransferData.KEY_CHAT_ID, false, SEL_ALL_GROUP_FILETRANSFERS);
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
+        mCmsLog = null;
     }
 
     /**
@@ -71,35 +73,58 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param chatId the chat id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public GroupFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
-            InstantMessagingService imService, LocalContentResolver contentResolver, String chatId, CmsManager cmsManager) {
+            InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
+            CmsSessionController cmsSessionCtrl) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CHAT_ID, SELECTION_FILETRANSFER_BY_CHATID, chatId);
+                FileTransferData.KEY_CHAT_ID, false, SEL_FILETRANSFER_BY_CHATID, chatId);
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
     }
 
     /**
-     * Deletion of a specific file transfer.
+     * Constructor to process a delete action for a specific file transfer.
      * 
      * @param fileTransferService the file transfer service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param chatId the chat id
      * @param transferId the transfer id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public GroupFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
             InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
-            String transferId, CmsManager cmsManager) {
+            String transferId, CmsSessionController cmsSessionCtrl) {
         super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
-                FileTransferData.KEY_CHAT_ID, null, transferId);
+                FileTransferData.KEY_CHAT_ID, true, null, transferId);
         mFileTransferService = fileTransferService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
+    }
+
+    /**
+     * Constructor to process a delete event for a specific file transfer.
+     * 
+     * @param fileTransferService the file transfer service impl
+     * @param imService the IM service
+     * @param contentResolver the content resolver
+     * @param transferId the transfer id
+     * @param cmsLog the CMS log accessor
+     */
+    public GroupFileTransferDeleteTask(FileTransferServiceImpl fileTransferService,
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            String transferId, CmsLog cmsLog) {
+        super(contentResolver, FileTransferData.CONTENT_URI, FileTransferData.KEY_FT_ID,
+                FileTransferData.KEY_CHAT_ID, true, null, transferId);
+        mFileTransferService = fileTransferService;
+        mImService = imService;
+        mCmsSessionCtrl = null;
+        mCmsLog = cmsLog;
     }
 
     @Override
@@ -132,7 +157,15 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
     @Override
     protected void onCompleted(String chatId, Set<String> transferIds) {
         mFileTransferService.broadcastGroupFileTransfersDeleted(chatId, transferIds);
-        mCmsManager.getFileTransferEventHandler().onDeleteGroupFileTransfer(chatId, transferIds);
+        if (mCmsSessionCtrl != null) {
+            mCmsSessionCtrl.getFileTransferEventHandler().onDeleteGroupFileTransfer(chatId,
+                    transferIds);
+        } else {
+            for (String delId : transferIds) {
+                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.FILE_TRANSFER, delId,
+                        CmsObject.DeleteStatus.DELETED, null);
+            }
+        }
     }
 
 }

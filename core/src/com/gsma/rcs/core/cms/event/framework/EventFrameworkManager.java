@@ -56,12 +56,11 @@ public class EventFrameworkManager implements IEventFrameworkListener {
     public final static String MIME_TYPE = "application/vnd.oma.cpm-eventfw+xml";
 
     /*
-    Delay before reporting event in order to aggregate multiple events in a single CPIM message.
+     * Delay before reporting event in order to aggregate multiple events in a single CPIM message.
      */
     private static final long DELAY_NOTIFICATION_EVENT_FRAMEWORK = 1000;
 
-    private static final String EVENT_FRAMEWORK_MANAGER = EventFrameworkManager.class
-            .getName();
+    private static final String EVENT_FRAMEWORK_MANAGER = EventFrameworkManager.class.getName();
     private static final Logger sLogger = Logger.getLogger(EVENT_FRAMEWORK_MANAGER);
 
     private final RcsSettings mSettings;
@@ -73,14 +72,13 @@ public class EventFrameworkManager implements IEventFrameworkListener {
     /**
      * Constructor
      *
-     * @param scheduler               the scheduler
+     * @param scheduler the scheduler
      * @param instantMessagingService the IMS module
-     * @param cmsLog                  the CMS log accessor
-     * @param settings                the RCS settings accessor
+     * @param cmsLog the CMS log accessor
+     * @param settings the RCS settings accessor
      */
     public EventFrameworkManager(CmsSyncScheduler scheduler,
-                                 InstantMessagingService instantMessagingService,
-                                 CmsLog cmsLog, RcsSettings settings) {
+            InstantMessagingService instantMessagingService, CmsLog cmsLog, RcsSettings settings) {
         mInstantMessagingService = instantMessagingService;
         mCmsSyncScheduler = scheduler;
         mSettings = settings;
@@ -90,8 +88,8 @@ public class EventFrameworkManager implements IEventFrameworkListener {
     public synchronized void start() {
         /**
          * Use a handler to delay event framework notification since client apps may mark messages
-         * as read by batch.
-         * Delaying event reports allows to aggregate events in a single CPIM message.
+         * as read by batch. Delaying event reports allows to aggregate events in a single CPIM
+         * message.
          */
         mHandler = allocateBgHandler(EVENT_FRAMEWORK_MANAGER);
         mCmsLog.resetReportedStatus();
@@ -111,7 +109,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
 
     @Override
     public void updateFlagsForXms(ContactId contact) {
-        // Do nothing for XMS
+        updateFlags(contact, null);
     }
 
     @Override
@@ -229,14 +227,14 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                         sLogger.debug("Report deletion for IDs " + getIds(deleted)
                                                 + ", contact=" + contactId);
                                     } else {
-                                        sLogger.debug("Report deletion " + getIds(deleted) + ", chatId="
-                                                + chatId);
+                                        sLogger.debug("Report deletion " + getIds(deleted)
+                                                + ", chatId=" + chatId);
                                     }
                                 }
                                 for (CmsObject cmsObject : eventFrameworkDoc.getDeletedObject()) {
-                                    mCmsLog.updateDeleteStatus(cmsObject.getMessageType(),
+                                    mCmsLog.updateRcsDeleteStatus(cmsObject.getMessageType(),
                                             cmsObject.getMessageId(),
-                                            CmsObject.DeleteStatus.DELETED_REPORTED);
+                                            CmsObject.DeleteStatus.DELETED_REPORTED, null);
                                 }
                             }
                             List<CmsObject> displayed = eventFrameworkDoc.getSeenObject();
@@ -251,9 +249,9 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                     }
                                 }
                                 for (CmsObject cmsObject : displayed) {
-                                    mCmsLog.updateReadStatus(cmsObject.getMessageType(),
+                                    mCmsLog.updateRcsReadStatus(cmsObject.getMessageType(),
                                             cmsObject.getMessageId(),
-                                            CmsObject.ReadStatus.READ_REPORTED);
+                                            CmsObject.ReadStatus.READ_REPORTED, null);
                                 }
                             }
                         } catch (NetworkException e) {

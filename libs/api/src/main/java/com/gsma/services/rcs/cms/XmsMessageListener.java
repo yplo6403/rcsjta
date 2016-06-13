@@ -52,4 +52,12 @@ public abstract class XmsMessageListener {
      * @param messageIds IDs of those deleted XMS messages
      */
     public abstract void onDeleted(ContactId contact, Set<String> messageIds);
+
+    /**
+     * Callback called when a read operation completed
+     *
+     * @param contact Contact ID
+     * @param msgId ID of the read XMS message
+     */
+    public abstract void onRead(ContactId contact, String msgId);
 }

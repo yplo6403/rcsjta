@@ -248,13 +248,13 @@ public final class CmsObject {
         }
     }
 
-    private String mFolder;
+    private final String mFolder;
     private Integer mUid;
     private ReadStatus mReadStatus;
     private DeleteStatus mDeleteStatus;
     private PushStatus mPushStatus = PushStatus.PUSHED;
-    private MessageType mMessageType;
-    private String mMessageId;
+    private final MessageType mMessageType;
+    private final String mMessageId;
     private final Long mNativeProviderId;
 
     /**
@@ -301,7 +301,11 @@ public final class CmsObject {
         mNativeProviderId = nativeProviderId;
     }
 
-    public CmsObject(Long nativeProviderId, ReadStatus readStatus, DeleteStatus deleteStatus) {
+    public CmsObject(String folder, String messageId, Long nativeProviderId, ReadStatus readStatus,
+            DeleteStatus deleteStatus, MessageType messageType) {
+        mFolder = folder;
+        mMessageId = messageId;
+        mMessageType = messageType;
         mNativeProviderId = nativeProviderId;
         mReadStatus = readStatus;
         mDeleteStatus = deleteStatus;
@@ -329,10 +333,6 @@ public final class CmsObject {
 
     public DeleteStatus getDeleteStatus() {
         return mDeleteStatus;
-    }
-
-    public void setDeleteStatus(DeleteStatus deleteStatus) {
-        mDeleteStatus = deleteStatus;
     }
 
     public MessageType getMessageType() {

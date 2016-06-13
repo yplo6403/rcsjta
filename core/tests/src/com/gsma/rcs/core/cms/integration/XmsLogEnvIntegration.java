@@ -80,7 +80,6 @@ public class XmsLogEnvIntegration {
                             contact.toString(), mimeType
                     }, SORT_BY_DATE_DESC);
             CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-
             int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
             int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
             int nativeThreadIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID);
@@ -89,7 +88,6 @@ public class XmsLogEnvIntegration {
             int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
             int directionIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_DIRECTION);
             int readStatusIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_READ_STATUS);
-            int mmsIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MMS_ID);
             List<MmsPart> parts = new ArrayList<>();
             while (cursor.moveToNext()) {
                 if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
@@ -103,8 +101,7 @@ public class XmsLogEnvIntegration {
                                     .isNull(nativeThreadIdIdx) ? null : cursor
                                     .getLong(nativeThreadIdIdx)));
                 } else {
-                    messages.add(new MmsDataObject(cursor.getString(mmsIdIdx), cursor
-                            .getString(messageIdIdx), ContactUtil
+                    messages.add(new MmsDataObject(cursor.getString(messageIdIdx), ContactUtil
                             .createContactIdFromTrustedData(cursor.getString(contactIdx)), cursor
                             .getString(contentIdx), RcsService.Direction.valueOf(cursor
                             .getInt(directionIdx)),
@@ -116,6 +113,7 @@ public class XmsLogEnvIntegration {
                 }
             }
             return messages;
+
         } finally {
             CursorUtil.close(cursor);
         }

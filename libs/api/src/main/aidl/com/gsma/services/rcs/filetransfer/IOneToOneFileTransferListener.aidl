@@ -12,4 +12,6 @@ interface IOneToOneFileTransferListener {
 	void onProgressUpdate(in ContactId contact, in String transferId, in long currentSize, in long totalSize);
 
 	void onDeleted(in ContactId contact, in List<String> transferIds);
+
+	void onRead(in ContactId contact, in String transferId);
 }

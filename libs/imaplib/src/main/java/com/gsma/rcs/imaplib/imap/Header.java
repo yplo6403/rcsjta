@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -22,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -39,19 +41,19 @@ public class Header {
 
     protected Header(String key, String rawValue) {
         mKey = key.trim();
-        mValue = rawValue.trim();
+        mValue = rawValue;
     }
 
     public Date getValueAsDate() throws ParseException {
         // Thu, 13 Feb 1989 23:32 -0330
         // EEE, dd MMM yyyy HH:mm:ss Z
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
         String normalized = normalizeSpace(mValue);
         return sdf.parse(normalized);
     }
 
     public void setValueAsDate(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
         mValue = sdf.format(date);
     }
 
@@ -63,7 +65,7 @@ public class Header {
         return mValue;
     }
 
-    public static final String normalizeSpace(String string) {
+    public static String normalizeSpace(String string) {
         return string.replaceAll("\\s+", " ").trim();
     }
 
@@ -74,16 +76,16 @@ public class Header {
         boolean escape = false;
         char[] arr = string.toCharArray();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == '\\') {
+        for (char anArr : arr) {
+            if (anArr == '\\') {
                 escape = true;
                 continue;
-            } else if (arr[i] == '(' && !escape) {
+            } else if (anArr == '(' && !escape) {
                 ignore = true;
-            } else if (arr[i] == ')' && !escape) {
+            } else if (anArr == ')' && !escape) {
                 ignore = false;
             } else if (!ignore) {
-                sb.append(arr[i]);
+                sb.append(anArr);
             }
             escape = false;
         }
@@ -92,11 +94,10 @@ public class Header {
 
     public static Header createHeader(String headerSpec) {
         headerSpec = cleanComments(headerSpec);
-
         int i = headerSpec.indexOf(':');
         if (i != -1) {
             String key = headerSpec.substring(0, i).trim();
-            String value = headerSpec.substring(i + 1).trim();
+            String value = headerSpec.substring(i + 2);
             return new Header(key, value);
         } else {
             return new Header(headerSpec);
@@ -104,10 +105,9 @@ public class Header {
     }
 
     public static Map<String, Header> parseHeaders(String headerString) {
-        Map<String, Header> headers = new HashMap<String, Header>();
+        Map<String, Header> headers = new HashMap<>();
         // unfold
         headerString = headerString.replace(CRLF + " ", "");
-
         String[] headersArray = headerString.split(CRLF);
         for (String spec : headersArray) {
             Header header = createHeader(spec);

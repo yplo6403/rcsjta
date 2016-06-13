@@ -66,9 +66,4 @@ public class PartData {
      */
     public static final String KEY_FILEICON = MmsPartLog.FILEICON;
 
-    /**
-     * ContactId formatted number of remote contact.
-     */
-    public static final String KEY_CONTACT = MmsPartLog.CONTACT;
-
 }

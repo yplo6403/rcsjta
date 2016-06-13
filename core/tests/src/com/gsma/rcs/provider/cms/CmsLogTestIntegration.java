@@ -78,7 +78,7 @@ public class CmsLogTestIntegration {
         Map<Integer, CmsObject> messages = new HashMap<>();
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
-                    CmsLog.Message.SELECTION_FOLDER_NAME, new String[] {
+                    CmsLog.Message.SEL_FOLDER_NAME, new String[] {
                         folderName
                     }, SORT_BY_UID_ASC);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
@@ -149,7 +149,7 @@ public class CmsLogTestIntegration {
         Cursor cursor = null;
         try {
             cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
-                    CmsLog.Message.SELECTION_FOLDER_NAME_MESSAGEID, new String[] {
+                    CmsLog.Message.SEL_FOLDER_MSGID, new String[] {
                             folderName, messageId
                     }, null);
             CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
@@ -227,33 +227,9 @@ public class CmsLogTestIntegration {
      */
     public int removeMessage(String folderName, Integer uid) {
         return mLocalContentResolver.delete(CmsObject.CONTENT_URI,
-                CmsLog.Message.SELECTION_FOLDER_NAME_UID, new String[] {
+                CmsLog.Message.SEL_FOLDER_NAME_UID, new String[] {
                         folderName, String.valueOf(uid)
                 });
     }
 
-    /**
-     * Gets uid by messageId
-     *
-     * @param messageId the message ID
-     * @return uid
-     */
-    public Integer getUidForXmsMessage(String messageId) {
-        Cursor cursor = null;
-        try {
-            cursor = mLocalContentResolver.query(CmsObject.CONTENT_URI, null,
-                    SELECTION_XMS_MESSAGEID, new String[] {
-                        messageId
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, CmsObject.CONTENT_URI);
-            int uidIdx = cursor.getColumnIndexOrThrow(CmsObject.KEY_UID);
-            if (cursor.moveToFirst()) {
-                return cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx);
-            }
-            return null;
-
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
 }

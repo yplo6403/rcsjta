@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,11 @@ import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 
 /**
- * Created by yplo6403 on 10/11/2015.
+ * CmsEventBroadcaster maintains the registering and unregistering of
+ * ICmsEventBroadcaster and also performs broadcast events on these listeners upon the trigger
+ * of corresponding callbacks.
+ *
+ * @author Philippe LEMORDANT
  */
 public class CmsEventBroadcaster implements ICmsEventBroadcaster {
 

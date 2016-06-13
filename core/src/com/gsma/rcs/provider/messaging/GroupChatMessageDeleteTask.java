@@ -17,13 +17,15 @@
 
 package com.gsma.rcs.provider.messaging;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsLog;
+import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -34,15 +36,16 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
     private static final Logger sLogger = Logger.getLogger(GroupChatMessageDeleteTask.class
             .getName());
 
-    private static final String SELECTION_GROUP_CHATMESSAGES = MessageData.KEY_CHAT_ID + "<>"
+    private static final String SEL_GROUP_CHATMESSAGES = MessageData.KEY_CHAT_ID + "<>"
             + MessageData.KEY_CONTACT + " OR " + MessageData.KEY_CONTACT + " IS NULL";
 
-    private static final String SELECTION_CHATMESSAGES_BY_CHATID = MessageData.KEY_CHAT_ID + "=?";
+    private static final String SEL_CHATMESSAGES_BY_CHATID = MessageData.KEY_CHAT_ID + "=?";
 
     private final ChatServiceImpl mChatService;
 
     private final InstantMessagingService mImService;
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
+    private final CmsLog mCmsLog;
 
     /**
      * Deletion of all group chat messages.
@@ -50,16 +53,17 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionController) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CHAT_ID, SELECTION_GROUP_CHATMESSAGES);
+                MessageData.KEY_CHAT_ID, false, SEL_GROUP_CHATMESSAGES);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
+        mCmsLog = null;
     }
 
     /**
@@ -69,52 +73,73 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param chatId the chat id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionCtrl) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CHAT_ID, SELECTION_CHATMESSAGES_BY_CHATID, chatId);
+                MessageData.KEY_CHAT_ID, false, SEL_CHATMESSAGES_BY_CHATID, chatId);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
     }
 
     /**
-     * Deletion of a specific message.
+     * Constructor to process a delete action for a specific message.
      * 
      * @param chatService the chat service impl
      * @param imService the IM service
      * @param contentResolver the content resolver
      * @param chatId the chat id (optional, can be null)
      * @param messageId the message id
-     * @param cmsManager the CMS manager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
             InstantMessagingService imService, LocalContentResolver contentResolver, String chatId,
-            String messageId, CmsManager cmsManager) {
+            String messageId, CmsSessionController cmsSessionCtrl) {
         super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
-                MessageData.KEY_CHAT_ID, null, messageId);
+                MessageData.KEY_CHAT_ID, true, null, messageId);
         mChatService = chatService;
         mImService = imService;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsLog = null;
+    }
+
+    /**
+     * Constructor to process a delete event for a specific message.
+     *
+     * @param chatService the chat service impl
+     * @param imService the IM service
+     * @param contentResolver the content resolver
+     * @param messageId the message id
+     * @param cmsLog the CMS log accessor
+     */
+    public GroupChatMessageDeleteTask(ChatServiceImpl chatService,
+            InstantMessagingService imService, LocalContentResolver contentResolver,
+            String messageId, CmsLog cmsLog) {
+        super(contentResolver, MessageData.CONTENT_URI, MessageData.KEY_MESSAGE_ID,
+                MessageData.KEY_CHAT_ID, true, null, messageId);
+        mChatService = chatService;
+        mImService = imService;
+        mCmsSessionCtrl = null;
+        mCmsLog = cmsLog;
     }
 
     @Override
     protected void onRowDelete(String chatId, String msgId) throws PayloadException {
         if (isSingleRowDelete()) {
             return;
-
         }
         ChatSession session = mImService.getGroupChatSession(chatId);
         if (session == null) {
             mChatService.removeGroupChat(chatId);
             return;
-
         }
         try {
             session.deleteSession();
+
         } catch (NetworkException e) {
             /*
              * If network is lost during a delete operation the remaining part of the delete
@@ -131,7 +156,14 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
     @Override
     protected void onCompleted(String chatId, Set<String> msgIds) {
         mChatService.broadcastGroupChatMessagesDeleted(chatId, msgIds);
-        mCmsManager.getGroupChatEventHandler().onDeleteGroupChatMessages(chatId, msgIds);
+        if (mCmsSessionCtrl != null) {
+            mCmsSessionCtrl.getGroupChatEventHandler().onDeleteGroupChatMessages(chatId, msgIds);
+        } else {
+            for (String delId : msgIds) {
+                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.CHAT_MESSAGE, delId,
+                        CmsObject.DeleteStatus.DELETED, null);
+            }
+        }
     }
 
 }

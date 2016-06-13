@@ -18,9 +18,7 @@
 
 package com.gsma.rcs.ri.cms.messaging;
 
-import com.gsma.rcs.ri.utils.ContactUtil;
 import com.gsma.services.rcs.cms.MmsPartLog;
-import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -45,7 +43,6 @@ public class MmsPartDataObject {
             MmsPartLog.FILESIZE,
             MmsPartLog.FILEICON,
             MmsPartLog.CONTENT,
-            MmsPartLog.CONTACT
     };
     // @formatter:on
 
@@ -59,7 +56,6 @@ public class MmsPartDataObject {
     private final String mBody;
     private final Uri mFile;
     private final byte[] mFileIcon;
-    private final ContactId mContact;
 
     public static final long INVALID_ID = -1;
 
@@ -67,11 +63,10 @@ public class MmsPartDataObject {
     public String toString() {
         return "MmsPartDataObject{" + "messageId='" + mMessageId + '\'' + ", mimeType='"
                 + mMimeType + '\'' + ", filename='" + mFilename + '\'' + ", fileSize=" + mFileSize
-                + ", body='" + mBody + '\'' + ", file=" + mFile + ", contact=" + mContact + '}';
+                + ", body='" + mBody + '\'' + ", file=" + mFile + '}';
     }
 
-    public MmsPartDataObject(String mimeType, Uri file, String filename, Long fileSize,
-            ContactId contact) {
+    public MmsPartDataObject(String mimeType, Uri file, String filename, Long fileSize) {
         mId = INVALID_ID;
         mMessageId = null;
         mFilename = filename;
@@ -79,18 +74,16 @@ public class MmsPartDataObject {
         mFileSize = fileSize;
         mBody = null;
         mFile = file;
-        mContact = contact;
         mFileIcon = null;
     }
 
     public MmsPartDataObject(long id, String messageId, String mimeType, String filename,
-            Long fileSize, String content, byte[] fileIcon, ContactId contact) {
+            Long fileSize, String content, byte[] fileIcon) {
         mId = id;
         mMessageId = messageId;
         mMimeType = mimeType;
         mFilename = filename;
         mFileSize = fileSize;
-        mContact = contact;
         if (MmsPartLog.MimeType.TEXT_MESSAGE.equals(mimeType)
                 || MmsPartLog.MimeType.APPLICATION_SMIL.equals(mimeType)) {
             mBody = content;
@@ -133,7 +126,6 @@ public class MmsPartDataObject {
             int fileSizeIdx = cursor.getColumnIndexOrThrow(MmsPartLog.FILESIZE);
             int fileIconIdx = cursor.getColumnIndexOrThrow(MmsPartLog.FILEICON);
             int contentIdx = cursor.getColumnIndexOrThrow(MmsPartLog.CONTENT);
-            int contactIdx = cursor.getColumnIndexOrThrow(MmsPartLog.CONTACT);
             do {
                 long id = cursor.getLong(idColumnIdx);
                 String filename = cursor.getString(filenameIdx);
@@ -141,10 +133,8 @@ public class MmsPartDataObject {
                 Long fileSize = cursor.isNull(fileSizeIdx) ? null : cursor.getLong(fileSizeIdx);
                 byte[] fileIcon = cursor.getBlob(fileIconIdx);
                 String content = cursor.getString(contentIdx);
-                String number = cursor.getString(contactIdx);
-                ContactId contact = ContactUtil.formatContact(number);
                 result.add(new MmsPartDataObject(id, messageId, mimeType, filename, fileSize,
-                        content, fileIcon, contact));
+                        content, fileIcon));
             } while (cursor.moveToNext());
             return result;
 
@@ -157,10 +147,6 @@ public class MmsPartDataObject {
 
     public long getId() {
         return mId;
-    }
-
-    public String getMessageId() {
-        return mMessageId;
     }
 
     public String getMimeType() {
@@ -185,10 +171,6 @@ public class MmsPartDataObject {
 
     public Uri getFile() {
         return mFile;
-    }
-
-    public ContactId getContact() {
-        return mContact;
     }
 
 }

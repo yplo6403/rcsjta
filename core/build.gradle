@@ -36,6 +36,12 @@ android {
         versionName "1.5.1"
         archivesBaseName = "RCS_Core"
     }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled = true
+        }
+    }
 }
 
 dependencies {

@@ -70,4 +70,12 @@ public abstract class GroupFileTransferListener {
      * @param transferIds ids of those deleted file transfers
      */
     public abstract void onDeleted(String chatId, Set<String> transferIds);
+
+    /**
+     * Callback called when a read operation completed.
+     *
+     * @param chatId id of the chat
+     * @param transferId id of the read file transfer
+     */
+    public abstract void onRead(String chatId, String transferId);
 }

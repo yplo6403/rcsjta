@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.core.ims.service.im.chat.standfw;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
@@ -52,8 +52,7 @@ public class StoreAndForwardManager {
 
     private final static Logger sLogger = Logger.getLogger(StoreAndForwardManager.class
             .getSimpleName());
-    private final CmsManager mCmsManager;
-
+    private final CmsSessionController mCmsSessionCtrl;
     /**
      * Constructor
      * 
@@ -61,15 +60,16 @@ public class StoreAndForwardManager {
      * @param rcsSettings the RCS settings accessor
      * @param contactManager the contact manager
      * @param messagingLog the massaging log accessor
-     * @param cmsManager the CMS manager
+     * @param cmsSessionController the CMS session controller
      */
     public StoreAndForwardManager(InstantMessagingService imService, RcsSettings rcsSettings,
-            ContactManager contactManager, MessagingLog messagingLog, CmsManager cmsManager) {
+            ContactManager contactManager, MessagingLog messagingLog,
+            CmsSessionController cmsSessionController) {
         mImService = imService;
         mRcsSettings = rcsSettings;
         mContactManager = contactManager;
         mMessagingLog = messagingLog;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionController;
     }
 
     /**
@@ -89,7 +89,7 @@ public class StoreAndForwardManager {
         }
         TerminatingStoreAndForwardOneToOneChatMessageSession session = new TerminatingStoreAndForwardOneToOneChatMessageSession(
                 mImService, invite, contact, remoteInstanceId, mRcsSettings, mMessagingLog,
-                timestamp, mContactManager, mCmsManager);
+                timestamp, mContactManager, mCmsSessionCtrl);
         mImService.receiveStoreAndForwardMsgSessionInvitation(session);
         session.startSession();
     }
@@ -109,7 +109,7 @@ public class StoreAndForwardManager {
         }
         TerminatingStoreAndForwardOneToOneChatNotificationSession session = new TerminatingStoreAndForwardOneToOneChatNotificationSession(
                 mImService, invite, contact, remoteSipInstance, mRcsSettings, mMessagingLog,
-                timestamp, mContactManager, mCmsManager);
+                timestamp, mContactManager, mCmsSessionCtrl);
         mImService.receiveStoreAndForwardNotificationSessionInvitation(session);
         session.startSession();
     }

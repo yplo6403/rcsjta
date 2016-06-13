@@ -26,9 +26,12 @@ import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 
 import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.OperationApplicationException;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -39,10 +42,14 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * @author Philippe LEMORDANT
+ */
 @SuppressWarnings("ConstantConditions")
 public class XmsProvider extends ContentProvider {
 
@@ -61,8 +68,6 @@ public class XmsProvider extends ContentProvider {
 
     private static final int INVALID_ROW_ID = -1;
 
-    private static final String SELECTION_WITH_XMS_ID_ONLY = XmsData.KEY_MESSAGE_ID.concat("=?");
-
     private static final String SELECTION_WITH_PART_ID_ONLY = PartData.KEY_PART_ID.concat("=?");
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -70,8 +75,6 @@ public class XmsProvider extends ContentProvider {
     static {
         sUriMatcher.addURI(XmsMessageLog.CONTENT_URI.getAuthority(), XmsMessageLog.CONTENT_URI
                 .getPath().substring(1), UriType.Xms.XMS);
-        sUriMatcher.addURI(XmsMessageLog.CONTENT_URI.getAuthority(), XmsMessageLog.CONTENT_URI
-                .getPath().substring(1).concat("/*"), UriType.Xms.XMS_WITH_ID);
 
         sUriMatcher.addURI(MmsPartLog.CONTENT_URI.getAuthority(), MmsPartLog.CONTENT_URI.getPath()
                 .substring(1), UriType.Part.PART);
@@ -80,8 +83,6 @@ public class XmsProvider extends ContentProvider {
 
         sUriMatcher.addURI(XmsData.CONTENT_URI.getAuthority(), XmsData.CONTENT_URI.getPath()
                 .substring(1), UriType.InternalXms.XMS);
-        sUriMatcher.addURI(XmsData.CONTENT_URI.getAuthority(), XmsData.CONTENT_URI.getPath()
-                .substring(1).concat("/*"), UriType.InternalXms.XMS_WITH_ID);
 
         sUriMatcher.addURI(PartData.CONTENT_URI.getAuthority(), PartData.CONTENT_URI.getPath()
                 .substring(1), UriType.InternalPart.PART);
@@ -130,11 +131,6 @@ public class XmsProvider extends ContentProvider {
             case UriType.InternalXms.XMS:
                 return CursorType.Xms.TYPE_DIRECTORY;
 
-            case UriType.Xms.XMS_WITH_ID:
-                /* Intentional fall through */
-            case UriType.InternalXms.XMS_WITH_ID:
-                return CursorType.Xms.TYPE_ITEM;
-
             case UriType.Part.PART:
                 /* Intentional fall through */
             case UriType.InternalPart.PART:
@@ -150,23 +146,6 @@ public class XmsProvider extends ContentProvider {
         }
     }
 
-    private String getSelectionWithXmsId(String selection) {
-        if (TextUtils.isEmpty(selection)) {
-            return SELECTION_WITH_XMS_ID_ONLY;
-        }
-        return "(" + SELECTION_WITH_XMS_ID_ONLY + ") AND (" + selection + ')';
-    }
-
-    private String[] getSelectionArgsWithXmsId(String[] selectionArgs, String xmsId) {
-        String[] keySelectionArg = new String[] {
-            xmsId
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
-    }
-
     private String getSelectionWithPartId(String selection) {
         if (TextUtils.isEmpty(selection)) {
             return SELECTION_WITH_PART_ID_ONLY;
@@ -175,13 +154,7 @@ public class XmsProvider extends ContentProvider {
     }
 
     private String[] getSelectionArgsWithPartId(String[] selectionArgs, String id) {
-        String[] keySelectionArg = new String[] {
-            id
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+        return DatabaseUtils.appendIdWithSelectionArgs(id, selectionArgs);
     }
 
     private String[] restrictPartsProjectionToExternallyDefinedColumns(String[] projection)
@@ -218,20 +191,9 @@ public class XmsProvider extends ContentProvider {
         Cursor cursor = null;
         try {
             switch (sUriMatcher.match(uri)) {
-                case UriType.InternalXms.XMS_WITH_ID:
-                    String xmsId = uri.getLastPathSegment();
-                    selection = getSelectionWithXmsId(selection);
-                    selectionArgs = getSelectionArgsWithXmsId(selectionArgs, xmsId);
-                    SQLiteDatabase db = mOpenHelper.getReadableDatabase();
-                    cursor = db.query(TABLE_XMS, projection, selection, selectionArgs, null, null,
-                            sort);
-                    CursorUtil.assertCursorIsNotNull(cursor, uri);
-                    cursor.setNotificationUri(getContext().getContentResolver(),
-                            Uri.withAppendedPath(XmsMessageLog.CONTENT_URI, xmsId));
-                    return cursor;
 
                 case UriType.InternalXms.XMS:
-                    db = mOpenHelper.getReadableDatabase();
+                    SQLiteDatabase db = mOpenHelper.getReadableDatabase();
                     cursor = db.query(TABLE_XMS, projection, selection, selectionArgs, null, null,
                             sort);
                     CursorUtil.assertCursorIsNotNull(cursor, uri);
@@ -239,11 +201,6 @@ public class XmsProvider extends ContentProvider {
                             XmsMessageLog.CONTENT_URI);
                     return cursor;
 
-                case UriType.Xms.XMS_WITH_ID:
-                    xmsId = uri.getLastPathSegment();
-                    selection = getSelectionWithXmsId(selection);
-                    selectionArgs = getSelectionArgsWithXmsId(selectionArgs, xmsId);
-                    //$FALL-THROUGH$
                 case UriType.Xms.XMS:
                     db = mOpenHelper.getReadableDatabase();
                     cursor = db.query(TABLE_XMS,
@@ -303,21 +260,9 @@ public class XmsProvider extends ContentProvider {
     public int update(@NonNull Uri uri, ContentValues values, String selection,
             String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.InternalXms.XMS_WITH_ID:
-                String xmsId = uri.getLastPathSegment();
-                selection = getSelectionWithXmsId(selection);
-                selectionArgs = getSelectionArgsWithXmsId(selectionArgs, xmsId);
+            case UriType.InternalXms.XMS:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 int count = db.update(TABLE_XMS, values, selection, selectionArgs);
-                if (count > 0) {
-                    getContext().getContentResolver().notifyChange(
-                            Uri.withAppendedPath(XmsMessageLog.CONTENT_URI, xmsId), null);
-                }
-                return count;
-
-            case UriType.InternalXms.XMS:
-                db = mOpenHelper.getWritableDatabase();
-                count = db.update(TABLE_XMS, values, selection, selectionArgs);
                 if (count > 0) {
                     getContext().getContentResolver().notifyChange(XmsMessageLog.CONTENT_URI, null);
                 }
@@ -328,8 +273,6 @@ public class XmsProvider extends ContentProvider {
             case UriType.InternalPart.PART:
                 //$FALL-THROUGH$
             case UriType.Xms.XMS:
-                //$FALL-THROUGH$
-            case UriType.Xms.XMS_WITH_ID:
                 //$FALL-THROUGH$
             case UriType.Part.PART:
                 //$FALL-THROUGH$
@@ -345,8 +288,6 @@ public class XmsProvider extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, ContentValues initialValues) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.InternalXms.XMS_WITH_ID:
-                //$FALL-THROUGH$
             case UriType.InternalXms.XMS:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 String xmsId = initialValues.getAsString(XmsData.KEY_MESSAGE_ID);
@@ -375,8 +316,6 @@ public class XmsProvider extends ContentProvider {
 
             case UriType.Xms.XMS:
                 //$FALL-THROUGH$
-            case UriType.Xms.XMS_WITH_ID:
-                //$FALL-THROUGH$
             case UriType.Part.PART:
                 //$FALL-THROUGH$
             case UriType.Part.PART_WITH_ID:
@@ -391,21 +330,9 @@ public class XmsProvider extends ContentProvider {
     @Override
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         switch (sUriMatcher.match(uri)) {
-            case UriType.InternalXms.XMS_WITH_ID:
-                String xmsId = uri.getLastPathSegment();
-                selection = getSelectionWithXmsId(selection);
-                selectionArgs = getSelectionArgsWithXmsId(selectionArgs, xmsId);
+            case UriType.InternalXms.XMS:
                 SQLiteDatabase db = mOpenHelper.getWritableDatabase();
                 int count = db.delete(TABLE_XMS, selection, selectionArgs);
-                if (count > 0) {
-                    getContext().getContentResolver().notifyChange(
-                            Uri.withAppendedPath(XmsMessageLog.CONTENT_URI, xmsId), null);
-                }
-                return count;
-
-            case UriType.InternalXms.XMS:
-                db = mOpenHelper.getWritableDatabase();
-                count = db.delete(TABLE_XMS, selection, selectionArgs);
                 if (count > 0) {
                     getContext().getContentResolver().notifyChange(XmsMessageLog.CONTENT_URI, null);
                 }
@@ -433,8 +360,6 @@ public class XmsProvider extends ContentProvider {
 
             case UriType.Xms.XMS:
                 //$FALL-THROUGH$
-            case UriType.Xms.XMS_WITH_ID:
-                //$FALL-THROUGH$
             case UriType.Part.PART:
                 //$FALL-THROUGH$
             case UriType.Part.PART_WITH_ID:
@@ -452,26 +377,45 @@ public class XmsProvider extends ContentProvider {
         return openFileHelper(uri, mode);
     }
 
+    @NonNull
+    @Override
+    public ContentProviderResult[] applyBatch(
+            @NonNull ArrayList<ContentProviderOperation> operations)
+            throws OperationApplicationException {
+        SQLiteDatabase database = mOpenHelper.getWritableDatabase();
+        database.beginTransaction();
+        try {
+            ContentProviderResult[] results = new ContentProviderResult[operations.size()];
+            int index = 0;
+            for (ContentProviderOperation operation : operations) {
+                results[index] = operation.apply(this, results, index);
+                index++;
+            }
+            database.setTransactionSuccessful();
+            return results;
+        } finally {
+            database.endTransaction();
+        }
+    }
+
     private static final class UriType {
 
         private static final class Xms {
             private static final int XMS = 1;
-            private static final int XMS_WITH_ID = 2;
         }
 
         private static final class Part {
-            private static final int PART = 3;
-            private static final int PART_WITH_ID = 4;
+            private static final int PART = 2;
+            private static final int PART_WITH_ID = 3;
         }
 
         private static final class InternalXms {
-            private static final int XMS = 5;
-            private static final int XMS_WITH_ID = 6;
+            private static final int XMS = 4;
         }
 
         private static final class InternalPart {
-            private static final int PART = 7;
-            private static final int PART_WITH_ID = 8;
+            private static final int PART = 5;
+            private static final int PART_WITH_ID = 6;
         }
     }
 
@@ -479,7 +423,6 @@ public class XmsProvider extends ContentProvider {
 
         private static final class Xms {
             private static final String TYPE_DIRECTORY = "vnd.android.cursor.dir/xms";
-            private static final String TYPE_ITEM = "vnd.android.cursor.item/xms";
         }
 
         private static final class Part {
@@ -499,7 +442,7 @@ public class XmsProvider extends ContentProvider {
         public void onCreate(SQLiteDatabase db) {
             // @formatter:off
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_XMS + '('
-                    + XmsData.KEY_MESSAGE_ID + " TEXT NOT NULL PRIMARY KEY,"
+                    + XmsData.KEY_MESSAGE_ID + " TEXT NOT NULL,"
                     + XmsData.KEY_BASECOLUMN_ID + " INTEGER NOT NULL,"
                     + XmsData.KEY_CONTACT + " TEXT NOT NULL,"
                     + XmsData.KEY_CHAT_ID + " TEXT NOT NULL,"
@@ -514,8 +457,7 @@ public class XmsProvider extends ContentProvider {
                     + XmsData.KEY_READ_STATUS + " INTEGER NOT NULL,"
                     + XmsData.KEY_NATIVE_ID + " INTEGER,"
                     + XmsData.KEY_NATIVE_THREAD_ID + " INTEGER,"
-                    + XmsData.KEY_MESSAGE_CORRELATOR + " TEXT,"
-                    + XmsData.KEY_MMS_ID + " TEXT)" );
+                    + XmsData.KEY_MESSAGE_CORRELATOR + " TEXT)" );
 
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MESSAGE_ID + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_MESSAGE_ID + ')');
@@ -532,9 +474,6 @@ public class XmsProvider extends ContentProvider {
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MESSAGE_CORRELATOR + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_MESSAGE_CORRELATOR + ')');
 
-            db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MMS_ID + "_idx" +
-                    " ON " + TABLE_XMS + '(' + XmsData.KEY_MMS_ID + ')');
-
             // @formatter:on
 
             // TODO add index on mimetype
@@ -545,7 +484,6 @@ public class XmsProvider extends ContentProvider {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_PART + '('
                     + PartData.KEY_PART_ID + " INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
                     + PartData.KEY_MESSAGE_ID + " TEXT NOT NULL,"
-                    + PartData.KEY_CONTACT + " TEXT NOT NULL,"
                     + PartData.KEY_MIME_TYPE + " TEXT NOT NULL,"
                     + PartData.KEY_FILENAME + " TEXT,"
                     + PartData.KEY_FILESIZE + " INTEGER,"
@@ -554,8 +492,6 @@ public class XmsProvider extends ContentProvider {
 
             db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_MESSAGE_ID + "_idx" +
                     " ON " + TABLE_PART + '(' + PartData.KEY_MESSAGE_ID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_PART + '_' + PartData.KEY_CONTACT + "_idx" +
-                    " ON " + TABLE_PART + '(' + PartData.KEY_CONTACT + ')');
             // @formatter:on
         }
 

@@ -151,7 +151,7 @@ public interface IFileTransferLog {
      * @param displayedTimestamp displayed timestamp
      * @return the number of rows affected
      */
-    int markFileTransferAsRead(String fileTransferId, long displayedTimestamp);
+    boolean markFileTransferAsRead(String fileTransferId, long displayedTimestamp);
 
     /**
      * Update file transfer download progress

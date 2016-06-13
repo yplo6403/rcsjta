@@ -56,7 +56,7 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
      *
      * @param remoteFolder the CMS folder
      * @param cmsObjects the CmsObjects which should be updated on the message store
-     * @param cmsLog the CmsLog accesssor
+     * @param cmsLog the CmsLog accessor
      */
     public CmsSyncUpdateFlagTask(String remoteFolder, List<CmsObject> cmsObjects, CmsLog cmsLog) {
         mRemoteFolder = remoteFolder;
@@ -73,7 +73,7 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
     /**
      * Update flags fr a remote folder
      */
-    public void updateFlags(BasicImapService basicImapService, String remoteFolder,
+    private void updateFlags(BasicImapService basicImapService, String remoteFolder,
             List<CmsObject> cmsObjects) throws NetworkException, PayloadException {
         mReadRequestedUids = new HashSet<>();
         mDeletedRequestedUids = new HashSet<>();
@@ -86,11 +86,12 @@ public class CmsSyncUpdateFlagTask extends CmsSyncSchedulerTask {
                     switch (messageType) {
                         case CHAT_MESSAGE:
                         case FILE_TRANSFER:
+                            String msgId = cmsObject.getMessageId();
                             uid = basicImapService.searchUidWithHeader(
-                                    Constants.HEADER_IMDN_MESSAGE_ID, cmsObject.getMessageId());
+                                    Constants.HEADER_IMDN_MESSAGE_ID, msgId);
                             if (uid != null) {
                                 cmsObject.setUid(uid);
-                                mCmsLog.updateUid(messageType, cmsObject.getMessageId(), uid);
+                                mCmsLog.updateUid(remoteFolder, msgId, uid);
                             }
                             break;
 

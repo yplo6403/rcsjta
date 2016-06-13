@@ -21,7 +21,7 @@ package com.gsma.rcs.ri.cms.messaging;
 import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.messaging.OneToOneTalkView;
 import com.gsma.rcs.ri.messaging.TalkList;
-import com.gsma.rcs.ri.messaging.chat.ChatPendingIntentManager;
+import com.gsma.rcs.ri.messaging.TalkPendingIntentManager;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsContactUtil;
 import com.gsma.services.rcs.cms.XmsMessageIntent;
@@ -43,8 +43,9 @@ import android.util.Log;
  */
 public class XmsIntentService extends IntentService {
 
-    private static final String LOGTAG = LogUtils.getTag(XmsIntentService.class.getSimpleName());
-    private ChatPendingIntentManager mChatPendingIntentManager;
+    private static final String LOGTAG = LogUtils.getTag(XmsIntentService.class.getName());
+
+    private TalkPendingIntentManager mPendingIntentManager;
 
     /**
      * Creates an IntentService.
@@ -56,7 +57,7 @@ public class XmsIntentService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mChatPendingIntentManager = ChatPendingIntentManager.getChatPendingIntentManager(this);
+        mPendingIntentManager = TalkPendingIntentManager.getTalkPendingIntentManager(this);
     }
 
     @Override
@@ -107,7 +108,7 @@ public class XmsIntentService extends IntentService {
     private void forwardXmsMessage2UI(Intent messageIntent, XmsDataObject message) {
         ContactId contact = message.getContact();
         Intent intent = OneToOneTalkView.forgeIntentOnStackEvent(this, contact, messageIntent);
-        Integer uniqueId = mChatPendingIntentManager.tryContinueChatConversation(intent, message
+        Integer uniqueId = mPendingIntentManager.tryContinueConversation(intent, message
                 .getContact().toString());
         if (uniqueId == null) {
             /* The conversation is already on foreground */
@@ -127,7 +128,7 @@ public class XmsIntentService extends IntentService {
             title = getString(R.string.title_recv_mms, displayName);
         }
         Notification notif = buildNotification(contentIntent, title, message.getContent());
-        mChatPendingIntentManager.postNotification(uniqueId, notif);
+        mPendingIntentManager.postNotification(uniqueId, notif);
         TalkList.notifyNewConversationEvent(this, XmsMessageIntent.ACTION_NEW_XMS_MESSAGE);
     }
 

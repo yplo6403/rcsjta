@@ -19,11 +19,7 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.rcs.provider.CursorUtil;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
-import com.gsma.rcs.provider.xms.model.SmsDataObject;
-import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.contact.ContactId;
@@ -41,7 +37,7 @@ public class XmsPersistedStorageAccessor {
 
     private final XmsLog mXmsLog;
 
-    private ContactId mContact;
+    private final ContactId mContact;
 
     private RcsService.Direction mDirection;
 
@@ -57,60 +53,25 @@ public class XmsPersistedStorageAccessor {
 
     private String mContent;
 
-    private String mNativeId;
-
-    private String mNativeThreadId;
-
-    private String mCorrelator;
-
-    private String mMmsId;
-
     private String mChatId;
 
-    public XmsPersistedStorageAccessor(XmsLog xmsLog, XmsDataObject xms) {
-        this(xmsLog, xms.getMessageId());
-        mContact = xms.getContact();
-        mDirection = xms.getDirection();
-        mMimeType = xms.getMimeType();
-        if (xms instanceof SmsDataObject) {
-            mContent = ((SmsDataObject) xms).getBody();
-            mCorrelator = ((SmsDataObject) xms).getCorrelator();
-        } else if (xms instanceof MmsDataObject) {
-            mCorrelator = null;
-            mContent = ((MmsDataObject) xms).getSubject();
-        }
-        mTimestamp = xms.getTimestamp();
-        mChatId = xms.getChatId();
-    }
-
-    public XmsPersistedStorageAccessor(XmsLog xmsLog, String xmsId) {
+    public XmsPersistedStorageAccessor(XmsLog xmsLog, ContactId contact, String xmsId) {
         mXmsLog = xmsLog;
         mXmsId = xmsId;
+        mContact = contact;
     }
 
     public ContactId getRemoteContact() {
-        /*
-         * Utilizing cache here as contact can't be changed in persistent storage after entry
-         * insertion anyway so no need to query for it multiple times.
-         */
-        if (mContact == null) {
-            cacheData();
-        }
         return mContact;
     }
 
     private void cacheData() {
         Cursor cursor = null;
         try {
-            cursor = mXmsLog.getXmsMessage(mXmsId);
+            cursor = mXmsLog.getXmsMessage(mContact, mXmsId);
             if (!cursor.moveToNext()) {
                 throw new ServerApiPersistentStorageException("Data not found for XMS message "
                         + mXmsId);
-            }
-            if (mContact == null) {
-                String contact = cursor
-                        .getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT));
-                mContact = ContactUtil.createContactIdFromTrustedData(contact);
             }
             if (mDirection == null) {
                 mDirection = RcsService.Direction.valueOf(cursor.getInt(cursor
@@ -136,21 +97,6 @@ public class XmsPersistedStorageAccessor {
             if (RcsService.ReadStatus.READ != mRead) {
                 mRead = RcsService.ReadStatus.valueOf(cursor.getInt(cursor
                         .getColumnIndexOrThrow(XmsData.KEY_READ_STATUS)));
-            }
-            if (mNativeId == null) {
-                mNativeId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID));
-            }
-            if (mNativeThreadId == null) {
-                mNativeThreadId = cursor.getString(cursor
-                        .getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID));
-            }
-
-            if (mCorrelator == null) {
-                mCorrelator = cursor.getString(cursor
-                        .getColumnIndexOrThrow(XmsData.KEY_MESSAGE_CORRELATOR));
-            }
-            if (mMmsId == null) {
-                mMmsId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_MMS_ID));
             }
             if (mChatId == null) {
                 mChatId = cursor.getString(cursor.getColumnIndexOrThrow(XmsData.KEY_CHAT_ID));
@@ -228,18 +174,19 @@ public class XmsPersistedStorageAccessor {
     }
 
     public XmsMessage.State getState() {
-        XmsMessage.State state = mXmsLog.getState(mXmsId);
+        XmsMessage.State state = mXmsLog.getState(mContact, mXmsId);
         if (state == null) {
-            throw new ServerApiPersistentStorageException("State not found for XMS ID " + mXmsId);
+            throw new ServerApiPersistentStorageException("State not found for XMS ID " + mXmsId
+                    + " contactId=" + mContact);
         }
         return state;
     }
 
     public XmsMessage.ReasonCode getReasonCode() {
-        XmsMessage.ReasonCode reasonCode = mXmsLog.getReasonCode(mXmsId);
+        XmsMessage.ReasonCode reasonCode = mXmsLog.getReasonCode(mContact, mXmsId);
         if (reasonCode == null) {
             throw new ServerApiPersistentStorageException("Reason code not found for XMS ID "
-                    + mXmsId);
+                    + mXmsId + " contactId=" + mContact);
         }
         return reasonCode;
     }
@@ -252,50 +199,6 @@ public class XmsPersistedStorageAccessor {
             cacheData();
         }
         return RcsService.ReadStatus.READ == mRead;
-    }
-
-    public String getNativeId() {
-        /*
-         * Utilizing cache here as native ID can't be changed in persistent storage after entry
-         * insertion anyway so no need to query for it multiple times.
-         */
-        if (mNativeId == null) {
-            cacheData();
-        }
-        return mNativeId;
-    }
-
-    public String getNativeThreadId() {
-        /*
-         * Utilizing cache here as native thread ID can't be changed in persistent storage after
-         * entry insertion anyway so no need to query for it multiple times.
-         */
-        if (mNativeThreadId == null) {
-            cacheData();
-        }
-        return mNativeThreadId;
-    }
-
-    public String getMessageCorrelator() {
-        /*
-         * Utilizing cache here as message correlator can't be changed in persistent storage after
-         * entry insertion anyway so no need to query for it multiple times.
-         */
-        if (mCorrelator == null) {
-            cacheData();
-        }
-        return mCorrelator;
-    }
-
-    public String getMmsId() {
-        /*
-         * Utilizing cache here as mms_id can't be changed in persistent storage after entry
-         * insertion anyway so no need to query for it multiple times.
-         */
-        if (mMmsId == null) {
-            cacheData();
-        }
-        return mMmsId;
     }
 
     public String getChatId() {

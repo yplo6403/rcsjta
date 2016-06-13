@@ -48,7 +48,12 @@ public class XmsMessageListenerImpl extends IXmsMessageListener.Stub {
     }
 
     @Override
-    public void onDeleted(ContactId contact, List<String> messageIds) throws RemoteException {
-        mListener.onDeleted(contact, new HashSet<>(messageIds));
+    public void onDeleted(ContactId contact, List<String> msgIds) throws RemoteException {
+        mListener.onDeleted(contact, new HashSet<>(msgIds));
+    }
+
+    @Override
+    public void onRead(ContactId contact, String msgId) throws RemoteException {
+        mListener.onRead(contact, msgId);
     }
 }

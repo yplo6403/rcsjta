@@ -26,8 +26,7 @@ import com.gsma.rcs.addressbook.AddressBookManager;
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.CoreListener;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.core.cms.service.CmsManager;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.ImsConnectionManager;
 import com.gsma.rcs.core.ims.network.ImsNetworkInterface;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -129,13 +128,12 @@ public class ImsModule implements SipEventListener {
         CapabilityService capabilityService = new CapabilityService(this, rcsSettings,
                 contactManager, addressBookManager);
         mServices.put(ImsServiceType.CAPABILITY, capabilityService);
-        CmsService cmsService = new CmsService(mCore, this, ctx, rcsSettings, xmsLog, messagingLog,
-                cmsLog);
-        mServices.put(ImsServiceType.CMS, cmsService);
-        CmsManager cmsManager = cmsService.getCmsManager();
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(ctx, mCore, this,
+                rcsSettings, localContentResolver, xmsLog, messagingLog, cmsLog);
+        mServices.put(ImsServiceType.CMS, cmsSessionCtrl);
         mServices.put(ImsServiceType.INSTANT_MESSAGING, new InstantMessagingService(this,
                 rcsSettings, contactManager, messagingLog, historyLog, localContentResolver, ctx,
-                core, cmsManager));
+                core, cmsSessionCtrl));
         mServices
                 .put(ImsServiceType.RICHCALL, new RichcallService(this, richCallHistory,
                         contactManager, rcsSettings, mCallManager, localContentResolver,
@@ -165,7 +163,7 @@ public class ImsModule implements SipEventListener {
         getInstantMessagingService().initialize();
         getRichcallService().initialize();
         getPresenceService().initialize();
-        getCmsService().initialize(xmsEventHandler);
+        getCmsSessionController().initialize(xmsEventHandler);
 
         mInitializationFinished = true;
         if (sLogger.isActivated()) {
@@ -229,7 +227,7 @@ public class ImsModule implements SipEventListener {
         mExtensionManager.start();
         mServiceDispatcher.start();
         mCallManager.start();
-        getCmsService().start();
+        getCmsSessionController().start();
         if (sLogger.isActivated()) {
             sLogger.info("IMS module is started");
         }
@@ -250,7 +248,7 @@ public class ImsModule implements SipEventListener {
         mCnxManager.terminate();
         mServiceDispatcher.terminate();
         mExtensionManager.stop();
-        getCmsService().stop(TerminationReason.TERMINATION_BY_SYSTEM);
+        getCmsSessionController().stop(TerminationReason.TERMINATION_BY_SYSTEM);
         if (sLogger.isActivated()) {
             sLogger.info("IMS module has been stopped");
         }
@@ -368,12 +366,12 @@ public class ImsModule implements SipEventListener {
     }
 
     /**
-     * Returns the CMS service
+     * Returns the CMS session controller
      *
-     * @return CMS service
+     * @return CMS session controller
      */
-    public CmsService getCmsService() {
-        return (CmsService) mServices.get(ImsServiceType.CMS);
+    public CmsSessionController getCmsSessionController() {
+        return (CmsSessionController) mServices.get(ImsServiceType.CMS);
     }
 
     /**

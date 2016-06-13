@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@
 package com.gsma.rcs.service.api;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
@@ -68,7 +68,7 @@ import android.os.RemoteException;
 
 /**
  * File transfer implementation
- * 
+ *
  * @author Jean-Marc AUFFRET
  */
 public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
@@ -95,11 +95,11 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     private final ContactManager mContactManager;
 
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
 
     /**
      * Constructor
-     * 
+     *
      * @param transferId Transfer ID
      * @param broadcaster IOneToOneFileTransferBroadcaster
      * @param imService InstantMessagingService
@@ -108,13 +108,13 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
      * @param rcsSettings The RCS settings accessor
      * @param messagingLog The messaging log accessor
      * @param contactManager The contact manager accessor
-     * @param cmsManager The CMS manager
+     * @param cmsSessionCtrl The CMS session controller
      */
     public OneToOneFileTransferImpl(InstantMessagingService imService, String transferId,
-            IOneToOneFileTransferBroadcaster broadcaster,
-            FileTransferPersistedStorageAccessor persistentStorage,
-            FileTransferServiceImpl fileTransferService, RcsSettings rcsSettings,
-            MessagingLog messagingLog, ContactManager contactManager, CmsManager cmsManager) {
+                                    IOneToOneFileTransferBroadcaster broadcaster,
+                                    FileTransferPersistedStorageAccessor persistentStorage,
+                                    FileTransferServiceImpl fileTransferService, RcsSettings rcsSettings,
+                                    MessagingLog messagingLog, ContactManager contactManager, CmsSessionController cmsSessionCtrl) {
         mImService = imService;
         mFileTransferId = transferId;
         mBroadcaster = broadcaster;
@@ -123,7 +123,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
         mRcsSettings = rcsSettings;
         mMessagingLog = messagingLog;
         mContactManager = contactManager;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
     }
 
     private State getRcsState(FileSharingSession session) {
@@ -521,7 +521,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     FileSharingSession session = new DownloadFromAcceptFileSharingSession(
                             mImService, ContentManager.createMmContent(resume.getFile(),
-                                    resume.getSize(), resume.getFileName()), download,
+                            resume.getSize(), resume.getFileName()), download,
                             mRcsSettings, mMessagingLog, mContactManager);
                     session.addListener(OneToOneFileTransferImpl.this);
                     session.startSession();
@@ -1142,7 +1142,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onFileTransferred(MmContent content, ContactId contact, long fileExpiration,
-            long fileIconExpiration, FileTransferProtocol ftProtocol) {
+                                  long fileIconExpiration, FileTransferProtocol ftProtocol) {
         if (sLogger.isActivated()) {
             sLogger.info("Content transferred");
         }
@@ -1234,7 +1234,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onSessionInvited(ContactId contact, MmContent file, MmContent fileIcon,
-            long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
+                                 long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
         if (sLogger.isActivated()) {
             sLogger.info("Invited to one-to-one file transfer session");
         }
@@ -1244,7 +1244,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                 mPersistentStorage.addOneToOneFileTransfer(contact, Direction.INCOMING, file,
                         fileIcon, State.INVITED, ReasonCode.UNSPECIFIED, timestamp, timestampSent,
                         fileExpiration, fileIconExpiration);
-                mCmsManager.getFileTransferEventHandler().onNewFileTransfer(contact,
+                mCmsSessionCtrl.getFileTransferEventHandler().onNewFileTransfer(contact,
                         Direction.INCOMING, mFileTransferId);
             }
         }
@@ -1254,7 +1254,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onSessionAutoAccepted(ContactId contact, MmContent file, MmContent fileIcon,
-            long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
+                                      long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
         if (sLogger.isActivated()) {
             sLogger.info("Session auto accepted");
         }
@@ -1264,7 +1264,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                 mPersistentStorage.addOneToOneFileTransfer(contact, Direction.INCOMING, file,
                         fileIcon, State.ACCEPTING, ReasonCode.UNSPECIFIED, timestamp,
                         timestampSent, fileExpiration, fileIconExpiration);
-                mCmsManager.getFileTransferEventHandler().onNewFileTransfer(contact,
+                mCmsSessionCtrl.getFileTransferEventHandler().onNewFileTransfer(contact,
                         Direction.INCOMING, mFileTransferId);
             }
         }
@@ -1350,7 +1350,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     FileSharingSession session = new FileTransferDownloadSession(mImService,
                             fileTransferHttpInfoDocument, mFileTransferId, mPersistentStorage
-                                    .getChatId(), mPersistentStorage.getRemoteContact(),
+                            .getChatId(), mPersistentStorage.getRemoteContact(),
                             mRcsSettings, mMessagingLog, mPersistentStorage.getTimestamp());
                     session.addListener(OneToOneFileTransferImpl.this);
                     session.startSession();

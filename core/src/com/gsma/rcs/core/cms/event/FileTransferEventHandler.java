@@ -92,8 +92,8 @@ public class FileTransferEventHandler implements FileTransferListener {
         if (sLogger.isActivated()) {
             sLogger.debug("onReadFileTransfer transferId : " + transferId);
         }
-        mCmsLog.updateReadStatus(MessageType.FILE_TRANSFER, transferId,
-                ReadStatus.READ_REPORT_REQUESTED);
+        mCmsLog.updateRcsReadStatus(MessageType.FILE_TRANSFER, transferId,
+                ReadStatus.READ_REPORT_REQUESTED, null);
         if (mEventFrameworkManager != null) {
             if (mMessagingLog.isGroupFileTransfer(transferId)) {
                 mEventFrameworkManager.updateFlagsForGroupChat(mMessagingLog
@@ -108,11 +108,11 @@ public class FileTransferEventHandler implements FileTransferListener {
     @Override
     public void onDeleteFileTransfer(ContactId contact, Set<String> transferIds) {
         if (sLogger.isActivated()) {
-            sLogger.debug("onDeleteFileTransfer for contact : " + contact.toString());
+            sLogger.debug("onDeleteFileTransfer for contact : " + contact);
         }
         for (String transferId : transferIds) {
-            mCmsLog.updateDeleteStatus(MessageType.FILE_TRANSFER, transferId,
-                    DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.FILE_TRANSFER, transferId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForChat(contact);
@@ -125,8 +125,8 @@ public class FileTransferEventHandler implements FileTransferListener {
             sLogger.debug("onDeleteGroupFileTransfer for chatId : " + chatId);
         }
         for (String transferId : transferIds) {
-            mCmsLog.updateDeleteStatus(MessageType.FILE_TRANSFER, transferId,
-                    DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.FILE_TRANSFER, transferId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForGroupChat(chatId);

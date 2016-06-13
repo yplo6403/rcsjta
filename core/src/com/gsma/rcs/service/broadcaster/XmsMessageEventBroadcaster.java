@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by yplo6403 on 10/11/2015.
+ * XmsMessageEventBroadcaster maintains the registering and unregistering of
+ * IXmsMessageEventBroadcaster and also performs broadcast events on these listeners upon the
+ * trigger of corresponding callbacks.
+ *
+ * @author Philippe LEMORDANT
  */
 public class XmsMessageEventBroadcaster implements IXmsMessageEventBroadcaster {
 
@@ -88,6 +92,21 @@ public class XmsMessageEventBroadcaster implements IXmsMessageEventBroadcaster {
         for (int i = 0; i < N; i++) {
             try {
                 mListeners.getBroadcastItem(i).onDeleted(contact, msgIds);
+            } catch (RemoteException e) {
+                if (sLogger.isActivated()) {
+                    sLogger.error("Can't notify listener.", e);
+                }
+            }
+        }
+        mListeners.finishBroadcast();
+    }
+
+    @Override
+    public void broadcastMessageRead(ContactId contact, String msgId) {
+        final int N = mListeners.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            try {
+                mListeners.getBroadcastItem(i).onRead(contact, msgId);
             } catch (RemoteException e) {
                 if (sLogger.isActivated()) {
                     sLogger.error("Can't notify listener.", e);

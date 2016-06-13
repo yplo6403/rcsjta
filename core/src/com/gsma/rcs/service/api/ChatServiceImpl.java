@@ -22,7 +22,7 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
@@ -105,7 +105,7 @@ public class ChatServiceImpl extends IChatService.Stub {
      * Lock used for synchronization
      */
     private final Object mLock = new Object();
-    private final CmsManager mCmsManager;
+    private final CmsSessionController mCmsSessionCtrl;
 
     /**
      * Constructor
@@ -115,10 +115,11 @@ public class ChatServiceImpl extends IChatService.Stub {
      * @param historyLog HistoryLog
      * @param rcsSettings RcsSettings
      * @param contactManager ContactManager
+     * @param cmsSessionCtrl the CMS session controller
      */
     public ChatServiceImpl(InstantMessagingService imService, MessagingLog messagingLog,
             HistoryLog historyLog, RcsSettings rcsSettings, ContactManager contactManager,
-            CmsManager cmsManager) {
+            CmsSessionController cmsSessionCtrl) {
         if (sLogger.isActivated()) {
             sLogger.info("Chat service API is loaded");
         }
@@ -128,7 +129,7 @@ public class ChatServiceImpl extends IChatService.Stub {
         mHistoryLog = historyLog;
         mRcsSettings = rcsSettings;
         mContactManager = contactManager;
-        mCmsManager = cmsManager;
+        mCmsSessionCtrl = cmsSessionCtrl;
     }
 
     private ReasonCode imdnToFailedReasonCode(ImdnDocument imdn) {
@@ -295,7 +296,6 @@ public class ChatServiceImpl extends IChatService.Stub {
         String msgId = imdn.getMsgId();
         String notificationType = imdn.getNotificationType();
         long timestamp = imdn.getDateTime();
-
         if (sLogger.isActivated()) {
             sLogger.info("Receive message delivery status for message " + msgId + ", status "
                     + status + "notificationType=" + notificationType);
@@ -312,7 +312,6 @@ public class ChatServiceImpl extends IChatService.Stub {
                             msgId, Status.FAILED, reasonCode);
                 }
             }
-
         } else if (ImdnDocument.DeliveryStatus.DELIVERED == status) {
             mImService.getDeliveryExpirationManager().cancelDeliveryTimeoutAlarm(msgId);
             synchronized (mLock) {
@@ -321,7 +320,6 @@ public class ChatServiceImpl extends IChatService.Stub {
                             msgId, Status.DELIVERED, ReasonCode.UNSPECIFIED);
                 }
             }
-
         } else if (ImdnDocument.DeliveryStatus.DISPLAYED == status) {
             mImService.getDeliveryExpirationManager().cancelDeliveryTimeoutAlarm(msgId);
             synchronized (mLock) {
@@ -466,7 +464,7 @@ public class ChatServiceImpl extends IChatService.Stub {
             mMessagingLog.addGroupChat(session.getContributionID(), session.getRemoteContact(),
                     session.getSubject(), session.getParticipants(), GroupChat.State.INITIATING,
                     GroupChat.ReasonCode.UNSPECIFIED, Direction.OUTGOING, timestamp);
-            mCmsManager.getGroupChatEventHandler().onCreateGroupChat(chatId, chatId);
+            mCmsSessionCtrl.getGroupChatEventHandler().onCreateGroupChat(chatId, chatId);
             mImService.scheduleImOperation(new Runnable() {
                 public void run() {
                     try {
@@ -871,7 +869,7 @@ public class ChatServiceImpl extends IChatService.Stub {
              * from the chat content provider
              */
             long now = NtpTrustedTime.currentTimeMillis();
-            if (mMessagingLog.markMessageAsRead(msgId, now) == 0) {
+            if (!mMessagingLog.markMessageAsRead(msgId, now)) {
                 /* no reporting towards the network if message is already marked as read */
                 if (sLogger.isActivated()) {
                     sLogger.info("Message with ID " + msgId + " is already marked as read!");
@@ -907,7 +905,7 @@ public class ChatServiceImpl extends IChatService.Stub {
                             mImService.tryToDispatchAllPendingDisplayNotifications();
                         }
                     }
-                    mCmsManager.getChatEventHandler().onReadChatMessage(msgId);
+                    mCmsSessionCtrl.getChatEventHandler().onReadChatMessage(msgId);
 
                 } catch (RuntimeException e) {
                     /*
@@ -1138,6 +1136,19 @@ public class ChatServiceImpl extends IChatService.Stub {
             getOrCreateOneToOneChat(remote).onChatMessageDisplayReportSent(msgId);
         } else {
             getOrCreateGroupChat(chatId).onChatMessageDisplayReportSent(msgId);
+        }
+    }
+
+    public void broadcastMessageRead(String msgId) {
+        if (mMessagingLog.isOneToOneChatMessage(msgId)) {
+            ContactId contact = mMessagingLog.getMessageContact(msgId);
+            mOneToOneChatEventBroadcaster.broadcastMessageRead(contact, msgId);
+
+        } else {
+            String chatId = mMessagingLog.getMessageChatId(msgId);
+            if (chatId != null) {
+                mGroupChatEventBroadcaster.broadcastMessageRead(chatId, msgId);
+            }
         }
     }
 }

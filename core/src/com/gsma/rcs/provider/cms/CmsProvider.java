@@ -194,33 +194,17 @@ public class CmsProvider extends ContentProvider {
     }
 
     private String[] getSelectionArgsWithId(String[] selectionArgs, String id) {
-        String[] keySelectionArg = new String[] {
-            id
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+        return DatabaseUtils.appendIdWithSelectionArgs(id, selectionArgs);
     }
 
     private String[] getSelectionArgsWithTelUri(String[] selectionArgs, String telUri) {
-        String[] keySelectionArg = new String[] {
-            Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + telUri
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+        String folder = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR + telUri;
+        return DatabaseUtils.appendIdWithSelectionArgs(folder, selectionArgs);
     }
 
     private String[] getSelectionArgsWithChatId(String[] selectionArgs, String chatId) {
-        String[] keySelectionArg = new String[] {
-            com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId, chatId)
-        };
-        if (selectionArgs == null) {
-            return keySelectionArg;
-        }
-        return DatabaseUtils.appendSelectionArgs(keySelectionArg, selectionArgs);
+        String folder = com.gsma.rcs.core.cms.utils.CmsUtils.groupChatToCmsFolder(chatId, chatId);
+        return DatabaseUtils.appendIdWithSelectionArgs(folder, selectionArgs);
     }
 
     @Override

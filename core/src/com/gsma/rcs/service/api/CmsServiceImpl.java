@@ -18,15 +18,16 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.core.cms.service.CmsManager;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler.SyncType;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerListener;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncSchedulerTaskType;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
 import com.gsma.rcs.core.cms.xms.mms.OriginatingMmsSession;
+import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsDeleteTask;
@@ -53,6 +54,7 @@ import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.RemoteException;
@@ -81,7 +83,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      * Lock used for synchronization
      */
     private final Object lock = new Object();
-    private final CmsService mCmsService;
+    private final CmsSessionController mCmsSessionCtrl;
 
     private final Map<String, XmsMessageImpl> mXmsMessageCache = new HashMap<>();
     private final XmsLog mXmsLog;
@@ -96,25 +98,24 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
             Arrays.asList(BLACK_LISTED_MODELS));
 
     private final LocalContentResolver mLocalContentResolver;
-    private final CmsManager mCmsManager;
 
     /**
      * Constructor
      */
-    public CmsServiceImpl(Context ctx, CmsService cmsService, ChatServiceImpl chatService,
-            FileTransferServiceImpl fileTransferService, XmsLog xmsLog, RcsSettings rcsSettings,
-            XmsManager xmsManager, LocalContentResolver localContentResolver, CmsManager cmsManager) {
+    public CmsServiceImpl(Context ctx, CmsSessionController cmsSessionCtrl,
+            ChatServiceImpl chatService, FileTransferServiceImpl fileTransferService,
+            InstantMessagingService imService, XmsLog xmsLog, RcsSettings rcsSettings,
+            XmsManager xmsManager, LocalContentResolver localContentResolver) {
         if (sLogger.isActivated()) {
             sLogger.info("CMS service API is loaded");
         }
         mCtx = ctx;
-        mCmsService = cmsService;
-        mCmsService.register(this, chatService, fileTransferService);
+        mCmsSessionCtrl = cmsSessionCtrl;
+        mCmsSessionCtrl.register(this, chatService, fileTransferService, imService);
         mXmsLog = xmsLog;
         mRcsSettings = rcsSettings;
         mXmsManager = xmsManager;
         mLocalContentResolver = localContentResolver;
-        mCmsManager = cmsManager;
     }
 
     @Override
@@ -179,10 +180,10 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("contact must not be null!");
         }
-        if (!mCmsService.isServiceStarted()) {
+        if (!mCmsSessionCtrl.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
+        mCmsSessionCtrl.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
@@ -190,7 +191,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
                             .toString()));
                 }
                 try {
-                    mCmsService.syncOneToOneConversation(contact);
+                    mCmsSessionCtrl.syncOneToOneConversation(contact);
 
                 } catch (RuntimeException e) {
                     /*
@@ -212,17 +213,17 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (chatId == null) {
             throw new ServerApiIllegalArgumentException("chat ID must not be null!");
         }
-        if (!mCmsService.isServiceStarted()) {
+        if (!mCmsSessionCtrl.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
+        mCmsSessionCtrl.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
                     sLogger.info("Sync group conversation for chat ID " + chatId);
                 }
                 try {
-                    mCmsService.syncGroupConversation(chatId);
+                    mCmsSessionCtrl.syncGroupConversation(chatId);
 
                 } catch (RuntimeException e) {
                     /*
@@ -241,17 +242,17 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void syncAll() throws RemoteException {
-        if (!mCmsService.isServiceStarted()) {
+        if (!mCmsSessionCtrl.isServiceStarted()) {
             throw new ServerApiServiceNotAvailableException("CMS service is not available!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
+        mCmsSessionCtrl.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
                     sLogger.debug("Synchronize CMS");
                 }
                 try {
-                    mCmsService.syncAll();
+                    mCmsSessionCtrl.syncAll();
 
                 } catch (RuntimeException e) {
                     /*
@@ -268,12 +269,12 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     }
 
     @Override
-    public IXmsMessage getXmsMessage(String messageId) throws RemoteException {
+    public IXmsMessage getXmsMessage(ContactId remote, String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
         try {
-            return getOrCreateXmsMessage(messageId);
+            return getOrCreateXmsMessage(remote, messageId);
 
         } catch (ServerApiBaseException e) {
             if (!e.shouldNotBeLogged()) {
@@ -287,14 +288,16 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
     }
 
-    public XmsMessageImpl getOrCreateXmsMessage(String messageId) {
-        XmsMessageImpl xmsMessage = mXmsMessageCache.get(messageId);
+    public XmsMessageImpl getOrCreateXmsMessage(ContactId remote, String messageId) {
+        String key = remote.toString() + messageId;
+        XmsMessageImpl xmsMessage = mXmsMessageCache.get(key);
         if (xmsMessage != null) {
             return xmsMessage;
         }
-        XmsPersistedStorageAccessor accessor = new XmsPersistedStorageAccessor(mXmsLog, messageId);
+        XmsPersistedStorageAccessor accessor = new XmsPersistedStorageAccessor(mXmsLog, remote,
+                messageId);
         XmsMessageImpl result = new XmsMessageImpl(messageId, accessor);
-        mXmsMessageCache.put(messageId, result);
+        mXmsMessageCache.put(key, result);
         return result;
     }
 
@@ -351,15 +354,15 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
         try {
             checkUris(files);
-            String mMessageId = IdGenerator.generateMessageID();
+            String msgId = IdGenerator.generateMessageID();
             long timestamp = NtpTrustedTime.currentTimeMillis();
-            MmsDataObject mmsDataObject = new MmsDataObject(mCtx, mMessageId, mMessageId, contact,
-                    subject, body, RcsService.Direction.OUTGOING, timestamp, files, null,
+            MmsDataObject mmsDataObject = new MmsDataObject(mCtx, msgId, contact, subject, body,
+                    RcsService.Direction.OUTGOING, timestamp, files, null,
                     mRcsSettings.getMaxFileIconSize());
             mmsDataObject.setReadStatus(ReadStatus.READ);
             mXmsLog.addOutgoingMms(mmsDataObject);
-            XmsMessageImpl mms = getOrCreateXmsMessage(mMessageId);
-            mCmsService.tryToDequeueMmsMessages();
+            XmsMessageImpl mms = getOrCreateXmsMessage(contact, msgId);
+            mCmsSessionCtrl.tryToDequeueMmsMessages();
             return mms;
 
         } catch (ServerApiBaseException e) {
@@ -401,36 +404,40 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         }
     }
 
+    public void markXmsMessageAsRead_(final ContactId contact, final String messageId) {
+        if (mXmsLog.markMessageAsRead(contact, messageId)) {
+            mCmsSessionCtrl.scheduleImOperation(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mCmsSessionCtrl.onReadXmsMessage(contact, messageId);
+
+                    } catch (RuntimeException e) {
+                        /*
+                         * Intentionally catch runtime exceptions as else it will abruptly end the
+                         * thread and eventually bring the whole system down, which is not intended.
+                         */
+                        sLogger.error("Failed to mark message as read!", e);
+                    }
+                }
+            });
+            broadcastMessageRead(contact, messageId);
+
+        } else {
+            /* no reporting towards the network if message is already marked as read */
+            if (sLogger.isActivated()) {
+                sLogger.info("Message with ID " + messageId + " is already marked as read!");
+            }
+        }
+    }
+
     @Override
-    public void markXmsMessageAsRead(final String messageId) throws RemoteException {
+    public void markXmsMessageAsRead(final ContactId contact, final String messageId)
+            throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        mCmsService.scheduleImOperation(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    RcsService.ReadStatus readStatus = mXmsLog.getReadStatus(messageId);
-                    if (readStatus != null) {
-                        if (RcsService.ReadStatus.UNREAD == readStatus) {
-                            if (mCmsService.isServiceStarted()) {
-                                mCmsService.markXmsMessageAsRead(messageId);
-                            }
-                        }
-                    } else {
-                        sLogger.warn("Cannot mark as read: message ID'" + messageId
-                                + "' not found!");
-                    }
-
-                } catch (RuntimeException e) {
-                    /*
-                     * Intentionally catch runtime exceptions as else it will abruptly end the
-                     * thread and eventually bring the whole system down, which is not intended.
-                     */
-                    sLogger.error("Failed to mark message as read!", e);
-                }
-            }
-        });
+        markXmsMessageAsRead_(contact, messageId);
     }
 
     @Override
@@ -477,7 +484,8 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     @Override
     public void deleteXmsMessages() throws RemoteException {
-        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver));
+        mCmsSessionCtrl.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver,
+                mCmsSessionCtrl));
     }
 
     @Override
@@ -485,19 +493,21 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         if (contact == null) {
             throw new ServerApiIllegalArgumentException("Contact must not be null!");
         }
-        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, contact));
+        mCmsSessionCtrl.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, contact,
+                mCmsSessionCtrl));
     }
 
-    public void deleteXmsMessageById(String messageId) {
-        mCmsService.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, messageId));
+    public void deleteXmsMessageByIdAndContact(ContactId contact, String messageId) {
+        mCmsSessionCtrl.scheduleImOperation(new XmsDeleteTask(this, mLocalContentResolver, contact,
+                messageId, mCmsSessionCtrl));
     }
 
     @Override
-    public void deleteXmsMessage(final String messageId) throws RemoteException {
+    public void deleteXmsMessage(ContactId contact, String messageId) throws RemoteException {
         if (TextUtils.isEmpty(messageId)) {
             throw new ServerApiIllegalArgumentException("message ID must not be null or empty!");
         }
-        deleteXmsMessageById(messageId);
+        deleteXmsMessageByIdAndContact(contact, messageId);
     }
 
     /*
@@ -505,14 +515,15 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
      */
     @Override
     public void deleteImapData() throws RemoteException {
-        mCmsService.scheduleImOperation(new Runnable() {
+        mCmsSessionCtrl.scheduleImOperation(new Runnable() {
             @Override
             public void run() {
                 if (sLogger.isActivated()) {
                     sLogger.info("Delete IMAP data");
                 }
                 try {
-                    mCmsService.deleteCmsData();
+                    mCmsSessionCtrl.deleteCmsData();
+
                 } catch (RuntimeException e) {
                     /*
                      * Intentionally catch runtime exceptions as else it will abruptly end the
@@ -553,6 +564,10 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         mXmsMessageBroadcaster.broadcastMessageDeleted(contact, messageIds);
     }
 
+    public void broadcastMessageRead(ContactId contact, String messageId) {
+        mXmsMessageBroadcaster.broadcastMessageRead(contact, messageId);
+    }
+
     /**
      * Dequeue MMS
      *
@@ -570,13 +585,13 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
         OriginatingMmsSession session = new OriginatingMmsSession(mCtx, mmsId, contact, subject,
                 parts, mRcsSettings, mXmsManager);
         session.addListener(this);
-        session.addListener(mCmsManager.getMmsSessionHandler());
-        mCmsService.scheduleImOperation(session);
+        session.addListener(mCmsSessionCtrl.getMmsSessionHandler());
+        mCmsSessionCtrl.scheduleImOperation(session);
     }
 
     public void setXmsStateAndReasonCode(String messageId, String mimeType, ContactId contact,
             XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
-        if (mXmsLog.setStateAndReasonCode(messageId, state, reasonCode)) {
+        if (mXmsLog.setStateAndReasonCode(contact, messageId, state, reasonCode)) {
             mXmsMessageBroadcaster.broadcastMessageStateChanged(contact, mimeType, messageId,
                     state, reasonCode);
         }
@@ -584,7 +599,7 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
 
     public void setXmsStateAndTimestamp(String mmsId, ContactId contact, XmsMessage.State state,
             long timestamp, long timestampSent) {
-        if (mXmsLog.setStateAndTimestamp(mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED,
+        if (mXmsLog.setStateAndTimestamp(contact, mmsId, state, XmsMessage.ReasonCode.UNSPECIFIED,
                 timestamp, timestampSent)) {
             broadcastMessageStateChanged(contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, mmsId,
                     state, XmsMessage.ReasonCode.UNSPECIFIED);
@@ -645,34 +660,57 @@ public class CmsServiceImpl extends ICmsService.Stub implements MmsSessionListen
     /**
      * Deletes MMS parts
      *
+     * @param contact the remote contact
      * @param messageId the message ID
      */
-    public void deleteMmsParts(String messageId) {
-        String mimeType = mXmsLog.getMimeType(messageId);
-        if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
-            mXmsLog.deleteMmsParts(messageId, mXmsLog.getDirection(messageId));
+    public void deleteMmsParts(ContactId contact, String messageId) {
+        // Check if MMS message
+        Cursor cursor = null;
+        RcsService.Direction dir = null;
+        boolean deleteParts = false;
+        try {
+            cursor = mXmsLog.getXmsMessage(contact, messageId);
+            if (!cursor.moveToNext()) {
+                return;
+            }
+            String mimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.MIME_TYPE));
+            if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(mimeType)) {
+                dir = RcsService.Direction.valueOf(cursor.getInt(cursor
+                        .getColumnIndexOrThrow(XmsMessageLog.DIRECTION)));
+                if (RcsService.Direction.INCOMING == dir) {
+                    // For incoming MMS, messageId is unique: delete parts
+                    deleteParts = true;
+                } else {
+                    /*
+                     * For outgoing MMS, only remove parts if there is only one message left
+                     * referencing this part.
+                     */
+                    if (mXmsLog.getCountXms(messageId) == 1) {
+                        deleteParts = true;
+                    }
+                }
+            }
+        } finally {
+            CursorUtil.close(cursor);
+        }
+        if (deleteParts) {
+            mXmsLog.deleteMmsParts(messageId, dir);
         }
     }
 
     /**
      * Removes a XMS message from cache
      *
+     * @param contact the remote contact
      * @param messageId the message ID
      */
-    public void removeXmsMessage(String messageId) {
+    public void removeXmsMessage(ContactId contact, String messageId) {
         if (sLogger.isActivated()) {
             sLogger.debug("Remove a XMS message from cache (size=" + mXmsMessageCache.size() + ")");
         }
-        mXmsMessageCache.remove(messageId);
+        String key = contact.toString() + messageId;
+        mXmsMessageCache.remove(key);
     }
 
-    /**
-     * Updates the deleted flags
-     *
-     * @param contact the message ID
-     * @param messageIds the message ID
-     */
-    public void updateDeletedFlags(ContactId contact, Set<String> messageIds) {
-        mCmsService.updateDeletedFlag(contact, messageIds);
-    }
 }

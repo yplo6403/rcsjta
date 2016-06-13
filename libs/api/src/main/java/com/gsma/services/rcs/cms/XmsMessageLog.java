@@ -45,7 +45,8 @@ public class XmsMessageLog {
      */
     public static final String BASECOLUMN_ID = BaseColumns._ID;
     /**
-     * The name of the column containing the message ID.
+     * The name of the column containing the message ID. There may have several occurrences of the
+     * same msg_id in the log but only one per contact.
      * <p/>
      * Type: TEXT
      * </P>

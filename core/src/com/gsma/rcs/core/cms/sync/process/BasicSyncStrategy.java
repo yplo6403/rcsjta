@@ -23,6 +23,7 @@ import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.protocol.cmd.ImapFolder;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncPushRequestTask;
+import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.imaplib.imap.ImapException;
@@ -30,9 +31,9 @@ import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsUtils;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -114,7 +115,7 @@ public class BasicSyncStrategy {
                 boolean isMailboxSelected = false;
                 if (shouldStartRemoteSynchronization(localFolder, remoteFolder)) {
                     startRemoteSynchro(localFolder, remoteFolder);
-                    mLocalStorageHandler.applyFolderChange(CmsUtils.toCmsFolder(remoteFolder));
+                    mLocalStorageHandler.applyFolderChange(CmsFolder.toCmsFolder(remoteFolder));
                     isMailboxSelected = true;
                 }
                 if (!isMailboxSelected) {
@@ -123,8 +124,10 @@ public class BasicSyncStrategy {
                 /* sync CMS with local change */
                 Set<FlagChangeOperation> flagChanges = mLocalStorageHandler
                         .getLocalFlagChanges(remoteFolderName);
-                mSynchronizer.syncLocalFlags(remoteFolderName, flagChanges);
-                mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
+                if (!flagChanges.isEmpty()) {
+                    mSynchronizer.syncLocalFlags(remoteFolderName, flagChanges);
+                    mLocalStorageHandler.finalizeLocalFlagChanges(flagChanges);
+                }
             }
             pushLocalMessages();
             mExecutionResult = true;
@@ -147,17 +150,23 @@ public class BasicSyncStrategy {
         if (localFolder.hasMessages()) {
             List<FlagChangeOperation> flagChanges = mSynchronizer.syncRemoteFlags(localFolder,
                     remoteFolder);
-            mLocalStorageHandler.applyFlagChange(flagChanges);
+            if (!flagChanges.isEmpty()) {
+                mLocalStorageHandler.applyFlagChange(flagChanges);
+            }
         }
         // Synchronize headers only
-        ContactId remote = com.gsma.rcs.core.cms.utils.CmsUtils.cmsFolderToContact(folderName);
-        List<ImapMessage> messages = mSynchronizer.syncRemoteHeaders(localFolder, remoteFolder);
-        // Only keep new UIDs
-        Set<Integer> uids = mLocalStorageHandler.filterNewMessages(messages, remote);
-        // Synchronize new messages (peek body)
-        Set<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(remoteFolder.getName(),
-                uids);
-        mLocalStorageHandler.createMessages(newMessages, remote);
+        ContactId remote = CmsUtils.cmsFolderToContact(folderName);
+        List<ImapMessage> unSyncImapHeaders = mSynchronizer.getRemoteUnSyncHeaders(
+                localFolder.getMaxUid(), remoteFolder);
+        if (!unSyncImapHeaders.isEmpty()) {
+            // Only keep new UIDs
+            Set<Integer> uids = mLocalStorageHandler.filterNewMessages(unSyncImapHeaders, remote);
+            if (!uids.isEmpty()) {
+                // Synchronize new messages (peek body)
+                Set<ImapMessage> newMessages = mSynchronizer.syncRemoteMessages(folderName, uids);
+                mLocalStorageHandler.createMessages(newMessages, remote);
+            }
+        }
     }
 
     private boolean shouldStartRemoteSynchronization(CmsFolder local, ImapFolder remote) {
@@ -186,11 +195,12 @@ public class BasicSyncStrategy {
         CmsSyncPushRequestTask task = new CmsSyncPushRequestTask(mContext, mRcsSettings, mXmsLog,
                 mCmsLog, new CmsSyncPushRequestTask.ICmsSyncPushRequestTask() {
                     @Override
-                    public void onMessagesPushed(Map<String, Integer> uids) {
-                        for (Entry<String, Integer> entry : uids.entrySet()) {
-                            String baseId = entry.getKey();
+                    public void onMessagesPushed(Map<XmsDataObject, Integer> uids) {
+                        for (Entry<XmsDataObject, Integer> entry : uids.entrySet()) {
+                            XmsDataObject message = entry.getKey();
                             Integer uid = entry.getValue();
-                            mCmsLog.updateXmsPushStatus(uid, baseId, PushStatus.PUSHED);
+                            mCmsLog.updateXmsPushStatus(uid, message.getContact(),
+                                    message.getMessageId(), PushStatus.PUSHED);
                         }
                     }
 

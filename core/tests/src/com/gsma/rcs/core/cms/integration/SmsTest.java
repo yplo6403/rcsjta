@@ -29,8 +29,7 @@ import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.Test9;
 import com.gsma.rcs.core.cms.integration.SmsIntegrationUtils.TestLoad;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
-import com.gsma.rcs.core.cms.service.CmsManager;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
@@ -60,8 +59,10 @@ import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
+import com.gsma.services.rcs.contact.ContactId;
 
 import android.test.AndroidTestCase;
 
@@ -95,24 +96,22 @@ public class SmsTest extends AndroidTestCase {
         MessagingLog messagingLog = MessagingLog.getInstance(new LocalContentResolver(mContext),
                 mSettings);
         mXmsLogEnvIntegration = XmsLogEnvIntegration.getInstance(mContext);
-        CmsService cmsService = new CmsService(null, null, mContext, mSettings, mXmsLog,
-                messagingLog, mCmsLog);
-        CmsManager cmsManager = cmsService.getCmsManager();
-        InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                mSettings, null, messagingLog, null, mLocalContentResolver, mContext, null,
-                cmsManager);
-        ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, messagingLog,
-                null, mSettings, null, cmsManager);
-        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(
-                instantMessagingService, chatService, messagingLog, mSettings, null, mContext,
-                cmsManager);
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, null,
+                mSettings, mLocalContentResolver, mXmsLog, messagingLog, mCmsLog);
+        InstantMessagingService imService = new InstantMessagingService(null, mSettings, null,
+                messagingLog, null, mLocalContentResolver, mContext, null, cmsSessionCtrl);
+        ChatServiceImpl chatService = new ChatServiceImpl(imService, messagingLog, null, mSettings,
+                null, cmsSessionCtrl);
+        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(imService,
+                chatService, messagingLog, mSettings, null, mContext, cmsSessionCtrl);
         XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
 
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsService, chatService,
-                fileTransferService, mXmsLog, mSettings, xmsManager, mLocalContentResolver,
-                cmsManager);
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mCmsLog, mXmsLog,
-                messagingLog, chatService, fileTransferService, cmsServiceImpl, mSettings);
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsSessionCtrl, chatService,
+                fileTransferService, imService, mXmsLog, mSettings, xmsManager,
+                mLocalContentResolver);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mLocalContentResolver,
+                mCmsLog, mXmsLog, messagingLog, chatService, fileTransferService, cmsServiceImpl,
+                imService, mSettings);
         LocalStorage localStorage = new LocalStorage(mSettings, mCmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(mSettings);
         mBasicImapService = mImapServiceHandler.openService();
@@ -219,8 +218,8 @@ public class SmsTest extends AndroidTestCase {
         List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
                 SmsIntegrationUtils.Test1.contact);
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateReadStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.ReadStatus.READ_REPORT_REQUESTED);
+            mCmsLog.updateXmsReadStatus(SmsIntegrationUtils.Test1.contact, sms.getMessageId(),
+                    CmsObject.ReadStatus.READ_REPORT_REQUESTED, null);
         }
         // sync with CMS : during this first sync, messages are marked as 'Seen' on CMS
         startSynchro();
@@ -231,8 +230,8 @@ public class SmsTest extends AndroidTestCase {
         messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
                 SmsIntegrationUtils.Test1.contact);
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateDeleteStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.SMS, sms.getMessageId(),
+                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         // sync with CMS : during this first sync, messages are marked as 'Deleted' on CMS
         startSynchro();
@@ -259,8 +258,8 @@ public class SmsTest extends AndroidTestCase {
         List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
                 SmsIntegrationUtils.Test1.contact);
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateReadStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.ReadStatus.READ_REPORT_REQUESTED);
+            mCmsLog.updateXmsReadStatus(SmsIntegrationUtils.Test1.contact, sms.getMessageId(),
+                    CmsObject.ReadStatus.READ_REPORT_REQUESTED, null);
         }
         startSynchro();
         String folder = CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact);
@@ -269,8 +268,8 @@ public class SmsTest extends AndroidTestCase {
                     cmsObject.getReadStatus());
         }
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateDeleteStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.SMS, sms.getMessageId(),
+                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         startSynchro();
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
@@ -298,8 +297,8 @@ public class SmsTest extends AndroidTestCase {
         List<XmsDataObject> messages = mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
                 SmsIntegrationUtils.Test1.contact);
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateReadStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.ReadStatus.READ_REPORT_REQUESTED);
+            mCmsLog.updateXmsReadStatus(SmsIntegrationUtils.Test1.contact, sms.getMessageId(),
+                    CmsObject.ReadStatus.READ_REPORT_REQUESTED, null);
         }
         startSynchro();
         String folder = CmsUtils.contactToCmsFolder(SmsIntegrationUtils.Test1.contact);
@@ -307,8 +306,8 @@ public class SmsTest extends AndroidTestCase {
             Assert.assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
         }
         for (XmsDataObject sms : messages) {
-            mCmsLog.updateDeleteStatus(MessageType.SMS, sms.getMessageId(),
-                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.SMS, sms.getMessageId(),
+                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         startSynchro();
         for (CmsObject cmsObject : mCmsLogTestIntegration.getMessages(folder).values()) {
@@ -475,10 +474,52 @@ public class SmsTest extends AndroidTestCase {
 
         assertEquals(SmsIntegrationUtils.Test10.conversation_1.length, mCmsLogTestIntegration
                 .getMessages(SmsIntegrationUtils.Test10.folder1).size());
-        assertEquals(SmsIntegrationUtils.Test10.conversation_2.length, mCmsLogTestIntegration
-                .getMessages(SmsIntegrationUtils.Test10.folder2).size());
+
+        Map<Integer, CmsObject> messages = mCmsLogTestIntegration
+                .getMessages(SmsIntegrationUtils.Test10.folder2);
+        assertEquals(SmsIntegrationUtils.Test10.conversation_2.length, messages.size());
         assertEquals(SmsIntegrationUtils.Test10.conversation_3.length, mCmsLogTestIntegration
                 .getMessages(SmsIntegrationUtils.Test10.folder3).size());
+    }
+
+    /**
+     * Check correlation of SMS message:<br>
+     * <ul>
+     * <li>the message has a trailing space and a quote in it.
+     * <li>the message is unseen on CMS but read report requested on local
+     * </ul>
+     */
+    public void test11() throws FileAccessException, NetworkException, PayloadException {
+        deleteLocalStorage(true, true);
+        deleteRemoteStorage();
+        ContactId contact = SmsIntegrationUtils.Test11.contact;
+        String folder = SmsIntegrationUtils.Test11.folder;
+        SmsDataObject sms = SmsIntegrationUtils.Test11.smsDataObject;
+        createRemoteMessages(new XmsDataObject[] {
+            sms
+        });
+        SmsDataObject localSms = new SmsDataObject(sms.getMessageId(), contact, sms.getBody(),
+                sms.getDirection(), RcsService.ReadStatus.READ, sms.getTimestamp(),
+                sms.getTimestampSent(), sms.getTimestampDelivered());
+        mXmsLog.addSms(localSms);
+        mCmsLog.addMessage(new CmsObject(folder, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, PushStatus.PUSH_REQUESTED, MessageType.SMS, localSms
+                        .getMessageId(), null));
+        startSynchro();
+        /*
+         * Checks that message is correctly correlated. Checks that the local flags take precedence
+         * to the remote ones.
+         */
+        assertEquals(
+                1,
+                mXmsLogEnvIntegration.getMessages(MimeType.TEXT_MESSAGE,
+                        SmsIntegrationUtils.Test11.contact).size());
+        CmsObject cmsObject = mCmsLogTestIntegration.getMessage(folder, localSms.getMessageId());
+        // Check that message is seen as pushed and read (correlated)
+        assertNotNull(cmsObject.getUid());
+        assertEquals(CmsObject.ReadStatus.READ, cmsObject.getReadStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, cmsObject.getDeleteStatus());
+        assertEquals(PushStatus.PUSHED, cmsObject.getPushStatus());
     }
 
     public void testLoad() throws FileAccessException, NetworkException, PayloadException {

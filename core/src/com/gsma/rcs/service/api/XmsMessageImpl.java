@@ -26,7 +26,7 @@ import com.gsma.services.rcs.contact.ContactId;
 import android.os.RemoteException;
 
 /**
- * Created by Philippe LEMORDANT on 13/11/2015.
+ * @author Philippe LEMORDANT on 13/11/2015.
  */
 public class XmsMessageImpl extends IXmsMessage.Stub {
 

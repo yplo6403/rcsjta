@@ -22,8 +22,7 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.protocol.service.BasicImapService;
 import com.gsma.rcs.core.cms.protocol.service.ImapServiceHandler;
-import com.gsma.rcs.core.cms.service.CmsManager;
-import com.gsma.rcs.core.cms.service.CmsService;
+import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.sync.process.BasicSyncStrategy;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.core.cms.sync.scheduler.task.CmsSyncDeleteTask;
@@ -64,23 +63,21 @@ public class CpmSessionTest extends AndroidTestCase {
         LocalContentResolver localContentResolver = new LocalContentResolver(mContext);
         XmsLog xmsLog = XmsLog.getInstance(mContext, settings, localContentResolver);
         mMessagingLog = MessagingLog.getInstance(localContentResolver, settings);
-        CmsService cmsService = new CmsService(null, null, mContext, settings, xmsLog,
-                mMessagingLog, cmsLog);
-        CmsManager cmsManager = cmsService.getCmsManager();
-        InstantMessagingService instantMessagingService = new InstantMessagingService(null,
-                settings, null, mMessagingLog, null, localContentResolver, mContext, null,
-                cmsManager);
-        ChatServiceImpl chatService = new ChatServiceImpl(instantMessagingService, mMessagingLog,
-                null, settings, null, cmsManager);
-        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(
-                instantMessagingService, chatService, mMessagingLog, settings, null, mContext,
-                cmsManager);
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, null,
+                settings, localContentResolver, xmsLog, mMessagingLog, cmsLog);
+        InstantMessagingService imService = new InstantMessagingService(null, settings, null,
+                mMessagingLog, null, localContentResolver, mContext, null, cmsSessionCtrl);
+        ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null, settings,
+                null, cmsSessionCtrl);
+        FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(imService,
+                chatService, mMessagingLog, settings, null, mContext, cmsSessionCtrl);
         XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
 
-        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsService, chatService,
-                fileTransferService, xmsLog, settings, xmsManager, localContentResolver, cmsManager);
-        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, cmsLog, xmsLog,
-                mMessagingLog, chatService, fileTransferService, cmsServiceImpl, settings);
+        CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsSessionCtrl, chatService,
+                fileTransferService, imService, xmsLog, settings, xmsManager, localContentResolver);
+        CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, localContentResolver,
+                cmsLog, xmsLog, mMessagingLog, chatService, fileTransferService, cmsServiceImpl,
+                imService, settings);
         LocalStorage localStorage = new LocalStorage(settings, cmsLog, cmsEventHandler);
         mImapServiceHandler = new ImapServiceHandler(settings);
         mBasicImapService = mImapServiceHandler.openService();

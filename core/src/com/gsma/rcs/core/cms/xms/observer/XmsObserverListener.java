@@ -38,10 +38,10 @@ public interface XmsObserverListener {
 
     void onDeleteMmsFromNativeApp(String mmsId);
 
-    void onReadXmsConversationFromNativeApp(long nativeThreadId);
+    void onReadMmsConversationFromNativeApp(long nativeThreadId);
 
-    void onDeleteXmsConversationFromNativeApp(long nativeThreadId);
+    void onDeleteMmsConversationFromNativeApp(long nativeThreadId);
 
-    void onXmsMessageStateChanged(Long nativeProviderId, String mimeType, State state);
+    void onSmsMessageStateChanged(Long nativeProviderId, State state);
 
 }

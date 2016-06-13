@@ -51,7 +51,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Philippe LEMORDANT on 12/11/2015.
+ * XMS Manager
+ * 
+ * @author Philippe LEMORDANT
  */
 public class XmsManager {
 

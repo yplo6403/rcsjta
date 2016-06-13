@@ -66,4 +66,12 @@ public abstract class OneToOneFileTransferListener {
      * @param transferIds ids of those deleted file transfers
      */
     public abstract void onDeleted(ContactId contact, Set<String> transferIds);
+
+    /**
+     * Callback called when a read operation completed.
+     *
+     * @param contact Contact ID
+     * @param transferId ids of the read file transfer
+     */
+    public abstract void onRead(ContactId contact, String transferId);
 }

@@ -104,7 +104,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageDeliveryStatusReceived: ".concat(imdnMessageId));
         }
-        mImdnDeliveryReportListener.onDeliveryReport(contact, imdn.getMsgId(), imdnMessageId);
+        mImdnDeliveryReportListener.onDeliveryReport(contact, imdn.getMsgId(), imdnMessageId,
+                imdn.getStatus());
     }
 
     @Override
@@ -164,8 +165,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         // TODO To be removed when the AS will update flags on the CMS server
         isImdnReportDisplayed = false;
 
-        mCmsLog.updateReadStatus(MessageType.CHAT_MESSAGE, messageId,
-                isImdnReportDisplayed ? ReadStatus.READ : ReadStatus.READ_REPORT_REQUESTED);
+        mCmsLog.updateRcsReadStatus(MessageType.CHAT_MESSAGE, messageId,
+                isImdnReportDisplayed ? ReadStatus.READ : ReadStatus.READ_REPORT_REQUESTED, null);
 
         if (!isImdnReportDisplayed && mEventFrameworkManager != null) {
             if (mMessagingLog.isOneToOneChatMessage(messageId)) {
@@ -181,8 +182,8 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
     @Override
     public void onDeleteChatMessages(ContactId contact, Set<String> msgIds) {
         for (String msgId : msgIds) {
-            mCmsLog.updateDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
-                    DeleteStatus.DELETED_REPORT_REQUESTED);
+            mCmsLog.updateRcsDeleteStatus(MessageType.CHAT_MESSAGE, msgId,
+                    DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForChat(contact);

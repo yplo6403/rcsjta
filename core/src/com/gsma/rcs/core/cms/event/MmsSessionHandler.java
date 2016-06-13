@@ -28,15 +28,12 @@ import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
 import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.contact.ContactId;
 
 public class MmsSessionHandler implements MmsSessionListener {
 
     private final CmsLog mCmsLog;
-    private final XmsLog mXmsLog;
     private final RcsSettings mSettings;
     private final CmsSyncScheduler mCmsSyncScheduler;
 
@@ -47,10 +44,8 @@ public class MmsSessionHandler implements MmsSessionListener {
      * @param settings the RCS settings accessor
      * @param cmsSyncScheduler the CMS synchronization scheduler
      */
-    public MmsSessionHandler(CmsLog cmsLog, XmsLog xmsLog, RcsSettings settings,
-                             CmsSyncScheduler cmsSyncScheduler) {
+    public MmsSessionHandler(CmsLog cmsLog, RcsSettings settings, CmsSyncScheduler cmsSyncScheduler) {
         mCmsLog = cmsLog;
-        mXmsLog = xmsLog;
         mSettings = settings;
         mCmsSyncScheduler = cmsSyncScheduler;
     }
@@ -61,13 +56,13 @@ public class MmsSessionHandler implements MmsSessionListener {
 
     @Override
     public void onMmsTransferred(ContactId contact, String mmsId) {
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, mSettings
-                        .getMessageStorePushSms() ? PushStatus.PUSH_REQUESTED : PushStatus.PUSHED,
-                MessageType.MMS, mmsId, null));
+        String folder = CmsUtils.contactToCmsFolder(contact);
+        PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
+                : PushStatus.PUSHED;
+        mCmsLog.addMessage(new CmsObject(folder, ReadStatus.READ,
+                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, mmsId, null));
         if (mCmsSyncScheduler != null) {
-            MmsDataObject mms = (MmsDataObject) mXmsLog.getXmsDataObject(mmsId);
-            mCmsSyncScheduler.schedulePushMessages(mms.getContact());
+            mCmsSyncScheduler.schedulePushMessages(contact);
         }
     }
 
