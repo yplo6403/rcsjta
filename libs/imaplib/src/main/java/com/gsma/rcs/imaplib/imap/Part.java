@@ -153,4 +153,9 @@ public class Part implements IPart {
             return null;
         }
     }
+
+    public Map<String, Header> getHeaders() {
+        return mHeaders;
+    }
+
 }

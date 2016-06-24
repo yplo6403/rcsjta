@@ -26,6 +26,8 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.msrp.MsrpSession;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -146,10 +148,10 @@ public class EventFrameworkManager implements IEventFrameworkListener {
         List<CmsObject> seenObjects = new ArrayList<>();
         List<CmsObject> deletedObjects = new ArrayList<>();
         for (CmsObject cmsObject : mCmsLog.getMessagesToSync(cmsFolder)) {
-            if (CmsObject.ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
+            if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
                 seenObjects.add(cmsObject);
             }
-            if (CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
+            if (DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
                 deletedObjects.add(cmsObject);
             }
         }
@@ -234,7 +236,7 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                 for (CmsObject cmsObject : eventFrameworkDoc.getDeletedObject()) {
                                     mCmsLog.updateRcsDeleteStatus(cmsObject.getMessageType(),
                                             cmsObject.getMessageId(),
-                                            CmsObject.DeleteStatus.DELETED_REPORTED, null);
+                                            DeleteStatus.DELETED_REPORTED, null);
                                 }
                             }
                             List<CmsObject> displayed = eventFrameworkDoc.getSeenObject();
@@ -250,8 +252,8 @@ public class EventFrameworkManager implements IEventFrameworkListener {
                                 }
                                 for (CmsObject cmsObject : displayed) {
                                     mCmsLog.updateRcsReadStatus(cmsObject.getMessageType(),
-                                            cmsObject.getMessageId(),
-                                            CmsObject.ReadStatus.READ_REPORTED, null);
+                                            cmsObject.getMessageId(), ReadStatus.READ_REPORTED,
+                                            null);
                                 }
                             }
                         } catch (NetworkException e) {

@@ -38,7 +38,7 @@ public interface ChatMessageListener {
     /**
      * Take into account deletion of 1to1 chat messages
      *
-     * @param contact
+     * @param contact the contact ID
      * @param msgIds the messages ID
      */
     void onDeleteChatMessages(ContactId contact, Set<String> msgIds);

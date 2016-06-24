@@ -24,11 +24,13 @@ import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.core.cms.utils.SmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.cms.CmsData;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -94,7 +96,7 @@ public class XmsSynchronizer {
 
     private void syncSms() throws FileAccessException {
         updateSetOfNativeSmsIds();
-        Map<Long, CmsObject> rcsMessages = mCmsLog.getNativeMessages(MessageType.SMS);
+        Map<Long, CmsXmsObject> rcsMessages = mCmsLog.getNativeMessages(MessageType.SMS);
         checkDeletedMessages(MessageType.SMS, rcsMessages);
         checkNewMessages(MessageType.SMS, rcsMessages);
         checkReadMessages(MessageType.SMS, rcsMessages);
@@ -102,7 +104,7 @@ public class XmsSynchronizer {
 
     private void syncMms() throws FileAccessException {
         updateSetOfNativeMmsIds();
-        Map<Long, CmsObject> rcsMessages = mCmsLog.getNativeMessages(MessageType.MMS);
+        Map<Long, CmsXmsObject> rcsMessages = mCmsLog.getNativeMessages(MessageType.MMS);
         checkDeletedMessages(MessageType.MMS, rcsMessages);
         checkNewMessages(MessageType.MMS, rcsMessages);
         checkReadMessages(MessageType.MMS, rcsMessages);
@@ -157,8 +159,7 @@ public class XmsSynchronizer {
         }
     }
 
-    private void checkDeletedMessages(CmsObject.MessageType messageType,
-            Map<Long, CmsObject> rcsMessages) {
+    private void checkDeletedMessages(MessageType messageType, Map<Long, CmsXmsObject> rcsMessages) {
         if (rcsMessages.isEmpty()) {
             return;
         }
@@ -179,8 +180,8 @@ public class XmsSynchronizer {
         }
     }
 
-    private void checkNewMessages(CmsObject.MessageType messageType,
-            Map<Long, CmsObject> rcsMessages) throws FileAccessException {
+    private void checkNewMessages(MessageType messageType, Map<Long, CmsXmsObject> rcsMessages)
+            throws FileAccessException {
         if (mNativeIds.isEmpty()) {
             return;
         }
@@ -197,16 +198,16 @@ public class XmsSynchronizer {
                     }
                     mXmsLog.addSms(smsData);
                     String folder = CmsUtils.contactToCmsFolder(remote);
-                    CmsObject.ReadStatus readStatus = CmsObject.ReadStatus.READ;
+                    CmsData.ReadStatus readStatus = CmsData.ReadStatus.READ;
                     if (Direction.INCOMING == smsData.getDirection()) {
-                        readStatus = smsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                                : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                        readStatus = smsData.getReadStatus() == ReadStatus.UNREAD ? CmsData.ReadStatus.UNREAD
+                                : CmsData.ReadStatus.READ_REPORT_REQUESTED;
                     }
                     PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED;
-                    mCmsLog.addMessage(new CmsObject(folder, readStatus,
-                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.SMS,
-                            smsData.getMessageId(), smsData.getNativeProviderId()));
+                    mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.SMS, folder, smsData
+                            .getMessageId(), pushStatus, readStatus,
+                            CmsData.DeleteStatus.NOT_DELETED, smsData.getNativeProviderId()));
                 }
             } else if (MessageType.MMS == messageType) {
                 for (MmsDataObject mmsData : MmsUtils.getMmsFromNativeProvider(mContentResolver,
@@ -223,23 +224,22 @@ public class XmsSynchronizer {
                         mXmsLog.addIncomingMms(mmsData);
                     }
                     String folder = CmsUtils.contactToCmsFolder(remote);
-                    CmsObject.ReadStatus readStatus = CmsObject.ReadStatus.READ;
+                    CmsData.ReadStatus readStatus = CmsData.ReadStatus.READ;
                     if (Direction.INCOMING == mmsData.getDirection()) {
-                        readStatus = mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsObject.ReadStatus.UNREAD
-                                : CmsObject.ReadStatus.READ_REPORT_REQUESTED;
+                        readStatus = mmsData.getReadStatus() == ReadStatus.UNREAD ? CmsData.ReadStatus.UNREAD
+                                : CmsData.ReadStatus.READ_REPORT_REQUESTED;
                     }
                     PushStatus pushStatus = mSettings.shouldPushMms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED;
-                    mCmsLog.addMessage(new CmsObject(folder, readStatus,
-                            CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, msgId,
-                            mmsData.getNativeProviderId()));
+                    mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, msgId, null,
+                            pushStatus, readStatus, DeleteStatus.NOT_DELETED, mmsData
+                                    .getNativeProviderId()));
                 }
             }
         }
     }
 
-    private void checkReadMessages(CmsObject.MessageType messageType,
-            Map<Long, CmsObject> rcsMessages) {
+    private void checkReadMessages(MessageType messageType, Map<Long, CmsXmsObject> rcsMessages) {
         if (mNativeReadIds.isEmpty()) {
             return;
         }
@@ -247,13 +247,13 @@ public class XmsSynchronizer {
         readIds.retainAll(rcsMessages.keySet());
         for (Long id : readIds) {
             CmsObject cmsObject = rcsMessages.get(id);
-            if (CmsObject.ReadStatus.UNREAD == cmsObject.getReadStatus()) {
+            if (CmsData.ReadStatus.UNREAD == cmsObject.getReadStatus()) {
                 if (sLogger.isActivated()) {
                     sLogger.debug(messageType.toString()
                             + " message is marked as READ_REPORT_REQUESTED :" + id);
                 }
                 mCmsLog.updateXmsReadStatus(CmsUtils.cmsFolderToContact(cmsObject.getFolder()),
-                        cmsObject.getMessageId(), CmsObject.ReadStatus.READ_REPORT_REQUESTED, null);
+                        cmsObject.getMessageId(), CmsData.ReadStatus.READ_REPORT_REQUESTED, null);
             }
         }
     }

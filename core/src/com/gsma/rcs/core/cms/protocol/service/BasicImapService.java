@@ -31,6 +31,7 @@ import com.gsma.rcs.core.cms.sync.process.FlagChangeOperation;
 import com.gsma.rcs.imaplib.imap.DefaultImapService;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.imaplib.imap.ImapFolderStatus;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapUtil;
 import com.gsma.rcs.imaplib.imap.IoService;
@@ -81,14 +82,20 @@ public class BasicImapService extends DefaultImapService {
      * Execute SELECT CONDSTORE command on CMS server
      * 
      * @param folderName the folder name
+     * @return ImapFolderStatus
      * @throws IOException
      * @throws ImapException
      */
-    public synchronized void selectCondstore(String folderName) throws IOException, ImapException {
-
+    public synchronized ImapFolderStatus selectCondstore(String folderName) throws IOException,
+            ImapException {
         CmdHandler handler = CmdHandler.getHandler(CommandType.SELECT_CONDSTORE, getCapabilities());
         writeCommand(handler.buildCommand(folderName));
-        readToEndOfResponse();
+        List<String> li = readToEndOfResponse();
+        if (li == null || li.size() == 0) {
+            throw new ImapException("Select folder wont return any status : " + folderName);
+        }
+        mSelectedFolderStatus = new ImapFolderStatus(folderName, li);
+        return mSelectedFolderStatus;
     }
 
     /**
@@ -103,7 +110,6 @@ public class BasicImapService extends DefaultImapService {
      */
     public List<FlagChangeOperation> fetchFlags(String folderName, Integer uid, Integer changedSince)
             throws IOException, ImapException {
-
         FetchFlagCmdHandler handler = (FetchFlagCmdHandler) CmdHandler.getHandler(
                 CommandType.FETCH_FLAGS, getCapabilities(), folderName);
         synchronized (getIoService()) {
@@ -133,7 +139,6 @@ public class BasicImapService extends DefaultImapService {
      */
     public List<ImapMessage> fetchHeaders(Integer fromUid, Integer toUid) throws ImapException,
             IOException {
-
         FetchHeaderCmdHandler handler = (FetchHeaderCmdHandler) CmdHandler.getHandler(
                 CommandType.FETCH_HEADERS, getCapabilities());
         synchronized (getIoService()) {
@@ -165,7 +170,6 @@ public class BasicImapService extends DefaultImapService {
      */
     public Integer searchUidWithHeader(String headerName, String headerValue) throws ImapException,
             IOException {
-
         UidSearchCmdHandler handler = (UidSearchCmdHandler) CmdHandler.getHandler(
                 CommandType.UID_SEARCH, getCapabilities());
         synchronized (getIoService()) {
@@ -181,7 +185,6 @@ public class BasicImapService extends DefaultImapService {
             }
             checkResponseOk(line);
         }
-
         List<Integer> result = handler.getResult();
         return result.size() == 1 ? result.get(0) : null;
     }
@@ -195,7 +198,6 @@ public class BasicImapService extends DefaultImapService {
      * @throws ImapException
      */
     public ImapMessage fetchMessage(Integer uid) throws IOException, ImapException {
-
         CmdHandler handler = CmdHandler.getHandler(CommandType.FETCH_MESSAGES_BODY,
                 getCapabilities());
         synchronized (getIoService()) {
@@ -216,12 +218,10 @@ public class BasicImapService extends DefaultImapService {
         return (ImapMessage) handler.getResult();
     }
 
-
     public synchronized int append(String folderName, List<Flag> flags, String payload)
             throws IOException, ImapException {
         // append INBOX (\Seen) {310}
         int length = payload.getBytes().length;
-
         if (!folderName.startsWith("\"")) {
             folderName = "\"" + folderName + "\"";
         }
@@ -230,16 +230,13 @@ public class BasicImapService extends DefaultImapService {
         if (!ok.startsWith("+"))
             return -1;
         ioWriteln(payload);
-
         while (true) {
             ok = ioReadLine();
             if (isTagged(ok)) {
                 break;
             }
         }
-
         checkResponseNotBad(ok);
-
         return getUidPlus(ok);
     }
 }

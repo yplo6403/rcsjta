@@ -28,7 +28,6 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.MmsUtils;
-import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
@@ -37,6 +36,7 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.text.TextUtils;
 
 import java.util.List;
 
@@ -54,11 +54,9 @@ public class ImapMmsMessage extends ImapCpimMessage {
      * @param rawMessage the raw IMAP message
      * @param remote the remote contact or null if group conversation
      * @throws CmsSyncMissingHeaderException
-     * @throws CmsSyncHeaderFormatException
      */
     public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
-            CmsSyncXmlFormatException {
+            throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
         mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
         if (mMmsId == null) {
@@ -71,7 +69,6 @@ public class ImapMmsMessage extends ImapCpimMessage {
                     Constants.HEADER_DATE.concat(" IMAP header is missing"));
         }
         mDate = DateUtils.parseDate(dateHeader, DateUtils.CMS_IMAP_DATE_FORMAT);
-        mSubject = getCpimMessage().getHeader(Constants.HEADER_SUBJECT);
     }
 
     public ImapMmsMessage(Context context, ContactId remote, String from, String to,
@@ -140,16 +137,15 @@ public class ImapMmsMessage extends ImapCpimMessage {
     }
 
     @Override
-    public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF, 2);
-        if (2 == parts.length) {
-            for (Header header : Header.parseHeaders(parts[0]).values()) {
-                addHeader(header.getKey().toLowerCase(), header.getValue());
-            }
-            CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
-            cpimMessage.parsePayload(parts[1]);
-            setBodyPart(cpimMessage);
+    public void parseBody() throws CmsSyncXmlFormatException, CmsSyncHeaderFormatException {
+        String content = mRawMessage.getBody().getContent();
+        if (TextUtils.isEmpty(content)) {
+            throw new CmsSyncXmlFormatException("Cannot parse MMS: IMAP body is missing!");
         }
+        CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new MultipartCpimBody());
+        cpimMessage.parsePayload(content);
+        setBodyPart(cpimMessage);
+        mSubject = cpimMessage.getHeader(Constants.HEADER_SUBJECT);
     }
 
     public String getMmsId() {

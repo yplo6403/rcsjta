@@ -71,9 +71,9 @@ public class CmsProvider extends ContentProvider {
                 .substring(1).concat("/Default/*"), UriType.Folder.FOLDER_SINGLE);
         sUriMatcher.addURI(CmsFolder.CONTENT_URI.getAuthority(), CmsFolder.CONTENT_URI.getPath()
                 .substring(1).concat("/Default/*/*"), UriType.Folder.FOLDER_GROUP);
-        sUriMatcher.addURI(CmsObject.CONTENT_URI.getAuthority(), CmsObject.CONTENT_URI.getPath()
+        sUriMatcher.addURI(CmsData.CONTENT_URI.getAuthority(), CmsData.CONTENT_URI.getPath()
                 .substring(1), UriType.Message.MESSAGE);
-        sUriMatcher.addURI(CmsObject.CONTENT_URI.getAuthority(), CmsObject.CONTENT_URI.getPath()
+        sUriMatcher.addURI(CmsData.CONTENT_URI.getAuthority(), CmsData.CONTENT_URI.getPath()
                 .substring(1).concat("/*"), UriType.Message.MESSAGE_WITH_ID);
     }
 
@@ -121,27 +121,28 @@ public class CmsProvider extends ContentProvider {
                     CmsFolder.KEY_UID_VALIDITY + " INTEGER)");
             
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MESSAGE + '(' +
-                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + 
-                    CmsObject.KEY_FOLDER + " TEXT NOT NULL," +
-                    CmsObject.KEY_UID + " INTEGER," + 
-                    CmsObject.KEY_READ_STATUS + " INTEGER NOT NULL," + 
-                    CmsObject.KEY_DEL_STATUS + " INTEGER NOT NULL," +
-                    CmsObject.KEY_PUSH_STATUS + " INTEGER NOT NULL," + 
-                    CmsObject.KEY_MSG_TYPE + " TEXT NOT NULL," +
-                    CmsObject.KEY_MSG_ID + " TEXT NOT NULL," +
-                    CmsObject.KEY_NATIVE_ID + " INTEGER)");
+                    BaseColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    CmsData.KEY_FOLDER + " TEXT NOT NULL," +
+                    CmsData.KEY_UID + " INTEGER," +
+                    CmsData.KEY_READ_STATUS + " INTEGER NOT NULL," +
+                    CmsData.KEY_DEL_STATUS + " INTEGER NOT NULL," +
+                    CmsData.KEY_PUSH_STATUS + " INTEGER NOT NULL," +
+                    CmsData.KEY_MSG_TYPE + " TEXT NOT NULL," +
+                    CmsData.KEY_MSG_ID + " TEXT NOT NULL," +
+                    CmsData.KEY_CHAT_ID + " TEXT," +
+                    CmsData.KEY_NATIVE_ID + " INTEGER)");
             
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER + "_idx"
-                    + " ON " + TABLE_MESSAGE + '(' + CmsObject.KEY_FOLDER + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_FOLDER + "_"
-                    + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
-                    + CmsObject.KEY_FOLDER + "," + CmsObject.KEY_UID + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MSG_ID + "_" +
-                    CmsObject.KEY_MSG_TYPE + "_idx" + " ON " + TABLE_MESSAGE +
-                    '(' + CmsObject.KEY_MSG_ID + "," + CmsObject.KEY_MSG_TYPE + ')');
-            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsObject.KEY_MSG_ID + "_"
-                    + CmsObject.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
-                    + CmsObject.KEY_MSG_ID + "," + CmsObject.KEY_UID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsData.KEY_FOLDER + "_idx"
+                    + " ON " + TABLE_MESSAGE + '(' + CmsData.KEY_FOLDER + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsData.KEY_FOLDER + "_"
+                    + CmsData.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
+                    + CmsData.KEY_FOLDER + "," + CmsData.KEY_UID + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsData.KEY_MSG_ID + "_" +
+                    CmsData.KEY_MSG_TYPE + "_idx" + " ON " + TABLE_MESSAGE +
+                    '(' + CmsData.KEY_MSG_ID + "," + CmsData.KEY_MSG_TYPE + ')');
+            db.execSQL("CREATE INDEX " + TABLE_MESSAGE + '_' + CmsData.KEY_MSG_ID + "_"
+                    + CmsData.KEY_UID + "_idx" + " ON " + TABLE_MESSAGE + '('
+                    + CmsData.KEY_MSG_ID + "," + CmsData.KEY_UID + ')');
         }
         // @formatter:on
 

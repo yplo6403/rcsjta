@@ -22,8 +22,8 @@ package com.gsma.rcs.core.cms.event;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.services.rcs.contact.ContactId;
 
 /**
@@ -52,11 +52,12 @@ public interface CmsEventListener {
      * @param messageType the message type
      * @param message the IMAP message
      * @param remote the remote contact or null if group conversation
-     * @return the message ID
+     * @return an array of strings with first element set to the message ID and optional second
+     *         element set to the chat ID
      * @throws CmsSyncException
      * @throws FileAccessException
      */
-    String onRemoteNewMessage(MessageType messageType, IImapMessage message, ContactId remote)
+    String[] onRemoteNewMessage(MessageType messageType, IImapMessage message, ContactId remote)
             throws CmsSyncException, FileAccessException;
 
     /**

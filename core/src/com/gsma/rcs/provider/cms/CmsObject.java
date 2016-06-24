@@ -7,290 +7,68 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.provider.cms;
 
-import android.net.Uri;
-import android.util.SparseArray;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 
 /**
- * CMS IMAP data constants
+ * CMS IMAP object
  */
-public final class CmsObject {
-
-    /**
-     * Database URI
-     */
-    /* package private */static final Uri CONTENT_URI = Uri
-            .parse("content://com.gsma.rcs.cms.imap/message");
-
-    /**
-     * Mailbox name
-     */
-    /* package private */static final String KEY_FOLDER = "folder";
-
-    /**
-     * UID IMAP counter
-     */
-    /* package private */static final String KEY_UID = "uid";
-
-    /**
-     * IMAP Flag Seen
-     */
-    /* package private */static final String KEY_READ_STATUS = "readStatus";
-
-    /**
-     * IMAP Flag Deleted
-     */
-    /* package private */static final String KEY_DEL_STATUS = "delStatus";
-
-    /**
-     * Push status
-     */
-    /* package private */static final String KEY_PUSH_STATUS = "pushStatus";
-
-    /**
-     * Message Type
-     */
-    /* package private */static final String KEY_MSG_TYPE = "msgType";
-
-    /**
-     * Message Id
-     */
-    /* package private */static final String KEY_MSG_ID = "msgId";
-
-    /**
-     * Native provider Id
-     */
-    /* package private */static final String KEY_NATIVE_ID = "nativeId";
-
-    public enum MessageType {
-        SMS, MMS, MESSAGE_CPIM, CHAT_MESSAGE, IMDN, CPM_SESSION, GROUP_STATE, FILE_TRANSFER
-    }
-
-    /**
-     * Read status of the message
-     */
-    public enum ReadStatus {
-        /**
-         * The message has not yet been displayed in the UI.
-         */
-        UNREAD(0), /**
-         * The message has been displayed in the UI and not synchronized with the CMS
-         * server
-         */
-        READ_REPORT_REQUESTED(1), /**
-         * The message has been displayed in the UI and reported to CMS
-         * server but CMS server has not acknowledged the report processing.
-         */
-        READ_REPORTED(2), /**
-         * The message has been displayed in the UI and synchronized with the CMS
-         * server
-         */
-        READ(3);
-
-        private final int mValue;
-
-        private static SparseArray<ReadStatus> mValueToEnum = new SparseArray<>();
-
-        static {
-            for (ReadStatus entry : ReadStatus.values()) {
-                mValueToEnum.put(entry.toInt(), entry);
-            }
-        }
-
-        ReadStatus(int value) {
-            mValue = value;
-        }
-
-        /**
-         * Gets integer value associated to ReadStatus instance
-         *
-         * @return value
-         */
-        public final int toInt() {
-            return mValue;
-        }
-
-        /**
-         * Returns a ReadStatus instance for the specified integer value.
-         *
-         * @param value the valure representing the read status
-         * @return instance
-         */
-        public static ReadStatus valueOf(int value) {
-            ReadStatus entry = mValueToEnum.get(value);
-            if (entry != null) {
-                return entry;
-            }
-            throw new IllegalArgumentException("No enum const class " + ReadStatus.class.getName()
-                    + "." + value + "!");
-        }
-    }
-
-    /**
-     * Read status of the message
-     */
-    public enum DeleteStatus {
-        /**
-         * The message has not yet been deleted from the UI.
-         */
-        NOT_DELETED(0), /**
-         * The message has been deleted from the UI but not synchronized with the
-         * CMS server
-         */
-        DELETED_REPORT_REQUESTED(1), /**
-         * The message has been deleted in the UI and reported to CMS
-         * server but CMS server has not acknowledged the report processing.
-         */
-        DELETED_REPORTED(2), /**
-         * The message has been deleted from the UI and synchronized with the
-         * CMS server
-         */
-        DELETED(3);
-
-        private final int mValue;
-
-        private static SparseArray<DeleteStatus> mValueToEnum = new SparseArray<>();
-
-        static {
-            for (DeleteStatus entry : DeleteStatus.values()) {
-                mValueToEnum.put(entry.toInt(), entry);
-            }
-        }
-
-        DeleteStatus(int value) {
-            mValue = value;
-        }
-
-        /**
-         * Gets integer value associated to ReadStatus instance
-         *
-         * @return value
-         */
-        public final int toInt() {
-            return mValue;
-        }
-
-        /**
-         * Returns a ReadStatus instance for the specified integer value.
-         *
-         * @param value the valure representing the delete status
-         * @return instance
-         */
-        public static DeleteStatus valueOf(int value) {
-            DeleteStatus entry = mValueToEnum.get(value);
-            if (entry != null) {
-                return entry;
-            }
-            throw new IllegalArgumentException("No enum const class "
-                    + DeleteStatus.class.getName() + "." + value + "!");
-        }
-    }
-
-    /**
-     * Push status of the message
-     */
-    public enum PushStatus {
-        /**
-         * The message should be pushed on CMS
-         */
-        PUSH_REQUESTED(0), /**
-         * The message has been pushed on CMS
-         */
-        PUSHED(1);
-
-        private final int mValue;
-
-        private static SparseArray<PushStatus> mValueToEnum = new SparseArray<>();
-
-        static {
-            for (PushStatus entry : PushStatus.values()) {
-                mValueToEnum.put(entry.toInt(), entry);
-            }
-        }
-
-        PushStatus(int value) {
-            mValue = value;
-        }
-
-        /**
-         * Gets integer value associated to ReadStatus instance
-         *
-         * @return value
-         */
-        public final int toInt() {
-            return mValue;
-        }
-
-        /**
-         * Returns a ReadStatus instance for the specified integer value.
-         *
-         * @param value the valure representing the push status
-         * @return instance
-         */
-        public static PushStatus valueOf(int value) {
-            PushStatus entry = mValueToEnum.get(value);
-            if (entry != null) {
-                return entry;
-            }
-            throw new IllegalArgumentException("No enum const class " + PushStatus.class.getName()
-                    + "." + value + "!");
-        }
-    }
+public abstract class CmsObject {
 
     private final String mFolder;
     private Integer mUid;
     private ReadStatus mReadStatus;
     private DeleteStatus mDeleteStatus;
-    private PushStatus mPushStatus = PushStatus.PUSHED;
+    private final PushStatus mPushStatus;
     private final MessageType mMessageType;
     private final String mMessageId;
-    private final Long mNativeProviderId;
 
     /**
      * Constructor
-     * 
+     *
      * @param folder the folder
+     * @param messageId the message ID
+     * @param pushStatus the push status
      * @param readStatus the read status
      * @param deleteStatus the delete status
-     * @param pushStatus the push status
      * @param messageType the message type
-     * @param messageId the message ID
-     * @param nativeProviderId the native provider ID
      */
-    public CmsObject(String folder, ReadStatus readStatus, DeleteStatus deleteStatus,
-            PushStatus pushStatus, MessageType messageType, String messageId, Long nativeProviderId) {
+    public CmsObject(String folder, String messageId, PushStatus pushStatus, ReadStatus readStatus,
+            DeleteStatus deleteStatus, MessageType messageType) {
         mFolder = folder;
+        mMessageId = messageId;
+        mMessageType = messageType;
         mReadStatus = readStatus;
         mDeleteStatus = deleteStatus;
         mPushStatus = pushStatus;
-        mMessageType = messageType;
-        mMessageId = messageId;
-        mNativeProviderId = nativeProviderId;
     }
 
     /**
      * Constructor
-     * 
+     *
      * @param folder the folder
+     * @param messageId the message ID
      * @param uid the cms UID
+     * @param pushStatus the push status
      * @param readStatus the read status
      * @param deleteStatus the delete status
      * @param messageType the message type
-     * @param messageId the message ID
      */
-    public CmsObject(String folder, Integer uid, ReadStatus readStatus, DeleteStatus deleteStatus,
-            PushStatus pushStatus, MessageType messageType, String messageId, Long nativeProviderId) {
+    public CmsObject(String folder, String messageId, Integer uid, PushStatus pushStatus,
+            ReadStatus readStatus, DeleteStatus deleteStatus, MessageType messageType) {
         mFolder = folder;
         mUid = uid;
         mReadStatus = readStatus;
@@ -298,17 +76,20 @@ public final class CmsObject {
         mPushStatus = pushStatus;
         mMessageType = messageType;
         mMessageId = messageId;
-        mNativeProviderId = nativeProviderId;
     }
 
-    public CmsObject(String folder, String messageId, Long nativeProviderId, ReadStatus readStatus,
+    /**
+     * Constructor
+     *
+     * @param folder the folder
+     * @param messageId the message ID
+     * @param readStatus the read status
+     * @param deleteStatus the delete status
+     * @param messageType the message type
+     */
+    public CmsObject(String folder, String messageId, ReadStatus readStatus,
             DeleteStatus deleteStatus, MessageType messageType) {
-        mFolder = folder;
-        mMessageId = messageId;
-        mMessageType = messageType;
-        mNativeProviderId = nativeProviderId;
-        mReadStatus = readStatus;
-        mDeleteStatus = deleteStatus;
+        this(folder, messageId, PushStatus.PUSHED, readStatus, deleteStatus, messageType);
     }
 
     public String getFolder() {
@@ -347,43 +128,33 @@ public final class CmsObject {
         return mPushStatus;
     }
 
-    public Long getNativeProviderId() {
-        return mNativeProviderId;
-    }
-
     @Override
     public String toString() {
-        return "CmsObject{Folder=" + mFolder + ", uid=" + mUid + ", readStatus=" + mReadStatus
-                + ", delStatus=" + mDeleteStatus + ", pushStatus=" + mPushStatus + ", Type="
-                + mMessageType + ", msgId=" + mMessageId + ", mNativeId=" + mNativeProviderId + '}';
+        return "msgId=" + mMessageId + "Folder=" + mFolder + ", uid=" + mUid + ", readStatus="
+                + mReadStatus + ", delStatus=" + mDeleteStatus + ", pushStatus=" + mPushStatus
+                + ", Type=" + mMessageType;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof CmsObject))
             return false;
-
-        CmsObject that = (CmsObject) o;
-
-        if (!mFolder.equals(that.mFolder))
+        CmsObject cmsObject = (CmsObject) o;
+        if (!mFolder.equals(cmsObject.mFolder))
             return false;
-        if (mUid != null ? !mUid.equals(that.mUid) : that.mUid != null)
+        if (mUid != null ? !mUid.equals(cmsObject.mUid) : cmsObject.mUid != null)
             return false;
-        if (mReadStatus != that.mReadStatus)
+        if (mReadStatus != cmsObject.mReadStatus)
             return false;
-        if (mDeleteStatus != that.mDeleteStatus)
+        if (mDeleteStatus != cmsObject.mDeleteStatus)
             return false;
-        if (mPushStatus != that.mPushStatus)
+        if (mPushStatus != cmsObject.mPushStatus)
             return false;
-        if (mMessageType != that.mMessageType)
+        if (mMessageType != cmsObject.mMessageType)
             return false;
-        if (!mMessageId.equals(that.mMessageId))
-            return false;
-        return !(mNativeProviderId != null ? !mNativeProviderId.equals(that.mNativeProviderId)
-                : that.mNativeProviderId != null);
-
+        return mMessageId.equals(cmsObject.mMessageId);
     }
 
     @Override
@@ -395,7 +166,16 @@ public final class CmsObject {
         result = 31 * result + mPushStatus.hashCode();
         result = 31 * result + mMessageType.hashCode();
         result = 31 * result + mMessageId.hashCode();
-        result = 31 * result + (mNativeProviderId != null ? mNativeProviderId.hashCode() : 0);
         return result;
+    }
+
+    public static boolean isXmsData(MessageType type) {
+        switch (type) {
+            case MMS:
+            case SMS:
+                return true;
+            default:
+                return false;
+        }
     }
 }

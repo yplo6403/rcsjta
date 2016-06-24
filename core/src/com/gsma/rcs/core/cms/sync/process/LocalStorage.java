@@ -26,13 +26,15 @@ import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
 import com.gsma.rcs.core.cms.protocol.message.ImapMessageResolver;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsFolder;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -124,7 +126,6 @@ public class LocalStorage {
                 } else if (seenFlag) {
                     mCmsEventListener.onRemoteReadEvent(msg);
                 }
-                mCmsLog.updateMessage(msg.getMessageId(), folder, uid, seenFlag, deleteFlag);
             }
         }
     }
@@ -156,7 +157,7 @@ public class LocalStorage {
                     continue;
                 }
                 IImapMessage resolvedMessage = mMessageResolver.resolveMessage(msgType, header,
-                        remote);
+                        remote, true);
                 CmsObject imapData = mCmsEventListener.searchLocalMessage(msgType, resolvedMessage);
                 boolean isDeleted = header.getMetadata().getFlags().contains(Flag.Deleted);
                 if (imapData == null) {
@@ -333,17 +334,28 @@ public class LocalStorage {
             List<IImapMessage> resolvedMessages = entry.getValue();
             for (IImapMessage resolvedMessage : resolvedMessages) {
                 try {
-                    String messageId = mCmsEventListener.onRemoteNewMessage(messageType,
+                    String[] result = mCmsEventListener.onRemoteNewMessage(messageType,
                             resolvedMessage, remote);
+                    String messageId = result[0];
+                    String chatId = null;
+                    if (result.length == 2) {
+                        chatId = result[1];
+                    }
                     ReadStatus readStatus = resolvedMessage.isSeen() ? ReadStatus.READ
                             : ReadStatus.UNREAD;
                     DeleteStatus delStatus = resolvedMessage.isDeleted() ? DeleteStatus.DELETED
                             : DeleteStatus.NOT_DELETED;
-                    CmsObject cmsObject = new CmsObject(resolvedMessage.getFolder(),
-                            resolvedMessage.getUid(), readStatus, delStatus, PushStatus.PUSHED,
-                            messageType, messageId, null);
-                    mCmsLog.addMessage(cmsObject);
-
+                    if (CmsObject.isXmsData(messageType)) {
+                        CmsXmsObject cmsObject = new CmsXmsObject(messageType,
+                                resolvedMessage.getFolder(), messageId, resolvedMessage.getUid(),
+                                PushStatus.PUSHED, readStatus, delStatus, null);
+                        mCmsLog.addXmsMessage(cmsObject);
+                    } else {
+                        CmsRcsObject cmsObject = new CmsRcsObject(messageType,
+                                resolvedMessage.getFolder(), messageId, resolvedMessage.getUid(),
+                                PushStatus.PUSHED, readStatus, delStatus, chatId);
+                        mCmsLog.addRcsMessage(cmsObject);
+                    }
                 } catch (CmsSyncException e) {
                     /*
                      * There is a wrongly formatted IMAP message on the CMS server. Keep processing
@@ -383,7 +395,7 @@ public class LocalStorage {
                     }
                     continue;
                 }
-                msgList.add(mMessageResolver.resolveMessage(messageType, msg, remote));
+                msgList.add(mMessageResolver.resolveMessage(messageType, msg, remote, false));
 
             } catch (CmsSyncException e) {
                 /*

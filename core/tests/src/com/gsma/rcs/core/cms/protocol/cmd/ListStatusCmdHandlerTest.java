@@ -30,8 +30,6 @@ import java.util.List;
 public class ListStatusCmdHandlerTest extends AndroidTestCase {
 
     public void test() {
-
-        String expectedCmd = String.format(ListStatusCmdHandler.sCommand, "myFolder");
         String[] lines = new String[] {
                 "* LIST () \".\" \"+33642575779\"",
                 "* STATUS +33642575779 (MESSAGES 1 UIDNEXT 4 UIDVALIDITY 1437039675 HIGHESTMODSEQ 7)",
@@ -41,8 +39,8 @@ public class ListStatusCmdHandlerTest extends AndroidTestCase {
         };
 
         ListStatusCmdHandler handler = new ListStatusCmdHandler();
-        String cmd = handler.buildCommand("myFolder");
-        Assert.assertEquals(expectedCmd, cmd);
+        String cmd = handler.buildCommand();
+        Assert.assertEquals(ListStatusCmdHandler.sCommand, cmd);
 
         handler.handleLines(Arrays.asList(lines));
 
@@ -64,15 +62,16 @@ public class ListStatusCmdHandlerTest extends AndroidTestCase {
 
         for (ImapFolder imapFolder : folders) {
             if ("+33642575779".equals(imapFolder.getName())) {
-                Assert.assertEquals(new Integer(1), imapFolder.getMessages());
-                Assert.assertEquals(new Integer(4), imapFolder.getUidNext());
-                Assert.assertEquals(new Integer(7), imapFolder.getHighestModseq());
-                Assert.assertEquals(new Integer(1437039675), imapFolder.getUidValidity());
+                Assert.assertEquals(Integer.valueOf(1), imapFolder.getMessages());
+                Assert.assertEquals(Integer.valueOf(4), imapFolder.getUidNext());
+                Assert.assertEquals(Integer.valueOf(7), imapFolder.getHighestModseq());
+                Assert.assertEquals(Integer.valueOf(1437039675), imapFolder.getUidValidity());
+
             } else if ("INBOX".equals(imapFolder.getName())) {
-                Assert.assertEquals(new Integer(2), imapFolder.getMessages());
-                Assert.assertEquals(new Integer(1), imapFolder.getUidNext());
-                Assert.assertEquals(new Integer(1), imapFolder.getHighestModseq());
-                Assert.assertEquals(new Integer(1437039422), imapFolder.getUidValidity());
+                Assert.assertEquals(Integer.valueOf(2), imapFolder.getMessages());
+                Assert.assertEquals(Integer.valueOf(1), imapFolder.getUidNext());
+                Assert.assertEquals(Integer.valueOf(1), imapFolder.getHighestModseq());
+                Assert.assertEquals(Integer.valueOf(1437039422), imapFolder.getUidValidity());
             }
         }
 

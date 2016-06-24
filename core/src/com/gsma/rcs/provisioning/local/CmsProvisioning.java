@@ -21,8 +21,8 @@ package com.gsma.rcs.provisioning.local;
 
 import com.gsma.rcs.R;
 import com.gsma.rcs.provider.LocalContentResolver;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventReportingFrameworkConfig;

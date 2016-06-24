@@ -24,15 +24,12 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
-import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.imaplib.imap.Header;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
 
 public class ImapCpimMessage extends ImapMessage {
 
-    private final ContactId mRemote;
+    protected ContactId mRemote;
     private Direction mDirection;
 
     public ImapCpimMessage(ContactId remote) {
@@ -45,56 +42,24 @@ public class ImapCpimMessage extends ImapMessage {
      * 
      * @param rawMessage the IMAP raw message
      * @param remote the remote contact or null if group chat
-     * @throws CmsSyncMissingHeaderException
-     * @throws CmsSyncHeaderFormatException
      */
     public ImapCpimMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
-            CmsSyncXmlFormatException {
+            throws CmsSyncMissingHeaderException {
         super(rawMessage);
+        mRemote = remote;
         String direction = getHeader(Constants.HEADER_DIRECTION);
         if (direction == null) {
             throw new CmsSyncMissingHeaderException("Direction IMAP header is missing");
         }
-        String from = null;
         if (Constants.DIRECTION_SENT.equals(direction)) {
             mDirection = Direction.OUTGOING;
         } else {
             mDirection = Direction.INCOMING;
-            from = getHeader(Constants.HEADER_FROM);
-            if (from == null) {
-                throw new CmsSyncMissingHeaderException("From IMAP header is missing");
-            }
-        }
-        if (remote != null) {
-            // single chat
-            mRemote = remote;
-        } else {
-            // Group conversation
-            if (Direction.INCOMING == mDirection) {
-                ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(from);
-                if (phoneNumber == null) {
-                    throw new CmsSyncXmlFormatException("From IMAP header do not contain tel URI ("
-                            + from + ")");
-                }
-                mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
-            } else {
-                mRemote = null;
-            }
         }
     }
 
     @Override
-    public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF, 2);
-        if (2 == parts.length) {
-            for (Header header : Header.parseHeaders(parts[0]).values()) {
-                addHeader(header.getKey().toLowerCase(), header.getValue());
-            }
-            CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
-            cpimMessage.parsePayload(parts[1]);
-            setBodyPart(cpimMessage);
-        }
+    public void parseBody() throws CmsSyncXmlFormatException, CmsSyncMissingHeaderException, CmsSyncHeaderFormatException {
     }
 
     public CpimMessage getCpimMessage() {

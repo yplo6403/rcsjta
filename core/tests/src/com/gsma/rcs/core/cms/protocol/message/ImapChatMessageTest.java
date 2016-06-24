@@ -77,6 +77,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
         imapMessage.setFolderPath(folderName);
 
         ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage, mExpectedContact);
+        imapChatMessage.parseBody();
         Assert.assertEquals(folderName, imapChatMessage.getFolder());
         Assert.assertEquals(uid, imapChatMessage.getUid());
         Assert.assertTrue(imapChatMessage.isSeen());
@@ -123,6 +124,7 @@ public class ImapChatMessageTest extends AndroidTestCase {
         imapMessage.setFolderPath(folderName);
 
         ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage, mExpectedContact);
+        imapChatMessage.parseBody();
         Assert.assertEquals(folderName, imapChatMessage.getFolder());
         Assert.assertEquals(uid, imapChatMessage.getUid());
         Assert.assertTrue(imapChatMessage.isSeen());

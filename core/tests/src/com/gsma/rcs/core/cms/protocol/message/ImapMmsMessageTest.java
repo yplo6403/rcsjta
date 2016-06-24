@@ -80,6 +80,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
         ImapMessage rawMessage = new ImapMessage();
         rawMessage.fromPayload(mPayload);
         ImapMmsMessage imapMmsMessage = new ImapMmsMessage(rawMessage, mRemote);
+        imapMmsMessage.parseBody();
         Assert.assertEquals("+33642575779", imapMmsMessage.getHeader(Constants.HEADER_FROM));
         Assert.assertEquals("+33640332859", imapMmsMessage.getHeader(Constants.HEADER_TO));
         Assert.assertEquals(mImapDate, imapMmsMessage.getHeader(Constants.HEADER_DATE));

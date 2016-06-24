@@ -19,8 +19,10 @@
 
 package com.gsma.rcs.core.cms.protocol.cmd;
 
+import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.imaplib.imap.Part;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,13 +39,13 @@ public abstract class CmdHandler {
     /**
      * Return a IMAP command handler
      *
-     * @param command
-     * @param capabilities
-     * @param params
-     * @return
+     * @param command the command type
+     * @param capabilities the list of capabilities
+     * @param params variable string parameters
+     * @return the IMAP command handler
      */
     public static CmdHandler getHandler(CommandType command, List<String> capabilities,
-            Object... params) {
+            Object... params) throws ImapException {
         CmdHandler handler = null;
         switch (command) {
             case LIST:
@@ -67,32 +69,41 @@ public abstract class CmdHandler {
             case UID_SEARCH:
                 handler = new UidSearchCmdHandler();
                 break;
-
         }
-        return handler.checkCapabilities(capabilities) ? handler : null;
+        if (handler.checkCapabilities(capabilities)) {
+            return handler;
+        }
+        throw new ImapException("Command " + command + " failed: no capabilities "
+                + Arrays.toString(capabilities.toArray()));
     }
 
     /**
      * Build an IMAP command
      * 
-     * @param params
-     * @return
+     * @param params the arguments used for the method call
+     * @return the command
      */
     public abstract String buildCommand(Object... params);
 
     /**
-     * @param oneLine
-     * @return boolean
+     * Handle one line
+     * 
+     * @param oneLine the line
+     * @return boolean true if handling is successful
      */
     public abstract boolean handleLine(String oneLine);
 
     /**
-     * @param lines
+     * handle multiple lines
+     * 
+     * @param lines the list of lines
      */
     public abstract void handleLines(List<String> lines);
 
     /**
-     * @param part
+     * Handles part
+     * 
+     * @param part the part
      */
     public abstract void handlePart(Part part);
 

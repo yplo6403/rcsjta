@@ -20,6 +20,7 @@ package com.gsma.rcs.core.cms.protocol.cmd;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.protocol.cmd.CmdHandler.CommandType;
+import com.gsma.rcs.imaplib.imap.ImapException;
 
 import android.test.AndroidTestCase;
 
@@ -28,8 +29,8 @@ import java.util.List;
 
 public class CmdHandlerTest extends AndroidTestCase {
 
-    public void test() {
-        List<String> capabilities = new ArrayList<String>();
+    public void test() throws ImapException {
+        List<String> capabilities = new ArrayList<>();
         capabilities.add(Constants.CAPA_CONDSTORE);
         CmdHandler handler;
 
@@ -47,7 +48,6 @@ public class CmdHandlerTest extends AndroidTestCase {
 
         handler = CmdHandler.getHandler(CommandType.FETCH_MESSAGES_BODY, capabilities);
         assertTrue(handler instanceof FetchMessageCmdHandler);
-
     }
 
 }

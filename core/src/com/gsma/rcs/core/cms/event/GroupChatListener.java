@@ -34,7 +34,7 @@ public interface GroupChatListener {
     /**
      * Take into account deletion of group chat messages
      *
-     * @param chatId
+     * @param chatId the chat ID
      * @param msgIds the messages ID
      */
     void onDeleteGroupChatMessages(String chatId, Set<String> msgIds);
@@ -42,7 +42,7 @@ public interface GroupChatListener {
     /**
      * Called when group chat conversation is deleted
      *
-     * @param chatId
+     * @param chatId the chat ID
      */
     void onDeleteGroupChat(String chatId);
 }

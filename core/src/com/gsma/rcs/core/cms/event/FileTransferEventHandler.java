@@ -21,12 +21,12 @@ package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -70,10 +70,10 @@ public class FileTransferEventHandler implements FileTransferListener {
             sLogger.debug("onNewFileTransfer contact : " + contact.toString() + ", transferId : "
                     + transferId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact),
-                direction == Direction.INCOMING ? ReadStatus.UNREAD : ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.FILE_TRANSFER,
-                transferId, null));
+        String folder = CmsUtils.contactToCmsFolder(contact);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.FILE_TRANSFER, folder, transferId,
+                PushStatus.PUSHED, direction == Direction.INCOMING ? ReadStatus.UNREAD
+                        : ReadStatus.READ, DeleteStatus.NOT_DELETED, null));
     }
 
     @Override
@@ -81,10 +81,10 @@ public class FileTransferEventHandler implements FileTransferListener {
         if (sLogger.isActivated()) {
             sLogger.debug("onNewFileTransfer chatId : " + chatId + ", transferId : " + transferId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
-                direction == Direction.INCOMING ? ReadStatus.UNREAD : ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.FILE_TRANSFER,
-                transferId, null));
+        String folder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.FILE_TRANSFER, folder, transferId,
+                PushStatus.PUSHED, direction == Direction.INCOMING ? ReadStatus.UNREAD
+                        : ReadStatus.READ, DeleteStatus.NOT_DELETED, chatId));
     }
 
     @Override

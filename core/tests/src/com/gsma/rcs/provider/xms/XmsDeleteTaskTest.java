@@ -23,8 +23,14 @@ import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
@@ -82,22 +88,19 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         long timestamp = 1;
         mSms = new SmsDataObject("sms-id", mContact2, "SMS test message",
                 RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L, null);
-        mCmsObjectSms = new CmsObject(mFolder2, 1, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.SMS, mSms.getMessageId(), null);
-
+        mCmsObjectSms = new CmsXmsObject(MessageType.SMS, mFolder2, mSms.getMessageId(), 1,
+                PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
         mSms1 = new SmsDataObject("sms-id1", mContact1, "SMS1 test message",
                 RcsService.Direction.INCOMING, timestamp++, ReadStatus.UNREAD, "c'est vrai");
-        mCmsObjectSms1 = new CmsObject(mFolder1, 2, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.SMS, mSms1.getMessageId(), null);
-
+        mCmsObjectSms1 = new CmsXmsObject(MessageType.SMS, mFolder1, mSms1.getMessageId(), 2,
+                PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
         mSms2 = new SmsDataObject("sms-id2", mContact1, "SMS2 test message",
                 RcsService.Direction.INCOMING, timestamp, ReadStatus.UNREAD, "c'est vrai");
-        mCmsObjectSms2 = new CmsObject(mFolder1, 3, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.SMS, mSms2.getMessageId(), null);
-
+        mCmsObjectSms2 = new CmsXmsObject(MessageType.SMS, mFolder1, mSms2.getMessageId(), 3,
+                PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
 
         File file = FileUtilsTest.createFileOnSdCard(mContext, "cat-test1.jpg");
         Uri mUriCat1 = Uri.fromFile(file);
@@ -110,9 +113,9 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         mMms = new MmsDataObject(mContext, "mms-id", mContact1, "MMS test subject",
                 "MMS test message", RcsService.Direction.INCOMING, timestamp, fileUris, 100L,
                 50000L);
-        mCmsObjectMms = new CmsObject(mFolder1, 1, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.MMS, mMms.getMessageId(), null);
+        mCmsObjectMms = new CmsXmsObject(MessageType.MMS, mFolder1, mMms.getMessageId(), 1,
+                PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
 
         mCmsLog = CmsLog.getInstance(mContext);
         MessagingLog mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
@@ -137,64 +140,69 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         mCmsLog.removeMessages();
     }
 
+    private void addMessageToCmsLog(CmsObject cmsObject) {
+        if (CmsObject.isXmsData(cmsObject.getMessageType())) {
+            mCmsLog.addXmsMessage((CmsXmsObject) cmsObject);
+        } else {
+            mCmsLog.addRcsMessage((CmsRcsObject) cmsObject);
+        }
+    }
+
     public void testXmsDeleteTaskOneSpecificSms_action() {
         mXmsLog.addSms(mSms);
-        mCmsLog.addMessage(mCmsObjectSms);
+        addMessageToCmsLog(mCmsObjectSms);
         assertTrue(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
+        CmsXmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
         assertEquals(mCmsObjectSms, cmsObjectFromDb);
         XmsDeleteTask task = new XmsDeleteTask(mCmsServiceImpl, mLocalContentResolver,
                 mSms.getContact(), mSms.getMessageId(), mCmsSessionCtrl);
         task.run();
         assertFalse(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testXmsDeleteTaskOneSpecificSms_event() {
         mXmsLog.addSms(mSms);
-        mCmsLog.addMessage(mCmsObjectSms);
+        addMessageToCmsLog(mCmsObjectSms);
         assertTrue(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
+        CmsXmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
         assertEquals(mCmsObjectSms, cmsObjectFromDb);
         XmsDeleteTask task = new XmsDeleteTask(mCmsServiceImpl, mLocalContentResolver,
                 mSms.getContact(), mSms.getMessageId(), mCmsLog);
         task.run();
         assertFalse(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testXmsDeleteTaskConversation() {
         mXmsLog.addSms(mSms1);
-        mCmsLog.addMessage(mCmsObjectSms1);
-        CmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms1.getContact(), mSms1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.NOT_DELETED, cmsObjectFromDb.getDeleteStatus());
+        addMessageToCmsLog(mCmsObjectSms1);
+        CmsXmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms1.getContact(), mSms1.getMessageId());
+        assertEquals(DeleteStatus.NOT_DELETED, cmsObjectFromDb.getDeleteStatus());
         mXmsLog.addSms(mSms2);
-        mCmsLog.addMessage(mCmsObjectSms2);
+        addMessageToCmsLog(mCmsObjectSms2);
         cmsObjectFromDb = mCmsLog.getSmsData(mSms2.getContact(), mSms2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.NOT_DELETED, cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.NOT_DELETED, cmsObjectFromDb.getDeleteStatus());
         XmsDeleteTask task = new XmsDeleteTask(mCmsServiceImpl, mLocalContentResolver,
                 mSms1.getContact(), mCmsSessionCtrl);
         task.run();
         assertFalse(mXmsLog.isMessagePersisted(mSms1.getContact(), mSms1.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms1.getContact(), mSms1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mXmsLog.isMessagePersisted(mSms2.getContact(), mSms2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms2.getContact(), mSms2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testXmsDeleteTaskAll() {
         mXmsLog.addSms(mSms);
-        mCmsLog.addMessage(mCmsObjectSms);
+        addMessageToCmsLog(mCmsObjectSms);
         mXmsLog.addSms(mSms1);
-        mCmsLog.addMessage(mCmsObjectSms1);
+        addMessageToCmsLog(mCmsObjectSms1);
         mXmsLog.addSms(mSms2);
-        mCmsLog.addMessage(mCmsObjectSms2);
+        addMessageToCmsLog(mCmsObjectSms2);
         assertTrue(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
         assertTrue(mXmsLog.isMessagePersisted(mSms1.getContact(), mSms1.getMessageId()));
         assertTrue(mXmsLog.isMessagePersisted(mSms2.getContact(), mSms2.getMessageId()));
@@ -202,24 +210,21 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
                 mCmsSessionCtrl);
         task.run();
         assertFalse(mXmsLog.isMessagePersisted(mSms.getContact(), mSms.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        CmsXmsObject cmsObjectFromDb = mCmsLog.getSmsData(mSms.getContact(), mSms.getMessageId());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mXmsLog.isMessagePersisted(mSms1.getContact(), mSms1.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms1.getContact(), mSms1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mXmsLog.isMessagePersisted(mSms2.getContact(), mSms2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getSmsData(mSms2.getContact(), mSms2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testMmsDeleteSpecific() {
         mXmsLog.addIncomingMms(mMms);
-        mCmsLog.addMessage(mCmsObjectMms);
+        addMessageToCmsLog(mCmsObjectMms);
         assertTrue(mXmsLog.isMessagePersisted(mMms.getContact(), mMms.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getMmsData(mMms.getContact(), mMms.getMessageId());
+        CmsXmsObject cmsObjectFromDb = mCmsLog.getMmsData(mMms.getContact(), mMms.getMessageId());
         assertEquals(mCmsObjectMms, cmsObjectFromDb);
         List<MmsDataObject.MmsPart> partsBeforeDelete = mXmsLog.getParts(mMms.getMessageId());
         assertEquals(partsBeforeDelete.size(), 3);
@@ -229,8 +234,7 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         task.run();
         assertFalse(mXmsLog.isMessagePersisted(mMms.getContact(), mMms.getMessageId()));
         cmsObjectFromDb = mCmsLog.getMmsData(mMms.getContact(), mMms.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
-
+        assertEquals(DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
         List<MmsDataObject.MmsPart> partsAfterDelete = mXmsLog.getParts(mMms.getMessageId());
         assertTrue(partsAfterDelete.isEmpty());
     }

@@ -20,6 +20,7 @@
 package com.gsma.rcs.core.cms.protocol.message.cpim;
 
 import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.protocol.message.BodyPart;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.imaplib.imap.Header;
@@ -35,23 +36,21 @@ public class CpimMessage extends BodyPart {
         mBody = body;
     }
 
-    public void parsePayload(String payload) {
+    public void parsePayload(String payload) throws CmsSyncHeaderFormatException {
         String[] parts = payload.split(Constants.CRLFCRLF, 2);
         if (2 == parts.length) {
             for (Header header : Header.parseHeaders(parts[0]).values()) {
                 mHeaders.addHeader(header.getKey().toLowerCase(), header.getValue());
             }
             mBody.parseBody(parts[1]);
+        } else {
+            throw new CmsSyncHeaderFormatException("Cannot parse CPIM: bad format");
         }
     }
 
     @Override
     public String getPayload() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(mHeaders);
-        sb.append(Constants.CRLF);
-        sb.append(mBody.toPayload());
-        return sb.toString();
+        return String.valueOf(mHeaders) + Constants.CRLF + mBody.toPayload();
     }
 
     public CpimBody getBody() {
@@ -65,10 +64,5 @@ public class CpimMessage extends BodyPart {
     public String getContentType() {
         return mBody.getContentType();
     }
-
-    /*
-     * public ContactId getContact(String headerName){ String raw =
-     * mHeaders.getHeaderValue(headerName); if(raw.startsWith("<") && raw.endsWith(">")){ } }
-     */
 
 }

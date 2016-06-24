@@ -29,10 +29,10 @@ import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
@@ -56,7 +56,7 @@ import java.util.Set;
  */
 public class CmsSyncScheduler {
 
-    private static final Logger sLogger = Logger.getLogger(CmsSyncScheduler.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsSyncScheduler.class.getName());
     private static final String MESSAGE_STORE_SYNC_OPERATIONS = "MessageStoreSyncOperations";
 
     /**

@@ -23,8 +23,8 @@ News:
 Bugs fixed:
 
 	* CMS: MMS are duplicated if already pushed on CMS and resolved locally.
-	* FO 60 SMS corelation issue (SMS stored via the SMS-C) in the stack.
-	* CMS: bad intitial state for synchronaized GC
+	* FO 60 SMS correlation issue (SMS stored via the SMS-C) in the stack.
+	* CMS: bad initial state for synchronized GC
 	* Core: Added support for psMedia & psRTMedia
 	* Core: Added ApplyBatch for resetting setting.db to default values
 	* Core: Handling configuration error management in Receipt of SMS (OTP)

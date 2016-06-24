@@ -31,16 +31,19 @@ import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapException;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.RcsService.ReadStatus;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
@@ -90,23 +93,23 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
     @Override
     public void execute(BasicImapService basicImapService) throws NetworkException,
             PayloadException, FileAccessException {
-        Set<CmsObject> cmsObjects = mCmsLog.getXmsMessagesToPush();
+        Set<CmsXmsObject> cmsObjects = mCmsLog.getXmsMessagesToPush();
         if (cmsObjects.isEmpty()) {
             return;
         }
-        Set<CmsObject> pushOperations = new HashSet<>();
-        Map<String, Set<CmsObject>> updateOperations = new HashMap<>();
-        for (CmsObject cmsObject : cmsObjects) {
-            if (CmsObject.PushStatus.PUSH_REQUESTED == cmsObject.getPushStatus()) {
+        Set<CmsXmsObject> pushOperations = new HashSet<>();
+        Map<String, Set<CmsXmsObject>> updateOperations = new HashMap<>();
+        for (CmsXmsObject cmsObject : cmsObjects) {
+            if (PushStatus.PUSH_REQUESTED == cmsObject.getPushStatus()) {
                 pushOperations.add(cmsObject);
             } else {
                 // It is a CMS update flag operation
                 String folder = cmsObject.getFolder();
                 if (updateOperations.containsKey(folder)) {
-                    Set<CmsObject> updates = updateOperations.get(folder);
+                    Set<CmsXmsObject> updates = updateOperations.get(folder);
                     updates.add(cmsObject);
                 } else {
-                    Set<CmsObject> updates = new HashSet<>();
+                    Set<CmsXmsObject> updates = new HashSet<>();
                     updates.add(cmsObject);
                     updateOperations.put(folder, updates);
                 }
@@ -121,7 +124,7 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
                 }
             }
             if (!updateOperations.isEmpty()) {
-                for (Map.Entry<String, Set<CmsObject>> entry : updateOperations.entrySet()) {
+                for (Map.Entry<String, Set<CmsXmsObject>> entry : updateOperations.entrySet()) {
                     String localFolder = entry.getKey();
                     // Only update flags if remote folder exists
                     if (remoteFolders.contains(localFolder)) {
@@ -143,9 +146,9 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
      * @param pushOperations CmsObject to push on remote server
      * @return list of XmsDataObject
      */
-    private List<XmsDataObject> filterMessagesToPush(Set<CmsObject> pushOperations) {
+    private List<XmsDataObject> filterMessagesToPush(Set<CmsXmsObject> pushOperations) {
         List<XmsDataObject> msgToPush = new ArrayList<>();
-        for (CmsObject cmsObject : pushOperations) {
+        for (CmsXmsObject cmsObject : pushOperations) {
             ContactId contact = CmsUtils.cmsFolderToContact(cmsObject.getFolder());
             XmsDataObject xms = mXmsLog.getXmsDataObject(contact, cmsObject.getMessageId());
             if (xms != null) {
@@ -191,7 +194,7 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
                 default:
                     break;
             }
-            if (message.getReadStatus() != ReadStatus.UNREAD) {
+            if (RcsService.ReadStatus.UNREAD != message.getReadStatus()) {
                 flags.add(Flag.Seen);
             }
             IImapMessage imapMessage = null;
@@ -235,12 +238,12 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
     }
 
     private void updateFlags(BasicImapService basicImapService, String remoteFolder,
-            Set<CmsObject> cmsObjects) throws NetworkException, PayloadException, IOException,
+            Set<CmsXmsObject> cmsObjects) throws NetworkException, PayloadException, IOException,
             ImapException {
         Set<Integer> readRequestedUids = new HashSet<>();
         Set<Integer> deletedRequestedUids = new HashSet<>();
         basicImapService.select(remoteFolder);
-        for (CmsObject cmsObject : cmsObjects) {
+        for (CmsXmsObject cmsObject : cmsObjects) {
             Integer uid = cmsObject.getUid();
             if (uid == null) { // search uid on CMS server
                 MessageType messageType = cmsObject.getMessageType();
@@ -267,10 +270,10 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
             if (uid == null) { // we are not able to update flags without UID
                 continue;
             }
-            if (CmsObject.ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
+            if (ReadStatus.READ_REPORT_REQUESTED == cmsObject.getReadStatus()) {
                 readRequestedUids.add(uid);
             }
-            if (CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
+            if (DeleteStatus.DELETED_REPORT_REQUESTED == cmsObject.getDeleteStatus()) {
                 deletedRequestedUids.add(uid);
             }
         }

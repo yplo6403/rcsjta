@@ -22,6 +22,7 @@ import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtil;
+import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.services.rcs.RcsPermissionDeniedException;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -54,6 +55,7 @@ public class RcsSettingsMock {
 
         sSettings.setUserProfileImsUserName(ContactUtil
                 .createContactIdFromTrustedData("+33601020304"));
+        PhoneUtils.initialize(sSettings);
         return sSettings;
     }
 

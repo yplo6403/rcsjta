@@ -20,7 +20,14 @@
 package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.imaplib.imap.Flag;
+import com.gsma.rcs.imaplib.imap.Header;
+
+import java.util.Map;
 
 public abstract class ImapMessage implements IImapMessage {
 
@@ -35,7 +42,15 @@ public abstract class ImapMessage implements IImapMessage {
     protected ImapMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) {
         this();
         mRawMessage = rawMessage;
-        parsePayload(mRawMessage.getPayload());
+        parseHeader();
+    }
+
+    private void parseHeader() {
+        for (Map.Entry<String, Header> entry : (mRawMessage.getBody().getHeaders()).entrySet()) {
+            String key = entry.getKey();
+            Header header = entry.getValue();
+            mHeaderPart.addHeader(key.toLowerCase(), header.getValue());
+        }
     }
 
     public void addHeader(String name, String value) {
@@ -44,10 +59,12 @@ public abstract class ImapMessage implements IImapMessage {
 
     @Override
     public String toPayload() {
-        return String.valueOf(mHeaderPart) + Constants.CRLF + mBodyPart.getPayload();
+        return mHeaderPart.toString() + Constants.CRLF + mBodyPart.getPayload();
     }
 
-    protected abstract void parsePayload(String payload);
+    protected abstract void parseBody() throws CmsSyncXmlFormatException,
+            CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException,
+            CmsSyncHeaderFormatException;
 
     @Override
     public String getHeader(String headerName) {

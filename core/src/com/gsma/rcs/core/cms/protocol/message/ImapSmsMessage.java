@@ -29,14 +29,15 @@ import com.gsma.rcs.core.cms.utils.DateUtils;
 import com.gsma.rcs.core.cms.utils.HeaderCorrelatorUtils;
 import com.gsma.services.rcs.contact.ContactId;
 
+import android.text.TextUtils;
+
 public class ImapSmsMessage extends ImapCpimMessage {
 
     private String mCorrelator;
     private long mDate;
 
     public ImapSmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
-            CmsSyncXmlFormatException {
+            throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
         mCorrelator = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
         if (mCorrelator == null) {
@@ -86,6 +87,17 @@ public class ImapSmsMessage extends ImapCpimMessage {
 
     public long getDate() {
         return mDate;
+    }
+
+    @Override
+    public void parseBody() throws CmsSyncXmlFormatException, CmsSyncHeaderFormatException {
+        String content = mRawMessage.getBody().getContent();
+        if (TextUtils.isEmpty(content)) {
+            throw new CmsSyncXmlFormatException("Cannot parse SMS: IMAP body is missing!");
+        }
+        CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
+        cpimMessage.parsePayload(content);
+        setBodyPart(cpimMessage);
     }
 
     @Override

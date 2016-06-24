@@ -297,8 +297,8 @@ public class ChatServiceImpl extends IChatService.Stub {
         String notificationType = imdn.getNotificationType();
         long timestamp = imdn.getDateTime();
         if (sLogger.isActivated()) {
-            sLogger.info("Receive message delivery status for message " + msgId + ", status "
-                    + status + "notificationType=" + notificationType);
+            sLogger.info("Receive IMDN for message " + msgId + ", status=" + status + ", Type="
+                    + notificationType);
         }
         String mimeType = mMessagingLog.getMessageMimeType(msgId);
         if (ImdnDocument.DeliveryStatus.ERROR == status

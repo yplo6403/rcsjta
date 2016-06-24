@@ -20,11 +20,11 @@ package com.gsma.rcs.core.cms.integration;
 
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.IdGenerator;
@@ -59,30 +59,26 @@ public class SmsIntegrationUtils {
 
     public static class Test2 {
 
-        public static CmsObject[] cmsObjectReadRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ_REPORT_REQUESTED,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ_REPORT_REQUESTED,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "2", null),
-                new CmsObject(Test1.folderName, 3, ReadStatus.READ_REPORT_REQUESTED,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "3", null),
-                new CmsObject(Test1.folderName, 4, ReadStatus.READ_REPORT_REQUESTED,
-                        DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.SMS, "4", null),
+        public static CmsXmsObject[] cmsObjectReadRequested = new CmsXmsObject[] {
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "1", 1, PushStatus.PUSHED,
+                        ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "2", 2, PushStatus.PUSHED,
+                        ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "3", 3, PushStatus.PUSHED,
+                        ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "4", 4, PushStatus.PUSHED,
+                        ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null),
         };
 
-        public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "2", null),
-                new CmsObject(Test1.folderName, 3, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "3", null),
-                new CmsObject(Test1.folderName, 4, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "4", null),
+        public static CmsXmsObject[] cmsObjectDeletedRequested = new CmsXmsObject[] {
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "1", 1, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "2", 2, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "3", 3, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "4", 4, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
         };
 
     }
@@ -91,13 +87,11 @@ public class SmsIntegrationUtils {
 
         public static ContactId contactId = ContactUtil
                 .createContactIdFromTrustedData("+33640332858");
-        public static CmsObject[] cmsObjectDeletedRequested = new CmsObject[] {
-                new CmsObject(Test1.folderName, 1, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "1", null),
-                new CmsObject(Test1.folderName, 2, ReadStatus.READ,
-                        DeleteStatus.DELETED_REPORT_REQUESTED, PushStatus.PUSHED, MessageType.SMS,
-                        "2", null),
+        public static CmsXmsObject[] cmsObjectDeletedRequested = new CmsXmsObject[] {
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "1", 1, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
+                new CmsXmsObject(MessageType.SMS, Test1.folderName, "2", 2, PushStatus.PUSHED,
+                        ReadStatus.READ, DeleteStatus.DELETED_REPORT_REQUESTED, null),
         };
 
         public static RcsService.ReadStatus readStatus = RcsService.ReadStatus.READ;

@@ -30,14 +30,16 @@ import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfoLog;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class XmsLogEnvIntegration {
+public class SyncLogUtilTest {
 
     private static final String SORT_BY_DATE_DESC = XmsData.KEY_TIMESTAMP + " DESC";
 
@@ -49,22 +51,80 @@ public class XmsLogEnvIntegration {
     /**
      * Current instance
      */
-    private static volatile XmsLogEnvIntegration sInstance;
+    private static volatile SyncLogUtilTest sInstance;
 
-    private XmsLogEnvIntegration(Context context) {
+    private SyncLogUtilTest(Context context) {
         mLocalContentResolver = new LocalContentResolver(context.getContentResolver());
     }
 
-    public static XmsLogEnvIntegration getInstance(Context context) {
+    public static SyncLogUtilTest getInstance(Context context) {
         if (sInstance != null) {
             return sInstance;
         }
-        synchronized (XmsLogEnvIntegration.class) {
+        synchronized (SyncLogUtilTest.class) {
             if (sInstance == null) {
-                sInstance = new XmsLogEnvIntegration(context);
+                sInstance = new SyncLogUtilTest(context);
             }
         }
         return sInstance;
+    }
+
+    public class GroupDeliveryInfo {
+        public final String mChatId;
+        public final ContactId mContact;
+        public final com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.Status mStatus;
+        public final com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.ReasonCode mReason;
+        public final long mTimestampDelivered;
+        public final long mTimestampDisplayed;
+
+        public GroupDeliveryInfo(String chatId, ContactId contact,
+                com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.Status status,
+                com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.ReasonCode reason,
+                long timestampDelivered, long timestampDisplayed) {
+            mChatId = chatId;
+            mContact = contact;
+            mStatus = status;
+            mReason = reason;
+            mTimestampDelivered = timestampDelivered;
+            mTimestampDisplayed = timestampDisplayed;
+        }
+    }
+
+    public List<GroupDeliveryInfo> getGroupDeliveryInfo(String msgId) {
+        List<GroupDeliveryInfo> result = new ArrayList<>();
+        Uri contentUri = Uri.withAppendedPath(GroupDeliveryInfoLog.CONTENT_URI, msgId);
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(contentUri, null, null, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, contentUri);
+            Integer columnChatId = cursor.getColumnIndexOrThrow(GroupDeliveryInfoLog.CHAT_ID);
+            Integer columnContact = cursor.getColumnIndexOrThrow(GroupDeliveryInfoLog.CONTACT);
+            Integer columnTimestampDeliver = cursor
+                    .getColumnIndexOrThrow(GroupDeliveryInfoLog.TIMESTAMP_DELIVERED);
+            Integer columnTimestampDisplay = cursor
+                    .getColumnIndexOrThrow(GroupDeliveryInfoLog.TIMESTAMP_DISPLAYED);
+            Integer columnStatus = cursor.getColumnIndexOrThrow(GroupDeliveryInfoLog.STATUS);
+            Integer columnReason = cursor.getColumnIndexOrThrow(GroupDeliveryInfoLog.REASON_CODE);
+
+            while (cursor.moveToNext()) {
+                String chatId = cursor.getString(columnChatId);
+                ContactId contact = ContactUtil.createContactIdFromTrustedData(cursor
+                        .getString(columnContact));
+                Long timestampDeliver = cursor.getLong(columnTimestampDeliver);
+                com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.Status status = com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.Status
+                        .valueOf(cursor.getInt(columnStatus));
+                com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.ReasonCode reason = com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo.ReasonCode
+                        .valueOf(cursor.getInt(columnReason));
+                Long timestampDisplay = cursor.getLong(columnTimestampDisplay);
+                GroupDeliveryInfo item = new GroupDeliveryInfo(chatId, contact, status, reason,
+                        timestampDeliver, timestampDisplay);
+                result.add(item);
+            }
+            return result;
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
     }
 
     /**

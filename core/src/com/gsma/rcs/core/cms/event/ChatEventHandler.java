@@ -27,12 +27,12 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatError;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.OneToOneChatSessionListener;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -74,9 +74,10 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
         if (sLogger.isActivated()) {
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(msg.getRemoteContact()),
-                ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
+        String folder = CmsUtils.contactToCmsFolder(msg.getRemoteContact());
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.CHAT_MESSAGE, folder,
+                msg.getMessageId(), PushStatus.PUSHED, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                null));
     }
 
     @Override
@@ -89,9 +90,9 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
             sLogger.debug("onMessageSent: ".concat(msgId));
         }
         ContactId contact = mMessagingLog.getMessageContact(msgId);
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.CHAT_MESSAGE,
-                msgId, null));
+        String folder = CmsUtils.contactToCmsFolder(contact);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.CHAT_MESSAGE, folder, msgId,
+                PushStatus.PUSHED, ReadStatus.READ, DeleteStatus.NOT_DELETED, null));
     }
 
     @Override
@@ -154,20 +155,16 @@ public class ChatEventHandler implements OneToOneChatSessionListener, ChatMessag
 
     @Override
     public void onReadChatMessage(String messageId) {
-
-        // From RCS 5.3 specification, the reporting event framework should not be used
-        // when the "IMDN Displayed" report is enabled. In this case, this is the participating
-        // function
-        // which is in charge of updating the flags on the CMS server.
-        boolean isImdnReportDisplayed = mSettings.isImReportsActivated()
-                && mSettings.isRespondToDisplayReports();
-
-        // TODO To be removed when the AS will update flags on the CMS server
-        isImdnReportDisplayed = false;
-
+        /*
+         * From RCS 5.3 specification, the reporting event framework should not be used when the
+         * "IMDN Displayed" report is enabled. In this case, this is the participating function
+         * which is in charge of updating the flags on the CMS server. boolean isImdnReportDisplayed
+         * = mSettings.isImReportsActivated() && mSettings.isRespondToDisplayReports(); TODO To be
+         * removed when the AS will update flags on the CMS server
+         */
+        boolean isImdnReportDisplayed = false;
         mCmsLog.updateRcsReadStatus(MessageType.CHAT_MESSAGE, messageId,
                 isImdnReportDisplayed ? ReadStatus.READ : ReadStatus.READ_REPORT_REQUESTED, null);
-
         if (!isImdnReportDisplayed && mEventFrameworkManager != null) {
             if (mMessagingLog.isOneToOneChatMessage(messageId)) {
                 mEventFrameworkManager.updateFlagsForChat(mMessagingLog

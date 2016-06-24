@@ -24,8 +24,9 @@ import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -162,8 +163,8 @@ public class GroupFileTransferDeleteTask extends DeleteTask.GroupedByChatId {
                     transferIds);
         } else {
             for (String delId : transferIds) {
-                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.FILE_TRANSFER, delId,
-                        CmsObject.DeleteStatus.DELETED, null);
+                mCmsLog.updateRcsDeleteStatus(MessageType.FILE_TRANSFER, delId,
+                        DeleteStatus.DELETED, null);
             }
         }
     }

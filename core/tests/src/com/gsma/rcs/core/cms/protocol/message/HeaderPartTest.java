@@ -46,8 +46,8 @@ public class HeaderPartTest extends AndroidTestCase {
         headers.addHeader(Constants.HEADER_CONVERSATION_ID, "1446218776000");
         headers.addHeader(Constants.HEADER_CONTRIBUTION_ID, "1446218776000");
         headers.addHeader(Constants.HEADER_MESSAGE_ID, "103015261610014200000");
-        headers.addHeader(headers.new Header(Constants.HEADER_IMDN_MESSAGE_ID, "1446218776000"));
-        headers.addHeader(headers.new Header(Constants.HEADER_DIRECTION, "received"));
+        headers.addHeader(Constants.HEADER_IMDN_MESSAGE_ID, "1446218776000");
+        headers.addHeader(Constants.HEADER_DIRECTION, "received");
         headers.addHeader(Constants.HEADER_MESSAGE_CONTEXT, "\"multimedia-message\"");
         headers.addHeader(Constants.HEADER_CONTENT_TYPE, "message/cpim");
         assertEquals(headerContent.toString(), headers.toString());

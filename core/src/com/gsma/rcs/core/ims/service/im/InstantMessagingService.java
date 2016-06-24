@@ -2172,7 +2172,6 @@ public class InstantMessagingService extends ImsService {
                     this, mLocalContentResolver, mMessagingLog.getFileTransferChatId(transferId),
                     transferId, mCmsSessionCtrl));
         } else {
-            ContactId contact = mMessagingLog.getFileTransferContact(transferId);
             mImDeleteOperationHandler.post(new OneToOneFileTransferDeleteTask(mFileTransferService,
                     this, mLocalContentResolver, transferId, mCmsSessionCtrl));
         }

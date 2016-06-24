@@ -21,12 +21,13 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -42,7 +43,8 @@ public class ImapMessageResolver {
     }
 
     public MessageType resolveType(com.gsma.rcs.imaplib.imap.ImapMessage imapMessage)
-            throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
+            throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException,
+            CmsSyncHeaderFormatException {
         String messageContext = imapMessage.getBody().getHeader(Constants.HEADER_MESSAGE_CONTEXT);
         if (messageContext != null) {
             messageContext = messageContext.toLowerCase();
@@ -107,36 +109,64 @@ public class ImapMessageResolver {
      * @param messageType the message type
      * @param imapMessage the raw IMAP message
      * @param remote the remote contact or null for group conversation
+     * @param headerOnly true if imapMessage only contains IMAP header
      * @return the terminal IMAP message instance
      * @throws CmsSyncException
      */
     public IImapMessage resolveMessage(MessageType messageType,
-            com.gsma.rcs.imaplib.imap.ImapMessage imapMessage, ContactId remote)
+            com.gsma.rcs.imaplib.imap.ImapMessage imapMessage, ContactId remote, boolean headerOnly)
             throws CmsSyncException {
         switch (messageType) {
             case SMS:
-                return new ImapSmsMessage(imapMessage, remote);
+                ImapSmsMessage imapSmsMessage = new ImapSmsMessage(imapMessage, remote);
+                if (!headerOnly) {
+                    imapSmsMessage.parseBody();
+                }
+                return imapSmsMessage;
 
             case MMS:
-                return new ImapMmsMessage(imapMessage, remote);
+                ImapMmsMessage imapMmsMessage = new ImapMmsMessage(imapMessage, remote);
+                if (!headerOnly) {
+                    imapMmsMessage.parseBody();
+                }
+                return imapMmsMessage;
 
             case MESSAGE_CPIM:
-                return new ImapCpimMessage(imapMessage, remote);
+                ImapCpimMessage imapCpimMessage = new ImapCpimMessage(imapMessage, remote);
+                imapCpimMessage.parseBody();
+                return imapCpimMessage;
 
             case CHAT_MESSAGE:
-                return new ImapChatMessage(imapMessage, remote);
+                ImapChatMessage imapChatMessage = new ImapChatMessage(imapMessage, remote);
+                imapChatMessage.parseBody();
+                return imapChatMessage;
 
             case IMDN:
-                return new ImapImdnMessage(imapMessage, remote);
+                ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
+                imapImdnMessage.parseBody();
+                return imapImdnMessage;
 
             case FILE_TRANSFER:
-                return new ImapFileTransferMessage(mRcsSettings, imapMessage, remote);
+                ImapFileTransferMessage imapFileTransferMessage = new ImapFileTransferMessage(
+                        mRcsSettings, imapMessage, remote);
+                imapFileTransferMessage.parseBody();
+                return imapFileTransferMessage;
 
             case CPM_SESSION:
-                return new ImapCpmSessionMessage(mRcsSettings, imapMessage);
+                ImapCpmSessionMessage imapCpmSessionMessage = new ImapCpmSessionMessage(
+                        mRcsSettings, imapMessage);
+                if (!headerOnly) {
+                    imapCpmSessionMessage.parseBody();
+                }
+                return imapCpmSessionMessage;
 
             case GROUP_STATE:
-                return new ImapGroupStateMessage(mRcsSettings, imapMessage);
+                ImapGroupStateMessage imapGroupStateMessage = new ImapGroupStateMessage(
+                        mRcsSettings, imapMessage);
+                if (!headerOnly) {
+                    imapGroupStateMessage.parseBody();
+                }
+                return imapGroupStateMessage;
         }
         throw new CmsSyncMessageNotSupportedException(
                 "unsupported message type : ".concat(messageType.toString()));

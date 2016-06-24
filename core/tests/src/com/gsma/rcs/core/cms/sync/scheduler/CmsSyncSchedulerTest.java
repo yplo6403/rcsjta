@@ -62,6 +62,9 @@ public class CmsSyncSchedulerTest extends AndroidTestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         RcsSettingsMock.restoreSettings();
+        if (mScheduler != null) {
+            mScheduler.stop();
+        }
     }
 
     public void testInitScheduler() throws InterruptedException {

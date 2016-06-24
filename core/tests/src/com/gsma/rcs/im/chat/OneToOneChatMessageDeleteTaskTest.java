@@ -26,8 +26,14 @@ import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.messaging.OneToOneChatMessageDeleteTask;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -79,22 +85,19 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
         long timestamp = 1;
         mChatMsg = new ChatMessage("msg_id-mChatMsg", mContact1, "body-mChatMsg",
                 ChatLog.Message.MimeType.TEXT_MESSAGE, timestamp++, timestamp++, "display");
-        mCmsObjectMsg = new CmsObject(mFolder1, 1, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.CHAT_MESSAGE, mChatMsg.getMessageId(), null);
-
+        mCmsObjectMsg = new CmsRcsObject(MessageType.CHAT_MESSAGE, mFolder1,
+                mChatMsg.getMessageId(), 1, PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
         mChatMsg1 = new ChatMessage("msg_id-mChatMsg1", mContact2, "body-mChatMsg1",
                 ChatLog.Message.MimeType.TEXT_MESSAGE, timestamp++, timestamp++, "display");
-        mCmsObjectMsg1 = new CmsObject(mFolder2, 2, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.CHAT_MESSAGE, mChatMsg1.getMessageId(), null);
-
+        mCmsObjectMsg1 = new CmsRcsObject(MessageType.CHAT_MESSAGE, mFolder2,
+                mChatMsg1.getMessageId(), 2, PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
         mChatMsg2 = new ChatMessage("msg_id-mChatMsg2", mContact2, "body-mChatMsg2",
                 ChatLog.Message.MimeType.TEXT_MESSAGE, timestamp++, timestamp, "display");
-        mCmsObjectMsg2 = new CmsObject(mFolder2, 3, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.CHAT_MESSAGE, mChatMsg2.getMessageId(), null);
-
+        mCmsObjectMsg2 = new CmsRcsObject(MessageType.CHAT_MESSAGE, mFolder2,
+                mChatMsg2.getMessageId(), 3, PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED,
+                DeleteStatus.NOT_DELETED, null);
         mCmsLog = CmsLog.getInstance(mContext);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
         mCmsSessionCtrl = new CmsSessionController(mContext, null, null, settings,
@@ -124,11 +127,19 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
         RcsSettingsMock.restoreSettings();
     }
 
+    private void addMessageToCmsLog(CmsObject cmsObject) {
+        if (CmsObject.isXmsData(cmsObject.getMessageType())) {
+            mCmsLog.addXmsMessage((CmsXmsObject) cmsObject);
+        } else {
+            mCmsLog.addRcsMessage((CmsRcsObject) cmsObject);
+        }
+    }
+
     public void testOneToOneChatMessageDeleteTaskOneSpecific_action() {
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg);
+        addMessageToCmsLog(mCmsObjectMsg);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
         assertEquals(mCmsObjectMsg, cmsObjectFromDb);
 
         OneToOneChatMessageDeleteTask task = new OneToOneChatMessageDeleteTask(mChatService,
@@ -137,15 +148,14 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
 
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testOneToOneChatMessageDeleteTaskOneSpecific_event() {
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg);
+        addMessageToCmsLog(mCmsObjectMsg);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
         assertEquals(mCmsObjectMsg, cmsObjectFromDb);
 
         OneToOneChatMessageDeleteTask task = new OneToOneChatMessageDeleteTask(mChatService,
@@ -154,18 +164,18 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
 
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testOneToOneChatMessageDeleteTaskConversation() {
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg1, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg1);
+        addMessageToCmsLog(mCmsObjectMsg1);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg1.getMessageId()));
-        CmsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg1.getMessageId());
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg1.getMessageId());
         assertEquals(mCmsObjectMsg1, cmsObjectFromDb);
 
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg2, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg2);
+        addMessageToCmsLog(mCmsObjectMsg2);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg2.getMessageId());
         assertEquals(mCmsObjectMsg2, cmsObjectFromDb);
@@ -176,29 +186,27 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
 
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg1.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
     public void testOneToOneChatMessageDeleteTaskAll() {
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg, null, false);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
-        mCmsLog.addMessage(mCmsObjectMsg);
-        CmsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
+        addMessageToCmsLog(mCmsObjectMsg);
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
         assertEquals(mCmsObjectMsg, cmsObjectFromDb);
 
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg1, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg1);
+        addMessageToCmsLog(mCmsObjectMsg1);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg1.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg1.getMessageId());
         assertEquals(mCmsObjectMsg1, cmsObjectFromDb);
 
         mMessagingLog.addIncomingOneToOneChatMessage(mChatMsg2, null, false);
-        mCmsLog.addMessage(mCmsObjectMsg2);
+        addMessageToCmsLog(mCmsObjectMsg2);
         assertTrue(mMessagingLog.isMessagePersisted(mChatMsg2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg2.getMessageId());
         assertEquals(mCmsObjectMsg2, cmsObjectFromDb);
@@ -209,16 +217,13 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
 
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg1.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(mMessagingLog.isMessagePersisted(mChatMsg2.getMessageId()));
         cmsObjectFromDb = mCmsLog.getChatData(mChatMsg2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
     }
 
 }

@@ -67,6 +67,7 @@ public class ImapCpmSessionMessageTest extends AndroidTestCase {
 
         ImapCpmSessionMessage imapCpmSessionMessage = new ImapCpmSessionMessage(mSettings,
                 imapMessage);
+        imapCpmSessionMessage.parseBody();
         Assert.assertEquals(folderName, imapCpmSessionMessage.getFolder());
         Assert.assertEquals(uid, imapCpmSessionMessage.getUid());
         Assert.assertTrue(imapCpmSessionMessage.isSeen());

@@ -43,7 +43,7 @@ public class DefaultImapService implements ImapService {
 
     private boolean mIdling;
 
-    private ImapFolderStatus mSelectedFolderStatus;
+    protected ImapFolderStatus mSelectedFolderStatus;
 
     private long mLastTimeRequested;
 
@@ -56,9 +56,9 @@ public class DefaultImapService implements ImapService {
     // credentials
     private String mUsername, mPassword, mMechanism, mToken;
 
-    private boolean mUseSASL;
+    private boolean mUseSasl;
 
-    private boolean mAutoconnect = true;
+    private boolean mAutoConnect = true;
 
     private static Logger sLogger = Logger.getLogger(DefaultImapService.class.getName());
 
@@ -66,21 +66,18 @@ public class DefaultImapService implements ImapService {
         mIoService = ioService;
     }
 
-    protected String getPathSeparator(String path) {
+    private String getPathSeparator() {
         return mPersonalNamespace.getDelimiter();
     }
 
     protected synchronized Part readPart(String a) throws IOException, ImapException {
         // Example : * 3 FETCH (BODY[] {55}
-
         int size = Integer.parseInt(a.substring(a.indexOf('{') + 1, a.indexOf('}')));
         if (sLogger.isLoggable(Level.FINE)) {
             sLogger.fine("Reading " + size + " characters");
         }
         StringBuilder sb = new StringBuilder();
-
         int read = 0;
-
         while (read < size) {
             String line = ioReadLine();
             int length = line.getBytes().length;
@@ -96,13 +93,9 @@ public class DefaultImapService implements ImapService {
                 // sb.append(line.substring(0,remaining));
             }
         }
-
         String payload = sb.toString();
-
         Part p = new Part();
-
         p.fromPayload(payload);
-
         return p;
     }
 
@@ -149,9 +142,8 @@ public class DefaultImapService implements ImapService {
     }
 
     private synchronized void autoConnect() throws IOException, ImapException {
-        if (mAutoconnect && !mIoService.isConnected()) {
+        if (mAutoConnect && !mIoService.isConnected()) {
             mSelectedFolderStatus = null;
-
             mIoService.connect();
             String welcome = mIoService.readLine();
             if (sLogger.isLoggable(Level.FINE)) {
@@ -163,16 +155,13 @@ public class DefaultImapService implements ImapService {
 
     private synchronized void initNamespace() throws IOException, ImapException {
         checkCapability("NAMESPACE");
-
         writeCommand("NAMESPACE");
         String spec = ioReadLine().trim().replace("NIL", "()"); // remove '* NAMESPACE'
         ioReadLine();
         spec = spec.substring(13, spec.length() - 1);
-
         String[] array = spec.split("\\) \\(");
         if (array.length > 0 && array[0].length() > 0)
             mPersonalNamespace = new ImapNamespace(array[0]);
-
         // ignore other namespaces
         // if (array.length>1 && array[1].length() > 0) othersNamespace = new
         // IMAPNamespace(array[1]);
@@ -181,19 +170,17 @@ public class DefaultImapService implements ImapService {
     }
 
     private String uidTag() {
-        if (isUidMode())
+        if (isUidMode()) {
             return "UID ";
-        else
-            return "";
+        }
+        return "";
     }
 
     @SuppressWarnings("unchecked")
     protected List<String> readToEndOfResponse() throws IOException, ImapException {
         String ok = mCurrentTag + " OK";
         String l = ioReadLine();
-
         checkResponseNotBad(l);
-
         List<String> response = null;
         while (!l.startsWith(ok)) {
             if (response == null) {
@@ -205,14 +192,13 @@ public class DefaultImapService implements ImapService {
         if (response == null) {
             response = Collections.EMPTY_LIST;
         }
-
         return response;
     }
 
     protected void checkResponseNotBad(String line) throws ImapException {
         boolean b = line.startsWith(mCurrentTag + " BAD") || line.startsWith(mCurrentTag + " NO");
         if (b) {
-            throw new ImapException("Server message : " + line);
+            throw new ImapException("Server message: [" + line + "]");
         }
     }
 
@@ -227,11 +213,9 @@ public class DefaultImapService implements ImapService {
     protected void writeCommand(String... command) throws IOException, ImapException {
         autoConnect();
         StringBuilder sb = new StringBuilder();
-
         sb.append("a");
         sb.append(mTagIndex++);
         mCurrentTag = sb.toString();
-
         for (String c : command) {
             if (c == null || c.length() == 0)
                 continue;
@@ -239,7 +223,6 @@ public class DefaultImapService implements ImapService {
             sb.append(c);
         }
         String s = sb.toString();
-
         ioWriteln(s);
         updateLastTimeRequested();
     }
@@ -254,7 +237,7 @@ public class DefaultImapService implements ImapService {
      */
     private synchronized boolean simpleCommand(String... command) throws IOException, ImapException {
         writeCommand(command);
-        String response = null;
+        String response;
         while (true) {
             response = ioReadLine();
             if (isTagged(response)) {
@@ -274,15 +257,15 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public ImapFolder getRootFolder(String path) {
-        return new ImapFolder(path, path, getPathSeparator(path));
+        return new ImapFolder(path, path, getPathSeparator());
     }
 
     public void setAutoconnect(boolean autoconnect) {
-        this.mAutoconnect = autoconnect;
+        mAutoConnect = autoconnect;
     }
 
     public boolean isAutoconnect() {
-        return mAutoconnect;
+        return mAutoConnect;
     }
 
     @Override
@@ -304,15 +287,13 @@ public class DefaultImapService implements ImapService {
             ImapException {
         String p = "";
         if (parentPath != null && parentPath.length() > 0) {
-            p = parentPath + getPathSeparator(parentPath);
+            p = parentPath + getPathSeparator();
         }
-
         if (recursive) {
             p += "*";
         } else {
             p += "%";
         }
-
         writeCommand("LIST", "\"\"", "\"" + p + "\"");
         List<String> li = readToEndOfResponse();
         List<ImapFolder> folders = new ArrayList<>();
@@ -344,11 +325,7 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public synchronized boolean delete(String folderName) throws IOException, ImapException {
-        try {
-            return simpleCommand("DELETE", folderName);
-        } catch (Exception e) {
-            return false;
-        }
+        return simpleCommand("DELETE", folderName);
     }
 
     @Override
@@ -368,44 +345,43 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public synchronized List<String> getCapabilities() throws ImapException, IOException {
-        if (mCapabilities != null)
+        if (mCapabilities != null) {
             return mCapabilities;
-
+        }
         writeCommand("CAPABILITY");
-
         mCapabilities = new ArrayList<>();
-
         String resp;
-
         while (true) {
             resp = ioReadLine();
             if (resp.startsWith("* CAPABILITY")) {
                 break;
-            } else if (isUntagged(resp)) {
-            } else {
+            } else if (!isUntagged(resp)) {
                 throw new ImapException("CAPABILITY error : " + resp);
             }
         }
-
         StringTokenizer stk = new StringTokenizer(resp);
         stk.nextToken(); // *
         stk.nextToken(); // CAPABILITY
-
         while (stk.hasMoreElements()) {
             String e = stk.nextToken();
             mCapabilities.add(e);
         }
-
         checkResponseOk(ioReadLine());
-
         return new ArrayList<>(mCapabilities);
     }
 
     @Override
     public synchronized void unselect() throws IOException, ImapException {
-        checkCapability("UNSELECT");
-        simpleCommand("UNSELECT");
-        mSelectedFolderStatus = null;
+        if (mSelectedFolderStatus == null) {
+            return;
+        }
+        try {
+            checkCapability("UNSELECT");
+            simpleCommand("UNSELECT");
+
+        } finally {
+            mSelectedFolderStatus = null;
+        }
     }
 
     @Override
@@ -429,15 +405,13 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public synchronized ImapFolderStatus getFolderStatus(String folderName,
-            ImapFolderStatus.StatusField... fields) throws IOException {
+            ImapFolderStatus.StatusField... fields) throws IOException, ImapException {
         try {
             // A042 STATUS blurdybloop (UIDNEXT MESSAGES)
             StringBuilder sb = new StringBuilder();
-
             if (fields == null || fields.length == 0) { // all fields
                 fields = ImapFolderStatus.StatusField.values();
             }
-
             sb.append('(');
             for (int i = 0; i < fields.length; i++) {
                 if (i > 0)
@@ -445,13 +419,11 @@ public class DefaultImapService implements ImapService {
                 sb.append(fields[i].toString());
             }
             sb.append(')');
-
             writeCommand("STATUS", folderName, sb.toString());
             // * STATUS "INBOX" (UIDNEXT 17 UIDVALIDITY 229669678)
             String result = ioReadLine();
             if (result.startsWith("* STATUS")) {
                 ioReadLine(); // END OF COMMAND
-
                 ImapFolderStatus fs = new ImapFolderStatus(folderName);
                 int i = result.indexOf('(');
                 int j = result.indexOf(')');
@@ -462,15 +434,11 @@ public class DefaultImapService implements ImapService {
                     int v = Integer.valueOf(data[k + 1]);
                     fs.setFieldValue(sf, v);
                 }
-
                 return fs;
             }
         } catch (IOException ioe) {
             throw ioe;
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
         return null;
     }
 
@@ -539,12 +507,12 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public void setFetchMetadataBody(boolean metadataBody) {
-        this.mMetadataBody = metadataBody;
+        mMetadataBody = metadataBody;
     }
 
     @Override
     public void setFetchMetadataEnvelope(boolean metadataEnvelope) {
-        this.mMetadataEnvelope = metadataEnvelope;
+        mMetadataEnvelope = metadataEnvelope;
     }
 
     @Override
@@ -564,7 +532,7 @@ public class DefaultImapService implements ImapService {
 
     @Override
     public void setUidMode(boolean uidmode) {
-        this.mUidMode = uidmode;
+        mUidMode = uidmode;
     }
 
     @Override
@@ -575,27 +543,24 @@ public class DefaultImapService implements ImapService {
     @Override
     public synchronized void setAuthenticationDetails(String username, String password,
             String mechanism, String token, boolean useSASL) {
-        this.mUsername = username;
-        this.mPassword = password;
-        this.mMechanism = mechanism;
-        this.mToken = token;
-        this.mUseSASL = useSASL;
+        mUsername = username;
+        mPassword = password;
+        mMechanism = mechanism;
+        mToken = token;
+        mUseSasl = useSASL;
     }
 
     @Override
     public synchronized void login() throws IOException, ImapException {
-        if (mUseSASL) {
+        if (mUseSasl) {
             if (mMechanism == null) {
                 mMechanism = AUTH_MECHANISM_PLAIN;
             }
-
             String token = mToken;
-
             if (token == null) {
                 token = "\0" + mUsername + "\0" + mPassword;
                 token = ImapUtil.encodeBase64(token.getBytes());
             }
-
             writeCommand("AUTHENTICATE", mMechanism);
             String l = ioReadLine();
             if (l.startsWith("+")) {
@@ -607,7 +572,6 @@ public class DefaultImapService implements ImapService {
         } else {
             writeCommand("LOGIN", mUsername, mPassword);
         }
-
         String resp = ioReadLine();
         checkResponseNotBad(resp);
         // login executed successfully
@@ -652,9 +616,7 @@ public class DefaultImapService implements ImapService {
                 break;
             }
         }
-
         checkResponseNotBad(ok);
-
         return getUidPlus(ok);
     }
 
@@ -663,11 +625,9 @@ public class DefaultImapService implements ImapService {
         List<ImapMessage> msgLi = fetchMessages("" + uid);
         if (msgLi.size() != 1)
             return null;
-
         // IMAPMessageMetadata metadata = fetchMessageMetadataById(uid);
         // IMAPMessage m = msgLi.get(0);
         // m.setMetadata(metadata);
-
         return msgLi.get(0);
     }
 
@@ -677,7 +637,6 @@ public class DefaultImapService implements ImapService {
         synchronized (mIoService) {
             writeCommand(uidTag() + "FETCH", "" + spec, "BODY.PEEK[]");
             messages = new ArrayList<>();
-
             while (true) {
                 String a = ioReadLine();
                 if (a.startsWith("* ")) {
@@ -696,7 +655,6 @@ public class DefaultImapService implements ImapService {
                     checkResponseOk(a);
                     break;
                 }
-
             }
         }
         return messages;
@@ -705,7 +663,6 @@ public class DefaultImapService implements ImapService {
     @Override
     public synchronized ImapMessageMetadata fetchMessageMetadataById(int id) throws IOException,
             ImapException {
-
         // (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE BODY)
         // ALL (FLAGS INTERNALDATE RFC822.SIZE ENVELOPE)
         // FAST (FLAGS INTERNALDATE RFC822.SIZE)
@@ -717,10 +674,8 @@ public class DefaultImapService implements ImapService {
             macro = "(FLAGS INTERNALDATE RFC822.SIZE BODY)";
         else if (mMetadataEnvelope & mMetadataBody)
             macro = "FULL";
-
         writeCommand(uidTag() + "FETCH", "" + id, macro);
         String line = ioReadLine();
-
         checkResponseNotBad(line);
         ImapMessageMetadata m;
         try {
@@ -729,7 +684,6 @@ public class DefaultImapService implements ImapService {
             throw new ImapException("Cannot parse from server: " + line);
         }
         checkResponseNotBad(ioReadLine());
-
         return m;
     }
 
@@ -745,9 +699,7 @@ public class DefaultImapService implements ImapService {
                 macro = "(FLAGS INTERNALDATE RFC822.SIZE BODY)";
             else if (mMetadataEnvelope & mMetadataBody)
                 macro = "FULL";
-
             writeCommand(uidTag() + "FETCH", spec, macro);
-
             li = new ArrayList<>();
             String a;
             while (true) {
@@ -815,10 +767,8 @@ public class DefaultImapService implements ImapService {
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-
                         }
                     }).start();
-
                 }
             } else {
                 // when finished execute DONE
@@ -831,7 +781,6 @@ public class DefaultImapService implements ImapService {
                 }
                 // readLine();
             }
-
         }
     }
 
@@ -844,15 +793,11 @@ public class DefaultImapService implements ImapService {
         String COMMENT_TYPE = "/private/comment";
         writeCommand("GETMETADATA", fullName, COMMENT_TYPE);
         String r = ioReadLine();
-
         checkResponseNotBad(r);
-
         int i = r.indexOf(COMMENT_TYPE) + COMMENT_TYPE.length();
         i = r.indexOf('"', i) + 1;
         int j = r.lastIndexOf('"');
-
         checkResponseOk(ioReadLine());
-
         return r.substring(i, j);
     }
 

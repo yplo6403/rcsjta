@@ -421,6 +421,10 @@ public class FileTransferLog implements IFileTransferLog {
         values.put(FileTransferData.KEY_DIRECTION, dir.toInt());
         values.put(FileTransferData.KEY_TRANSFERRED, 0);
         values.put(FileTransferData.KEY_FILESIZE, size);
+        /*
+         * File is pushed into the CMS upon sending for originator and upon delivery for terminator.
+         * No need to save file icon information then.
+         */
         values.put(FileTransferData.KEY_FILEICON_EXPIRATION, FileTransferData.UNKNOWN_EXPIRATION);
         values.put(FileTransferData.KEY_STATE, state.toInt());
         values.put(FileTransferData.KEY_REASON_CODE, reason.toInt());
@@ -905,6 +909,9 @@ public class FileTransferLog implements IFileTransferLog {
 
     @Override
     public boolean isGroupFileTransfer(String fileTransferId) {
+        /*
+         * Warning: return true if record does not exist.
+         */
         Cursor cursor = null;
         try {
             Uri contentUri = Uri.withAppendedPath(FileTransferData.CONTENT_URI, fileTransferId);
@@ -915,6 +922,7 @@ public class FileTransferLog implements IFileTransferLog {
              * For a one-to-one file transfer, value of chatID is equal to the value of contact
              */
             return !cursor.moveToNext();
+
         } finally {
             CursorUtil.close(cursor);
         }

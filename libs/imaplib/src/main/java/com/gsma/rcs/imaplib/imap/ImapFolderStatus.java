@@ -23,16 +23,12 @@ import java.util.Set;
 public class ImapFolderStatus {
 
     private String mFolderName;
-
     private Set<String> mFlags = null;
     private Set<String> mPermanentFlags = null;
-
     private int mExists;
     private int mRecent;
-
     private int mUidValidity;
     private int mUnseen;
-
     private int mNextUid;
 
     public ImapFolderStatus(String name) {
@@ -58,7 +54,7 @@ public class ImapFolderStatus {
                 int j = spec.indexOf(')');
                 if (i < j) {
                     String[] fls = spec.substring(i + 1, j).split(" ");
-                    mFlags = new HashSet<String>();
+                    mFlags = new HashSet<>();
                     for (String f : fls) {
                         mFlags.add(f.substring(1));
                     }
@@ -80,12 +76,11 @@ public class ImapFolderStatus {
 
                 if (0 <= i && i < j) {
                     String[] fls = spec.substring(i + 1, j).split(" ");
-                    mPermanentFlags = new HashSet<String>();
+                    mPermanentFlags = new HashSet<>();
                     for (String f : fls) {
                         mPermanentFlags.add(f.substring(1));
                     }
                 }
-
             } else if (spec.startsWith("OK [UIDNEXT")) {
                 mNextUid = Integer.parseInt(spec.substring(12, spec.indexOf(']')));
             }
@@ -121,29 +116,28 @@ public class ImapFolderStatus {
     }
 
     public void setExists(int exists) {
-        this.mExists = exists;
+        mExists = exists;
     }
 
     public void setNextUid(int nextUid) {
-        this.mNextUid = nextUid;
+        mNextUid = nextUid;
     }
 
     public void setRecent(int recent) {
-        this.mRecent = recent;
+        mRecent = recent;
     }
 
     public void setUnseen(int unseen) {
-        this.mUnseen = unseen;
+        mUnseen = unseen;
     }
 
     public void setUidValidity(int uidValidity) {
-        this.mUidValidity = uidValidity;
+        mUidValidity = uidValidity;
     }
 
     @Override
     public String toString() {
-        String s = "FOLDERSTATUS[";
-        s += "exists=" + mExists;
+        String s = mFolderName + " STATUS[exists=" + mExists;
         s += ", recent=" + mRecent;
         s += ", unseen=" + mUnseen;
         s += ", UIDvalidity=" + mUidValidity;

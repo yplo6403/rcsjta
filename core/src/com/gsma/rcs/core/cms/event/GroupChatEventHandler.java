@@ -26,12 +26,12 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatError;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.GroupChatSessionListener;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.DeleteStatus;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -66,9 +66,9 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
         if (sLogger.isActivated()) {
             sLogger.debug("onCreateGroupChat: " + conversationId + "/" + contributionId);
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(conversationId,
-                contributionId), ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED,
-                PushStatus.PUSHED, MessageType.CPM_SESSION, contributionId, null));
+        String folder = CmsUtils.groupChatToCmsFolder(conversationId, contributionId);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.CPM_SESSION, folder, conversationId,
+                PushStatus.PUSHED, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, contributionId));
     }
 
     @Override
@@ -98,9 +98,10 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
             sLogger.debug("onMessageReceived: ".concat(msg.toString()));
         }
         String chatId = mMessagingLog.getMessageChatId(msg.getMessageId());
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
-                ReadStatus.UNREAD, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.CHAT_MESSAGE, msg.getMessageId(), null));
+        String folder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.CHAT_MESSAGE, folder,
+                msg.getMessageId(), PushStatus.PUSHED, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED,
+                chatId));
     }
 
     @Override
@@ -109,9 +110,9 @@ public class GroupChatEventHandler extends ChatEventHandler implements GroupChat
             sLogger.debug("onMessageSent: ".concat(msgId));
         }
         String chatId = mMessagingLog.getMessageChatId(msgId);
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.CHAT_MESSAGE, msgId, null));
+        String folder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.CHAT_MESSAGE, folder, msgId,
+                PushStatus.PUSHED, ReadStatus.READ, DeleteStatus.NOT_DELETED, chatId));
     }
 
     @Override

@@ -24,8 +24,9 @@ import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatSession;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -160,8 +161,8 @@ public class GroupChatMessageDeleteTask extends DeleteTask.GroupedByChatId {
             mCmsSessionCtrl.getGroupChatEventHandler().onDeleteGroupChatMessages(chatId, msgIds);
         } else {
             for (String delId : msgIds) {
-                mCmsLog.updateRcsDeleteStatus(CmsObject.MessageType.CHAT_MESSAGE, delId,
-                        CmsObject.DeleteStatus.DELETED, null);
+                mCmsLog.updateRcsDeleteStatus(MessageType.CHAT_MESSAGE, delId,
+                        DeleteStatus.DELETED, null);
             }
         }
     }

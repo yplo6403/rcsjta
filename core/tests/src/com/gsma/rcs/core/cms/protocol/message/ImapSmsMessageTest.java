@@ -79,6 +79,7 @@ public class ImapSmsMessageTest extends AndroidTestCase {
         imapMessage.setFolderPath(folderName);
 
         ImapSmsMessage imapSmsMessage = new ImapSmsMessage(imapMessage, mRemote);
+        imapSmsMessage.parseBody();
         Assert.assertEquals(folderName, imapSmsMessage.getFolder());
         Assert.assertEquals(uid, imapSmsMessage.getUid());
         Assert.assertTrue(imapSmsMessage.isSeen());

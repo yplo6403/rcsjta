@@ -22,11 +22,13 @@ package com.gsma.rcs.core.cms.protocol.message;
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
+import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
+import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.text.TextUtils;
@@ -46,30 +48,14 @@ public class ImapImdnMessage extends ImapCpimMessage {
      * @param rawMessage the IMAP raw message
      * @param remote the remote contact or null if group chat
      * @throws CmsSyncMissingHeaderException
-     * @throws CmsSyncHeaderFormatException
-     * @throws CmsSyncImdnFormatException
      */
     public ImapImdnMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
-            CmsSyncImdnFormatException, CmsSyncXmlFormatException {
+            throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
         mImdnId = getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (mImdnId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
-        }
-        String cpim = getBodyPart().getPayload();
-        if (TextUtils.isEmpty(cpim)) {
-            /* CPIM messages are always instantiated with the body */
-            throw new CmsSyncXmlFormatException("IMDN message has not body content! (ftId="
-                    + mImdnId + ")");
-        }
-        // The payload is peeked
-        try {
-            mImdnDocument = ChatUtils.parseCpimDeliveryReport(cpim);
-
-        } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
-            throw new CmsSyncImdnFormatException(e);
         }
     }
 
@@ -79,6 +65,38 @@ public class ImapImdnMessage extends ImapCpimMessage {
 
     public String getImdnId() {
         return mImdnId;
+    }
+
+    @Override
+    public void parseBody() throws CmsSyncXmlFormatException, CmsSyncHeaderFormatException {
+        String content = mRawMessage.getBody().getContent();
+        if (TextUtils.isEmpty(content)) {
+            throw new CmsSyncXmlFormatException("IMDN message has not body content! (ID=" + mImdnId
+                    + ")");
+        }
+        CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
+        cpimMessage.parsePayload(content);
+        setBodyPart(cpimMessage);
+        if (mRemote == null) {
+            // Group chat
+            String fromHeader = cpimMessage.getHeader(Constants.HEADER_FROM);
+            if (fromHeader == null) {
+                throw new CmsSyncXmlFormatException("From CPIM header is missing");
+            }
+            ContactUtil.PhoneNumber phoneNumber = ContactUtil
+                    .getValidPhoneNumberFromUri(fromHeader);
+            if (phoneNumber == null) {
+                throw new CmsSyncXmlFormatException("From CPIM header do not contain tel URI");
+            }
+            mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
+        }
+        // The payload is peeked
+        try {
+            mImdnDocument = ChatUtils.parseCpimDeliveryReport(content);
+
+        } catch (SAXException | ParserConfigurationException | ParseFailureException e) {
+            throw new CmsSyncXmlFormatException("Cannot parse IMDN for message ID=" + mImdnId);
+        }
     }
 
 }

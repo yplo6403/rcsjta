@@ -22,11 +22,12 @@ package com.gsma.rcs.core.cms.event;
 import com.gsma.rcs.core.cms.sync.scheduler.CmsSyncScheduler;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.contact.ContactId;
@@ -59,8 +60,8 @@ public class MmsSessionHandler implements MmsSessionListener {
         String folder = CmsUtils.contactToCmsFolder(contact);
         PushStatus pushStatus = mSettings.shouldPushSms() ? PushStatus.PUSH_REQUESTED
                 : PushStatus.PUSHED;
-        mCmsLog.addMessage(new CmsObject(folder, ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, pushStatus, MessageType.MMS, mmsId, null));
+        mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, mmsId, pushStatus,
+                ReadStatus.READ, DeleteStatus.NOT_DELETED, null));
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(contact);
         }

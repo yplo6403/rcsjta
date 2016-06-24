@@ -20,7 +20,6 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.utils.DateUtils;
@@ -61,7 +60,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
 
     @SmallTest
     public void testOneToOneImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException,
+            CmsSyncHeaderFormatException, RcsPermissionDeniedException,
             CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String from = "+33642575779";
@@ -79,6 +78,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         imapMessage.setFolderPath(folderName);
 
         ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
+        imapImdnMessage.parseBody();
         Assert.assertEquals(folderName, imapImdnMessage.getFolder());
         Assert.assertEquals(uid, imapImdnMessage.getUid());
         Assert.assertTrue(imapImdnMessage.isSeen());
@@ -112,13 +112,14 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         part.fromPayload(getPayload(true, from, to, direction, messageId,
                 ImdnDocument.DeliveryStatus.DISPLAYED));
         imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
+        imapImdnMessage.parseBody();
         Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }
 
     @SmallTest
     public void testGroupChatImdn() throws CmsSyncMissingHeaderException,
-            CmsSyncHeaderFormatException, CmsSyncImdnFormatException, RcsPermissionDeniedException,
+            CmsSyncHeaderFormatException, RcsPermissionDeniedException,
             CmsSyncXmlFormatException {
         String folderName = "myFolder";
         String from = "+33642575779";
@@ -136,6 +137,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         imapMessage.setFolderPath(folderName);
 
         ImapImdnMessage imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
+        imapImdnMessage.parseBody();
         Assert.assertEquals(folderName, imapImdnMessage.getFolder());
         Assert.assertEquals(uid, imapImdnMessage.getUid());
         Assert.assertTrue(imapImdnMessage.isSeen());
@@ -169,6 +171,7 @@ public class ImapImdnMessageTest extends AndroidTestCase {
         part.fromPayload(getPayload(false, from, to, direction, messageId,
                 ImdnDocument.DeliveryStatus.DISPLAYED));
         imapImdnMessage = new ImapImdnMessage(imapMessage, remote);
+        imapImdnMessage.parseBody();
         Assert.assertEquals(ImdnDocument.DeliveryStatus.DISPLAYED, imapImdnMessage
                 .getImdnDocument().getStatus());
     }

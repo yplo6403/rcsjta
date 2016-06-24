@@ -29,8 +29,14 @@ import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.messaging.OneToOneFileTransferDeleteTask;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -92,24 +98,18 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
         mFt1 = new FileUtilsTest.FileTransferHolder(mContact1, "ft1", timestamp++, timestamp++,
                 RcsService.Direction.OUTGOING, FileTransfer.State.TRANSFERRED,
                 FileTransfer.ReasonCode.UNSPECIFIED, mUriCat1, 1L, mUriCat2);
-        mCmsObjectFt1 = new CmsObject(mFolder1, 1, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.FILE_TRANSFER, mFt1.mFtId, null);
-
+        mCmsObjectFt1 = new CmsRcsObject(MessageType.FILE_TRANSFER, mFolder1, mFt1.mFtId, 1,
+                PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null);
         mFt2 = new FileUtilsTest.FileTransferHolder(mContact1, "ft2", timestamp++, timestamp++,
                 RcsService.Direction.OUTGOING, FileTransfer.State.TRANSFERRED,
                 FileTransfer.ReasonCode.UNSPECIFIED, mUriCat3, 1L, null);
-        mCmsObjectFt2 = new CmsObject(mFolder1, 2, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.FILE_TRANSFER, mFt2.mFtId, null);
-
+        mCmsObjectFt2 = new CmsRcsObject(MessageType.FILE_TRANSFER, mFolder1, mFt2.mFtId, 2,
+                PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null);
         mFt3 = new FileUtilsTest.FileTransferHolder(mContact2, "ft3", timestamp++, timestamp,
                 RcsService.Direction.OUTGOING, FileTransfer.State.TRANSFERRED,
                 FileTransfer.ReasonCode.UNSPECIFIED, mUriCat4, 1L, null);
-        mCmsObjectFt3 = new CmsObject(mFolder2, 2, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                CmsObject.DeleteStatus.NOT_DELETED, CmsObject.PushStatus.PUSHED,
-                CmsObject.MessageType.FILE_TRANSFER, mFt3.mFtId, null);
-
+        mCmsObjectFt3 = new CmsRcsObject(MessageType.FILE_TRANSFER, mFolder2, mFt3.mFtId, 2,
+                PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null);
         mCmsLog = CmsLog.getInstance(mCtx);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
         mCmsSessionCtrl = new CmsSessionController(mCtx, null, null, settings,
@@ -152,13 +152,21 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
                 holder.mFileIcon != null ? holder.mFileExpiration : 0L);
     }
 
+    private void addMessageToCmsLog(CmsObject cmsObject) {
+        if (CmsObject.isXmsData(cmsObject.getMessageType())) {
+            mCmsLog.addXmsMessage((CmsXmsObject) cmsObject);
+        } else {
+            mCmsLog.addRcsMessage((CmsRcsObject) cmsObject);
+        }
+    }
+
     public void testOneToOneFileTransferDeleteTaskSpecific_action() {
         createFileTransfer(mFt1);
         assertTrue(doesFileExist(mFt1.mFile));
         assertTrue(doesFileExist(mFt1.mFileIcon));
         assertTrue(mMessagingLog.isFileTransfer(mFt1.mFtId));
-        mCmsLog.addMessage(mCmsObjectFt1);
-        CmsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
+        addMessageToCmsLog(mCmsObjectFt1);
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
                 .getMessageId());
         assertEquals(mCmsObjectFt1, cmsObjectFromDb);
 
@@ -169,8 +177,7 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
 
         assertFalse(mMessagingLog.isFileTransfer(mFt1.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt1.mFile));
         assertFalse(doesFileExist(mFt1.mFileIcon));
     }
@@ -180,8 +187,8 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
         assertTrue(doesFileExist(mFt1.mFile));
         assertTrue(doesFileExist(mFt1.mFileIcon));
         assertTrue(mMessagingLog.isFileTransfer(mFt1.mFtId));
-        mCmsLog.addMessage(mCmsObjectFt1);
-        CmsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
+        addMessageToCmsLog(mCmsObjectFt1);
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
                 .getMessageId());
         assertEquals(mCmsObjectFt1, cmsObjectFromDb);
 
@@ -192,7 +199,7 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
 
         assertFalse(mMessagingLog.isFileTransfer(mFt1.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt1.mFile));
         assertFalse(doesFileExist(mFt1.mFileIcon));
     }
@@ -200,15 +207,15 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
     public void testOneToOneChatMessageDeleteTaskConversation() {
         createFileTransfer(mFt1);
         assertTrue(mMessagingLog.isFileTransfer(mFt1.mFtId));
-        mCmsLog.addMessage(mCmsObjectFt1);
-        CmsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
+        addMessageToCmsLog(mCmsObjectFt1);
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
                 .getMessageId());
         assertEquals(mCmsObjectFt1, cmsObjectFromDb);
 
         createFileTransfer(mFt2);
         assertTrue(mMessagingLog.isFileTransfer(mFt2.mFtId));
         assertTrue(doesFileExist(mFt2.mFile));
-        mCmsLog.addMessage(mCmsObjectFt2);
+        addMessageToCmsLog(mCmsObjectFt2);
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt2.getMessageId());
         assertEquals(mCmsObjectFt2, cmsObjectFromDb);
 
@@ -219,37 +226,35 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
 
         assertFalse(mMessagingLog.isFileTransfer(mFt1.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt1.mFile));
         assertFalse(doesFileExist(mFt1.mFileIcon));
 
         assertFalse(mMessagingLog.isFileTransfer(mFt2.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt2.mFile));
     }
 
     public void testOneToOneChatMessageDeleteTaskAll() {
         createFileTransfer(mFt1);
         assertTrue(mMessagingLog.isFileTransfer(mFt1.mFtId));
-        mCmsLog.addMessage(mCmsObjectFt1);
-        CmsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
+        addMessageToCmsLog(mCmsObjectFt1);
+        CmsRcsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1
                 .getMessageId());
         assertEquals(mCmsObjectFt1, cmsObjectFromDb);
 
         createFileTransfer(mFt2);
         assertTrue(mMessagingLog.isFileTransfer(mFt2.mFtId));
         assertTrue(doesFileExist(mFt2.mFile));
-        mCmsLog.addMessage(mCmsObjectFt2);
+        addMessageToCmsLog(mCmsObjectFt2);
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt2.getMessageId());
         assertEquals(mCmsObjectFt2, cmsObjectFromDb);
 
         createFileTransfer(mFt3);
         assertTrue(mMessagingLog.isFileTransfer(mFt3.mFtId));
         assertTrue(doesFileExist(mFt3.mFile));
-        mCmsLog.addMessage(mCmsObjectFt3);
+        addMessageToCmsLog(mCmsObjectFt3);
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt3.getMessageId());
         assertEquals(mCmsObjectFt3, cmsObjectFromDb);
 
@@ -260,21 +265,18 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
 
         assertFalse(mMessagingLog.isFileTransfer(mFt1.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt1.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt1.mFile));
         assertFalse(doesFileExist(mFt1.mFileIcon));
 
         assertFalse(mMessagingLog.isFileTransfer(mFt2.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt2.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt2.mFile));
 
         assertFalse(mMessagingLog.isFileTransfer(mFt3.mFtId));
         cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(mCmsObjectFt3.getMessageId());
-        assertEquals(CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED,
-                cmsObjectFromDb.getDeleteStatus());
+        assertEquals(DeleteStatus.DELETED_REPORT_REQUESTED, cmsObjectFromDb.getDeleteStatus());
         assertFalse(doesFileExist(mFt3.mFile));
     }
 

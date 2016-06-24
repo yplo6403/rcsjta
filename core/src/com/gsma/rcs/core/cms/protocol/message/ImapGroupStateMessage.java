@@ -21,12 +21,12 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
+import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
+import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
-import com.gsma.rcs.imaplib.imap.Header;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -43,6 +43,8 @@ import javax.xml.parsers.ParserConfigurationException;
 public class ImapGroupStateMessage extends ImapMessage {
 
     private final String mChatId;
+    private final RcsSettings mRcsSettings;
+    private final String mMessageId;
     private String mRejoinId;
     private List<ContactId> mParticipants;
 
@@ -51,43 +53,43 @@ public class ImapGroupStateMessage extends ImapMessage {
      * 
      * @param settings the RCS settings accessor
      * @param rawMessage the IMAP raw message
-     * @throws CmsSyncException
+     * @throws CmsSyncMissingHeaderException
      */
     public ImapGroupStateMessage(RcsSettings settings,
-            com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) throws CmsSyncException {
+            com.gsma.rcs.imaplib.imap.ImapMessage rawMessage) throws CmsSyncMissingHeaderException {
         super(rawMessage);
-        try {
-            mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
-            if (mChatId == null) {
-                throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
-                        + " IMAP header is missing");
-            }
-            String xml = getBodyPart().getPayload();
-            if (!TextUtils.isEmpty(xml)) {
-                // the payload is peeked
-                GroupStateParser parser = new GroupStateParser(new InputSource(
-                        new ByteArrayInputStream(xml.getBytes())));
-                GroupStateDocument document = parser.parse().getGroupStateDocument();
-                mRejoinId = document.getLastfocussessionid();
-                mParticipants = document.getParticipants();
-                mParticipants.remove(settings.getUserProfileImsUserName());
-                if (mParticipants == null || mParticipants.isEmpty()) {
-                    throw new CmsSyncXmlFormatException("Invalid Group State: " + xml);
-                }
-            }
-        } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
-            throw new CmsSyncXmlFormatException(e);
+        mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
+        if (mChatId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
+                    + " IMAP header is missing");
         }
+        mMessageId = getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
+        if (mMessageId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
+                    + " IMAP header is missing");
+        }
+        mRcsSettings = settings;
     }
 
     @Override
-    public void parsePayload(String payload) {
-        String[] parts = payload.split(Constants.CRLFCRLF, 2);
-        if (2 == parts.length) {
-            for (Header header : Header.parseHeaders(parts[0]).values()) {
-                addHeader(header.getKey().toLowerCase(), header.getValue());
+    public void parseBody() throws CmsSyncXmlFormatException {
+        String content = mRawMessage.getBody().getContent();
+        if (TextUtils.isEmpty(content)) {
+            throw new CmsSyncXmlFormatException("Cannot parse Group State: IMAP body is missing!");
+        }
+        setBodyPart(new BodyPart(content));
+        try {
+            GroupStateParser parser = new GroupStateParser(new InputSource(
+                    new ByteArrayInputStream(content.getBytes())));
+            GroupStateDocument document = parser.parse().getGroupStateDocument();
+            mRejoinId = document.getLastfocussessionid();
+            mParticipants = document.getParticipants();
+            mParticipants.remove(mRcsSettings.getUserProfileImsUserName());
+            if (mParticipants == null || mParticipants.isEmpty()) {
+                throw new CmsSyncXmlFormatException("Invalid Group State: " + content);
             }
-            setBodyPart(new BodyPart(parts[1]));
+        } catch (ParserConfigurationException | SAXException | ParseFailureException e) {
+            throw new CmsSyncXmlFormatException(e);
         }
     }
 
@@ -101,6 +103,10 @@ public class ImapGroupStateMessage extends ImapMessage {
 
     public String getChatId() {
         return mChatId;
+    }
+
+    public String getMessageId() {
+        return mMessageId;
     }
 
 }

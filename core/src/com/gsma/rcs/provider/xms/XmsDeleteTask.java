@@ -22,8 +22,8 @@ import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.provider.DeleteTask;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -124,7 +124,7 @@ public class XmsDeleteTask extends DeleteTask.GroupedByContactId {
             mCmsSessionCrtl.onDeleteXmsMessages(contact, deletedIds);
         } else {
             for (String delId : deletedIds) {
-                mCmsLog.updateXmsDeleteStatus(contact, delId, CmsObject.DeleteStatus.DELETED, null);
+                mCmsLog.updateXmsDeleteStatus(contact, delId, DeleteStatus.DELETED, null);
             }
         }
     }

@@ -21,8 +21,8 @@ package com.gsma.rcs.core.cms.event.framework;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
 import com.gsma.services.rcs.contact.ContactId;
 
 import java.util.List;

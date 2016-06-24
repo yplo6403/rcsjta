@@ -20,6 +20,7 @@ package com.gsma.rcs.core.cms.protocol.message;
 
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
@@ -28,7 +29,7 @@ import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
 import com.gsma.rcs.imaplib.imap.Part;
 import com.gsma.rcs.platform.AndroidFactory;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtilMockContext;
 import com.gsma.services.rcs.RcsPermissionDeniedException;
@@ -76,10 +77,11 @@ public class ImapMessageResolverTest extends AndroidTestCase {
 
         ContactUtil contactUtil = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         ContactId remote = contactUtil.formatContact("+33642575779");
-        Assert.assertTrue(imapMessageResolver.resolveMessage(type, imapMessage, remote) instanceof ImapSmsMessage);
+        Assert.assertTrue(imapMessageResolver.resolveMessage(type, imapMessage, remote, false) instanceof ImapSmsMessage);
     }
 
-    public void testMms() throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException {
+    public void testMms() throws CmsSyncMissingHeaderException,
+            CmsSyncMessageNotSupportedException, CmsSyncHeaderFormatException {
         String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
                 + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
                 + "Conversation-ID: 1443517760826" + Constants.CRLF

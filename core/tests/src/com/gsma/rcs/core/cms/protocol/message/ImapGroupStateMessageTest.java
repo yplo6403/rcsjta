@@ -72,6 +72,7 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
 
         ImapGroupStateMessage imapGroupStateMessage = new ImapGroupStateMessage(mSettings,
                 imapMessage);
+        imapGroupStateMessage.parseBody();
         Assert.assertEquals(folderName, imapGroupStateMessage.getFolder());
         Assert.assertEquals(uid, imapGroupStateMessage.getUid());
         Assert.assertTrue(imapGroupStateMessage.isSeen());
@@ -99,15 +100,20 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
         Assert.assertEquals(mContactUtil.formatContact("+16135551212"), contacts.get(2));
     }
 
+    // @formatter:off
     public String getPayload() {
-        return "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                + "Date: " + mImapDate + Constants.CRLF + "Subject: mySubject" + Constants.CRLF
+        return "From: +33642575779" + Constants.CRLF
+                + "To: +33640332859" + Constants.CRLF
+                + "Date: " + mImapDate + Constants.CRLF
+                + "Subject: mySubject" + Constants.CRLF
                 + "Conversation-ID: 1443517760826" + Constants.CRLF
                 + "Contribution-ID: 1443517760826" + Constants.CRLF
-                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: sent"
-                + Constants.CRLF + "Content-Type: application/group-state-object+xml"
-                + Constants.CRLF + Constants.CRLF + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                + Constants.CRLF + "<groupstate" + Constants.CRLF
+                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF
+                + "Message-Direction: sent" + Constants.CRLF
+                + "Content-Type: application/group-state-object+xml" + Constants.CRLF
+                + Constants.CRLF
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + Constants.CRLF
+                + "<groupstate" + Constants.CRLF
                 + "timestamp=\"2012-06-13T16:39:57-05:00\"" + Constants.CRLF
                 + "lastfocussessionid=\"sip:da9274453@company.com\"" + Constants.CRLF
                 + "group-type=\"Closed\">" + Constants.CRLF
@@ -116,4 +122,5 @@ public class ImapGroupStateMessageTest extends AndroidTestCase {
                 + "<participant name=\"donald\" comm-addr=\"tel:+16135551212\"/>" + Constants.CRLF
                 + "</groupstate>" + Constants.CRLF;
     }
+    // @formatter:on
 }

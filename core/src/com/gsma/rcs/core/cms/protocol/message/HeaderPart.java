@@ -28,9 +28,10 @@ import java.util.Map;
 
 public class HeaderPart {
 
-    class Header {
-        private String mKey;
-        private String mValue;
+    private class Header {
+
+        private final String mKey;
+        private final String mValue;
 
         public Header(String key, String value) {
             mKey = key;
@@ -42,8 +43,8 @@ public class HeaderPart {
         }
     }
 
-    Map<String, Header> mHeadersMap;
-    List<Header> mHeadersList;
+    private final Map<String, Header> mHeadersMap;
+    private final List<Header> mHeadersList;
 
     public HeaderPart() {
         mHeadersMap = new HashMap<>();
@@ -51,17 +52,14 @@ public class HeaderPart {
     }
 
     public void addHeader(String key, String value) {
-        addHeader(new Header(key, value));
-    }
-
-    public void addHeader(Header header) {
+        Header header = new Header(key, value);
         mHeadersList.add(header);
-        mHeadersMap.put(header.mKey, header);
+        mHeadersMap.put(key, header);
     }
 
     public String getHeaderValue(String headerName) {
         Header header = mHeadersMap.get(headerName.toLowerCase());
-        return (header == null ? null : header.mValue);
+        return header == null ? null : header.mValue;
     }
 
     @Override

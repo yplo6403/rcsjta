@@ -21,11 +21,12 @@ package com.gsma.rcs.core.cms.event;
 
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.PushStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
-import com.gsma.rcs.provider.cms.CmsObject.PushStatus;
-import com.gsma.rcs.provider.cms.CmsObject.ReadStatus;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -83,9 +84,9 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
             // Do not persist IMDN if chat message is not present
             return;
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.contactToCmsFolder(contact), ReadStatus.READ,
-                CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED, MessageType.IMDN, imdnMsgId,
-                null));
+        String folder = CmsUtils.contactToCmsFolder(contact);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.IMDN, folder, imdnMsgId,
+                PushStatus.PUSHED, ReadStatus.READ, DeleteStatus.NOT_DELETED, null));
     }
 
     private void onGroupDeliveryReport(String chatId, String msgId, String imdnMsgId) {
@@ -93,8 +94,8 @@ public class ImdnDeliveryReportHandler implements ImdnDeliveryReportListener {
             // do not persist IMDN if chat message is not present
             return;
         }
-        mCmsLog.addMessage(new CmsObject(CmsUtils.groupChatToCmsFolder(chatId, chatId),
-                ReadStatus.READ, CmsObject.DeleteStatus.NOT_DELETED, PushStatus.PUSHED,
-                MessageType.IMDN, imdnMsgId, null));
+        String folder = CmsUtils.groupChatToCmsFolder(chatId, chatId);
+        mCmsLog.addRcsMessage(new CmsRcsObject(MessageType.IMDN, folder, imdnMsgId,
+                PushStatus.PUSHED, ReadStatus.READ, DeleteStatus.NOT_DELETED, chatId));
     }
 }

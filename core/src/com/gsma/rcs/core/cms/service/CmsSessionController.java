@@ -41,8 +41,9 @@ import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
-import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.xms.UpdateMmsStateAfterUngracefulTerminationTask;
@@ -80,8 +81,7 @@ import javax2.sip.message.Response;
 public class CmsSessionController extends ImsService {
 
     private static final String CMS_OPERATION_THREAD_NAME = "CmsOperations";
-    private final static Logger sLogger = Logger.getLogger(CmsSessionController.class
-            .getSimpleName());
+    private final static Logger sLogger = Logger.getLogger(CmsSessionController.class.getName());
 
     private final Handler mOperationHandler;
     private final XmsLog mXmsLog;
@@ -468,7 +468,7 @@ public class CmsSessionController extends ImsService {
     public void onDeleteXmsMessages(ContactId contact, Set<String> deletedIds) {
         for (String messageId : deletedIds) {
             mCmsLog.updateXmsDeleteStatus(contact, messageId,
-                    CmsObject.DeleteStatus.DELETED_REPORT_REQUESTED, null);
+                    DeleteStatus.DELETED_REPORT_REQUESTED, null);
         }
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForXms(contact);
@@ -476,8 +476,7 @@ public class CmsSessionController extends ImsService {
     }
 
     public void onReadXmsMessage(ContactId contact, String messageId) {
-        mCmsLog.updateXmsReadStatus(contact, messageId, CmsObject.ReadStatus.READ_REPORT_REQUESTED,
-                null);
+        mCmsLog.updateXmsReadStatus(contact, messageId, ReadStatus.READ_REPORT_REQUESTED, null);
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForXms(contact);
         }

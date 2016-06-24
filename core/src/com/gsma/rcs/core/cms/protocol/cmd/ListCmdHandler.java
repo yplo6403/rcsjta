@@ -32,7 +32,12 @@ public class ListCmdHandler extends CmdHandler {
 
     private static final String sPattern = "^LIST \\(.*\\) \"/\" (.*)$";
 
-    private final List<String> mFolders = new ArrayList<>();
+    private final List<String> mFolders;
+
+    public ListCmdHandler() {
+        super();
+        mFolders = new ArrayList<>();
+    }
 
     @Override
     public String buildCommand(Object... params) {

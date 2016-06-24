@@ -19,13 +19,11 @@
 
 package com.gsma.rcs.core.cms.event;
 
-import static com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession.isFileCapacityAcceptable;
-
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncBadStateException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncImdnFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.IImapMessage;
@@ -42,13 +40,15 @@ import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
-import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingError;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
+import com.gsma.rcs.provider.cms.CmsData.MessageType;
+import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
-import com.gsma.rcs.provider.cms.CmsObject.MessageType;
+import com.gsma.rcs.provider.cms.CmsRcsObject;
+import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.GroupChatDeleteTask;
 import com.gsma.rcs.provider.messaging.GroupChatMessageDeleteTask;
 import com.gsma.rcs.provider.messaging.GroupChatPersistedStorageAccessor;
@@ -135,21 +135,21 @@ public class CmsEventHandler implements CmsEventListener {
         switch (cmsObject.getMessageType()) {
             case SMS:
             case MMS:
-                onEventReadXmsMessage(cmsObject);
+                onEventReadXmsMessage((CmsXmsObject) cmsObject);
                 break;
             case CHAT_MESSAGE:
-                onEventReadChatMessage(cmsObject);
+                onEventReadChatMessage((CmsRcsObject) cmsObject);
                 break;
             case FILE_TRANSFER:
-                onEventReadFileTransfer(cmsObject);
+                onEventReadFileTransfer((CmsRcsObject) cmsObject);
                 break;
         }
     }
 
-    private void onEventReadXmsMessage(CmsObject imapData) {
+    private void onEventReadXmsMessage(CmsXmsObject imapData) {
         String msgId = imapData.getMessageId();
         ContactId contact = CmsUtils.cmsFolderToContact(imapData.getFolder());
-        mCmsLog.updateXmsReadStatus(contact, msgId, CmsObject.ReadStatus.READ, imapData.getUid());
+        mCmsLog.updateXmsReadStatus(contact, msgId, ReadStatus.READ, imapData.getUid());
         // There is not timestamp displayed for XMS
         if (mXmsLog.markMessageAsRead(contact, msgId)) {
             mCmsService.broadcastMessageRead(contact, msgId);
@@ -165,10 +165,10 @@ public class CmsEventHandler implements CmsEventListener {
         }
     }
 
-    private void onEventReadChatMessage(CmsObject imapData) {
+    private void onEventReadChatMessage(CmsRcsObject imapData) {
         String msgId = imapData.getMessageId();
         ContactId contact = CmsUtils.cmsFolderToContact(imapData.getFolder());
-        mCmsLog.updateRcsReadStatus(MessageType.CHAT_MESSAGE, msgId, CmsObject.ReadStatus.READ,
+        mCmsLog.updateRcsReadStatus(MessageType.CHAT_MESSAGE, msgId, ReadStatus.READ,
                 imapData.getUid());
         if (mMessagingLog.markMessageAsRead(msgId, NtpTrustedTime.currentTimeMillis())) {
             mChatService.broadcastMessageRead(msgId);
@@ -184,9 +184,9 @@ public class CmsEventHandler implements CmsEventListener {
         }
     }
 
-    private void onEventReadFileTransfer(CmsObject imapData) {
+    private void onEventReadFileTransfer(CmsRcsObject imapData) {
         String msgId = imapData.getMessageId();
-        mCmsLog.updateRcsReadStatus(MessageType.FILE_TRANSFER, msgId, CmsObject.ReadStatus.READ,
+        mCmsLog.updateRcsReadStatus(MessageType.FILE_TRANSFER, msgId, ReadStatus.READ,
                 imapData.getUid());
         if (mMessagingLog.markFileTransferAsRead(msgId, NtpTrustedTime.currentTimeMillis())) {
             mFileTransferService.broadcastFileTransferRead(msgId);
@@ -205,24 +205,24 @@ public class CmsEventHandler implements CmsEventListener {
         switch (cmsObject.getMessageType()) {
             case SMS:
             case MMS:
-                onEventDeleteXmsMessage(cmsObject);
+                onEventDeleteXmsMessage((CmsXmsObject) cmsObject);
                 break;
 
             case CHAT_MESSAGE:
-                onEventDeleteChatMessage(cmsObject);
+                onEventDeleteChatMessage((CmsRcsObject) cmsObject);
                 break;
 
             case CPM_SESSION:
-                onEventDeleteGroupChat(cmsObject);
+                onEventDeleteGroupChat((CmsRcsObject) cmsObject);
                 break;
 
             case FILE_TRANSFER:
-                onEventDeleteFileTransfer(cmsObject);
+                onEventDeleteFileTransfer((CmsRcsObject) cmsObject);
                 break;
         }
     }
 
-    private void onEventDeleteXmsMessage(CmsObject imapData) {
+    private void onEventDeleteXmsMessage(CmsXmsObject imapData) {
         if (sLogger.isActivated()) {
             sLogger.debug("onEventDeleteXmsMessage " + imapData);
         }
@@ -234,7 +234,7 @@ public class CmsEventHandler implements CmsEventListener {
         task.run();
     }
 
-    private void onEventDeleteChatMessage(CmsObject imapData) {
+    private void onEventDeleteChatMessage(CmsRcsObject imapData) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteChatMessage " + imapData);
         }
@@ -252,17 +252,16 @@ public class CmsEventHandler implements CmsEventListener {
         }
     }
 
-    private void onEventDeleteGroupChat(CmsObject imapData) {
+    private void onEventDeleteGroupChat(CmsRcsObject imapData) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteGroupChat " + imapData);
         }
-        String chatId = imapData.getMessageId();
         GroupChatDeleteTask task = new GroupChatDeleteTask(mChatService, mImService,
-                mLocalContentResolver, chatId, mCmsLog);
+                mLocalContentResolver, imapData.getChatId(), mCmsLog);
         task.run();
     }
 
-    private void onEventDeleteFileTransfer(CmsObject imapData) {
+    private void onEventDeleteFileTransfer(CmsRcsObject imapData) {
         if (sLogger.isActivated()) {
             sLogger.debug("onDeleteFileTransfer " + imapData);
         }
@@ -281,19 +280,23 @@ public class CmsEventHandler implements CmsEventListener {
     }
 
     @Override
-    public String onRemoteNewMessage(MessageType messageType, IImapMessage message, ContactId remote)
-            throws CmsSyncException, FileAccessException {
+    public String[] onRemoteNewMessage(MessageType messageType, IImapMessage message,
+            ContactId remote) throws CmsSyncException, FileAccessException {
         if (sLogger.isActivated()) {
             sLogger.debug("onRemoteNewMessage : " + messageType + " uid=" + message.getUid()
                     + " folder=" + message.getFolder());
         }
         switch (messageType) {
             case SMS:
-                return onNewSmsMessage((ImapSmsMessage) message);
-
+                String smsMsgId = onNewSmsMessage((ImapSmsMessage) message);
+                return new String[] {
+                    smsMsgId
+                };
             case MMS:
-                return onNewMmsMessage((ImapMmsMessage) message);
-
+                String mmsMsgId = onNewMmsMessage((ImapMmsMessage) message);
+                return new String[] {
+                    mmsMsgId
+                };
             case CHAT_MESSAGE:
                 return onNewChatMessage((ImapChatMessage) message, remote);
 
@@ -346,7 +349,8 @@ public class CmsEventHandler implements CmsEventListener {
         return messageId;
     }
 
-    private String onNewChatMessage(ImapChatMessage imapChatMessage, ContactId remote) {
+    private String[] onNewChatMessage(ImapChatMessage imapChatMessage, ContactId remote)
+            throws CmsSyncBadStateException {
         boolean singleChat = remote != null;
         if (!singleChat) {
             // this is a GC
@@ -356,12 +360,12 @@ public class CmsEventHandler implements CmsEventListener {
         Direction direction = imapChatMessage.getDirection();
         boolean isSeen = imapChatMessage.isSeen();
         String msgId = chatMessage.getMessageId();
+        String chatId = imapChatMessage.getChatId();
         if (!mMessagingLog.isMessagePersisted(msgId)) {
             if (singleChat) {
                 onNewOneToOneChatMessage(chatMessage, null, direction, isSeen);
             } else {
-                onNewGroupChatMessage(chatMessage, null, imapChatMessage.getChatId(), direction,
-                        isSeen);
+                onNewGroupChatMessage(chatMessage, null, chatId, direction, isSeen);
             }
         }
         if (direction == Direction.INCOMING) {
@@ -371,7 +375,14 @@ public class CmsEventHandler implements CmsEventListener {
                 mChatService.broadcastNewChatMessage(chatMessage);
             }
         }
-        return chatMessage.getMessageId();
+        if (singleChat) {
+            return new String[] {
+                msgId
+            };
+        }
+        return new String[] {
+                msgId, chatId
+        };
     }
 
     private String onNewOneToOneChatMessage(ChatMessage chatMessage, String remoteSipInstance,
@@ -386,8 +397,12 @@ public class CmsEventHandler implements CmsEventListener {
     }
 
     private String onNewGroupChatMessage(ChatMessage chatMessage, String sipInstance,
-            String chatId, Direction direction, boolean isSeen) {
+            String chatId, Direction direction, boolean isSeen) throws CmsSyncBadStateException {
         if (direction == Direction.OUTGOING) {
+            if (!mMessagingLog.isGroupChatPersisted(chatId)) {
+                throw new CmsSyncBadStateException("Group chat message " + chatMessage
+                        + " discarded: not group chat!");
+            }
             GroupChatPersistedStorageAccessor accessor = new GroupChatPersistedStorageAccessor(
                     chatId, mMessagingLog, mSettings);
             mMessagingLog.addOutgoingGroupChatMessage(chatId, chatMessage, accessor
@@ -398,124 +413,170 @@ public class CmsEventHandler implements CmsEventListener {
         return chatMessage.getMessageId();
     }
 
-    private String onNewImdnMessage(ImapImdnMessage imapImdnMessage, ContactId remote)
-            throws CmsSyncImdnFormatException {
+    private String[] onNewImdnMessage(ImapImdnMessage imapImdnMessage, ContactId remote)
+            throws CmsSyncMissingHeaderException {
         String messageId = imapImdnMessage.getImdnDocument().getMsgId();
+        boolean single = remote != null;
         if (mMessagingLog.isMessagePersisted(messageId)) {
-            return onNewChatImdn(imapImdnMessage, remote);
+            String msgId = onNewChatImdn(imapImdnMessage, remote);
+            if (single) {
+                return new String[] {
+                    msgId
+                };
+            } else {
+                String chatId = mMessagingLog.getMessageChatId(messageId);
+                return new String[] {
+                        msgId, chatId
+                };
+            }
         }
         if (mMessagingLog.isFileTransfer(messageId)) {
-            return onNewFileTransferImdn(imapImdnMessage, remote);
+            String ftId = onNewFileTransferImdn(imapImdnMessage, remote);
+            if (single) {
+                return new String[] {
+                    ftId
+                };
+            } else {
+                String chatId = mMessagingLog.getFileTransferChatId(ftId);
+                return new String[] {
+                        ftId, chatId
+                };
+            }
         }
         if (sLogger.isActivated()) {
-            sLogger.debug("No message (chat or file transfer) found for IMDN with id : "
-                    + messageId);
+            sLogger.debug("No message (chat or file transfer) found for IMDN with id: " + messageId);
         }
-        return imapImdnMessage.getImdnId();
+        return new String[] {
+            imapImdnMessage.getImdnId()
+        };
     }
 
-    private String onNewChatImdn(ImapImdnMessage imapImdnMessage, ContactId remote)
-            throws CmsSyncImdnFormatException {
+    private String onNewChatImdn(ImapImdnMessage imapImdnMessage, ContactId remote) {
         boolean logActivated = sLogger.isActivated();
         String imdnId = imapImdnMessage.getImdnId();
         if (logActivated) {
-            sLogger.debug("onNewChatImdnMessage : " + imdnId);
+            sLogger.debug("onNewChatImdn: " + imdnId);
         }
-        if (Direction.OUTGOING == imapImdnMessage.getDirection()) {
-            return imdnId;
-        }
-        boolean singleChat = remote != null;
         ImdnDocument imdn = imapImdnMessage.getImdnDocument();
-        if (singleChat) {
-            mChatService.onOneToOneMessageDeliveryStatusReceived(remote, imdn);
+        if (Direction.OUTGOING == imapImdnMessage.getDirection()) {
+            switch (imdn.getStatus()) {
+                case DELIVERED:
+                    break;
+
+                case DISPLAYED:
+                    mMessagingLog.markMessageAsRead(imdn.getMsgId(), imdn.getDateTime());
+                    break;
+
+                default:
+                    /*
+                     * This should never occur because only delivered or displayed notifications are
+                     * stored on CMS. Message is stored on CMS only once delivered.
+                     */
+                    if (logActivated) {
+                        sLogger.warn("onNewChatImdnMessage : failed to process IMDN");
+                    }
+            }
         } else {
-            // this is a GC: get remote from CPIM
-            remote = imapImdnMessage.getContact();
-            String chatId = mMessagingLog.getMessageChatId(imdn.getMsgId());
-            if (chatId != null) {
-                mChatService.getOrCreateGroupChat(chatId).onMessageDeliveryStatusReceived(remote,
-                        imdn, imdnId);
+            boolean singleChat = remote != null;
+            if (singleChat) {
+                mChatService.onOneToOneMessageDeliveryStatusReceived(remote, imdn);
+            } else {
+                // this is a GC: get remote from CPIM
+                remote = imapImdnMessage.getContact();
+                String chatId = mMessagingLog.getMessageChatId(imdn.getMsgId());
+                if (chatId != null) {
+                    mChatService.getOrCreateGroupChat(chatId).onMessageDeliveryStatusReceived(
+                            remote, imdn, imdnId);
+                }
             }
         }
         return imdnId;
     }
 
-    private String onNewFileTransferImdn(ImapImdnMessage imapImdnMessage, ContactId remote)
-            throws CmsSyncImdnFormatException {
+    private String onNewFileTransferImdn(ImapImdnMessage imapImdnMessage, ContactId remote) {
+        boolean logActivated = sLogger.isActivated();
         String imdnId = imapImdnMessage.getImdnId();
-        if (sLogger.isActivated()) {
-            sLogger.debug("onNewFileTransferImdnMessage : " + imdnId);
+        if (logActivated) {
+            sLogger.debug("onNewFileTransferImdn: " + imdnId);
         }
-        if (Direction.OUTGOING == imapImdnMessage.getDirection()) {
-            return imdnId;
-        }
-        boolean singleChat = remote != null;
         ImdnDocument imdnDoc = imapImdnMessage.getImdnDocument();
         String fileTransferId = imdnDoc.getMsgId();
-        if (singleChat) {
-            mFileTransferService.receiveOneToOneFileDeliveryStatus(imdnDoc, remote);
+        if (Direction.OUTGOING == imapImdnMessage.getDirection()) {
+            switch (imdnDoc.getStatus()) {
+                case DELIVERED:
+                    break;
+
+                case DISPLAYED:
+                    mMessagingLog.markFileTransferAsRead(fileTransferId, imdnDoc.getDateTime());
+                    break;
+
+                default:
+                    /*
+                     * This should never occur because only delivered or displayed notifications are
+                     * stored on CMS. Message is stored on CMS only once delivered.
+                     */
+                    if (logActivated) {
+                        sLogger.warn("onNewFileTransferImdn : failed to process IMDN");
+                    }
+            }
         } else {
-            String chatId = mMessagingLog.getFileTransferChatId(fileTransferId);
-            if (chatId != null) {
-                remote = imapImdnMessage.getContact();
-                mFileTransferService.receiveGroupFileDeliveryStatus(chatId, imdnDoc, remote);
+            boolean singleChat = remote != null;
+            if (singleChat) {
+                mFileTransferService.receiveOneToOneFileDeliveryStatus(imdnDoc, remote);
+            } else {
+                String chatId = mMessagingLog.getFileTransferChatId(fileTransferId);
+                if (chatId != null) {
+                    remote = imapImdnMessage.getContact();
+                    mFileTransferService.receiveGroupFileDeliveryStatus(chatId, imdnDoc, remote);
+                }
             }
         }
         return imdnId;
     }
 
-    private String onNewFileTransferMessage(ImapFileTransferMessage imapFileTransferMessage,
-            ContactId remote) throws CmsSyncImdnFormatException {
-        boolean logActivated = sLogger.isActivated();
+    private String[] onNewFileTransferMessage(ImapFileTransferMessage imapFileTransferMessage,
+            ContactId remote) throws CmsSyncBadStateException {
         String fileTransferId = imapFileTransferMessage.getImdnId();
+        String chatId = imapFileTransferMessage.getChatId();
         FileTransferHttpInfoDocument ftInfo = imapFileTransferMessage.getInfoDocument();
         long timestamp = DateUtils.decodeDate(imapFileTransferMessage.getCpimMessage().getHeader(
                 Constants.HEADER_DATE_TIME));
         FileTransfer.State state = FileTransfer.State.TRANSFERRED;
         FileTransfer.ReasonCode reasonCode = FileTransfer.ReasonCode.UNSPECIFIED;
-        FileSharingError error = isFileCapacityAcceptable(ftInfo.getSize(), mSettings);
-        if (error != null) {
-            int errorCode = error.getErrorCode();
-            state = FileTransfer.State.FAILED;
-            switch (errorCode) {
-                case FileSharingError.MEDIA_SIZE_TOO_BIG:
-                    if (logActivated) {
-                        sLogger.warn("Rejecting file transfer, media size too big : "
-                                + ftInfo.getSize());
-                    }
-                    reasonCode = FileTransfer.ReasonCode.REJECTED_MAX_SIZE;
-                    break;
-
-                case FileSharingError.NOT_ENOUGH_STORAGE_SPACE:
-                    if (logActivated) {
-                        sLogger.warn("Rejecting file transfer, not enough space in local storage");
-                    }
-                    reasonCode = FileTransfer.ReasonCode.REJECTED_LOW_SPACE;
-                    break;
-            }
-        }
+        boolean singleChat = remote != null;
         if (mMessagingLog.isFileTransfer(fileTransferId)) {
             // file transfer is already persisted.
-            return fileTransferId;
+            if (singleChat) {
+                return new String[] {
+                    fileTransferId
+                };
+            } else {
+                return new String[] {
+                        fileTransferId, chatId
+                };
+            }
         }
-        boolean singleChat = remote != null;
         if (singleChat) {
             onNewOneToOneFileTransferMessage(fileTransferId, remote,
                     imapFileTransferMessage.getDirection(), timestamp, state, reasonCode, ftInfo,
                     imapFileTransferMessage.isSeen());
+            return new String[] {
+                fileTransferId
+            };
         } else {
             remote = imapFileTransferMessage.getContact();
-            onNewGroupFileTransferMessage(fileTransferId, remote,
-                    imapFileTransferMessage.getChatId(), imapFileTransferMessage.getDirection(),
-                    timestamp, state, reasonCode, ftInfo, imapFileTransferMessage.isSeen());
+            onNewGroupFileTransferMessage(fileTransferId, remote, chatId,
+                    imapFileTransferMessage.getDirection(), timestamp, state, reasonCode, ftInfo,
+                    imapFileTransferMessage.isSeen());
+            return new String[] {
+                    fileTransferId, chatId
+            };
         }
-        return fileTransferId;
     }
 
     private void onNewOneToOneFileTransferMessage(String fileTransferId, ContactId contact,
             Direction direction, long timestamp, FileTransfer.State state,
-            FileTransfer.ReasonCode reasonCode, FileTransferHttpInfoDocument ftInfo, boolean seen)
-            throws CmsSyncImdnFormatException {
+            FileTransfer.ReasonCode reasonCode, FileTransferHttpInfoDocument ftInfo, boolean seen) {
         mMessagingLog.addOneToOneFileTransferOnSecondaryDevice(fileTransferId, contact, direction,
                 ftInfo.getUri(), ftInfo.getLocalMmContent(), state, reasonCode, timestamp,
                 timestamp, ftInfo.getExpiration(), seen);
@@ -524,12 +585,16 @@ public class CmsEventHandler implements CmsEventListener {
     private void onNewGroupFileTransferMessage(String fileTransferId, ContactId contact,
             String chatId, Direction direction, long timestamp, FileTransfer.State state,
             FileTransfer.ReasonCode reasonCode, FileTransferHttpInfoDocument ftInfo, boolean seen)
-            throws CmsSyncImdnFormatException {
+            throws CmsSyncBadStateException {
         if (Direction.INCOMING == direction) {
             mMessagingLog.addIncomingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
                     contact, ftInfo.getUri(), ftInfo.getLocalMmContent(), state, reasonCode,
                     timestamp, timestamp, ftInfo.getExpiration(), seen);
         } else {
+            if (!mMessagingLog.isGroupChatPersisted(chatId)) {
+                throw new CmsSyncBadStateException("Group file transfer " + fileTransferId
+                        + " discarded: not group chat!");
+            }
             GroupChatPersistedStorageAccessor gcAccessor = new GroupChatPersistedStorageAccessor(
                     chatId, mMessagingLog, mSettings);
             mMessagingLog.addOutgoingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
@@ -539,7 +604,7 @@ public class CmsEventHandler implements CmsEventListener {
         }
     }
 
-    private String onNewCpmSessionMessage(ImapCpmSessionMessage imapCpmSessionMessage) {
+    private String[] onNewCpmSessionMessage(ImapCpmSessionMessage imapCpmSessionMessage) {
         String chatId = imapCpmSessionMessage.getChatId();
         Map<ContactId, ParticipantStatus> participants = new HashMap<>();
         for (ContactId contact : imapCpmSessionMessage.getParticipants()) {
@@ -555,20 +620,24 @@ public class CmsEventHandler implements CmsEventListener {
                     GroupChat.ReasonCode.ABORTED_BY_INACTIVITY,
                     imapCpmSessionMessage.getDirection(), imapCpmSessionMessage.getTimestamp());
         }
-        return chatId;
+        return new String[] {
+                imapCpmSessionMessage.getMessageId(), chatId
+        };
     }
 
-    private String onNewGroupStateMessage(ImapGroupStateMessage imapGroupStateMessage) {
+    private String[] onNewGroupStateMessage(ImapGroupStateMessage imapGroupStateMessage) {
         String chatId = imapGroupStateMessage.getChatId();
-        Map<ContactId, ParticipantStatus> participants = new HashMap<>();
-        for (ContactId contact : imapGroupStateMessage.getParticipants()) {
-            participants.put(contact, ParticipantStatus.CONNECTED);
-        }
         if (mMessagingLog.isGroupChatPersisted(chatId)) {
             mMessagingLog.setGroupChatRejoinId(chatId, imapGroupStateMessage.getRejoinId(), false);
+            Map<ContactId, ParticipantStatus> participants = new HashMap<>();
+            for (ContactId contact : imapGroupStateMessage.getParticipants()) {
+                participants.put(contact, ParticipantStatus.CONNECTED);
+            }
             mMessagingLog.setGroupChatParticipants(chatId, participants);
         }
-        return chatId;
+        return new String[] {
+                imapGroupStateMessage.getMessageId(), chatId
+        };
     }
 
     @Override
@@ -598,7 +667,7 @@ public class CmsEventHandler implements CmsEventListener {
         }
     }
 
-    private CmsObject searchLocalSmsMessage(ImapSmsMessage message)
+    private CmsXmsObject searchLocalSmsMessage(ImapSmsMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
         boolean logActive = sLogger.isActivated();
         if (logActive) {
@@ -619,7 +688,16 @@ public class CmsEventHandler implements CmsEventListener {
                     sLogger.warn("searchLocalSmsMessage messageID does not match " + msgId);
                 }
             }
-            return cmsObject;
+            if (cmsObject instanceof CmsXmsObject) {
+                return (CmsXmsObject) cmsObject;
+
+            } else {
+                if (logActive) {
+                    sLogger.warn("searchLocalSmsMessage messageID " + msgId
+                            + " matches but not type!");
+                }
+                return null;
+            }
         }
         /*
          * get messages from provider with contact, direction and correlator fields messages are
@@ -638,12 +716,12 @@ public class CmsEventHandler implements CmsEventListener {
         }
         // take the first message which is not synchronized with CMS server (have no uid)
         for (String id : ids) {
-            cmsObject = mCmsLog.getSmsData(contact, id);
-            if (cmsObject != null && cmsObject.getUid() == null) {
+            CmsXmsObject xmsObject = mCmsLog.getSmsData(contact, id);
+            if (xmsObject != null && xmsObject.getUid() == null) {
                 if (logActive) {
-                    sLogger.debug("searchLocalSmsMessage select 1rst=" + cmsObject);
+                    sLogger.debug("searchLocalSmsMessage select 1rst=" + xmsObject);
                 }
-                String cmsId = cmsObject.getMessageId();
+                String cmsId = xmsObject.getMessageId();
                 if (!msgId.equals(cmsId)) {
                     /*
                      * If SMS is pushed by SMSC then message-id should be different from the local
@@ -657,11 +735,11 @@ public class CmsEventHandler implements CmsEventListener {
                                     + cmsId);
                         }
                     }
-                    cmsObject = new CmsObject(folder, null, cmsObject.getReadStatus(),
-                            cmsObject.getDeleteStatus(), cmsObject.getPushStatus(),
-                            MessageType.SMS, msgId, cmsObject.getNativeProviderId());
+                    xmsObject = new CmsXmsObject(MessageType.SMS, folder, msgId, null,
+                            xmsObject.getPushStatus(), xmsObject.getReadStatus(),
+                            xmsObject.getDeleteStatus(), xmsObject.getNativeProviderId());
                 }
-                return cmsObject;
+                return xmsObject;
             }
         }
         if (logActive) {
@@ -670,7 +748,7 @@ public class CmsEventHandler implements CmsEventListener {
         return null;
     }
 
-    private CmsObject searchLocalMmsMessage(ImapMmsMessage message)
+    private CmsXmsObject searchLocalMmsMessage(ImapMmsMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
         String mmsId = message.getHeader(Constants.HEADER_MESSAGE_ID);
         if (mmsId == null) {
@@ -680,7 +758,7 @@ public class CmsEventHandler implements CmsEventListener {
         return mCmsLog.getMmsData(message.getContact(), mmsId);
     }
 
-    private CmsObject searchLocalCpimMessage(ImapCpimMessage message)
+    private CmsRcsObject searchLocalCpimMessage(ImapCpimMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
         String messageId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (messageId == null) {
@@ -690,21 +768,21 @@ public class CmsEventHandler implements CmsEventListener {
         return mCmsLog.getChatOrImdnOrFileTransferData(messageId);
     }
 
-    private CmsObject searchLocalGroupStateMessage(ImapGroupStateMessage message)
+    private CmsRcsObject searchLocalGroupStateMessage(ImapGroupStateMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
-        String messageId = message.getHeader(Constants.HEADER_CONTRIBUTION_ID);
+        String messageId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (messageId == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
         return mCmsLog.getGroupChatObjectData(messageId);
     }
 
-    private CmsObject searchLocalCpmSessionMessage(ImapCpmSessionMessage message)
+    private CmsRcsObject searchLocalCpmSessionMessage(ImapCpmSessionMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
-        String messageId = message.getHeader(Constants.HEADER_CONTRIBUTION_ID);
+        String messageId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (messageId == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTRIBUTION_ID
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
         return mCmsLog.getCpmSessionData(messageId);

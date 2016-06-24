@@ -23,8 +23,12 @@ import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
+import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
+import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
+
+import android.text.TextUtils;
 
 public class ImapChatMessage extends ImapCpimMessage {
 
@@ -36,11 +40,9 @@ public class ImapChatMessage extends ImapCpimMessage {
      * @param rawMessage the IMAP raw message
      * @param remote the remote contact or null if group chat
      * @throws CmsSyncMissingHeaderException
-     * @throws CmsSyncHeaderFormatException
      */
     public ImapChatMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
-            throws CmsSyncMissingHeaderException, CmsSyncHeaderFormatException,
-            CmsSyncXmlFormatException {
+            throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
         mChatId = getHeader(Constants.HEADER_CONTRIBUTION_ID);
         if (mChatId == null) {
@@ -57,4 +59,27 @@ public class ImapChatMessage extends ImapCpimMessage {
         return mChatId;
     }
 
+    @Override
+    public void parseBody() throws CmsSyncXmlFormatException, CmsSyncHeaderFormatException {
+        String content = mRawMessage.getBody().getContent();
+        if (TextUtils.isEmpty(content)) {
+            throw new CmsSyncXmlFormatException("IMAP body is missing!");
+        }
+        CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
+        cpimMessage.parsePayload(content);
+        setBodyPart(cpimMessage);
+        if (mRemote == null) {
+            // Group chat
+            String fromHeader = cpimMessage.getHeader(Constants.HEADER_FROM);
+            if (fromHeader == null) {
+                throw new CmsSyncXmlFormatException("From CPIM header is missing");
+            }
+            ContactUtil.PhoneNumber phoneNumber = ContactUtil
+                    .getValidPhoneNumberFromUri(fromHeader);
+            if (phoneNumber == null) {
+                throw new CmsSyncXmlFormatException("From CPIM header do not contain tel URI");
+            }
+            mRemote = ContactUtil.createContactIdFromValidatedData(phoneNumber);
+        }
+    }
 }
