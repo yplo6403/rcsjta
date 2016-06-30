@@ -41,4 +41,8 @@
         android:id="@+id/menu_ft_download"
         android:title="@string/menu_ft_download"/>
 
+    <item
+        android:id="@+id/menu_view_detail"
+        android:title="@string/menu_view_detail"/>
+
 </menu>

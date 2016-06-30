@@ -26,9 +26,11 @@ import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.RiApplication;
 import com.gsma.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.gsma.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.gsma.rcs.ri.messaging.chat.ChatMessageLogView;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager.INotifyComposing;
 import com.gsma.rcs.ri.messaging.chat.group.SendGroupFile;
+import com.gsma.rcs.ri.messaging.filetransfer.FileTransferLogView;
 import com.gsma.rcs.ri.messaging.geoloc.DisplayGeoloc;
 import com.gsma.rcs.ri.messaging.geoloc.EditGeoloc;
 import com.gsma.rcs.ri.settings.RiSettings;
@@ -619,6 +621,14 @@ public class GroupTalkView extends RcsFragmentActivity implements
                         mChatService.deleteMessage(id);
                     } else {
                         mFileTransferService.deleteFileTransfer(id);
+                    }
+                    return true;
+
+                case R.id.menu_view_detail:
+                    if (ChatLog.Message.HISTORYLOG_MEMBER_ID == providerId) {
+                        ChatMessageLogView.startActivity(this, id);
+                    } else {
+                        FileTransferLogView.startActivity(this, id);
                     }
                     return true;
 

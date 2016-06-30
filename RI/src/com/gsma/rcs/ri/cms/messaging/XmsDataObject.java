@@ -21,7 +21,9 @@
 package com.gsma.rcs.ri.cms.messaging;
 
 import com.gsma.rcs.ri.utils.ContactUtil;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.Direction;
+import com.gsma.services.rcs.cms.XmsMessage;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -35,13 +37,6 @@ import android.database.Cursor;
  */
 public class XmsDataObject {
 
-    // @formatter:off
-    private static final String[] PROJECTION = {
-            XmsMessageLog.MIME_TYPE, XmsMessageLog.CONTENT, XmsMessageLog.CONTACT,
-            XmsMessageLog.TIMESTAMP, XmsMessageLog.DIRECTION
-    };
-    // @formatter:on
-
     private static final String SELECTION = XmsMessageLog.MESSAGE_ID + "=?";
     private final String mMessageId;
     private final String mMimeType;
@@ -49,15 +44,27 @@ public class XmsDataObject {
     private final long mTimestamp;
     private final String mContent;
     private final Direction mDirection;
+    private XmsMessage.State mState;
+    private XmsMessage.ReasonCode mReasonCode;
+    private long mTimestampSent;
+    private long mTimestampDelivered;
+    private RcsService.ReadStatus mReadStatus;
 
-    public XmsDataObject(String messageId, String content, String mimeType, ContactId contact,
-            long timestamp, Direction direction) {
+    private XmsDataObject(String messageId, String content, String mimeType, ContactId contact,
+            XmsMessage.State state, XmsMessage.ReasonCode reason, long timestamp,
+            Direction direction, long timestampSent, long timestampDelivered,
+            RcsService.ReadStatus readStatus) {
         mMessageId = messageId;
         mMimeType = mimeType;
         mContact = contact;
         mTimestamp = timestamp;
         mContent = content;
         mDirection = direction;
+        mTimestampSent = timestampSent;
+        mTimestampDelivered = timestampDelivered;
+        mState = state;
+        mReasonCode = reason;
+        mReadStatus = readStatus;
     }
 
     /**
@@ -70,8 +77,8 @@ public class XmsDataObject {
     public static XmsDataObject getXms(Context ctx, String messageId) {
         Cursor cursor = null;
         try {
-            cursor = ctx.getContentResolver().query(XmsMessageLog.CONTENT_URI, PROJECTION,
-                    SELECTION, new String[] {
+            cursor = ctx.getContentResolver().query(XmsMessageLog.CONTENT_URI, null, SELECTION,
+                    new String[] {
                         messageId
                     }, null);
             if (cursor == null) {
@@ -91,7 +98,18 @@ public class XmsDataObject {
             ContactId contact = ContactUtil.formatContact(number);
             long timestamp = cursor.getLong(timestampIdx);
             Direction direction = Direction.valueOf(cursor.getInt(directionIdx));
-            return new XmsDataObject(messageId, content, mimeType, contact, timestamp, direction);
+            long timestampSent = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP_SENT));
+            long timestampDelivered = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.TIMESTAMP_DELIVERED));
+            XmsMessage.State state = XmsMessage.State.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.STATE)));
+            XmsMessage.ReasonCode reason = XmsMessage.ReasonCode.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.REASON_CODE)));
+            RcsService.ReadStatus readStatus = RcsService.ReadStatus.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(XmsMessageLog.READ_STATUS)));
+            return new XmsDataObject(messageId, content, mimeType, contact, state, reason,
+                    timestamp, direction, timestampSent, timestampDelivered, readStatus);
 
         } finally {
             if (cursor != null) {
@@ -125,5 +143,25 @@ public class XmsDataObject {
         return "XmsDataObject{" + "mMessageId='" + mMessageId + '\'' + ", mMimeType='" + mMimeType
                 + '\'' + ", mContact=" + mContact + ", mTimestamp=" + mTimestamp + ", mContent='"
                 + mContent + '\'' + ", mDirection=" + mDirection + '}';
+    }
+
+    public XmsMessage.State getState() {
+        return mState;
+    }
+
+    public XmsMessage.ReasonCode getReasonCode() {
+        return mReasonCode;
+    }
+
+    public long getTimestampSent() {
+        return mTimestampSent;
+    }
+
+    public long getTimestampDelivered() {
+        return mTimestampDelivered;
+    }
+
+    public RcsService.ReadStatus getReadStatus() {
+        return mReadStatus;
     }
 }

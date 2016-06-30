@@ -1,11 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent"
+             android:layout_width="fill_parent"
+             android:layout_height="wrap_content"
              android:layout_margin="5dp">
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
+
+        <TextView
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:text="@string/label_log_id"/>
+
+        <TextView
+            android:id="@+id/history_log_item_id"
+            android:text="@string/contact_dummy"/>
+    </TableRow>
+
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -17,8 +28,7 @@
             android:text="@string/contact_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -30,8 +40,7 @@
             android:text="@string/text_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -43,8 +52,7 @@
             android:text="@string/text_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -56,8 +64,7 @@
             android:text="@string/direction_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -69,47 +76,43 @@
             android:text="@string/timestamp_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
             android:layout_marginRight="10dp"
-            android:text="@string/label_log_filename"/>
+            android:text="@string/label_log_date_sent"/>
 
         <TextView
-            android:id="@+id/history_log_item_filename"
+            android:id="@+id/history_log_item_date_sent"
+            android:text="@string/timestamp_dummy"/>
+    </TableRow>
+
+    <TableRow android:layout_margin="2dp">
+
+        <TextView
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:text="@string/label_log_date_delivered"/>
+
+        <TextView
+            android:id="@+id/history_log_item_date_delivered"
+            android:text="@string/timestamp_dummy"/>
+    </TableRow>
+
+    <TableRow android:layout_margin="2dp">
+
+        <TextView
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:text="@string/label_log_read_status"/>
+
+        <TextView
+            android:id="@+id/history_log_item_read_status"
             android:text="@string/text_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
-
-        <TextView
-            android:layout_marginEnd="10dp"
-            android:layout_marginRight="10dp"
-            android:text="@string/label_log_file_size"/>
-
-        <TextView
-            android:id="@+id/history_log_item_size"
-            android:text="@string/number_dummy"/>
-    </TableRow>
-
-    <TableRow
-        android:layout_margin="2dp">
-
-        <TextView
-            android:layout_marginEnd="10dp"
-            android:layout_marginRight="10dp"
-            android:text="@string/label_log_transferred"/>
-
-        <TextView
-            android:id="@+id/history_log_item_transferred"
-            android:text="@string/number_dummy"/>
-    </TableRow>
-
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
@@ -118,19 +121,18 @@
 
         <TextView
             android:id="@+id/history_log_item_mime"
-            android:text="@string/number_dummy"/>
+            android:text="@string/text_dummy"/>
     </TableRow>
 
-    <TableRow
-        android:layout_margin="2dp">
+    <TableRow android:layout_margin="2dp">
 
         <TextView
             android:layout_marginEnd="10dp"
             android:layout_marginRight="10dp"
-            android:text="@string/label_log_file_uri"/>
+            android:text="@string/label_log_content"/>
 
         <TextView
-            android:id="@+id/history_log_item_uri"
+            android:id="@+id/history_log_item_content"
             android:text="@string/text_dummy"/>
     </TableRow>
 </TableLayout>

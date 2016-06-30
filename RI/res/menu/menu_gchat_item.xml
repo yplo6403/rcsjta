@@ -36,4 +36,8 @@
     <item
         android:id="@+id/menu_view_group_delivery"
         android:title="@string/menu_view_group_delivery"/>
+
+    <item
+        android:id="@+id/menu_view_detail"
+        android:title="@string/menu_view_detail"/>
 </menu>

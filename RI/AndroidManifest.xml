@@ -442,6 +442,15 @@
             android:name="com.gsma.rcs.ri.sharing.video.VideoSharingLogView"
             android:label="@string/title_sharing_log_item"/>
         <activity
+            android:name="com.gsma.rcs.ri.messaging.filetransfer.FileTransferLogView"
+            android:label="@string/title_sharing_log_item"/>
+        <activity
+            android:name="com.gsma.rcs.ri.cms.messaging.XmsLogView"
+            android:label="@string/title_sharing_log_item"/>
+        <activity
+            android:name="com.gsma.rcs.ri.messaging.chat.ChatMessageLogView"
+            android:label="@string/title_sharing_log_item"/>
+        <activity
             android:name="com.gsma.rcs.ri.sharing.SharingListView"
             android:label="@string/title_sharing_log"/>
         <activity

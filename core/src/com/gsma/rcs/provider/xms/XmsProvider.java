@@ -106,8 +106,8 @@ public class XmsProvider extends ContentProvider {
      * Strings to allow projection for exposed URI to a set of columns.
      */
     private static final String[] XMS_COLUMNS_ALLOWED_FOR_EXTERNAL_ACCESS = new String[] {
-            XmsData.KEY_BASECOLUMN_ID, XmsData.KEY_MESSAGE_ID, XmsData.KEY_CONTACT,
-            XmsData.KEY_CONTENT, XmsData.KEY_MIME_TYPE, XmsData.KEY_DIRECTION,
+            XmsData.KEY_CHAT_ID, XmsData.KEY_BASECOLUMN_ID, XmsData.KEY_MESSAGE_ID,
+            XmsData.KEY_CONTACT, XmsData.KEY_CONTENT, XmsData.KEY_MIME_TYPE, XmsData.KEY_DIRECTION,
             XmsData.KEY_TIMESTAMP, XmsData.KEY_TIMESTAMP_SENT, XmsData.KEY_TIMESTAMP_DELIVERED,
             XmsData.KEY_STATE, XmsData.KEY_REASON_CODE, XmsData.KEY_READ_STATUS
     };

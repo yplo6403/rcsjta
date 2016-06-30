@@ -15,10 +15,11 @@ Limitations :
 
 News:
 
-	* Core: refactor provisioning tool
-	* Manage permissions for Android Marshmallow
-	* CMS RI: manage accept/reject of file transfer within talk views
-	* CMS RI: replace subject by body text for MMS in TalkListView
+	* RI: view details of messages: chat, file transfer, SMS and MMS.
+	* Core: refactor provisioning tool.
+	* Manage permissions for Android Marshmallow.
+	* CMS RI: manage accept/reject of file transfer within talk views.
+	* CMS RI: replace subject by body text for MMS in TalkListView.
 
 Bugs fixed:
 

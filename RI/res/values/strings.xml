@@ -101,6 +101,7 @@
     <string name="menu_file_transfer">File transfer</string>
     <string name="menu_chat">Chat</string>
     <string name="menu_messaging_log">Messaging log</string>
+    <string name="menu_view_detail">View details</string>
 
     <!-- File transfer menu -->
     <string name="menu_transfer_file">Transfer a file</string>
@@ -339,9 +340,18 @@
     <string name="hint_type_message">Enter your message ... </string>
 
     <!-- HistoryLog  menu -->
+    <string name="label_log_id">Id:</string>
+    <string name="label_log_chat_id">Chat Id:</string>
     <string name="label_log_contact">Contact:</string>
     <string name="label_log_content">Content:</string>
     <string name="label_log_date">Date:</string>
+    <string name="label_log_date_sent">Sent:</string>
+    <string name="label_log_date_delivered">Delivered:</string>
+    <string name="label_log_date_displayed">Displayed:</string>
+    <string name="label_log_date_file_expiration">Expiration:</string>
+    <string name="label_log_date_icon_expiration">Icon expiration:</string>
+    <string name="label_log_read_status">Read:</string>
+    <string name="label_log_expired_delivery">Expired delivery:</string>
     <string name="label_log_dir">Direction:</string>
     <string name="label_log_duration">Duration:</string>
     <string name="label_log_encoding">Encoding:</string>
@@ -349,10 +359,12 @@
     <string name="label_log_filename">Filename:</string>
     <string name="label_log_height">Height :</string>
     <string name="label_log_mime">Mime type:</string>
+    <string name="label_log_icon_mime">Icon mime type:</string>
     <string name="label_log_reason">Reason:</string>
     <string name="label_log_state">State:</string>
     <string name="label_log_transferred">Transferred:</string>
-    <string name="label_log_uri">Uri:</string>
+    <string name="label_log_file_uri">File uri:</string>
+    <string name="label_log_icon_uri">Icon uri:</string>
     <string name="label_log_width">Width :</string>
     <string name="title_sharing_log_item">History Log detail</string>
     <string name="menu_log_sharing">Sharing log</string>

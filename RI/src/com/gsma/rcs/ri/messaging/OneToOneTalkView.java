@@ -27,12 +27,15 @@ import com.gsma.rcs.ri.R;
 import com.gsma.rcs.ri.RI;
 import com.gsma.rcs.ri.cms.messaging.InitiateMmsTransfer;
 import com.gsma.rcs.ri.cms.messaging.SendMmsInBackground;
+import com.gsma.rcs.ri.cms.messaging.XmsLogView;
 import com.gsma.rcs.ri.messaging.adapter.TalkCursorAdapter;
 import com.gsma.rcs.ri.messaging.chat.ChatCursorObserver;
+import com.gsma.rcs.ri.messaging.chat.ChatMessageLogView;
 import com.gsma.rcs.ri.messaging.chat.IsComposingManager;
 import com.gsma.rcs.ri.messaging.chat.single.SendSingleFile;
 import com.gsma.rcs.ri.messaging.chat.single.SingleChatIntentService;
 import com.gsma.rcs.ri.messaging.filetransfer.FileTransferIntentService;
+import com.gsma.rcs.ri.messaging.filetransfer.FileTransferLogView;
 import com.gsma.rcs.ri.messaging.geoloc.EditGeoloc;
 import com.gsma.rcs.ri.settings.RiSettings;
 import com.gsma.rcs.ri.utils.ContactUtil;
@@ -1124,6 +1127,20 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
                         default:
                             throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+                    }
+                    return true;
+
+                case R.id.menu_view_detail:
+                    switch (providerId) {
+                        case ChatLog.Message.HISTORYLOG_MEMBER_ID:
+                            ChatMessageLogView.startActivity(this, id);
+                            break;
+                        case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                            FileTransferLogView.startActivity(this, id);
+                            break;
+                        case XmsMessageLog.HISTORYLOG_MEMBER_ID:
+                            XmsLogView.startActivity(this, id);
+                            break;
                     }
                     return true;
 
