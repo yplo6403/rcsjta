@@ -19,6 +19,7 @@
 package com.gsma.rcs.core.cms.protocol.message.cpim;
 
 import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.protocol.message.HeaderPart;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 
@@ -33,8 +34,7 @@ public class CpimMessageTest extends AndroidTestCase {
             .append(Constants.CRLF).append("Content-Type: myContentType").append(Constants.CRLF)
             .append(Constants.CRLF).append("myContent").toString();
 
-    public void testFromPayload() {
-
+    public void testFromPayload() throws CmsSyncHeaderFormatException {
         CpimMessage cpimMessage = new CpimMessage(new HeaderPart(), new TextCpimBody());
         cpimMessage.parsePayload(expectedPayload);
         Assert.assertEquals("value1", cpimMessage.getHeader("header1"));
