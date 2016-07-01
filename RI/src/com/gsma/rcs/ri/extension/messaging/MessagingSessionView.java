@@ -245,7 +245,9 @@ public class MessagingSessionView extends RcsActivity {
 
     private void startSession() {
         try {
-            mSession = getMultimediaSessionApi().initiateMessagingSession(mServiceId, mContact);
+            mSession = getMultimediaSessionApi().initiateMessagingSession(mServiceId, mContact,
+                    MessagingSessionUtils.SERVICE_ACCEPT_TYPE,
+                    MessagingSessionUtils.SERVICE_WRAPPED_ACCEPT_TYPE);
             mSessionId = mSession.getSessionId();
             showProgressDialog();
 
@@ -339,8 +341,8 @@ public class MessagingSessionView extends RcsActivity {
             public void onClick(View v) {
                 try {
                     String data = "data".concat(String.valueOf(i++));
-                    mSession.sendMessage(data.getBytes());
-
+                    mSession.sendMessage(data.getBytes(),
+                            MessagingSessionUtils.SERVICE_CONTENT_TYPE);
                 } catch (RcsServiceException e) {
                     showExceptionThenExit(e);
                 }
@@ -402,6 +404,12 @@ public class MessagingSessionView extends RcsActivity {
 
             @Override
             public void onMessageReceived(ContactId contact, String sessionId, byte[] content) {
+                // Deprecated since TAPI 1.6
+            }
+
+            @Override
+            public void onMessageReceived(ContactId contact, String sessionId, byte[] content,
+                    String contentType) {
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "onMessageReceived contact=" + contact + " sessionId="
                             + sessionId);
@@ -420,6 +428,14 @@ public class MessagingSessionView extends RcsActivity {
                         txt.setText(data);
                     }
                 });
+            }
+
+            @Override
+            public void onMessagesFlushed(ContactId contact, String sessionId) {
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "onMessagesFlushed contact=" + contact + " sessionId="
+                            + sessionId);
+                }
             }
         };
 

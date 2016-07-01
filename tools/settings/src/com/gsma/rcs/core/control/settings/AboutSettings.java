@@ -83,6 +83,9 @@ public class AboutSettings extends Activity {
             case Build.VERSION_CODES.BLACKBIRD:
                 version.append("Blackbird 1.5.");
                 break;
+            case Build.VERSION_CODES.CPR:
+                version.append("Crane Priority Release 1.6.");
+                break;
             default:
                 version.append("Unknown 0.0");
         }

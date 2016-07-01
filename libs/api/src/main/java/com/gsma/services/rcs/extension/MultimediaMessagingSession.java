@@ -194,10 +194,12 @@ public class MultimediaMessagingSession extends MultimediaSession {
     /**
      * Sends a message in real time
      * 
+     * @deprecated Use {@link #sendMessage(byte[] content, String contentType)} instead.
      * @param content Message content
      * @throws RcsPermissionDeniedException
      * @throws RcsGenericException
      */
+    @Deprecated
     public void sendMessage(byte[] content) throws RcsPermissionDeniedException,
             RcsGenericException {
         try {
@@ -205,6 +207,42 @@ public class MultimediaMessagingSession extends MultimediaSession {
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Sends a message in real time
+     *
+     * @param content Message content
+     * @param contentType Message content type
+     * @throws RcsPermissionDeniedException
+     * @throws RcsGenericException
+     */
+    public void sendMessage(byte[] content, String contentType)
+            throws RcsPermissionDeniedException, RcsGenericException {
+        try {
+            mSessionIntf.sendMessage2(content, contentType);
+
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Flush all messages of the session
+     *
+     * @throws RcsPermissionDeniedException
+     * @throws RcsGenericException
+     */
+    public void flushMessages() throws RcsPermissionDeniedException, RcsGenericException {
+        try {
+            mSessionIntf.flushMessages();
+
+        } catch (Exception e) {
             RcsPermissionDeniedException.assertException(e);
             throw new RcsGenericException(e);
         }

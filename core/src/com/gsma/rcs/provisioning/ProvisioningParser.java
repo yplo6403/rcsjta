@@ -518,6 +518,10 @@ public class ProvisioningParser {
         String rcsIPVoiceCallAuth = null;
         String rcsIPVideoCallAuth = null;
         String allowExtensions = null;
+        String composerAuth;
+        String sharedMapAuth;
+        String sharedSketchAuth;
+        String postCallAuth;
         Node childnode = node.getFirstChild();
 
         if (childnode != null) {
@@ -613,7 +617,35 @@ public class ProvisioningParser {
                         int value = Integer.decode(allowExtensions);
                         mRcsSettings.writeBoolean(RcsSettingsData.ALLOW_EXTENSIONS,
                                 (value % 16) != 0);
+                        continue;
                     }
+                }
+
+                if ((composerAuth = getValueByParamName("composerAuth", childnode, TYPE_INT)) != null) {
+                    int value = Integer.decode(composerAuth);
+                    mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_CALL_COMPOSER,
+                            (value % 16) != 0);
+                    continue;
+                }
+
+                if ((sharedMapAuth = getValueByParamName("sharedMapAuth", childnode, TYPE_INT)) != null) {
+                    int value = Integer.decode(sharedMapAuth);
+                    mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_SHARED_MAP,
+                            (value % 16) != 0);
+                    continue;
+                }
+
+                if ((sharedSketchAuth = getValueByParamName("sharedSketchAuth", childnode, TYPE_INT)) != null) {
+                    int value = Integer.decode(sharedSketchAuth);
+                    mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_SHARED_SKETCH,
+                            (value % 16) != 0);
+                    continue;
+                }
+
+                if ((postCallAuth = getValueByParamName("postCallAuth", childnode, TYPE_INT)) != null) {
+                    int value = Integer.decode(postCallAuth);
+                    mRcsSettings.writeBoolean(RcsSettingsData.CAPABILITY_POST_CALL,
+                            (value % 16) != 0);
                 }
 
                 // Not used: "standaloneMsgAuth"
@@ -1378,9 +1410,8 @@ public class ProvisioningParser {
         String rcsIPVideoCallUpgradeOnCapError = null;
         String beIPVideoCallUpgradeAttemptEarly = null;
         String maxMsrpLengthExtensions = null;
-
+        String callComposerTimerIdle = null;
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
@@ -1470,6 +1501,14 @@ public class ProvisioningParser {
                     if ((maxMsrpLengthExtensions = getValueByParamName("extensionsMaxMSRPSize",
                             childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeInteger(RcsSettingsData.MAX_MSRP_SIZE_EXTENSIONS,
+                                Integer.parseInt(maxMsrpLengthExtensions));
+                        continue;
+                    }
+                }
+                if (callComposerTimerIdle == null) {
+                    if ((callComposerTimerIdle = getValueByParamName("callComposerTimerIdle",
+                            childnode, TYPE_INT)) != null) {
+                        mRcsSettings.writeInteger(RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT,
                                 Integer.parseInt(maxMsrpLengthExtensions));
                     }
                 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,6 +51,7 @@ public class FileUploadEventBroadcaster implements IFileUploadEventBroadcaster {
         mFileUploadListeners.unregister(listener);
     }
 
+    @Override
     public void broadcastStateChanged(String uploadId, State state) {
         int rcsState = state.toInt();
         final int N = mFileUploadListeners.beginBroadcast();
@@ -66,6 +67,7 @@ public class FileUploadEventBroadcaster implements IFileUploadEventBroadcaster {
         mFileUploadListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastProgressUpdate(String uploadId, long currentSize, long totalSize) {
         final int N = mFileUploadListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {
@@ -81,6 +83,7 @@ public class FileUploadEventBroadcaster implements IFileUploadEventBroadcaster {
         mFileUploadListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastUploaded(String uploadId, FileUploadInfo info) {
         final int N = mFileUploadListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {

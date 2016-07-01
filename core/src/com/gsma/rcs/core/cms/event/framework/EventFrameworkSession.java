@@ -46,7 +46,6 @@ import com.gsma.rcs.provider.contact.ContactManagerException;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.NetworkRessourceManager;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.chat.ChatLog;
 
 import android.content.ContentProviderResult;
 
@@ -96,7 +95,7 @@ public abstract class EventFrameworkSession extends ImsServiceSession implements
 
         mImService = imService;
         mCmsLog = cmsLog;
-        mActivityMgr = new SessionActivityManager(this, rcsSettings);
+        mActivityMgr = new SessionActivityManager(this,  mRcsSettings.getChatIdleDuration());
 
         addAcceptTypes(CpimMessage.MIME_TYPE);
         addWrappedTypes(ImdnDocument.MIME_TYPE);

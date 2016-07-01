@@ -43,6 +43,8 @@ import android.os.IBinder;
 import android.os.IInterface;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -219,11 +221,13 @@ public final class CapabilityService extends RcsService {
      * exception is thrown. The result of the capability refresh request is provided to all the
      * clients that have registered the listener for this event.
      *
+     * @deprecated Use {@link #requestContactCapabilities(Set of ContactIds )} instead.
      * @param contact Contact Identifier
      * @throws RcsServiceNotRegisteredException
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
+    @Deprecated
     public void requestContactCapabilities(ContactId contact)
             throws RcsServiceNotRegisteredException, RcsServiceNotAvailableException,
             RcsGenericException {
@@ -231,7 +235,10 @@ public final class CapabilityService extends RcsService {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            mApi.requestContactCapabilities(contact);
+            List<ContactId> listOfContacts = new ArrayList<>();
+            listOfContacts.add(contact);
+            mApi.requestContactCapabilities2(listOfContacts);
+
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
             RcsServiceNotRegisteredException.assertException(e);
@@ -256,8 +263,19 @@ public final class CapabilityService extends RcsService {
     public void requestContactCapabilities(Set<ContactId> contacts)
             throws RcsServiceNotRegisteredException, RcsServiceNotAvailableException,
             RcsGenericException {
-        for (ContactId contact : contacts) {
-            requestContactCapabilities(contact);
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        if (contacts == null || contacts.isEmpty()) {
+            throw new RcsIllegalArgumentException("contacts must not be null or empty!");
+        }
+        try {
+            mApi.requestContactCapabilities2(new ArrayList<>(contacts));
+
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotRegisteredException.assertException(e);
+            throw new RcsGenericException(e);
         }
     }
 
@@ -267,16 +285,13 @@ public final class CapabilityService extends RcsService {
      * sending SIP OPTIONS. The result of a capability request is sent asynchronously via callback
      * method of the capabilities listener. The result of the capability refresh request is provided
      * to all the clients that have registered the listener for this event.
-     *
+     * 
      * @throws RcsServiceNotRegisteredException
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
     public void requestAllContactsCapabilities() throws RcsServiceNotRegisteredException,
             RcsServiceNotAvailableException, RcsGenericException {
-        if (mApi == null) {
-            throw new RcsServiceNotAvailableException();
-        }
         try {
             mApi.requestAllContactsCapabilities();
         } catch (Exception e) {

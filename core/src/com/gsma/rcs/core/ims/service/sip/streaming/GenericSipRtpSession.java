@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ package com.gsma.rcs.core.ims.service.sip.streaming;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -57,7 +56,7 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
     /**
      * RTP payload format
      */
-    private DataFormat mFormat = new DataFormat();
+    protected DataFormat mFormat;
 
     private int mLocalRtpPort = -1;
 
@@ -83,18 +82,21 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
      * @param parent IMS service
      * @param contact Remote contact Id
      * @param featureTag Feature tag
-     * @param rcsSettings
+     * @param rcsSettings RCS settings
      * @param timestamp Local timestamp for the session
-     * @param contactManager
+     * @param contactManager Contact manager
+     * @param encoding Encoding
      */
     public GenericSipRtpSession(SipService parent, ContactId contact, String featureTag,
-            RcsSettings rcsSettings, long timestamp, ContactManager contactManager) {
+            RcsSettings rcsSettings, long timestamp,
+            ContactManager contactManager, String encoding) {
         super(parent, contact, featureTag, rcsSettings, timestamp, contactManager);
 
         /* Get local port */
         mLocalRtpPort = NetworkRessourceManager.generateLocalRtpPort(rcsSettings);
 
         /* Create the RTP sender & receiver */
+        mFormat = new DataFormat(encoding);
         mRtpReceiver = new MediaRtpReceiver(mLocalRtpPort);
         mRtpSender = new MediaRtpSender(mFormat, mLocalRtpPort);
     }
@@ -141,15 +143,15 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
      * @return SDP built
      */
     public String generateSdp() {
-        String ntpTime = SipUtils.constructNTPtime(NtpTrustedTime.currentTimeMillis());
+        String ntpTime = SipUtils.constructNTPtime(System.currentTimeMillis());
         String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
         return "v=0" + SipUtils.CRLF + "o=- " + ntpTime + " " + ntpTime + " "
                 + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "s=-" + SipUtils.CRLF
                 + "c=" + SdpUtils.formatAddressType(ipAddress) + SipUtils.CRLF + "t=0 0"
                 + SipUtils.CRLF + "m=application " + mLocalRtpPort + " RTP/AVP "
                 + getRtpFormat().getPayload() + SipUtils.CRLF + "a=rtpmap:"
-                + getRtpFormat().getPayload() + " " + getRtpFormat().getCodec() + "/90000"
-                + SipUtils.CRLF + // TODO: hardcoded value for clock rate and codec
+                + getRtpFormat().getPayload() + " " + getRtpFormat().getCodec()
+                + SipUtils.CRLF +
                 "a=sendrecv" + SipUtils.CRLF;
     }
 
@@ -157,12 +159,35 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
     public void prepareMediaSession() throws NetworkException {
         SdpParser parser = new SdpParser(getDialogPath().getRemoteContent().getBytes(UTF8));
         MediaDescription mediaApp = parser.getMediaDescription("application");
+
+        // Extract session description
         String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaApp);
         int remotePort = mediaApp.mPort;
 
+        // Extract encoding name
+        String rtpmap = mediaApp.getMediaAttribute("rtpmap").getValue();
+        String encoding = rtpmap.substring(
+                rtpmap.indexOf(mediaApp.mPayload) + mediaApp.mPayload.length() + 1).trim();
+
+        mFormat = new DataFormat(encoding);
         mRtpReceiver.prepareSession(remoteHost, remotePort, mDataReceiver, mFormat, this);
         mRtpSender.prepareSession(mDataSender, remoteHost, remotePort,
                 mRtpReceiver.getInputStream(), this);
+    }
+
+    /**
+     * Gets the encoding payload
+     *
+     * @param content SDP content
+     * @return encoding
+     */
+    public static String getEncoding(String content) {
+        SdpParser parser = new SdpParser(content.getBytes(UTF8));
+        MediaDescription mediaApp = parser.getMediaDescription("application");
+        String rtpmap = mediaApp.getMediaAttribute("rtpmap").getValue();
+        String encoding = rtpmap.substring(
+                rtpmap.indexOf(mediaApp.mPayload) + mediaApp.mPayload.length() + 1).trim();
+        return encoding;
     }
 
     @Override
@@ -198,7 +223,7 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
         if (!mMediaSessionStarted) {
             throw new SessionNotEstablishedException("Unable to send payload!");
         }
-        mDataSender.addFrame(content, NtpTrustedTime.currentTimeMillis());
+        mDataSender.addFrame(content, System.currentTimeMillis());
     }
 
     @Override
@@ -240,13 +265,14 @@ public abstract class GenericSipRtpSession extends GenericSipSession implements 
 
     /**
      * Receive media data
-     * 
+     *
      * @param data Data
+     * @param mimeType MIME-type
      */
-    public void receiveData(byte[] data) {
+    public void receiveData(byte[] data, String mimeType) {
         ContactId contact = getRemoteContact();
         for (ImsSessionListener listener : getListeners()) {
-            ((SipSessionListener) listener).onDataReceived(contact, data);
+            ((SipSessionListener) listener).onDataReceived(contact, data, mimeType);
         }
     }
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +33,6 @@ import com.gsma.rcs.core.ims.protocol.sdp.SdpParser;
 import com.gsma.rcs.core.ims.protocol.sdp.SdpUtils;
 import com.gsma.rcs.core.ims.protocol.sip.SipMessage;
 import com.gsma.rcs.core.ims.service.richcall.image.ImageTransferSession;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.NetworkUtils;
@@ -126,7 +125,11 @@ public class CapabilityUtils {
         // Extensions
         if (rcsSettings.isExtensionsAllowed()) {
             for (String extension : rcsSettings.getSupportedRcsExtensions()) {
-                iariTags.add(FeatureTags.FEATURE_RCSE_EXTENSION + "." + extension);
+                if (extension.startsWith("gsma.")) {
+                    icsiTags.add(FeatureTags.FEATURE_RCSE_ICSI_EXTENSION + "." + extension);
+                } else {
+                    iariTags.add(FeatureTags.FEATURE_RCSE_IARI_EXTENSION + "." + extension);
+                }
             }
             icsiTags.add(FeatureTags.FEATURE_3GPP_EXTENSION);
         }
@@ -191,7 +194,6 @@ public class CapabilityUtils {
                 } else {
                     ipCall_RCSE = true;
                 }
-
             } else if (tag.contains(FeatureTags.FEATURE_3GPP_IP_VOICE_CALL)) {
                 if (ipCall_RCSE) {
                     capaBuilder.setIpVoiceCall(true);
@@ -207,13 +209,14 @@ public class CapabilityUtils {
             } else if (tag.contains(FeatureTags.FEATURE_RCSE_GC_SF)) {
                 capaBuilder.setGroupChatStoreForward(true);
 
-            } else
-            // TODO if (tag.contains(FeatureTags.FEATURE_RCSE_EXTENSION + ".ext") ||
-            // TODO tag.contains(FeatureTags.FEATURE_RCSE_EXTENSION + ".mnc")) {
-            if (tag.contains(FeatureTags.FEATURE_RCSE_EXTENSION)) {
+            } else if (tag.contains(FeatureTags.FEATURE_RCSE_IARI_EXTENSION + ".ext")
+                    || tag.contains(FeatureTags.FEATURE_RCSE_IARI_EXTENSION + ".mnc")
+                    || tag.contains(FeatureTags.FEATURE_RCSE_ICSI_EXTENSION + ".gsma")) {
                 // Support an RCS extension
-                capaBuilder.addExtension(extractServiceId(tag));
-
+                String serviceId = extractServiceId(tag);
+                if (!"gsma.rcs.extension".equals(serviceId)) {
+                    capaBuilder.addExtension(serviceId);
+                }
             } else if (tag.contains(FeatureTags.FEATURE_SIP_AUTOMATA)) {
                 capaBuilder.setSipAutomata(true);
             }
@@ -266,7 +269,7 @@ public class CapabilityUtils {
                 capaBuilder.setImageSharing(false);
             }
         }
-        long timestamp = NtpTrustedTime.currentTimeMillis();
+        long timestamp = System.currentTimeMillis();
         capaBuilder.setTimestampOfLastResponse(timestamp);
         capaBuilder.setTimestampOfLastRequest(timestamp);
         return capaBuilder.build();
@@ -340,6 +343,12 @@ public class CapabilityUtils {
     public static String extractServiceId(String featureTag) {
         String[] values = featureTag.split("=");
         String value = StringUtils.removeQuotes(values[1]);
-        return value.substring(FeatureTags.FEATURE_RCSE_EXTENSION.length() + 1, value.length());
+        if (featureTag.contains(FeatureTags.FEATURE_RCSE_IARI_EXTENSION)) {
+            return value.substring(FeatureTags.FEATURE_RCSE_IARI_EXTENSION.length() + 1,
+                    value.length());
+        } else {
+            return value.substring(FeatureTags.FEATURE_RCSE_ICSI_EXTENSION.length() + 1,
+                    value.length());
+        }
     }
 }

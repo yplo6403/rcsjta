@@ -53,22 +53,6 @@ public class Utils {
     }
 
     /**
-     * Returns the application version from manifest file
-     * 
-     * @param ctx Context
-     * @return Application version or null if not found
-     */
-    public static String getApplicationVersion(Context ctx) {
-        String version = null;
-        try {
-            PackageInfo info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
-            version = info.versionName;
-        } catch (NameNotFoundException ignored) {
-        }
-        return version;
-    }
-
-    /**
      * Display a toast
      * 
      * @param ctx Context

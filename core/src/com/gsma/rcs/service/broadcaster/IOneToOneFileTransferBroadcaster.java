@@ -28,15 +28,13 @@ import java.util.Set;
  */
 public interface IOneToOneFileTransferBroadcaster {
 
-    public void broadcastStateChanged(ContactId contact, String transferId, State status,
+    void broadcastStateChanged(ContactId contact, String transferId, State status,
             ReasonCode reasonCode);
 
-    public void broadcastProgressUpdate(ContactId contact, String transferId, long currentSize,
+    void broadcastProgressUpdate(ContactId contact, String transferId, long currentSize,
             long totalSize);
 
-    public void broadcastInvitation(String fileTransferId);
-
-    public void broadcastResumeFileTransfer(String filetransferId);
+    void broadcastInvitation(String fileTransferId);
 
     void broadcastFileTransferDeleted(ContactId contact, Set<String> filetransferIds);
 

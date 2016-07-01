@@ -732,6 +732,12 @@ public class RcsSettingsData {
     /* package private */static final Integer DEFAULT_KEY_DEFAULT_MESSAGING_METHOD = MessagingMethod.AUTOMATIC
             .toInt();
 
+    /**
+     * Enrich calling service support
+     */
+    public static final String ENRICH_CALLING_SERVICE = "EnrichCallingSupport";
+    /* package private */static final Boolean DEFAULT_ENRICH_CALLING_SERVICE = true;
+
     // ---------------------------------------------------------------------------
     // User profile settings
     // ---------------------------------------------------------------------------
@@ -1147,6 +1153,30 @@ public class RcsSettingsData {
     /* package private */static final String DEFAULT_CAPABILITY_RCS_EXTENSIONS = null;
 
     /**
+     * Call composer
+     */
+    public static final String CAPABILITY_CALL_COMPOSER = "CapabilityCallComposer";
+    /* package private */static final Boolean DEFAULT_CAPABILITY_CALL_COMPOSER = true;
+
+    /**
+     * Shared map
+     */
+    public static final String CAPABILITY_SHARED_MAP = "CapabilitySharedMap";
+    /* package private */static final Boolean DEFAULT_CAPABILITY_SHARED_MAP = true;
+
+    /**
+     * Shared sketch
+     */
+    public static final String CAPABILITY_SHARED_SKETCH = "CapabilitySharedSketch";
+    /* package private */static final Boolean DEFAULT_CAPABILITY_SHARED_SKETCH = true;
+
+    /**
+     * Post call
+     */
+    public static final String CAPABILITY_POST_CALL = "CapabilityPostCall";
+    /* package private */static final Boolean DEFAULT_CAPABILITY_POST_CALL = true;
+
+    /**
      * Instant messaging is always on (Store & Forward server)
      */
     public static final String IM_CAPABILITY_ALWAYS_ON = "ImAlwaysOn";
@@ -1421,6 +1451,12 @@ public class RcsSettingsData {
     /* package private */static final Integer DEFAULT_MAX_MSRP_SIZE_EXTENSIONS = 0;
 
     /**
+     * Call composer inactivity timeout before session is closed
+     */
+    public static final String CALL_COMPOSER_INACTIVITY_TIMEOUT = "CallComposerInactivityTimeout";
+    /* package private */static final Long DEFAULT_CALL_COMPOSER_INACTIVITY_TIMEOUT = 180000L;
+
+    /**
      * Validity of the RCS configuration.
      */
     public static final String CONFIGURATION_VALID = "ConfigurationValidity";
@@ -1690,6 +1726,14 @@ public class RcsSettingsData {
                 RcsSettingsData.DEFAULT_CAPABILITY_FT_SF);
         sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_RCS_EXTENSIONS,
                 RcsSettingsData.DEFAULT_CAPABILITY_RCS_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_CALL_COMPOSER,
+                RcsSettingsData.DEFAULT_CAPABILITY_CALL_COMPOSER);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_SHARED_MAP,
+                RcsSettingsData.DEFAULT_CAPABILITY_SHARED_MAP);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_SHARED_SKETCH,
+                RcsSettingsData.DEFAULT_CAPABILITY_SHARED_SKETCH);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CAPABILITY_POST_CALL,
+                RcsSettingsData.DEFAULT_CAPABILITY_POST_CALL);
         sSettingsKeyDefaultValue.put(RcsSettingsData.IMS_SERVICE_POLLING_PERIOD,
                 RcsSettingsData.DEFAULT_IMS_SERVICE_POLLING_PERIOD);
         sSettingsKeyDefaultValue.put(RcsSettingsData.SIP_DEFAULT_PORT,
@@ -1844,6 +1888,8 @@ public class RcsSettingsData {
                 RcsSettingsData.DEFAULT_ALLOW_EXTENSIONS);
         sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_MSRP_SIZE_EXTENSIONS,
                 RcsSettingsData.DEFAULT_MAX_MSRP_SIZE_EXTENSIONS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT,
+                RcsSettingsData.DEFAULT_CALL_COMPOSER_INACTIVITY_TIMEOUT);
         sSettingsKeyDefaultValue.put(RcsSettingsData.CONFIGURATION_VALID,
                 RcsSettingsData.DEFAULT_CONFIGURATION_VALID);
         sSettingsKeyDefaultValue.put(RcsSettingsData.AUTO_ACCEPT_FT_IN_ROAMING,
@@ -1878,6 +1924,8 @@ public class RcsSettingsData {
                 RcsSettingsData.DEFAULT_PROV_REJECT_BUTTON);
         sSettingsKeyDefaultValue.put(RcsSettingsData.LOCAL_DISPLAY_LANGUAGE,
                 RcsSettingsData.DEFAULT_LOCAL_DISPLAY_LANGUAGE);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.ENRICH_CALLING_SERVICE,
+                RcsSettingsData.DEFAULT_ENRICH_CALLING_SERVICE);
         // message store
         sSettingsKeyDefaultValue.put(RcsSettingsData.MESSAGE_STORE_URI,
                 RcsSettingsData.DEFAULT_MESSAGE_STORE_URI);

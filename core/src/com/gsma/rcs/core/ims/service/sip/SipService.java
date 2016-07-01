@@ -24,23 +24,25 @@ package com.gsma.rcs.core.ims.service.sip;
 
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
+import com.gsma.rcs.core.ims.network.sip.SipMessageFactory;
 import com.gsma.rcs.core.ims.network.sip.SipUtils;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
+import com.gsma.rcs.core.ims.service.capability.CapabilityUtils;
 import com.gsma.rcs.core.ims.service.sip.messaging.GenericSipMsrpSession;
 import com.gsma.rcs.core.ims.service.sip.messaging.OriginatingSipMsrpSession;
 import com.gsma.rcs.core.ims.service.sip.messaging.TerminatingSipMsrpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.GenericSipRtpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.OriginatingSipRtpSession;
 import com.gsma.rcs.core.ims.service.sip.streaming.TerminatingSipRtpSession;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.service.api.MultimediaSessionServiceImpl;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.ContactUtil.PhoneNumber;
+import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -50,6 +52,7 @@ import android.os.HandlerThread;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax2.sip.message.Response;
 
@@ -64,12 +67,14 @@ public class SipService extends ImsService {
 
     private static final String MM_STREAMING_OPERATION_THREAD_NAME = "MmsOperations";
 
+    private static final String MM_INSTANT_MESSAGE_OPERATION_THREAD_NAME = "ImmOperations";
+
     private final static Logger sLogger = Logger.getLogger(SipService.class.getSimpleName());
 
     /**
-     * MIME-type for multimedia services
+     * Default MIME-type for multimedia services
      */
-    public final static String MIME_TYPE = "application/*";
+    public final static String DEFAULT_MIME_TYPE = "application/*";
 
     /**
      * GenericSipMsrpSessionCache with SessionId as key
@@ -85,14 +90,17 @@ public class SipService extends ImsService {
 
     private final RcsSettings mRcsSettings;
 
+    private ImmManager mImmManager;
+
     private MultimediaSessionServiceImpl mMmSessionService;
 
     private final Handler mMultimediaMessagingOperationHandler;
     private final Handler mMultimediaStreamingOperationHandler;
+    private final Handler mMultimediaMessageOperationHandler;
 
     /**
      * Constructor
-     * 
+     *
      * @param parent IMS module
      * @param contactManager ContactManager
      * @param rcsSettings the RCS settings accessor
@@ -103,6 +111,7 @@ public class SipService extends ImsService {
         mRcsSettings = rcsSettings;
         mMultimediaMessagingOperationHandler = allocateBgHandler(MM_MESSAGING_OPERATION_THREAD_NAME);
         mMultimediaStreamingOperationHandler = allocateBgHandler(MM_STREAMING_OPERATION_THREAD_NAME);
+        mMultimediaMessageOperationHandler = allocateBgHandler(MM_INSTANT_MESSAGE_OPERATION_THREAD_NAME);
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -126,6 +135,10 @@ public class SipService extends ImsService {
         mMultimediaStreamingOperationHandler.post(runnable);
     }
 
+    public void scheduleMultimediaMessageOperation(Runnable runnable) {
+        mMultimediaMessageOperationHandler.post(runnable);
+    }
+
     @Override
     public synchronized void start() {
         if (isServiceStarted()) {
@@ -133,6 +146,8 @@ public class SipService extends ImsService {
             return;
         }
         setServiceStarted(true);
+        mImmManager = new ImmManager(this, mRcsSettings);
+        mImmManager.start();
     }
 
     @Override
@@ -142,9 +157,12 @@ public class SipService extends ImsService {
             return;
         }
         setServiceStarted(false);
+        mImmManager.terminate();
+        mImmManager = null;
         if (ImsServiceSession.TerminationReason.TERMINATION_BY_SYSTEM == reasonCode) {
             mMultimediaMessagingOperationHandler.getLooper().quit();
             mMultimediaStreamingOperationHandler.getLooper().quit();
+            mMultimediaMessageOperationHandler.getLooper().quit();
         }
     }
 
@@ -154,22 +172,25 @@ public class SipService extends ImsService {
 
     /**
      * Initiate a MSRP session
-     * 
+     *
      * @param contact Remote contact Id
      * @param featureTag Feature tag of the service
+     * @param acceptTypes Accept-types related to exchanged messages
+     * @param acceptWrappedTypes Accept-wrapped-types related to exchanged messages
      * @return SIP session
      */
-    public GenericSipMsrpSession createMsrpSession(ContactId contact, String featureTag) {
+    public GenericSipMsrpSession createMsrpSession(ContactId contact, String featureTag,
+            String[] acceptTypes, String[] acceptWrappedTypes) {
         if (sLogger.isActivated()) {
             sLogger.info("Initiate a MSRP session with contact " + contact);
         }
         return new OriginatingSipMsrpSession(this, contact, featureTag, mRcsSettings,
-                NtpTrustedTime.currentTimeMillis(), mContactManager);
+                System.currentTimeMillis(), mContactManager, acceptTypes, acceptWrappedTypes);
     }
 
     /**
      * Receive a session invitation with MSRP media
-     * 
+     *
      * @param sessionInvite Resolved intent
      * @param invite Initial invite
      * @param timestamp Local timestamp when got SipRequest
@@ -232,22 +253,24 @@ public class SipService extends ImsService {
 
     /**
      * Initiate a RTP session
-     * 
+     *
      * @param contact Remote contact
      * @param featureTag Feature tag of the service
+     * @param encoding Encoding
      * @return SIP session
      */
-    public GenericSipRtpSession createRtpSession(ContactId contact, String featureTag) {
+    public GenericSipRtpSession createRtpSession(ContactId contact, String featureTag,
+            String encoding) {
         if (sLogger.isActivated()) {
             sLogger.info("Initiate a RTP session with contact " + contact);
         }
         return new OriginatingSipRtpSession(this, contact, featureTag, mRcsSettings,
-                NtpTrustedTime.currentTimeMillis(), mContactManager);
+                System.currentTimeMillis(), mContactManager, encoding);
     }
 
     /**
      * Receive a session invitation with RTP media
-     * 
+     *
      * @param sessionInvite Resolved intent
      * @param invite Initial invite
      * @param timestamp Local timestamp when got SipRequest
@@ -370,4 +393,85 @@ public class SipService extends ImsService {
         }
     }
 
+    public void sendInstantMultimediaMessage(ContactId contact, String featureTag, byte[] content,
+            String contentType) throws NetworkException {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Send instant multimedia message to contact " + contact);
+        }
+        if (mImmManager == null) {
+            throw new NetworkException("Cannot send multimedia message: SIP service not started!");
+        }
+        mImmManager.sendMessage(contact, featureTag, content, contentType);
+    }
+
+    /**
+     * Receive a multimedia instant messsage
+     *
+     * @param intent Resolved intent
+     * @param message Instant message
+     */
+    public void onInstantMessageReceived(final Intent intent, final SipRequest message) {
+        try {
+            PhoneNumber number = ContactUtil.getValidPhoneNumberFromUri(SipUtils
+                    .getAssertedIdentity(message));
+            if (number == null) {
+                if (sLogger.isActivated()) {
+                    sLogger.warn("Cannot process instant message: invalid SIP header");
+                }
+                sendErrorResponse(message, Response.SESSION_NOT_ACCEPTABLE);
+                return;
+            }
+            // Test if the contact is blocked
+            final ContactId remote = ContactUtil.createContactIdFromValidatedData(number);
+            mContactManager.setContactDisplayName(remote,
+                    SipUtils.getDisplayNameFromInvite(message));
+            if (mContactManager.isBlockedForContact(remote)) {
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Contact " + remote
+                            + " is blocked: automatically reject the message");
+                }
+                sendErrorResponse(message, Response.DECLINE);
+                return;
+            }
+            /* Send automatically a 200 Ok */
+            getImsModule().getSipManager().sendSipResponse(
+                    SipMessageFactory.createResponse(message, IdGenerator.getIdentifier(),
+                            Response.OK));
+            Set<String> featureTags = message.getFeatureTags();
+            String iariFeatureTag = GenericSipSession.getIariFeatureTag(featureTags);
+            if (iariFeatureTag == null) {
+                if (sLogger.isActivated()) {
+                    sLogger.warn("Cannot process instant message: no service ID");
+                }
+                sendErrorResponse(message, Response.SESSION_NOT_ACCEPTABLE);
+                return;
+            }
+            final String serviceId = CapabilityUtils.extractServiceId(iariFeatureTag);
+            mMultimediaMessageOperationHandler.post(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        mMmSessionService.receiveSipInstantMessage(intent, remote,
+                                message.getRawContent(), message.getContentType(), serviceId);
+                    } catch (RuntimeException e) {
+                        /*
+                         * Normally we are not allowed to catch runtime exceptions as these are
+                         * genuine bugs which should be handled/fixed within the code. However the
+                         * cases when we are executing operations on a thread unhandling such
+                         * exceptions will eventually lead to exit the system and thus can bring the
+                         * whole system down, which is not intended.
+                         */
+                        sLogger.error("Failed to receive generic instant message!", e);
+                    }
+                }
+            });
+        } catch (NetworkException e) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("Failed to receive generic instant message! (" + e.getMessage() + ")");
+            }
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to receive instant message!", e);
+        }
+    }
 }

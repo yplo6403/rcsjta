@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import com.gsma.services.rcs.RcsServiceRegistration;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 /**
  * Server API utils
@@ -75,8 +76,10 @@ public class ServerApiUtils {
     public static boolean isMmsConnectionAvailable(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
-        return connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS)
-                .isAvailable();
+        // TODO suppress deprecation
+        NetworkInfo networkInfo = connectivityManager
+                .getNetworkInfo(ConnectivityManager.TYPE_MOBILE_MMS);
+        return networkInfo != null && networkInfo.isAvailable();
     }
 
     /**
@@ -97,13 +100,19 @@ public class ServerApiUtils {
     }
 
     /**
-     * Test API extension permission
+     * Test IMS extension
      * 
      * @param ext Extension ID
      * @throws ServerApiPermissionDeniedException
+     * @throws ServerApiServiceNotRegisteredException
      */
-    public static void testApiExtensionPermission(String ext)
-            throws ServerApiPermissionDeniedException {
-        // No control done in this release
+    public static void testImsExtension(String ext) throws ServerApiPermissionDeniedException,
+            ServerApiServiceNotRegisteredException {
+        if (!isImsConnected()) {
+            throw new ServerApiServiceNotRegisteredException("Core is not connected to IMS");
+        }
+        if (!Core.getInstance().getImsModule().getExtensionManager().isExtensionAuthorized(ext)) {
+            throw new ServerApiPermissionDeniedException("Extension not authorized");
+        }
     }
 }

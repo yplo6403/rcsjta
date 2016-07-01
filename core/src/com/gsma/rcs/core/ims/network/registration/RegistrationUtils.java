@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@
 
 package com.gsma.rcs.core.ims.network.registration;
 
+import com.gsma.rcs.core.ims.network.sip.FeatureTags;
+import com.gsma.rcs.provider.settings.RcsSettings;
+
 import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.gsma.rcs.core.ims.network.sip.FeatureTags;
-import com.gsma.rcs.provider.settings.RcsSettings;
 
 /**
  * Registration utility functions
@@ -35,13 +35,13 @@ public class RegistrationUtils {
     /**
      * Get supported feature tags for registration
      * 
-     * @param rcsSettings
+     * @param rcsSettings RCS settings accessor
      * @return List of tags
      */
     public static String[] getSupportedFeatureTags(RcsSettings rcsSettings) {
-        List<String> tags = new ArrayList<String>();
-        List<String> icsiTags = new ArrayList<String>();
-        List<String> iariTags = new ArrayList<String>();
+        List<String> tags = new ArrayList<>();
+        List<String> icsiTags = new ArrayList<>();
+        List<String> iariTags = new ArrayList<>();
 
         // IM support
         if (rcsSettings.isImSessionSupported()) {
@@ -87,9 +87,13 @@ public class RegistrationUtils {
         // Extensions
         if (rcsSettings.isExtensionsAllowed()) {
             for (String extension : rcsSettings.getSupportedRcsExtensions()) {
-                StringBuilder sb = new StringBuilder(FeatureTags.FEATURE_RCSE_EXTENSION)
-                        .append('.').append(extension);
-                iariTags.add(sb.toString());
+                if (rcsSettings.isExtensionAuthorized(extension)) {
+                    if (extension.startsWith("gsma.")) {
+                        icsiTags.add(FeatureTags.FEATURE_RCSE_ICSI_EXTENSION + "." + extension);
+                    } else {
+                        iariTags.add(FeatureTags.FEATURE_RCSE_IARI_EXTENSION + "." + extension);
+                    }
+                }
             }
             icsiTags.add(FeatureTags.FEATURE_3GPP_EXTENSION);
         }

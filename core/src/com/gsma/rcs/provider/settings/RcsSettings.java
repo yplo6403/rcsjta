@@ -25,6 +25,7 @@ package com.gsma.rcs.provider.settings;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
 import com.gsma.rcs.core.ims.service.capability.Capabilities.CapabilitiesBuilder;
 import com.gsma.rcs.core.ims.service.extension.ServiceExtensionManager;
+import com.gsma.rcs.core.ims.service.sip.EnrichCallingService;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettingsData.AuthenticationProcedure;
@@ -1481,6 +1482,42 @@ public class RcsSettings {
     }
 
     /**
+     * Is call composer supported
+     *
+     * @return Boolean
+     */
+    public boolean isCallComposerSupported() {
+        return readBoolean(RcsSettingsData.CAPABILITY_CALL_COMPOSER);
+    }
+
+    /**
+     * Is shared map supported
+     *
+     * @return Boolean
+     */
+    public boolean isSharedMapSupported() {
+        return readBoolean(RcsSettingsData.CAPABILITY_SHARED_MAP);
+    }
+
+    /**
+     * Is shared sketch supported
+     *
+     * @return Boolean
+     */
+    public boolean isSharedSketchSupported() {
+        return readBoolean(RcsSettingsData.CAPABILITY_SHARED_SKETCH);
+    }
+
+    /**
+     * Is post call supported
+     *
+     * @return Boolean
+     */
+    public boolean isPostCallSupported() {
+        return readBoolean(RcsSettingsData.CAPABILITY_POST_CALL);
+    }
+
+    /**
      * Is IM always-on thanks to the Store & Forward functionality
      * 
      * @return Boolean
@@ -1924,12 +1961,34 @@ public class RcsSettings {
     }
 
     /**
+     * Is RCS extension authorized
+     *
+     * @return Boolean
+     */
+    public boolean isExtensionAuthorized(String ext) {
+        return ext != null
+                && !(EnrichCallingService.CALL_COMPOSER_FEATURE_TAG.equals(ext) && !isCallComposerSupported())
+                && !(EnrichCallingService.SHARED_MAP_SERVICE_ID.equals(ext) && !isSharedMapSupported())
+                && !(EnrichCallingService.SHARED_SKETCH_SERVICE_ID.equals(ext) && !isSharedSketchSupported())
+                && !(EnrichCallingService.POST_CALL_SERVICE_ID.equals(ext) && !isPostCallSupported());
+    }
+
+    /**
      * Get max lenght for extensions using real time messaging (MSRP)
      * 
      * @return Max length
      */
     public int getMaxMsrpLengthForExtensions() {
         return readInteger(RcsSettingsData.MAX_MSRP_SIZE_EXTENSIONS);
+    }
+
+    /**
+     * Get call composer inactivity timeout
+     *
+     * @return Timeout in milliseconds
+     */
+    public long getCallComposerInactivityTimeout() {
+        return readLong(RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT);
     }
 
     /**
@@ -2240,6 +2299,15 @@ public class RcsSettings {
      */
     public String getDisplayLanguage() {
         return readString(RcsSettingsData.LOCAL_DISPLAY_LANGUAGE);
+    }
+
+    /**
+     * Is enrich calling service supported
+     *
+     * @return Boolean True if supported
+     */
+    public boolean isEnrichCallingServiceSupported() {
+        return readBoolean(RcsSettingsData.ENRICH_CALLING_SERVICE);
     }
 
     /**

@@ -397,6 +397,9 @@
             android:name="com.gsma.rcs.ri.extension.streaming.StreamingSessionView"
             android:label="@string/title_streaming_session"/>
         <activity
+            android:name="com.gsma.rcs.ri.extension.SendInstantMessage"
+            android:label="@string/title_instant_session"/>
+        <activity
             android:name="com.gsma.rcs.ri.extension.streaming.StreamingSessionList"
             android:label="@string/menu_streaming_sessions_list"/>
 
@@ -405,7 +408,6 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="com.gsma.services.rcs.extension.action.NEW_MESSAGING_SESSION"/>
-
                 <data android:mimeType="com.gsma.services.rcs/ext.messaging"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -413,8 +415,19 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="com.gsma.services.rcs.extension.action.NEW_STREAMING_SESSION"/>
-
                 <data android:mimeType="com.gsma.services.rcs/ext.streaming"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.gsma.rcs.ri.extension.InstantMessageReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.gsma.services.rcs.extension.action.NEW_INSTANT_MESSAGE"/>
+                <data android:mimeType="com.gsma.services.rcs/ext.messaging"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="android.intent.category.DEFAULT"/>

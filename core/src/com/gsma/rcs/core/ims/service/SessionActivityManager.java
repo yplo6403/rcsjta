@@ -24,8 +24,6 @@ package com.gsma.rcs.core.ims.service;
 
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
-import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.PeriodicRefresher;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -45,7 +43,10 @@ public class SessionActivityManager extends PeriodicRefresher {
      */
     private final ImsServiceSession mSession;
 
-    private RcsSettings mRcsSettings;
+    /**
+     * Timeout
+     */
+    private final long mTimeout;
 
     private static final Logger sLogger = Logger.getLogger(SessionActivityManager.class
             .getSimpleName());
@@ -54,32 +55,38 @@ public class SessionActivityManager extends PeriodicRefresher {
      * Constructor
      * 
      * @param session IM session
-     * @param rcsSettings the RCS settings accessor
+     * @param timeout Idle timeout
      */
-    public SessionActivityManager(ImsServiceSession session, RcsSettings rcsSettings) {
+    public SessionActivityManager(ImsServiceSession session, long timeout) {
         mSession = session;
-        mRcsSettings = rcsSettings;
+        mTimeout = timeout;
     }
 
     /**
      * Update the session activity
      */
     public void updateActivity() {
-        mActivityTimestamp = NtpTrustedTime.currentTimeMillis();
+        mActivityTimestamp = System.currentTimeMillis();
     }
 
     /**
      * Start manager
      */
     public void start() {
-        long timeout = mRcsSettings.getChatIdleDuration();
+        if (mTimeout == 0) {
+            if (sLogger.isActivated()) {
+                sLogger.info("Activity manager is disabled (no idle timeout)");
+            }
+            return;
+        }
         if (sLogger.isActivated()) {
-            sLogger.info("Start the activity manager for " + timeout + "ms");
+            sLogger.info("Start the activity manager for " + mTimeout + "ms");
         }
         // Reset the inactivity timestamp
         updateActivity();
+
         // Start a timer to check if the inactivity period has been reach or not each 10seconds
-        startTimer(NtpTrustedTime.currentTimeMillis(), timeout);
+        startTimer(System.currentTimeMillis(), mTimeout);
     }
 
     /**
@@ -99,8 +106,8 @@ public class SessionActivityManager extends PeriodicRefresher {
      * @throws PayloadException
      */
     public void periodicProcessing() throws PayloadException, NetworkException {
-        long timeout = mRcsSettings.getChatIdleDuration();
-        long inactivityPeriod = NtpTrustedTime.currentTimeMillis() - mActivityTimestamp;
+        long timeout = mTimeout;
+        long inactivityPeriod = System.currentTimeMillis() - mActivityTimestamp;
         long remainingPeriod = timeout - inactivityPeriod;
         if (sLogger.isActivated()) {
             sLogger.debug("Check inactivity period: inactivity=" + inactivityPeriod
@@ -113,7 +120,7 @@ public class SessionActivityManager extends PeriodicRefresher {
             }
             mSession.handleInactivityEvent();
         } else {
-            startTimer(NtpTrustedTime.currentTimeMillis(), remainingPeriod);
+            startTimer(System.currentTimeMillis(), remainingPeriod);
         }
     }
 }

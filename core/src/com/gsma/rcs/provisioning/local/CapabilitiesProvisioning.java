@@ -93,6 +93,10 @@ public class CapabilitiesProvisioning extends Fragment implements IProvisioningF
         mHelper.setBoolCheckBox(R.id.file_transfer_sf, RcsSettingsData.CAPABILITY_FILE_TRANSFER_SF);
         mHelper.setBoolCheckBox(R.id.group_chat_sf, RcsSettingsData.CAPABILITY_GROUP_CHAT_SF);
         mHelper.setBoolCheckBox(R.id.sip_automata, RcsSettingsData.CAPABILITY_SIP_AUTOMATA);
+        mHelper.setBoolCheckBox(R.id.call_composer, RcsSettingsData.CAPABILITY_CALL_COMPOSER);
+        mHelper.setBoolCheckBox(R.id.shared_map, RcsSettingsData.CAPABILITY_SHARED_MAP);
+        mHelper.setBoolCheckBox(R.id.shared_sketch, RcsSettingsData.CAPABILITY_SHARED_SKETCH);
+        mHelper.setBoolCheckBox(R.id.post_call, RcsSettingsData.CAPABILITY_POST_CALL);
     }
 
     @Override
@@ -119,6 +123,10 @@ public class CapabilitiesProvisioning extends Fragment implements IProvisioningF
         mHelper.saveBoolCheckBox(R.id.file_transfer_sf, RcsSettingsData.CAPABILITY_FILE_TRANSFER_SF);
         mHelper.saveBoolCheckBox(R.id.group_chat_sf, RcsSettingsData.CAPABILITY_GROUP_CHAT_SF);
         mHelper.saveBoolCheckBox(R.id.sip_automata, RcsSettingsData.CAPABILITY_SIP_AUTOMATA);
+        mHelper.saveBoolCheckBox(R.id.call_composer, RcsSettingsData.CAPABILITY_CALL_COMPOSER);
+        mHelper.saveBoolCheckBox(R.id.shared_map, RcsSettingsData.CAPABILITY_SHARED_MAP);
+        mHelper.saveBoolCheckBox(R.id.shared_sketch, RcsSettingsData.CAPABILITY_SHARED_SKETCH);
+        mHelper.saveBoolCheckBox(R.id.post_call, RcsSettingsData.CAPABILITY_POST_CALL);
     }
 
 }

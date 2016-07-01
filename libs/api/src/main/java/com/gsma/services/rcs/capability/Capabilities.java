@@ -75,8 +75,33 @@ public class Capabilities implements Parcelable {
     private long mTimestamp;
 
     /**
+     * Indicates the file transfer capability is supported.
+     */
+    public static final int CAPABILITY_FILE_TRANSFER = 0x00000001;
+
+    /**
+     * Indicates the IM capability is supported.
+     */
+    public static final int CAPABILITY_IM = 0x00000002;
+
+    /**
+     * Indicates the geoloc push capability is supported.
+     */
+    public static final int CAPABILITY_GEOLOC_PUSH = 0x00000004;
+
+    /**
+     * Indicates the image sharing capability is supported.
+     */
+    public static final int CAPABILITY_IMAGE_SHARING = 0x00000008;
+
+    /**
+     * Indicates the video sharing capability is supported.
+     */
+    public static final int CAPABILITY_VIDEO_SHARING = 0x00000010;
+
+    /**
      * Constructor
-     * 
+     *
      * @param imageSharing Image sharing support
      * @param videoSharing Video sharing support
      * @param imSession IM/Chat support
@@ -150,7 +175,7 @@ public class Capabilities implements Parcelable {
         dest.writeInt(mFileTransfer ? 1 : 0);
         if (mExtensions != null) {
             dest.writeInt(1);
-            List<String> exts = new ArrayList<>(mExtensions);
+            List<String> exts = new ArrayList<String>(mExtensions);
             dest.writeStringList(exts);
         } else {
             dest.writeInt(0);
@@ -178,8 +203,10 @@ public class Capabilities implements Parcelable {
     /**
      * Is image sharing supported
      *
+     * @deprecated Use {@link #hasCapabilities(int capabilities)} instead.
      * @return true if supported else returns false
      */
+    @Deprecated
     public boolean isImageSharingSupported() {
         return mImageSharing;
     }
@@ -187,8 +214,10 @@ public class Capabilities implements Parcelable {
     /**
      * Is video sharing supported
      *
+     * @deprecated Use {@link #hasCapabilities(int capabilities)} instead.
      * @return true if supported else returns false
      */
+    @Deprecated
     public boolean isVideoSharingSupported() {
         return mVideoSharing;
     }
@@ -196,8 +225,10 @@ public class Capabilities implements Parcelable {
     /**
      * Is IM session supported
      *
+     * @deprecated Use {@link #hasCapabilities(int capabilities)} instead.
      * @return true if supported else returns false
      */
+    @Deprecated
     public boolean isImSessionSupported() {
         return mImSession;
     }
@@ -205,8 +236,10 @@ public class Capabilities implements Parcelable {
     /**
      * Is file transfer supported
      *
+     * @deprecated Use {@link #hasCapabilities(int capabilities)} instead.
      * @return true if supported else returns false
      */
+    @Deprecated
     public boolean isFileTransferSupported() {
         return mFileTransfer;
     }
@@ -214,8 +247,10 @@ public class Capabilities implements Parcelable {
     /**
      * Is geolocation push supported
      *
+     * @deprecated Use {@link #hasCapabilities(int capabilities)} instead.
      * @return true if supported else returns false
      */
+    @Deprecated
     public boolean isGeolocPushSupported() {
         return mGeolocPush;
     }
@@ -257,4 +292,30 @@ public class Capabilities implements Parcelable {
         return mTimestamp;
     }
 
+    private int isCapabilitySupported(boolean supported, int capabilityFlag) {
+        return (supported) ? capabilityFlag : 0;
+    }
+
+    /**
+     * Gets the combination of supported capabilities.
+     * 
+     * @return the combination of supported capabilities
+     */
+    private int getSupportedCapabilities() {
+        int result = isCapabilitySupported(mFileTransfer, CAPABILITY_FILE_TRANSFER);
+        result |= isCapabilitySupported(mImSession, CAPABILITY_IM);
+        result |= isCapabilitySupported(mGeolocPush, CAPABILITY_GEOLOC_PUSH);
+        result |= isCapabilitySupported(mImageSharing, CAPABILITY_IMAGE_SHARING);
+        result |= isCapabilitySupported(mVideoSharing, CAPABILITY_VIDEO_SHARING);
+        return result;
+    }
+
+    /**
+     * Tests for the support of capabilities on this instance.
+     * 
+     * @return True if the capabilities are supported.
+     */
+    public boolean hasCapabilities(int capabilities) {
+        return (getSupportedCapabilities() & capabilities) == capabilities;
+    }
 }

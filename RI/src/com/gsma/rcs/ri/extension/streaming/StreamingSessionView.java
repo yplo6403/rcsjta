@@ -263,7 +263,8 @@ public class StreamingSessionView extends RcsActivity {
 
     private void startSession() {
         try {
-            mSession = mSessionService.initiateStreamingSession(mServiceId, mContact);
+            mSession = mSessionService.initiateStreamingSession(mServiceId, mContact,
+                    StreamingSessionUtils.ENCODING);
             mSessionId = mSession.getSessionId();
             showProgressDialog();
 
@@ -477,7 +478,6 @@ public class StreamingSessionView extends RcsActivity {
                     }
                 });
             }
-
         };
     }
 

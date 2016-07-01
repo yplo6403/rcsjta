@@ -106,7 +106,8 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
                 RcsSettingsData.DIRECTORY_PATH_FILEICONS);
         mHelper.setIntEditText(R.id.MaxGeolocLabelLength, RcsSettingsData.MAX_GEOLOC_LABEL_LENGTH);
         mHelper.setLongEditText(R.id.GeolocExpirationTime, RcsSettingsData.GEOLOC_EXPIRATION_TIME);
-
+        mHelper.setLongEditText(R.id.CallComposerIdleDuration,
+                RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT);
         Spinner spinner = (Spinner) mRootView.findViewById(R.id.ImSessionStart);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(),
                 android.R.layout.simple_spinner_item, IM_SESSION_START_MODES);
@@ -125,6 +126,7 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
                 RcsSettingsData.AUTO_ACCEPT_FT_CHANGEABLE);
         mHelper.setBoolCheckBox(R.id.AutoAcceptChat, RcsSettingsData.AUTO_ACCEPT_CHAT);
         mHelper.setBoolCheckBox(R.id.AutoAcceptGroupChat, RcsSettingsData.AUTO_ACCEPT_GROUP_CHAT);
+        mHelper.setBoolCheckBox(R.id.EnrichCalling, RcsSettingsData.ENRICH_CALLING_SERVICE);
     }
 
     @Override
@@ -159,6 +161,8 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         mHelper.saveStringEditText(R.id.DirectoryPathPhotos, RcsSettingsData.DIRECTORY_PATH_PHOTOS);
         mHelper.saveStringEditText(R.id.DirectoryPathVideos, RcsSettingsData.DIRECTORY_PATH_VIDEOS);
         mHelper.saveStringEditText(R.id.DirectoryPathFiles, RcsSettingsData.DIRECTORY_PATH_FILES);
+        mHelper.saveLongEditText(R.id.CallComposerIdleDuration,
+                RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT);
         mHelper.saveStringEditText(R.id.DirectoryPathFileIcons,
                 RcsSettingsData.DIRECTORY_PATH_FILEICONS);
 
@@ -176,6 +180,7 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
                 RcsSettingsData.AUTO_ACCEPT_FT_CHANGEABLE);
         mHelper.saveBoolCheckBox(R.id.AutoAcceptChat, RcsSettingsData.AUTO_ACCEPT_CHAT);
         mHelper.saveBoolCheckBox(R.id.AutoAcceptGroupChat, RcsSettingsData.AUTO_ACCEPT_GROUP_CHAT);
+        mHelper.saveBoolCheckBox(R.id.EnrichCalling, RcsSettingsData.ENRICH_CALLING_SERVICE);
     }
 
 }

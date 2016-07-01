@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +30,9 @@ import com.gsma.services.rcs.upload.FileUploadInfo;
  */
 public interface IFileUploadEventBroadcaster {
 
-    public void broadcastStateChanged(String uploadId, State state);
+    void broadcastStateChanged(String uploadId, State state);
 
-    public void broadcastProgressUpdate(String uploadId, long currentSize, long totalSize);
+    void broadcastProgressUpdate(String uploadId, long currentSize, long totalSize);
 
-    public void broadcastUploaded(String uploadId, FileUploadInfo info);
+    void broadcastUploaded(String uploadId, FileUploadInfo info);
 }

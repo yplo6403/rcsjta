@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,6 +39,10 @@ import com.gsma.services.rcs.capability.ICapabilityService;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.os.RemoteException;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Capability service API implementation
@@ -324,6 +328,23 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
     public void requestAllContactsCapabilities() throws RemoteException {
         ServerApiUtils.testIms();
         mCapabilityService.scheduleCapabilityOperation(new AllCapabilitiesRequester());
+    }
+
+    @Override
+    public void requestContactCapabilities2(List<ContactId> contacts) throws RemoteException {
+        ServerApiUtils.testIms();
+        if (contacts == null) {
+            throw new ServerApiIllegalArgumentException("contacts must not be null!");
+
+        }
+        final Set<ContactId> setOfContacts = new HashSet<>(contacts);
+        mCapabilityService.scheduleCapabilityOperation(new Runnable() {
+
+            @Override
+            public void run() {
+                mCapabilityService.requestContactCapabilities(setOfContacts);
+            }
+        });
     }
 
     /**

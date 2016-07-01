@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 Sony Mobile Communications Inc.
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -47,6 +47,7 @@ public class RcsServiceRegistrationEventBroadcaster implements
         mServiceRegistrationListeners.unregister(listener);
     }
 
+    @Override
     public void broadcastServiceRegistered() {
         final int N = mServiceRegistrationListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {
@@ -61,6 +62,7 @@ public class RcsServiceRegistrationEventBroadcaster implements
         mServiceRegistrationListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastServiceUnRegistered(RcsServiceRegistration.ReasonCode reason) {
         final int N = mServiceRegistrationListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {

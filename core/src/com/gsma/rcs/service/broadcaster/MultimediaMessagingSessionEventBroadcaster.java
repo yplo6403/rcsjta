@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Sony Mobile Communications Inc.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -52,7 +53,8 @@ public class MultimediaMessagingSessionEventBroadcaster implements
         mMultimediaMessagingListeners.unregister(listener);
     }
 
-    public void broadcastMessageReceived(ContactId contact, String sessionId, byte[] message) {
+    @Override
+    public void broadcastMessageReceived(ContactId contact, String sessionId, byte[] message, String contentType) {
         final int N = mMultimediaMessagingListeners.beginBroadcast();
         for (int i = 0; i < N; i++) {
             try {
@@ -63,10 +65,19 @@ public class MultimediaMessagingSessionEventBroadcaster implements
                     logger.error("Can't notify listener", e);
                 }
             }
+            try {
+                mMultimediaMessagingListeners.getBroadcastItem(i).onMessageReceived2(contact,
+                        sessionId, message, contentType);
+            } catch (RemoteException e) {
+                if (logger.isActivated()) {
+                    logger.error("Can't notify listener", e);
+                }
+            }
         }
         mMultimediaMessagingListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastStateChanged(ContactId contact, String sessionId, State state,
             ReasonCode reasonCode) {
         int rcsState = state.toInt();
@@ -85,11 +96,27 @@ public class MultimediaMessagingSessionEventBroadcaster implements
         mMultimediaMessagingListeners.finishBroadcast();
     }
 
+    @Override
     public void broadcastInvitation(String sessionId, Intent msrpSessionInvite) {
         msrpSessionInvite.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
         IntentUtils.tryToSetReceiverForegroundFlag(msrpSessionInvite);
         msrpSessionInvite.putExtra(MultimediaMessagingSessionIntent.EXTRA_SESSION_ID, sessionId);
 
         AndroidFactory.getApplicationContext().sendBroadcast(msrpSessionInvite);
+    }
+
+    @Override
+    public void broadcastMessagesFlushed(ContactId contact, String sessionId) {
+        final int N = mMultimediaMessagingListeners.beginBroadcast();
+        for (int i = 0; i < N; i++) {
+            try {
+                mMultimediaMessagingListeners.getBroadcastItem(i).onMessagesFlushed(contact, sessionId);
+            } catch (RemoteException e) {
+                if (logger.isActivated()) {
+                    logger.error("Can't notify listener", e);
+                }
+            }
+        }
+        mMultimediaMessagingListeners.finishBroadcast();
     }
 }

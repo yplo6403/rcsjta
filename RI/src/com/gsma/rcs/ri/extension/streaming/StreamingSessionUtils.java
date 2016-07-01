@@ -28,4 +28,9 @@ public class StreamingSessionUtils {
      * Service ID constant
      */
     public final static String SERVICE_ID = "ext.streaming";
+
+    /**
+     * Encoding
+     */
+    public final static String ENCODING = "TEXT/1";
 }

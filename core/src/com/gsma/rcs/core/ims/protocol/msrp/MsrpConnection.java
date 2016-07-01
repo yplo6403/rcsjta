@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -87,19 +87,15 @@ public abstract class MsrpConnection {
     public void open() throws NetworkException, PayloadException {
         // Open socket connection
         mSocket = getSocketConnection();
-
         // Open I/O stream
         mInputStream = mSocket.getInputStream();
         mOutputStream = mSocket.getOutputStream();
-
         // Create the chunk receiver
         mReceiver = new ChunkReceiver(this, mInputStream);
         mReceiver.start();
-
         // Create the chunk sender
         mSender = new ChunkSender(this, mOutputStream);
         mSender.start();
-
         if (sLogger.isActivated()) {
             sLogger.debug("Connection has been opened");
         }
@@ -115,22 +111,17 @@ public abstract class MsrpConnection {
     public void open(long timeout) throws NetworkException, PayloadException {
         // Open socket connection
         mSocket = getSocketConnection();
-
         // Set SoTimeout
         mSocket.setSoTimeout(timeout);
-
         // Open I/O stream
         mInputStream = mSocket.getInputStream();
         mOutputStream = mSocket.getOutputStream();
-
         // Create the chunk receiver
         mReceiver = new ChunkReceiver(this, mInputStream);
         mReceiver.start();
-
         // Create the chunk sender
         mSender = new ChunkSender(this, mOutputStream);
         mSender.start();
-
         if (sLogger.isActivated()) {
             sLogger.debug("Connection has been opened");
         }
@@ -143,19 +134,15 @@ public abstract class MsrpConnection {
         if (mSender != null) {
             mSender.terminate();
         }
-
         if (mReceiver != null) {
             mReceiver.terminate();
         }
-
         if (sLogger.isActivated()) {
             sLogger.debug("Close the socket connection");
         }
-
         CloseableUtils.tryToClose(mInputStream);
         CloseableUtils.tryToClose(mOutputStream);
         CloseableUtils.tryToClose(mSocket);
-
         if (sLogger.isActivated()) {
             sLogger.debug("Connection has been closed");
         }

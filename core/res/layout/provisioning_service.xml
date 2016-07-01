@@ -335,6 +335,12 @@
             android:lines="1"
             android:maxLength="13"/>
 
+        <android.support.v7.widget.AppCompatTextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="5dip"
+            android:text="@string/Idle_duration_of_a_callcomposer_session_milliseconds"/>
+
         <android.support.v7.widget.AppCompatEditText
             android:id="@+id/CallComposerIdleDuration"
             android:layout_width="fill_parent"
@@ -465,5 +471,12 @@
             android:layout_marginRight="5dip"
             android:text="@string/Auto_accept_group_chat_invitation"/>
 
+        <android.support.v7.widget.AppCompatCheckBox
+            android:id="@+id/EnrichCalling"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dip"
+            android:layout_marginRight="5dip"
+            android:text="@string/EnrichCalling_support"/>
     </LinearLayout>
 </ScrollView>

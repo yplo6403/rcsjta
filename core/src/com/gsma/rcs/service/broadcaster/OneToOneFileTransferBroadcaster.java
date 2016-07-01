@@ -102,15 +102,6 @@ public class OneToOneFileTransferBroadcaster implements IOneToOneFileTransferBro
     }
 
     @Override
-    public void broadcastResumeFileTransfer(String filetransferId) {
-        Intent resumeFileTransfer = new Intent(FileTransferIntent.ACTION_RESUME);
-        resumeFileTransfer.addFlags(Intent.FLAG_EXCLUDE_STOPPED_PACKAGES);
-        IntentUtils.tryToSetReceiverForegroundFlag(resumeFileTransfer);
-        resumeFileTransfer.putExtra(FileTransferIntent.EXTRA_TRANSFER_ID, filetransferId);
-        AndroidFactory.getApplicationContext().sendBroadcast(resumeFileTransfer);
-    }
-
-    @Override
     public void broadcastFileTransferDeleted(ContactId contact, Set<String> filetransferIds) {
         List<String> ids = new ArrayList<>(filetransferIds);
         final int N = mOneToOneFileTransferListeners.beginBroadcast();

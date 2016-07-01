@@ -196,7 +196,47 @@ public final class MultimediaSessionService extends RcsService {
                     contact);
             if (sessionIntf != null) {
                 return new MultimediaMessagingSession(sessionIntf);
+            }
+            return null;
 
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotRegisteredException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Initiates a new session for real time messaging with a remote contact and for a given service
+     * extension. The messages exchanged in real time during the session are specified by parameters
+     * accept-types and accept-wrapped-types. The parameter contact supports the following formats:
+     * MSISDN in national or international format, SIP address, SIP-URI or Tel-URI. If the format of
+     * the contact is not supported an exception is thrown.
+     *
+     * @param serviceId Service ID
+     * @param contact Contact identifier
+     * @param acceptTypes Accept-types related to exchanged messages (may be null or empty)
+     * @param acceptWrappedTypes Accept-wrapped-types related to exchanged messages (may be null or
+     *            empty)
+     * @return MultimediaMessagingSession
+     * @throws RcsServiceNotRegisteredException
+     * @throws RcsPermissionDeniedException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public MultimediaMessagingSession initiateMessagingSession(String serviceId, ContactId contact,
+            String[] acceptTypes, String[] acceptWrappedTypes)
+            throws RcsServiceNotRegisteredException, RcsPermissionDeniedException,
+            RcsServiceNotAvailableException, RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            IMultimediaMessagingSession sessionIntf = mApi.initiateMessagingSession2(serviceId,
+                    contact, acceptTypes, acceptWrappedTypes);
+            if (sessionIntf != null) {
+                return new MultimediaMessagingSession(sessionIntf);
             }
             return null;
 
@@ -270,6 +310,9 @@ public final class MultimediaSessionService extends RcsService {
      * international format, SIP address, SIP-URI or Tel-URI. If the format of the contact is not
      * supported an exception is thrown.
      * 
+     * @deprecated Use
+     *             {@link #initiateStreamingSession(String serviceId, ContactId contact, String encoding)}
+     *             instead.
      * @param serviceId Service ID
      * @param contact Contact ID
      * @return MultimediaStreamingSession
@@ -278,6 +321,7 @@ public final class MultimediaSessionService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
+    @Deprecated
     public MultimediaStreamingSession initiateStreamingSession(String serviceId, ContactId contact)
             throws RcsServiceNotRegisteredException, RcsPermissionDeniedException,
             RcsServiceNotAvailableException, RcsGenericException {
@@ -289,7 +333,45 @@ public final class MultimediaSessionService extends RcsService {
                     contact);
             if (sessionIntf != null) {
                 return new MultimediaStreamingSession(sessionIntf);
+            }
+            return null;
 
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotRegisteredException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Initiates a new session for real time streaming with a remote contact for a given service
+     * extension and encoding (ie. rtpmap format containing <encoding name>/<clock rate> and
+     * optional parameters if needed. The payload are exchanged in real time during the session and
+     * may be from any type. The parameter contact supports the following formats: MSISDN in
+     * national or international format, SIP address, SIP-URI or Tel-URI. If the format of the
+     * contact is not supported an exception is thrown.
+     *
+     * @param serviceId Service ID
+     * @param contact Contact ID
+     * @param encoding Encoding payload format
+     * @return MultimediaStreamingSession
+     * @throws RcsServiceNotRegisteredException
+     * @throws RcsPermissionDeniedException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public MultimediaStreamingSession initiateStreamingSession(String serviceId, ContactId contact,
+            String encoding) throws RcsServiceNotRegisteredException, RcsPermissionDeniedException,
+            RcsServiceNotAvailableException, RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            IMultimediaStreamingSession sessionIntf = mApi.initiateStreamingSession2(serviceId,
+                    contact, encoding);
+            if (sessionIntf != null) {
+                return new MultimediaStreamingSession(sessionIntf);
             }
             return null;
 
@@ -464,6 +546,39 @@ public final class MultimediaSessionService extends RcsService {
             }
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Sends an instant multimedia message to a remote contact and for a given service extension.
+     * The content takes part of the message, so any multimedia session is needed to exchange
+     * content here. The parameter contact supports the following formats: MSISDN in national or
+     * international format, SIP address, SIP-URI or Tel-URI. If the format of the contact is not
+     * supported an exception is thrown.
+     *
+     * @param serviceId Service ID
+     * @param contact Contact identifier
+     * @param content Content of the message
+     * @param contentType Content type of the the message
+     * @throws RcsServiceNotRegisteredException
+     * @throws RcsPermissionDeniedException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public void sendInstantMultimediaMessage(String serviceId, ContactId contact, byte[] content,
+            String contentType) throws RcsServiceNotRegisteredException,
+            RcsPermissionDeniedException, RcsServiceNotAvailableException, RcsGenericException {
+        if (mApi == null) {
+            throw new RcsServiceNotAvailableException();
+        }
+        try {
+            mApi.sendInstantMultimediaMessage(serviceId, contact, content, contentType);
+
+        } catch (Exception e) {
+            RcsIllegalArgumentException.assertException(e);
+            RcsServiceNotRegisteredException.assertException(e);
+            RcsPermissionDeniedException.assertException(e);
             throw new RcsGenericException(e);
         }
     }

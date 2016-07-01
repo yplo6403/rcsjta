@@ -307,6 +307,10 @@ public class HttpsProvisioningManager {
                     HttpsProvisioningUtils.getRcsVersion());
             sHttpsReqUriBuilder.appendQueryParameter(PARAM_RCS_PROFILE,
                     HttpsProvisioningUtils.getRcsProfile());
+            if (mRcsSettings.isEnrichCallingServiceSupported()) {
+                sHttpsReqUriBuilder.appendQueryParameter(PARAM_RCS_PROFILE,
+                        HttpsProvisioningUtils.getEnrichCallingProfile());
+            }
             sHttpsReqUriBuilder.appendQueryParameter(PARAM_CLIENT_VENDOR,
                     TerminalInfo.getClientVendor());
             sHttpsReqUriBuilder.appendQueryParameter(PARAM_CLIENT_VERSION,
