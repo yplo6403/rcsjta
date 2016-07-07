@@ -106,7 +106,8 @@ public class InitiateSingleChat extends RcsActivity {
         mCapabilitiesListener = new CapabilitiesListener() {
             @Override
             public void onCapabilitiesReceived(ContactId contact, Capabilities capabilities) {
-                if (contact.equals(getSelectedContact()) && capabilities.isImSessionSupported()) {
+                if (contact.equals(getSelectedContact())
+                        && capabilities.hasCapabilities(Capabilities.CAPABILITY_IM)) {
                     mHandler.post(new Runnable() {
                         @Override
                         public void run() {

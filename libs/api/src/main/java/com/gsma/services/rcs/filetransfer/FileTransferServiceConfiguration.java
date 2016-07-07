@@ -110,6 +110,21 @@ public class FileTransferServiceConfiguration {
     }
 
     /**
+     * Returns the maximum audio message duration.
+     *
+     * @return long maximum audio message duration
+     * @throws RcsGenericException
+     */
+    public long getMaxAudioMessageDuration() throws RcsGenericException {
+        try {
+            return mIFtServiceConfig.getMaxAudioMessageDuration();
+
+        } catch (Exception e) {
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
      * Returns the file transfer size threshold when the user should be warned about the potential
      * charges associated to the transfer of a large file. It returns 0 if there no need to warn.
      * 

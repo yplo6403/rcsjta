@@ -21,7 +21,7 @@ package com.gsma.rcs.ri.permissions;
 
 import com.gsma.rcs.api.connection.utils.RcsListActivity;
 import com.gsma.rcs.ri.R;
-import com.gsma.rcs.ri.messaging.TalkList;
+import com.gsma.rcs.ri.RiMessaging;
 import com.gsma.rcs.ri.utils.LogUtils;
 
 import android.Manifest;
@@ -56,7 +56,8 @@ public class PermissionsActivity extends RcsListActivity {
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.CAMERA,
             Manifest.permission.CALL_PHONE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE));
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            android.Manifest.permission.RECORD_AUDIO));
     // @formatter:on
 
     private static final int MY_PERMISSION_REQUEST_ALL = 5428;
@@ -82,8 +83,8 @@ public class PermissionsActivity extends RcsListActivity {
                                     MY_PERMISSION_REQUEST_ALL);
                 }
                 displayUngrantedPermissions();
-            }  else {
-                startActivity(new Intent(this, TalkList.class));
+            } else {
+                startActivity(new Intent(this, RiMessaging.class));
                 finish();
             }
 
@@ -92,7 +93,7 @@ public class PermissionsActivity extends RcsListActivity {
                 if (LogUtils.isActive) {
                     Log.d(LOGTAG, "All permissions are granted");
                 }
-                startActivity(new Intent(this, TalkList.class));
+                startActivity(new Intent(this, RiMessaging.class));
                 finish();
             } else {
                 if (LogUtils.isActive) {
@@ -130,7 +131,7 @@ public class PermissionsActivity extends RcsListActivity {
             if (!notGrantedPermissions.isEmpty()) {
                 displayUngrantedPermissions();
             } else {
-                startActivity(new Intent(this, TalkList.class));
+                startActivity(new Intent(this, RiMessaging.class));
                 finish();
             }
         }
@@ -147,7 +148,7 @@ public class PermissionsActivity extends RcsListActivity {
                         MY_PERMISSION_REQUEST_ALL);
             }
         } else {
-            startActivity(new Intent(this, TalkList.class));
+            startActivity(new Intent(this, RiMessaging.class));
             finish();
         }
     }

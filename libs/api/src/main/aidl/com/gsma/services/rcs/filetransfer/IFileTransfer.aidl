@@ -67,5 +67,7 @@ interface IFileTransfer {
 
 	boolean isExpiredDelivery();
 
+	int getDisposition();
+
 	void download();
 }

@@ -18,7 +18,7 @@
 
 package com.gsma.rcs.core.cms.xms;
 
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.cms.xms.observer.XmsObserverListener;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
@@ -66,6 +66,7 @@ public class SmsObserverTest extends AndroidTestCase {
     @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+        RcsSettingsMock.restoreSettings();
         mXmsObserver.unregisterListener(mNativeSmsListenerMock);
     }
 

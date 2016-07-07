@@ -41,6 +41,58 @@ import android.util.SparseArray;
 public class FileTransfer {
 
     /**
+     * File disposition
+     */
+    public enum Disposition {
+        /**
+         * Attachment
+         */
+        ATTACH(0),
+
+        /**
+         * Render
+         */
+        RENDER(1);
+
+        private final int mValue;
+
+        private static SparseArray<Disposition> mValueToEnum = new SparseArray<>();
+        static {
+            for (Disposition entry : Disposition.values()) {
+                mValueToEnum.put(entry.toInt(), entry);
+            }
+        }
+
+        Disposition(int value) {
+            mValue = value;
+        }
+
+        /**
+         * Returns the value of this Disposition as an integer.
+         *
+         * @return integer value
+         */
+        public final int toInt() {
+            return mValue;
+        }
+
+        /**
+         * Returns a Disposition instance representing the specified integer value.
+         *
+         * @param value the integer value
+         * @return State instance
+         */
+        public static Disposition valueOf(int value) {
+            Disposition entry = mValueToEnum.get(value);
+            if (entry != null) {
+                return entry;
+            }
+            throw new IllegalArgumentException("No enum const class " + State.class.getName() + ""
+                    + value + "!");
+        }
+    }
+
+    /**
      * File transfer state
      */
     public enum State {
@@ -833,6 +885,24 @@ public class FileTransfer {
         } catch (Exception e) {
             RcsPermissionDeniedException.assertException(e);
             RcsUnsupportedOperationException.assertException(e);
+            throw new RcsGenericException(e);
+        }
+    }
+
+    /**
+     * Returns the file disposition
+     * {@link com.gsma.services.rcs.filetransfer.FileTransfer.Disposition}.
+     *
+     * @return disposition
+     * @throws RcsPersistentStorageException
+     * @throws RcsGenericException
+     */
+    public Disposition getDisposition() throws RcsPersistentStorageException, RcsGenericException {
+        try {
+            return Disposition.valueOf(mTransferInf.getDisposition());
+
+        } catch (Exception e) {
+            RcsPersistentStorageException.assertException(e);
             throw new RcsGenericException(e);
         }
     }

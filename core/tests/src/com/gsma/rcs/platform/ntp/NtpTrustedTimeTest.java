@@ -18,8 +18,8 @@
 
 package com.gsma.rcs.platform.ntp;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.platform.AndroidFactory;
-import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.settings.RcsSettings;
 
 import android.content.Context;
@@ -30,29 +30,31 @@ import junit.framework.Assert;
 public class NtpTrustedTimeTest extends AndroidTestCase {
 
     private RcsSettings mRcsSettings;
-    private Context  mContext;
 
     protected void setUp() throws Exception {
         super.setUp();
-        mContext = getContext();
-        mRcsSettings = RcsSettings.getInstance(new LocalContentResolver(mContext.getContentResolver()));
-        AndroidFactory.setApplicationContext(mContext, mRcsSettings);
+        Context context = getContext();
+        mRcsSettings = RcsSettingsMock.getMockSettings(context);
+        AndroidFactory.setApplicationContext(context, mRcsSettings);
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        RcsSettingsMock.restoreSettings();
+    }
 
-    public void test(){
-
-        long testOffset = 2L; //2ms : acceptable offset due to test execution
-
-        Assert.assertTrue(Math.abs(System.currentTimeMillis()-NtpTrustedTime.currentTimeMillis()) < testOffset);
-
+    public void test() {
+        long testOffset = 2L; // 2ms : acceptable offset due to test execution
+        Assert.assertTrue(Math.abs(System.currentTimeMillis() - NtpTrustedTime.currentTimeMillis()) < testOffset);
         NtpTrustedTime ntpTrustedTime = NtpTrustedTime.createInstance(getContext(), mRcsSettings);
         long localOffset = mRcsSettings.getNtpLocalOffset();
-        Assert.assertTrue(Math.abs(System.currentTimeMillis() + localOffset - NtpTrustedTime.currentTimeMillis()) < testOffset);
-
-        if(ntpTrustedTime.forceRefresh()){
+        Assert.assertTrue(Math.abs(System.currentTimeMillis() + localOffset
+                - NtpTrustedTime.currentTimeMillis()) < testOffset);
+        if (ntpTrustedTime.forceRefresh()) {
             localOffset = mRcsSettings.getNtpLocalOffset();
-            Assert.assertTrue(Math.abs(System.currentTimeMillis() + localOffset - NtpTrustedTime.currentTimeMillis()) < testOffset);
+            Assert.assertTrue(Math.abs(System.currentTimeMillis() + localOffset
+                    - NtpTrustedTime.currentTimeMillis()) < testOffset);
         }
     }
 

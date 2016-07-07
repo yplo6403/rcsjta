@@ -37,44 +37,25 @@ import javax.xml.parsers.ParserConfigurationException;
 public class ImdnParserTest extends AndroidTestCase {
     private static Logger sLogger = Logger.getLogger(ImdnParserTest.class.getName());
 
-    // @formatter:off
-    private static final String sXmlDisplayNotification = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    private static final String sXmlContentToParse = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">\n"
-            + "<message-id>34jk324j</message-id>\n"
-            + "<datetime>2008-04-04T12:16:49-05:00</datetime>\n"
-            + "<display-notification><status><displayed/></status></display-notification>\n"
-            + "</imdn>";
+            + "\t<message-id>34jk324j</message-id>\n"
+            + "\t<datetime>2008-04-04T12:16:49-05:00</datetime>\n" + "\t<display-notification>\n"
+            + "\t\t<status>\n" + "\t\t\t<displayed/>\n" + "\t\t</status>\n"
+            + "\t</display-notification>\n" + "</imdn>";
 
-    private static final String sXmlDeliveryNotification = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            + "<imdn xmlns=\"urn:ietf:params:xml:ns:imdn\">\n"
-            + "<message-id>554671c403f544208924fc29aee3e6eb</message-id>\n"
-            + "<datetime>2016-05-13T14:23:23+02:00</datetime>\n"
-            + "<delivery-notification><status><delivered/></status></delivery-notification>\n"
-            + "</imdn>";
-
-    // @formatter:on
-
-    public void testParseImdnDocumentDisplayNofitfication() throws SAXException,
-            ParserConfigurationException, IOException, ParseFailureException {
+    public void testGetImdnDocument() throws SAXException, ParserConfigurationException,
+            IOException, ParseFailureException {
         ImdnParser parser = new ImdnParser(new InputSource(new ByteArrayInputStream(
-                sXmlDisplayNotification.getBytes())));
+                sXmlContentToParse.getBytes())));
         parser.parse();
         ImdnDocument imdnDoc = parser.getImdnDocument();
+        if (sLogger.isActivated()) {
+            sLogger.info("MsgId=" + imdnDoc.getMsgId() + "  status=" + imdnDoc.getStatus());
+        }
         assertEquals("34jk324j", imdnDoc.getMsgId());
         assertEquals("displayed", imdnDoc.getStatus().toString());
         assertEquals("display-notification", imdnDoc.getNotificationType());
         assertEquals(DateUtils.decodeDate("2008-04-04T12:16:49-05:00"), imdnDoc.getDateTime());
-    }
-
-    public void testParseImdnDocumentDeliveryNofitfication() throws SAXException,
-            ParserConfigurationException, IOException, ParseFailureException {
-        ImdnParser parser = new ImdnParser(new InputSource(new ByteArrayInputStream(
-                sXmlDeliveryNotification.getBytes())));
-        parser.parse();
-        ImdnDocument imdnDoc = parser.getImdnDocument();
-        assertEquals("554671c403f544208924fc29aee3e6eb", imdnDoc.getMsgId());
-        assertEquals("delivered", imdnDoc.getStatus().toString());
-        assertEquals("delivery-notification", imdnDoc.getNotificationType());
-        assertEquals(DateUtils.decodeDate("2016-05-13T14:23:23+02:00"), imdnDoc.getDateTime());
     }
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,9 @@ public class ServiceExtensionManagerTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        extensions = new HashSet<String>();
+        extensions = new HashSet<>();
         extensions.add(UUID.randomUUID().toString());
         extensions.add(UUID.randomUUID().toString());
-    }
-
-    protected void tearDown() throws Exception {
-        super.tearDown();
     }
 
     public void testGetExtensions() {

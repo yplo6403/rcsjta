@@ -18,9 +18,11 @@
 
 package com.gsma.rcs.ri.messaging;
 
+import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.ri.cms.messaging.MmsPartDataObject;
 import com.gsma.rcs.ri.messaging.adapter.TalkListArrayItem;
 import com.gsma.rcs.ri.utils.ContactUtil;
+import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.cms.MmsPartLog;
@@ -35,6 +37,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,6 +69,7 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
 
     private final TaskCompleted mTaskCompleted;
     private final Context mCtx;
+    private static final String LOGTAG = LogUtils.getTag(TalkListUpdate.class.getSimpleName());
 
     public TalkListUpdate(Context ctx, TaskCompleted taskCompleted) {
         mCtx = ctx;
@@ -74,12 +78,18 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
 
     @Override
     protected Collection<TalkListArrayItem> doInBackground(Void... params) {
-        /*
-         * The MMS sending is performed in background because the API returns a message instance
-         * only once it is persisted and to persist MMS, the core stack computes the file icon for
-         * image attached files.
-         */
-        return queryHistoryLogAndRefreshView();
+        try {
+            /*
+             * The MMS sending is performed in background because the API returns a message instance
+             * only once it is persisted and to persist MMS, the core stack computes the file icon
+             * for image attached files.
+             */
+            return queryHistoryLogAndRefreshView();
+
+        } catch (RuntimeException e) {
+            Log.e(LOGTAG, ExceptionUtil.getFullStackTrace(e));
+            return null;
+        }
     }
 
     @Override
@@ -175,7 +185,7 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
                 dataMap.put(chatId, item);
             }
             /*
-            Replace subject by body text for MMS message
+             * Replace subject by body text for MMS message
              */
             for (TalkListArrayItem value : dataMap.values()) {
                 if (XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE.equals(value.getMimeType())) {

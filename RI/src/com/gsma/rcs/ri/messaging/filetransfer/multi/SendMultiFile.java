@@ -75,36 +75,25 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
     private final static String EXTRA_CHAT_ID = "chat_id";
 
     protected String mChatId;
-
     /**
      * UI Handler
      */
     protected final Handler mHandler = new Handler();
-
     /**
      * The list of file transfer IDs
      */
     protected List<String> mTransferIds;
-
     /**
      * The list of files to transfer
      */
     protected List<FileTransferProperties> mFiles;
-
     /**
      * A flag to only add listener once and to remove only if previously added
      */
     protected boolean mFileTransferListenerAdded = false;
-
     protected Set<FileTransfer> mFileTransfers;
-
     private ProgressDialog mProgressDialog;
-
-    /**
-     * List view file transfer adapter
-     */
     protected FileTransferAdapter mFileTransferAdapter;
-
     protected FileTransferService mFileTransferService;
     private boolean mInvited;
 
@@ -120,18 +109,14 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
             finish();
             return;
         }
-
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.filetransfer_send_multi_file);
-
         ListView listView = (ListView) findViewById(android.R.id.list);
         mFileTransferAdapter = new FileTransferAdapter(this,
                 R.layout.filetransfer_send_multi_file_item,
                 mFiles.toArray(new FileTransferProperties[mFiles.size()]));
         listView.setAdapter(mFileTransferAdapter);
-
         mFileTransfers = new HashSet<>();
-
         /* Set start button */
         Button startButton = (Button) findViewById(R.id.ft_start_btn);
         startButton.setVisibility(View.GONE);
@@ -141,7 +126,6 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
                 initiateTransfer();
             }
         });
-
         /* Register to API connection manager */
         if (!isServiceConnected(RcsServiceName.CHAT, RcsServiceName.FILE_TRANSFER,
                 RcsServiceName.CONTACT)) {
@@ -182,7 +166,6 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
             long fileSize = FileUtils.getFileSize(this, uri);
             String mimeType = FileUtils.getMimeType(this, uri);
             mFiles.add(new FileTransferProperties(uri, fileName, fileSize, mimeType));
-
             if (LogUtils.isActive) {
                 Log.d(LOGTAG, "Transfer single file " + fileName + " (size=" + fileSize + ")");
             }
@@ -402,6 +385,7 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
             TableRow mReasonCodeTableRow;
             TextView mReasonCodeText;
             CheckBox mFileIcon;
+            CheckBox mAudiomsg;
             ProgressBar mProgressBar;
 
             ViewHolder(View view) {
@@ -412,6 +396,7 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
                 mProgressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
                 mReasonCodeTableRow = (TableRow) view.findViewById(R.id.row_reason_code);
                 mReasonCodeText = (TextView) view.findViewById(R.id.text_reason_code);
+                mAudiomsg = (CheckBox) view.findViewById(R.id.send_audio_msg);
             }
         }
 
@@ -432,16 +417,25 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
             viewHolder.mSize.setText(FileUtils.humanReadableByteCount(item.getSize(), true));
             viewHolder.mProgressStatus.setText(item.getStatus());
             String mimeType = item.getMimeType();
+            viewHolder.mAudiomsg.setEnabled(false);
+            viewHolder.mAudiomsg.setChecked(item.isAudioMessage());
             viewHolder.mFileIcon.setEnabled(false);
             viewHolder.mFileIcon.setChecked(item.isFileicon());
             if (!mInvited) {
                 if (Utils.isImageType(mimeType)) {
                     viewHolder.mFileIcon.setEnabled(true);
-
                     viewHolder.mFileIcon.setOnClickListener(new View.OnClickListener() {
                         public void onClick(View v) {
                             CheckBox cb = (CheckBox) v;
                             item.setFileicon(cb.isChecked());
+                        }
+                    });
+                } else if (Utils.isAudioType(mimeType)) {
+                    viewHolder.mAudiomsg.setEnabled(true);
+                    viewHolder.mAudiomsg.setOnClickListener(new View.OnClickListener() {
+                        public void onClick(View v) {
+                            CheckBox cb = (CheckBox) v;
+                            item.setAudioMessage(cb.isChecked());
                         }
                     });
                 }
@@ -469,9 +463,6 @@ public abstract class SendMultiFile extends RcsActivity implements ISendMultiFil
         }
     }
 
-    /**
-     * 
-     */
     protected void closeDialogIfMultipleFileTransferIsFinished() {
         if (mFileTransfers == null) {
             return;

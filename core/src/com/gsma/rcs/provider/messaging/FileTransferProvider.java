@@ -107,7 +107,8 @@ public class FileTransferProvider extends ContentProvider {
             FileTransferData.KEY_TIMESTAMP_DISPLAYED, FileTransferData.KEY_STATE,
             FileTransferData.KEY_REASON_CODE, FileTransferData.KEY_READ_STATUS,
             FileTransferData.KEY_FILE_EXPIRATION, FileTransferData.KEY_FILEICON_EXPIRATION,
-            FileTransferData.KEY_EXPIRED_DELIVERY
+            FileTransferData.KEY_EXPIRED_DELIVERY, FileTransferData.KEY_EXPIRED_DELIVERY,
+            FileTransferData.KEY_DISPOSITION
     };
 
     private static final Set<String> COLUMNS_SET_ALLOWED_FOR_EXTERNAL_ACCESS = new HashSet<>(
@@ -144,6 +145,7 @@ public class FileTransferProvider extends ContentProvider {
                     + FileTransferData.KEY_STATE + " INTEGER NOT NULL,"
                     + FileTransferData.KEY_REASON_CODE + " INTEGER NOT NULL,"
                     + FileTransferData.KEY_READ_STATUS + " INTEGER NOT NULL,"
+                    + FileTransferData.KEY_DISPOSITION + " INTEGER NOT NULL,"
                     + FileTransferData.KEY_DIRECTION + " INTEGER NOT NULL,"
                     + FileTransferData.KEY_TIMESTAMP + " INTEGER NOT NULL,"
                     + FileTransferData.KEY_TIMESTAMP_SENT + " INTEGER NOT NULL,"

@@ -30,6 +30,7 @@ import com.gsma.rcs.provider.fthttp.FtHttpResumeUpload;
 import com.gsma.rcs.provider.messaging.FileTransferData.DownloadState;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 
@@ -474,15 +475,17 @@ public interface IFileTransferLog {
      * @param timestampSent Timestamp sent in payload for both incoming and outgoing file transfer
      *            for one-one chat
      * @param fileExpiration the time when file on the content server is no longer valid to
+     * @param disposition the file disposition
      * @param seen true if the file is seen
      */
     void addOneToOneFileTransferOnSecondaryDevice(String fileTransferId, ContactId contact,
             Direction dir, Uri downloadUri, MmContent content, State state, ReasonCode reason,
-            long timestamp, long timestampSent, long fileExpiration, boolean seen);
+            long timestamp, long timestampSent, long fileExpiration,
+            FileTransfer.Disposition disposition, boolean seen);
 
     /**
      * Add incoming group file transfer on secondary device
-     *
+     * 
      * @param fileTransferId File transfer ID
      * @param chatId Chat ID
      * @param contact Contact ID
@@ -494,17 +497,18 @@ public interface IFileTransferLog {
      * @param timestampSent Timestamp sent in payload for incoming file transfer for a group chat
      * @param fileExpiration the time when file on the content server is no longer valid to
      *            download.
+     * @param disposition the file disposition
      * @param seen true if the file is seen.
      */
 
     void addIncomingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
             ContactId contact, Uri downloadUri, MmContent localMmContent, State state,
             ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration,
-            boolean seen);
+            FileTransfer.Disposition disposition, boolean seen);
 
     /**
      * Add an outgoing File Transfer supported by Group Chat
-     *
+     * 
      * @param fileTransferId the identity of the file transfer
      * @param chatId the identity of the group chat
      * @param downloadUri the download URI
@@ -515,11 +519,12 @@ public interface IFileTransferLog {
      * @param timestamp Local timestamp for outgoing file transfer for a group chat
      * @param timestampSent Timestamp sent in payload for outgoing file transfer for a group chat
      * @param fileExpiration the time when file on the content server is no longer valid to
-     *            download.
+     * @param disposition the file disposition
      */
     void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
             Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients, State state,
-            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration);
+            ReasonCode reasonCode, long timestamp, long timestampSent, long fileExpiration,
+            FileTransfer.Disposition disposition);
 
     /**
      * Get file transfer SIP instance

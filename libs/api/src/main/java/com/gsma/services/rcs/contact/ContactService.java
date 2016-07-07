@@ -192,13 +192,15 @@ public final class ContactService extends RcsService {
 
     /**
      * Returns the list of online contacts (i.e. registered)
-     * 
+     *
+     * @deprecated Use {@link #getRcsContacts()} instead.
      * @return Set&lt;RcsContact&gt; List of contacts
      * @throws RcsPersistentStorageException
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      * @see RcsContact
      */
+    @Deprecated
     public Set<RcsContact> getRcsContactsOnline() throws RcsPersistentStorageException,
             RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
@@ -215,7 +217,8 @@ public final class ContactService extends RcsService {
 
     /**
      * Returns the list of contacts supporting a given extension or service ID
-     * 
+     *
+     * @deprecated Use {@link #getRcsContacts()} instead.
      * @param serviceId Service ID
      * @return Set&lt;RcsContact&gt; List of contacts
      * @throws RcsPersistentStorageException
@@ -223,6 +226,7 @@ public final class ContactService extends RcsService {
      * @throws RcsGenericException
      * @see RcsContact
      */
+    @Deprecated
     public Set<RcsContact> getRcsContactsSupporting(String serviceId)
             throws RcsPersistentStorageException, RcsServiceNotAvailableException,
             RcsGenericException {

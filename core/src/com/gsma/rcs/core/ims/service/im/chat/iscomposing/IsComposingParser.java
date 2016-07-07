@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,23 +41,29 @@ import javax.xml.parsers.SAXParserFactory;
  * Is composing event parser (RFC3994)
  */
 public class IsComposingParser extends DefaultHandler {
-    /*
-     * IsComposing SAMPLE: <?xml version="1.0" encoding="UTF-8"?> <isComposing
-     * xmlns="urn:ietf:params:xml:ns:im-iscomposing"
-     * xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-     * xsi:schemaLocation="urn:ietf:params:xml:ns:im-composing iscomposing.xsd"> <state>idle</state>
-     * <lastactive>2003-01-27T10:43:00Z</lastactive> <contenttype>audio</contenttype> </isComposing>
-     */
+    // @formatter:off
+    /* Example of CPIM message having application/im-iscomposing+xml for content type:
+    <?xml version="1.0" encoding="utf-8"?>
+        <isComposing xmlns="urn:ietf:params:xml:ns:im-iscomposing"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="urn:ietf:params:xml:ns:im-composing iscomposing.xsd">
+            <state>active</state>
+            <contenttype>text/plain</contenttype>
+            <lastactive>2012-02-22T17:53:49.000Z</lastactive>
+            <refresh>60</refresh>
+    </isComposing>
+*/    // @formatter:on
+
     /**
      * Rate to convert from seconds to milliseconds
      */
     private static final long SECONDS_TO_MILLISECONDS_CONVERSION_RATE = 1000;
 
-    private StringBuffer mAccumulator;
+    private StringBuilder mAccumulator;
 
-    private IsComposingInfo mIsComposingInfo;
+    private IsComposingInfo mComposingInfo;
 
-    private static final Logger sLogger = Logger.getLogger(IsComposingParser.class.getName());
+    private static final Logger sLogger = Logger.getLogger(IsComposingParser.class.getSimpleName());
 
     private final InputSource mInputSource;
 
@@ -91,7 +97,7 @@ public class IsComposingParser extends DefaultHandler {
     }
 
     public void startDocument() {
-        mAccumulator = new StringBuffer();
+        mAccumulator = new StringBuilder();
     }
 
     public void characters(char buffer[], int start, int length) {
@@ -100,36 +106,38 @@ public class IsComposingParser extends DefaultHandler {
 
     public void startElement(String namespaceURL, String localName, String qname, Attributes attr) {
         mAccumulator.setLength(0);
-        if (localName.equals("isComposing")) {
-            mIsComposingInfo = new IsComposingInfo();
+        if ("isComposing".equals(localName)) {
+            mComposingInfo = new IsComposingInfo();
         }
-
     }
 
     public void endElement(String namespaceURL, String localName, String qname) {
         switch (localName) {
             case "state":
-                if (mIsComposingInfo != null) {
-                    mIsComposingInfo.setState(mAccumulator.toString());
+                if (mComposingInfo != null) {
+                    mComposingInfo.setState(mAccumulator.toString());
                 }
                 break;
             case "lastactive":
-                if (mIsComposingInfo != null) {
-                    mIsComposingInfo.setLastActiveDate(mAccumulator.toString());
+                if (mComposingInfo != null) {
+                    mComposingInfo.setLastActiveDate(mAccumulator.toString());
                 }
                 break;
             case "contenttype":
-                if (mIsComposingInfo != null) {
-                    mIsComposingInfo.setContentType(mAccumulator.toString());
+                if (mComposingInfo != null) {
+                    mComposingInfo.setContentType(mAccumulator.toString());
                 }
                 break;
-            default:
-                if (localName.equals("refresh")) {
-                    if (mIsComposingInfo != null) {
-                        long time = Long.parseLong(mAccumulator.toString())
-                                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE;
-                        mIsComposingInfo.setRefreshTime(time);
-                    }
+            case "refresh":
+                if (mComposingInfo != null) {
+                    long time = Long.parseLong(mAccumulator.toString())
+                            * SECONDS_TO_MILLISECONDS_CONVERSION_RATE;
+                    mComposingInfo.setRefreshTime(time);
+                }
+                break;
+            case "isComposing":
+                if (sLogger.isActivated()) {
+                    sLogger.debug("Watcher document is complete");
                 }
                 break;
         }
@@ -147,18 +155,20 @@ public class IsComposingParser extends DefaultHandler {
 
     public void error(SAXParseException exception) {
         if (sLogger.isActivated()) {
-            sLogger.error("Error: line " + exception.getLineNumber() + ": " + exception.getMessage());
+            sLogger.error("Error: line " + exception.getLineNumber() + ": "
+                    + exception.getMessage());
         }
     }
 
     public void fatalError(SAXParseException exception) throws SAXException {
         if (sLogger.isActivated()) {
-            sLogger.error("Fatal: line " + exception.getLineNumber() + ": " + exception.getMessage());
+            sLogger.error("Fatal: line " + exception.getLineNumber() + ": "
+                    + exception.getMessage());
         }
         throw exception;
     }
 
-    public IsComposingInfo getmIsComposingInfo() {
-        return mIsComposingInfo;
+    public IsComposingInfo getIsComposingInfo() {
+        return mComposingInfo;
     }
 }

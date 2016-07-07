@@ -22,7 +22,7 @@ import static com.gsma.rcs.utils.FileUtilsTest.doesFileExist;
 import static com.gsma.rcs.utils.FileUtilsTest.getFileContent;
 
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.content.MmContent;

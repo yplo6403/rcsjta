@@ -18,17 +18,14 @@
 
 package com.gsma.rcs.core.cms.protocol.service;
 
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
-import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.contact.ContactUtil;
-
-import android.content.Context;
-import android.test.AndroidTestCase;
-
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.imaplib.imap.ImapException;
 import com.gsma.rcs.imaplib.imap.IoService;
 import com.gsma.rcs.imaplib.imap.SocketIoService;
+import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.utils.logger.Logger;
+
+import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
 
@@ -38,8 +35,8 @@ import java.net.URI;
 
 public class BasicImapServiceTest extends AndroidTestCase {
 
-    private static final Logger sLogger = Logger
-            .getLogger(BasicImapServiceTest.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(BasicImapServiceTest.class
+            .getSimpleName());
 
     private RcsSettings mSettings;
     private boolean mIsBlocked = true;
@@ -49,8 +46,15 @@ public class BasicImapServiceTest extends AndroidTestCase {
         mSettings = RcsSettingsMock.getMockSettings(mContext);
     }
 
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        RcsSettingsMock.restoreSettings();
+    }
+
     public void testWithoutSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri().toString()));
+        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri()
+                .toString()));
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);
@@ -79,7 +83,8 @@ public class BasicImapServiceTest extends AndroidTestCase {
     }
 
     public void testWithSoTimeout() throws IOException, ImapException, InterruptedException {
-        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri().toString()), 3000);
+        final IoService io = new SocketIoService(URI.create(mSettings.getMessageStoreUri()
+                .toString()), 3000);
         final BasicImapService service = new BasicImapService(io);
         service.setAuthenticationDetails(mSettings.getMessageStoreUser(),
                 mSettings.getMessageStorePwd(), null, null, false);

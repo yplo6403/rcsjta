@@ -538,6 +538,10 @@ public class TalkList extends RcsActivity {
         mUpdateTalkListListener = new TalkListUpdate.TaskCompleted() {
             @Override
             public void onTaskComplete(Collection<TalkListArrayItem> talks) {
+                if (talks == null) {
+                    TalkList.this.showMessageThenExit(R.string.cannot_read_log);
+                    return;
+                }
                 mMessageLogs.clear();
                 mMessageLogs.addAll(talks);
                 /* Sort by descending timestamp */

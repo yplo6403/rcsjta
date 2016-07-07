@@ -22,14 +22,15 @@
 
 package com.gsma.rcs.contact;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.service.ContactInfo;
 import com.gsma.rcs.core.ims.service.ContactInfo.BlockingState;
 import com.gsma.rcs.core.ims.service.ContactInfo.RcsStatus;
 import com.gsma.rcs.core.ims.service.ContactInfo.RegistrationState;
 import com.gsma.rcs.core.ims.service.capability.Capabilities;
 import com.gsma.rcs.core.ims.service.capability.Capabilities.CapabilitiesBuilder;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.contact.ContactManagerException;
@@ -61,7 +62,7 @@ public class ContactManagerTest extends AndroidTestCase {
         Context context = getContext();
         ContentResolver contentResolver = context.getContentResolver();
         LocalContentResolver localContentResolver = new LocalContentResolver(contentResolver);
-        mRcsSettings = RcsSettings.getInstance(localContentResolver);
+        mRcsSettings = RcsSettingsMock.getMockSettings(context);
         mContactManager = ContactManager.getInstance(context, contentResolver,
                 localContentResolver, mRcsSettings);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(context));
@@ -71,6 +72,7 @@ public class ContactManagerTest extends AndroidTestCase {
 
     protected void tearDown() throws Exception {
         mContactManager.cleanRCSEntries();
+        RcsSettingsMock.restoreSettings();
         super.tearDown();
     }
 
@@ -167,7 +169,8 @@ public class ContactManagerTest extends AndroidTestCase {
          * second.
          */
         Thread.sleep(1010);
-        mContactManager.updateCapabilitiesTimeLastResponse(mContact, NtpTrustedTime.currentTimeMillis());
+        mContactManager.updateCapabilitiesTimeLastResponse(mContact,
+                NtpTrustedTime.currentTimeMillis());
         Capabilities newCapa = mContactManager.getContactCapabilities(mContact);
         assertNotNull(newCapa);
         assertNotNull(oldCapa);
@@ -180,7 +183,8 @@ public class ContactManagerTest extends AndroidTestCase {
         assertTrue(mContactManager.isBlockedForContact(mContact));
     }
 
-    public CapabilitiesBuilder createRcsContact() throws ContactManagerException, FileAccessException {
+    public CapabilitiesBuilder createRcsContact() throws ContactManagerException,
+            FileAccessException {
         long now = NtpTrustedTime.currentTimeMillis();
         CapabilitiesBuilder capaBuilder = new CapabilitiesBuilder();
         /*

@@ -223,7 +223,10 @@ public final class FileTransferService extends RcsService {
      * transferred (for a local or a remote file). The parameter contact supports the following
      * formats: MSISDN in national or international format, SIP address, SIP-URI or Tel-URI. If the
      * format of the contact is not supported an exception is thrown.
-     * 
+     *
+     * @deprecated Use
+     *             {@link #transferFile(ContactId contact, Uri file, FileTransfer.Disposition disposition, boolean attachFileIcon)}
+     *             instead.
      * @param contact the remote contact Identifier
      * @param file Uri of file to transfer
      * @param attachFileIcon File icon option. If true, the stack tries to attach fileicon. Fileicon
@@ -234,7 +237,32 @@ public final class FileTransferService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
+    @Deprecated
     public FileTransfer transferFile(ContactId contact, Uri file, boolean attachFileIcon)
+            throws RcsPersistentStorageException, RcsServiceNotAvailableException,
+            RcsGenericException {
+        return transferFile(contact, file, FileTransfer.Disposition.ATTACH, attachFileIcon);
+    }
+
+    /**
+     * Transfers a file to a contact. The parameter file contains the URI of the file to be
+     * transferred (for a local or a remote file). The parameter contact supports the following
+     * formats: MSISDN in national or international format, SIP address, SIP-URI or Tel-URI. If the
+     * format of the contact is not supported an exception is thrown.
+     *
+     * @param contact the remote contact Identifier
+     * @param file Uri of file to transfer
+     * @param disposition File disposition
+     * @param attachFileIcon File icon option. If true, the stack tries to attach fileicon. Fileicon
+     *            may not be attached if file is not an image or if local or remote contact does not
+     *            support fileicon.
+     * @return FileTransfer
+     * @throws RcsPersistentStorageException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public FileTransfer transferFile(ContactId contact, Uri file,
+            FileTransfer.Disposition disposition, boolean attachFileIcon)
             throws RcsPersistentStorageException, RcsServiceNotAvailableException,
             RcsGenericException {
         if (mApi == null) {
@@ -243,7 +271,8 @@ public final class FileTransferService extends RcsService {
         try {
             /* Only grant permission for content Uris */
             tryToGrantUriPermissionToStackServices(file);
-            IFileTransfer ftIntf = mApi.transferFile(contact, file, attachFileIcon);
+            IFileTransfer ftIntf = mApi.transferFile2(contact, file, disposition.toInt(),
+                    attachFileIcon);
             if (ftIntf != null) {
                 return new FileTransfer(ftIntf);
             }
@@ -284,7 +313,10 @@ public final class FileTransferService extends RcsService {
 
     /**
      * Transfers a file to a group chat with an optional file icon.
-     * 
+     *
+     * @deprecated Use
+     *             {@link #transferFileToGroupChat(String chatId, Uri file, FileTransfer.Disposition disposition, boolean attachFileIcon)}
+     *             instead.
      * @param chatId the chat ID
      * @param file Uri of file to transfer
      * @param attachFileIcon Attach file icon option. If true, the stack tries to attach fileIcon.
@@ -296,7 +328,31 @@ public final class FileTransferService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
+    @Deprecated
     public FileTransfer transferFileToGroupChat(String chatId, Uri file, boolean attachFileIcon)
+            throws RcsPermissionDeniedException, RcsPersistentStorageException,
+            RcsServiceNotAvailableException, RcsGenericException {
+        return transferFileToGroupChat(chatId, file, FileTransfer.Disposition.ATTACH,
+                attachFileIcon);
+    }
+
+    /**
+     * Transfers a file to a group chat with an optional file icon.
+     *
+     * @param chatId the chat ID
+     * @param file Uri of file to transfer
+     * @param disposition File disposition
+     * @param attachFileIcon Attach file icon option. If true, the stack tries to attach fileIcon.
+     *            FileIcon may not be attached if file is not an image or if local or remote contact
+     *            does not support fileIcon.
+     * @return FileTransfer
+     * @throws RcsPermissionDeniedException
+     * @throws RcsPersistentStorageException
+     * @throws RcsServiceNotAvailableException
+     * @throws RcsGenericException
+     */
+    public FileTransfer transferFileToGroupChat(String chatId, Uri file,
+            FileTransfer.Disposition disposition, boolean attachFileIcon)
             throws RcsPermissionDeniedException, RcsPersistentStorageException,
             RcsServiceNotAvailableException, RcsGenericException {
         if (mApi == null) {
@@ -305,7 +361,8 @@ public final class FileTransferService extends RcsService {
         try {
             /* Only grant permission for content Uris */
             tryToGrantUriPermissionToStackServices(file);
-            IFileTransfer ftIntf = mApi.transferFileToGroupChat(chatId, file, attachFileIcon);
+            IFileTransfer ftIntf = mApi.transferFileToGroupChat2(chatId, file, disposition.toInt(),
+                    attachFileIcon);
             if (ftIntf != null) {
                 return new FileTransfer(ftIntf);
 

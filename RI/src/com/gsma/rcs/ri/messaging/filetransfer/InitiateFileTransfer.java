@@ -75,45 +75,36 @@ public class InitiateFileTransfer extends RcsActivity {
 
     private final static int RC_SELECT_IMAGE = 0;
     private final static int RC_SELECT_TEXT_FILE = 1;
+    private final static int RC_SELECT_AUDIO = 2;
+    private final static int RC_RECORD_AUDIO = 3;
 
-    private final static String BUNDLE_FTDAO_ID = "ftdao";
+    private static final String BUNDLE_FTDAO_ID = "ftdao";
+
+    private static final String LOGTAG = LogUtils.getTag(InitiateFileTransfer.class.getName());
 
     /**
      * UI handler
      */
     private final Handler mHandler = new Handler();
-
     private String mFilename;
-
     private Uri mFile;
-
     private long mFilesize = -1;
-
     private FileTransfer mFileTransfer;
-
-    private static final String LOGTAG = LogUtils.getTag(InitiateFileTransfer.class.getName());
-
     private String mFileTransferId;
-
     /**
      * Spinner for contact selection
      */
     private Spinner mSpinner;
-
     private Button mResumeBtn;
-
     private Button mPauseBtn;
-
     private Button mInviteBtn;
-
     private Button mSelectBtn;
-
     private OneToOneFileTransferListener mFileTransferListener;
-
     private FileTransferService mFileTransferService;
     private TextView mUriTextView;
     private TextView mSizeTextView;
     private CheckBox mIconCheckBox;
+    private CheckBox mAudioMessageCheckBox;
     private TextView mStatusView;
     private ProgressBar mProgressBar;
 
@@ -175,7 +166,6 @@ public class InitiateFileTransfer extends RcsActivity {
                     Log.d(LOGTAG, "onCreate");
                 }
             }
-
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
         }
@@ -201,22 +191,30 @@ public class InitiateFileTransfer extends RcsActivity {
         /* Get thumbnail option */
         boolean tryToSendFileicon = mIconCheckBox.isChecked();
         String mimeType = getContentResolver().getType(mFile);
-
         if (tryToSendFileicon && mimeType != null && !mimeType.startsWith("image")) {
             tryToSendFileicon = false;
         }
         try {
+            FileTransfer.Disposition dispo = (mAudioMessageCheckBox.isChecked()) ? FileTransfer.Disposition.RENDER
+                    : FileTransfer.Disposition.ATTACH;
             /* Only take persistable permission for content Uris */
             takePersistableContentUriPermission(this, mFile);
             /* Initiate transfer */
-            mFileTransfer = mFileTransferService.transferFile(remote, mFile, tryToSendFileicon);
-            mFileTransferId = mFileTransfer.getTransferId();
+            mFileTransfer = mFileTransferService.transferFile(remote, mFile, dispo,
+                    tryToSendFileicon);
+            if (mFileTransfer != null) {
+                mFileTransferId = mFileTransfer.getTransferId();
+            } else {
+                Log.e(LOGTAG, "Cannot initiate transfer: ID not found");
+                return;
+            }
             /* Disable UI */
             mSpinner.setEnabled(false);
             /* Hide buttons */
             mInviteBtn.setVisibility(View.INVISIBLE);
             mSelectBtn.setVisibility(View.INVISIBLE);
             mIconCheckBox.setEnabled(false);
+            mAudioMessageCheckBox.setEnabled(false);
 
         } catch (RcsServiceException e) {
             showExceptionThenExit(e);
@@ -236,10 +234,14 @@ public class InitiateFileTransfer extends RcsActivity {
             public void onClick(DialogInterface dialog, int which) {
                 if (RC_SELECT_IMAGE == which) {
                     FileUtils.openFile(InitiateFileTransfer.this, "image/*", RC_SELECT_IMAGE);
-                } else if (RC_SELECT_TEXT_FILE == which) {
+                    return;
+                }
+                if (RC_SELECT_TEXT_FILE == which) {
                     FileUtils
                             .openFile(InitiateFileTransfer.this, "text/plain", RC_SELECT_TEXT_FILE);
+                    return;
                 }
+                FileUtils.openFile(InitiateFileTransfer.this, "audio/*", RC_SELECT_AUDIO);
             }
         });
 
@@ -267,6 +269,7 @@ public class InitiateFileTransfer extends RcsActivity {
         switch (requestCode) {
             case RC_SELECT_IMAGE:
             case RC_SELECT_TEXT_FILE:
+            case RC_SELECT_AUDIO:
                 if (data.getData() == null) {
                     return;
                 }
@@ -276,9 +279,28 @@ public class InitiateFileTransfer extends RcsActivity {
                 }
                 displaySelectedFileInfo();
                 mInviteBtn.setEnabled(true);
-                mIconCheckBox.setEnabled(true);
+                if (RC_SELECT_AUDIO == requestCode) {
+                    mAudioMessageCheckBox.setEnabled(true);
+                    mIconCheckBox.setEnabled(false);
+                    mIconCheckBox.setChecked(false);
+                } else {
+                    mIconCheckBox.setEnabled(true);
+                    mAudioMessageCheckBox.setChecked(false);
+                    mAudioMessageCheckBox.setEnabled(false);
+                }
                 break;
 
+            case RC_RECORD_AUDIO:
+                mFile = data.getData();
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Created audio file:" + mFile);
+                }
+                displaySelectedFileInfo();
+                mInviteBtn.setEnabled(true);
+                mAudioMessageCheckBox.setEnabled(true);
+                mIconCheckBox.setEnabled(false);
+                mIconCheckBox.setChecked(false);
+                break;
         }
     }
 
@@ -342,13 +364,24 @@ public class InitiateFileTransfer extends RcsActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = new MenuInflater(getApplicationContext());
-        inflater.inflate(R.menu.menu_ft, menu);
+        inflater.inflate(R.menu.menu_initiate_ft, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.menu_record_audio);
+        item.setVisible(mFileTransfer == null);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.menu_record_audio:
+                startActivityForResult(new Intent(this, AudioMessageRecordActivity.class),
+                        RC_RECORD_AUDIO);
+                break;
             case R.id.menu_close_session:
                 quitSession();
                 break;
@@ -467,6 +500,8 @@ public class InitiateFileTransfer extends RcsActivity {
 
         mIconCheckBox = (CheckBox) findViewById(R.id.ft_thumb);
 
+        mAudioMessageCheckBox = (CheckBox) findViewById(R.id.send_audio_msg);
+
         TableRow expiration = (TableRow) findViewById(R.id.expiration);
         expiration.setVisibility(View.GONE);
 
@@ -580,7 +615,6 @@ public class InitiateFileTransfer extends RcsActivity {
 
             @Override
             public void onRead(ContactId contact, String transferId) {
-
             }
         };
     }

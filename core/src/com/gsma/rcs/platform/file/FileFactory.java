@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,15 +58,15 @@ public abstract class FileFactory {
             mFactory = (FileFactory) Class.forName(classname).newInstance();
         } catch (InstantiationException e) {
             throw new FactoryException(
-                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
+                    "Can't load the factory " + classname, e);
 
         } catch (IllegalAccessException e) {
             throw new FactoryException(
-                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
+                    "Can't load the factory " + classname, e);
 
         } catch (ClassNotFoundException e) {
             throw new FactoryException(
-                    new StringBuilder("Can't load the factory ").append(classname).toString(), e);
+                    "Can't load the factory " + classname, e);
         }
     }
 

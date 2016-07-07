@@ -1,14 +1,14 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import com.gsma.rcs.utils.StorageUtils;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.chat.GroupChat.ParticipantStatus;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 
 import android.net.Uri;
 
@@ -43,7 +44,7 @@ import java.util.Map;
 
 /**
  * Abstract file sharing session
- * 
+ *
  * @author jexa7410
  */
 public abstract class FileSharingSession extends ImsServiceSession {
@@ -66,53 +67,52 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     private boolean mFileTransferred = false;
 
-    protected Map<ContactId, ParticipantStatus> mParticipants = new HashMap<ContactId, ParticipantStatus>();
+    protected final Map<ContactId, ParticipantStatus> mParticipants;
 
-    private MmContent mFileIcon;
+    private final MmContent mFileIcon;
 
     private boolean mFileTransferPaused = false;
 
-    private String mFiletransferId;
+    private final String mFileTransferId;
 
     protected final ImdnManager mImdnManager;
 
-    private static final Logger sLogger = Logger
-            .getLogger(FileSharingSession.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(FileSharingSession.class.getName());
 
     /**
      * Constructor
-     * 
+     *
      * @param imService InstantMessagingService
      * @param content Content to be shared
      * @param contact Remote contactId
      * @param remoteContact the remote contact URI
      * @param fileIcon File icon
-     * @param filetransferId File transfer identifier
+     * @param fileTransferId File transfer identifier
      * @param rcsSettings RCS settings accessor
      * @param timestamp Local timestamp for the session
      * @param contactManager Contact manager accessor
      */
     public FileSharingSession(InstantMessagingService imService, MmContent content,
-            ContactId contact, Uri remoteContact, MmContent fileIcon, String filetransferId,
+            ContactId contact, Uri remoteContact, MmContent fileIcon, String fileTransferId,
             RcsSettings rcsSettings, long timestamp, ContactManager contactManager) {
         super(imService, contact, remoteContact, rcsSettings, timestamp, contactManager);
-
         mContent = content;
         mFileIcon = fileIcon;
-        mFiletransferId = filetransferId;
+        mFileTransferId = fileTransferId;
         mImdnManager = imService.getImdnManager();
+        mParticipants = new HashMap<>();
     }
 
     /**
      * Check if the file sharing session is a HTTP transfer
-     * 
+     *
      * @return {@code true} if HTTP transfer, otherwise {@code false}
      */
     public abstract boolean isHttpTransfer();
 
     /**
      * Return the contribution ID
-     * 
+     *
      * @return Contribution ID
      */
     public String getContributionID() {
@@ -121,7 +121,7 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Set the contribution ID
-     * 
+     *
      * @param id Contribution ID
      */
     public void setContributionID(String id) {
@@ -130,7 +130,7 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Returns the content
-     * 
+     *
      * @return Content
      */
     public MmContent getContent() {
@@ -139,7 +139,7 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Returns the list of participants involved in the transfer
-     * 
+     *
      * @return List of participants
      */
     public Map<ContactId, ParticipantStatus> getParticipants() {
@@ -148,7 +148,7 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Set the content
-     * 
+     *
      * @param content Content
      */
     public void setContent(MmContent content) {
@@ -157,24 +157,23 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Returns the unique id for file transfer
-     * 
+     *
      * @return filetransferId String
      */
     public String getFileTransferId() {
-        return mFiletransferId;
+        return mFileTransferId;
     }
 
     /**
-     * File has been transferred
+     * Set file as being transferred
      */
-    public void fileTransfered() {
+    public void setFileTransferred() {
         mFileTransferred = true;
-
     }
 
     /**
      * Is file transferred
-     * 
+     *
      * @return Boolean
      */
     public boolean isFileTransferred() {
@@ -184,20 +183,20 @@ public abstract class FileSharingSession extends ImsServiceSession {
     /**
      * File has been paused
      */
-    public void fileTransferPaused() {
+    public void setFileTransferPaused() {
         mFileTransferPaused = true;
     }
 
     /**
      * File is resuming
      */
-    public void fileTransferResumed() {
+    public void setFileTransferResumed() {
         mFileTransferPaused = false;
     }
 
     /**
      * Is file transfer paused
-     * 
+     *
      * @return fileTransferPaused
      */
     public boolean isFileTransferPaused() {
@@ -206,7 +205,7 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Returns the fileIcon content
-     * 
+     *
      * @return Fileicon
      */
     public MmContent getFileicon() {
@@ -215,16 +214,16 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Check if file capacity is acceptable
-     * 
+     *
      * @param fileSize File size in bytes
      * @param rcsSettings RCS settings accessor
      * @return Error or null if file capacity is acceptable
      */
     public static FileSharingError isFileCapacityAcceptable(long fileSize, RcsSettings rcsSettings) {
         long maxFileSharingSize = rcsSettings.getMaxFileTransferSize();
-        boolean fileIsToBig = (maxFileSharingSize > 0) ? fileSize > maxFileSharingSize : false;
-        boolean storageIsTooSmall = (StorageUtils.getExternalStorageFreeSpace() > 0) ? fileSize > StorageUtils
-                .getExternalStorageFreeSpace() : false;
+        boolean fileIsToBig = (maxFileSharingSize > 0) && fileSize > maxFileSharingSize;
+        boolean storageIsTooSmall = (StorageUtils.getExternalStorageFreeSpace() > 0)
+                && fileSize > StorageUtils.getExternalStorageFreeSpace();
         if (fileIsToBig) {
             if (sLogger.isActivated()) {
                 sLogger.warn("File is too big, reject the file transfer");
@@ -267,16 +266,36 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Returns the time when the file on the content server is no longer valid to download.
-     * 
+     *
      * @return time
      */
     public abstract long getFileExpiration();
 
     /**
      * Returns the time when the file icon on the content server is no longer valid to download.
-     * 
+     *
      * @return time
      */
     public abstract long getIconExpiration();
 
+    /**
+     * Returns the file-disposition
+     *
+     * @return string for payload insertion.
+     */
+    public String getFileDisposition() {
+        return getContent().isPlayable() ? FileSharingSession.FILE_DISPOSITION_RENDER
+                : FileSharingSession.FILE_DISPOSITION_ATTACH;
+    }
+
+    /**
+     * Convert Disposition to string for payload insertion.
+     * 
+     * @param disposition the disposition
+     * @return the string for payload insertion.
+     */
+    public static String DispositionToString(FileTransfer.Disposition disposition) {
+        return FileTransfer.Disposition.ATTACH == disposition ? FILE_DISPOSITION_ATTACH
+                : FILE_DISPOSITION_RENDER;
+    }
 }

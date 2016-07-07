@@ -19,7 +19,7 @@
 package com.gsma.rcs.core.cms.sync.scheduler;
 
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.sync.process.LocalStorage;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsLog;

@@ -96,9 +96,9 @@ public class ImapImdnMessageImpl implements ImapCmsUtilTest.IImapRcsMessage {
         mSeen = seen;
         mDeleted = deleted;
         if (RcsService.Direction.INCOMING == mDirection) {
-            mRemote = mToContact;
-        } else {
             mRemote = mFromContact;
+        } else {
+            mRemote = mToContact;
         }
         if (chatId == null) {
             mChatId = mRemote.toString();

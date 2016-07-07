@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2016 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,9 +22,9 @@
 
 package com.gsma.rcs.im.filetransfer;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.content.FileContent;
 import com.gsma.rcs.core.content.MmContent;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.FileTransferData;
@@ -45,6 +45,7 @@ import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.net.Uri;
 import android.test.AndroidTestCase;
 
@@ -86,7 +87,7 @@ public class FileTransferLogTest extends AndroidTestCase {
         Context context = getContext();
         mContentResolver = context.getContentResolver();
         mLocalContentResolver = new LocalContentResolver(mContentResolver);
-        RcsSettings rcsSettings = RcsSettings.getInstance(mLocalContentResolver);
+        RcsSettings rcsSettings = RcsSettingsMock.getMockSettings(context);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, rcsSettings);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact = contactUtils.formatContact("+339000000");
@@ -100,6 +101,7 @@ public class FileTransferLogTest extends AndroidTestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         mMessagingLog.deleteAllEntries();
+        RcsSettingsMock.restoreSettings();
     }
 
     public void testAddFileTransfer() {
@@ -109,67 +111,81 @@ public class FileTransferLogTest extends AndroidTestCase {
                 mTimestampSent, mFileExpiration, FileTransferLog.UNKNOWN_EXPIRATION);
         // Read entry
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
-        Cursor cursor = mContentResolver.query(uri, null, null, null, null);
-        // Check entry
-        assertNotNull(cursor);
-        assertEquals(1, cursor.getCount());
-        assertTrue(cursor.moveToFirst());
-        String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
-        String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
-        String contact = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
-        String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
-        String filename = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILENAME));
-        String fileMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
-        int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
-        long transferred = cursor
-                .getLong(cursor.getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
-        long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
-        String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
-        String iconMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
-        long iconExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
-        int readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
-        int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
-        int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
-        long fileExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
-        long timestampDelivered = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
-        long timestampDisplayed = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, null, null, null, null);
+            // Check entry
+            if (cursor == null) {
+                throw new SQLException("Can not query uri " + uri);
 
-        assertEquals(mFileTransferId, id);
-        assertEquals(mContact.toString(), chatId);
-        assertEquals(mContact.toString(), contact);
-        assertEquals(IMAGE_URI, fileUri);
-        assertEquals(IMAGE_FILENAME, filename);
-        assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
-        assertEquals(Direction.OUTGOING.toInt(), direction);
-        assertEquals(0, transferred);
-        assertEquals(IMAGE_FILESIZE, size);
-        assertEquals(null, icon);
-        assertEquals(null, iconMimeType);
-        assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, iconExpiration);
-        assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
-        assertEquals(FileTransfer.State.INITIATING.toInt(), state);
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
-        assertEquals(mFileExpiration, fileExpiration);
-        assertEquals(0L, timestampDelivered);
-        assertEquals(0L, timestampDisplayed);
+            }
+            assertEquals(1, cursor.getCount());
+            assertTrue(cursor.moveToFirst());
+            String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
+            String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
+            String contact = cursor
+                    .getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
+            String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
+            String filename = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILENAME));
+            String fileMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
+            int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
+            long transferred = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
+            long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
+            String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
+            String iconMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
+            long iconExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
+            int readStatus = cursor.getInt(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
+            int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
+            int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
+            long fileExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
+            long timestampDelivered = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
+            long timestampDisplayed = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
 
-        assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
-        assertEquals(false, mMessagingLog.isGroupFileTransfer(mFileTransferId));
-        assertEquals(FileTransfer.State.INITIATING,
-                mMessagingLog.getFileTransferState(mFileTransferId));
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
-                mMessagingLog.getFileTransferReasonCode(mFileTransferId));
+            assertEquals(mFileTransferId, id);
+            assertEquals(mContact.toString(), chatId);
+            assertEquals(mContact.toString(), contact);
+            assertEquals(IMAGE_URI, fileUri);
+            assertEquals(IMAGE_FILENAME, filename);
+            assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
+            assertEquals(Direction.OUTGOING.toInt(), direction);
+            assertEquals(0, transferred);
+            assertEquals(IMAGE_FILESIZE, size);
+            assertEquals(null, icon);
+            assertEquals(null, iconMimeType);
+            assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, iconExpiration);
+            assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
+            assertEquals(FileTransfer.State.INITIATING.toInt(), state);
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
+            assertEquals(mFileExpiration, fileExpiration);
+            assertEquals(0L, timestampDelivered);
+            assertEquals(0L, timestampDisplayed);
 
-        mLocalContentResolver.delete(
-                Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
-        assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
-        cursor.close();
+            assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
+            assertEquals(false, mMessagingLog.isGroupFileTransfer(mFileTransferId));
+            assertEquals(FileTransfer.State.INITIATING,
+                    mMessagingLog.getFileTransferState(mFileTransferId));
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
+                    mMessagingLog.getFileTransferReasonCode(mFileTransferId));
+
+            mLocalContentResolver
+                    .delete(Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId),
+                            null, null);
+            assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+
+        }
     }
 
     public void testAddOutgoingGroupFileTransfer() {
@@ -185,67 +201,81 @@ public class FileTransferLogTest extends AndroidTestCase {
                 mTimestampSent);
         // Read entry
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
-
-        Cursor cursor = mContentResolver.query(uri, null, null, null, null);
-        assertNotNull(cursor);
+        Cursor cursor = null;
         // Check entry
-        assertEquals(1, cursor.getCount());
-        assertTrue(cursor.moveToFirst());
-        String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
-        String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
-        String contact = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
-        String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
-        String filename = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILENAME));
-        String fileMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
-        int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
-        long transferred = cursor
-                .getLong(cursor.getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
-        long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
-        String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
-        String iconMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
-        long iconExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
-        int readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
-        int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
-        int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
-        long fileExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
-        long timestampDelivered = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
-        long timestampDisplayed = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
+        try {
 
-        assertEquals(mFileTransferId, id);
-        assertEquals(mChatId, chatId);
-        assertEquals(null, contact);
-        assertEquals(IMAGE_URI, fileUri);
-        assertEquals(IMAGE_FILENAME, filename);
-        assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
-        assertEquals(Direction.OUTGOING.toInt(), direction);
-        assertEquals(0, transferred);
-        assertEquals(IMAGE_FILESIZE, size);
-        assertEquals(IMAGE_ICON_URI, icon);
-        assertEquals(MimeManager.getInstance().getMimeType(IMAGE_ICON_FILENAME), iconMimeType);
-        assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, iconExpiration);
-        assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
-        assertEquals(FileTransfer.State.INITIATING.toInt(), state);
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
-        assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, fileExpiration);
-        assertEquals(0L, timestampDelivered);
-        assertEquals(0L, timestampDisplayed);
+            cursor = mContentResolver.query(uri, null, null, null, null);
+            // Check entry
+            if (cursor == null) {
+                throw new SQLException("Can not query uri " + uri);
 
-        assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
-        assertEquals(true, mMessagingLog.isGroupFileTransfer(mFileTransferId));
-        assertEquals(FileTransfer.State.INITIATING,
-                mMessagingLog.getFileTransferState(mFileTransferId));
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
-                mMessagingLog.getFileTransferReasonCode(mFileTransferId));
-        mLocalContentResolver.delete(
-                Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
-        assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
-        cursor.close();
+            }
+            assertEquals(1, cursor.getCount());
+            assertTrue(cursor.moveToFirst());
+            String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
+            String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
+            String contact = cursor
+                    .getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
+            String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
+            String filename = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILENAME));
+            String fileMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
+            int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
+            long transferred = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
+            long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
+            String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
+            String iconMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
+            long iconExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
+            int readStatus = cursor.getInt(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
+            int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
+            int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
+            long fileExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
+            long timestampDelivered = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
+            long timestampDisplayed = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
+
+            assertEquals(mFileTransferId, id);
+            assertEquals(mChatId, chatId);
+            assertEquals(null, contact);
+            assertEquals(IMAGE_URI, fileUri);
+            assertEquals(IMAGE_FILENAME, filename);
+            assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
+            assertEquals(Direction.OUTGOING.toInt(), direction);
+            assertEquals(0, transferred);
+            assertEquals(IMAGE_FILESIZE, size);
+            assertEquals(IMAGE_ICON_URI, icon);
+            assertEquals(MimeManager.getInstance().getMimeType(IMAGE_ICON_FILENAME), iconMimeType);
+            assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, iconExpiration);
+            assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
+            assertEquals(FileTransfer.State.INITIATING.toInt(), state);
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
+            assertEquals(FileTransferLog.UNKNOWN_EXPIRATION, fileExpiration);
+            assertEquals(0L, timestampDelivered);
+            assertEquals(0L, timestampDisplayed);
+
+            assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
+            assertEquals(true, mMessagingLog.isGroupFileTransfer(mFileTransferId));
+            assertEquals(FileTransfer.State.INITIATING,
+                    mMessagingLog.getFileTransferState(mFileTransferId));
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
+                    mMessagingLog.getFileTransferReasonCode(mFileTransferId));
+            mLocalContentResolver
+                    .delete(Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId),
+                            null, null);
+            assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     public void testAddIncomingGroupFileTransfer() {
@@ -255,67 +285,81 @@ public class FileTransferLogTest extends AndroidTestCase {
                 ICON_CONTENT, State.ACCEPTING, ReasonCode.UNSPECIFIED, mTimestamp, mTimestampSent,
                 mFileExpiration, fileIconExpiration);
         // Read entry
+
         Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, mFileTransferId);
-        Cursor cursor = mContentResolver.query(uri, null, null, null, null);
-        // Check entry
-        assertNotNull(cursor);
-        assertEquals(1, cursor.getCount());
-        assertTrue(cursor.moveToFirst());
-        String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
-        String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
-        String contact = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
-        String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
-        String filename = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILENAME));
-        String fileMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
-        int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
-        long transferred = cursor
-                .getLong(cursor.getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
-        long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
-        String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
-        String iconMimeType = cursor.getString(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
-        long _fileIconExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
-        int readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
-        int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
-        int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
-        long _fileExpiration = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
-        long timestampDelivered = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
-        long timestampDisplayed = cursor.getLong(cursor
-                .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, null, null, null, null);
+            // Check entry
+            if (cursor == null) {
+                throw new SQLException("Can not query uri " + uri);
+            }
+            assertEquals(1, cursor.getCount());
+            assertTrue(cursor.moveToFirst());
+            String id = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FT_ID));
+            String chatId = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.CHAT_ID));
+            String contact = cursor
+                    .getString(cursor.getColumnIndexOrThrow(FileTransferLog.CONTACT));
+            String fileUri = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILE));
+            String filename = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILENAME));
+            String fileMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.MIME_TYPE));
+            int direction = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DIRECTION));
+            long transferred = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
+            long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
+            String icon = cursor.getString(cursor.getColumnIndexOrThrow(FileTransferLog.FILEICON));
+            String iconMimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
+            long _fileIconExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
+            int readStatus = cursor.getInt(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.READ_STATUS));
+            int state = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.STATE));
+            int reason = cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE));
+            long _fileExpiration = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.FILE_EXPIRATION));
+            long timestampDelivered = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DELIVERED));
+            long timestampDisplayed = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(FileTransferLog.TIMESTAMP_DISPLAYED));
 
-        assertEquals(mFileTransferId, id);
-        assertEquals(mChatId, chatId);
-        assertEquals(mContact.toString(), contact);
-        assertEquals(IMAGE_URI, fileUri);
-        assertEquals(IMAGE_FILENAME, filename);
-        assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
-        assertEquals(Direction.INCOMING.toInt(), direction);
-        assertEquals(0, transferred);
-        assertEquals(IMAGE_FILESIZE, size);
-        assertEquals(IMAGE_ICON_URI, icon);
-        assertEquals(MimeManager.getInstance().getMimeType(IMAGE_ICON_FILENAME), iconMimeType);
-        assertEquals(fileIconExpiration, _fileIconExpiration);
-        assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
-        assertEquals(FileTransfer.State.ACCEPTING.toInt(), state);
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
-        assertEquals(mFileExpiration, _fileExpiration);
-        assertEquals(0L, timestampDelivered);
-        assertEquals(0L, timestampDisplayed);
+            assertEquals(mFileTransferId, id);
+            assertEquals(mChatId, chatId);
+            assertEquals(mContact.toString(), contact);
+            assertEquals(IMAGE_URI, fileUri);
+            assertEquals(IMAGE_FILENAME, filename);
+            assertEquals(MimeManager.getInstance().getMimeType(IMAGE_FILENAME), fileMimeType);
+            assertEquals(Direction.INCOMING.toInt(), direction);
+            assertEquals(0, transferred);
+            assertEquals(IMAGE_FILESIZE, size);
+            assertEquals(IMAGE_ICON_URI, icon);
+            assertEquals(MimeManager.getInstance().getMimeType(IMAGE_ICON_FILENAME), iconMimeType);
+            assertEquals(fileIconExpiration, _fileIconExpiration);
+            assertEquals(ReadStatus.UNREAD.toInt(), readStatus);
+            assertEquals(FileTransfer.State.ACCEPTING.toInt(), state);
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED.toInt(), reason);
+            assertEquals(mFileExpiration, _fileExpiration);
+            assertEquals(0L, timestampDelivered);
+            assertEquals(0L, timestampDisplayed);
 
-        assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
-        assertEquals(true, mMessagingLog.isGroupFileTransfer(mFileTransferId));
-        assertEquals(FileTransfer.State.ACCEPTING,
-                mMessagingLog.getFileTransferState(mFileTransferId));
-        assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
-                mMessagingLog.getFileTransferReasonCode(mFileTransferId));
-        mLocalContentResolver.delete(
-                Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
-        assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
-        cursor.close();
+            assertEquals(true, mMessagingLog.isFileTransfer(mFileTransferId));
+            assertEquals(true, mMessagingLog.isGroupFileTransfer(mFileTransferId));
+            assertEquals(FileTransfer.State.ACCEPTING,
+                    mMessagingLog.getFileTransferState(mFileTransferId));
+            assertEquals(FileTransfer.ReasonCode.UNSPECIFIED,
+                    mMessagingLog.getFileTransferReasonCode(mFileTransferId));
+            mLocalContentResolver
+                    .delete(Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId),
+                            null, null);
+            assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
     }
 
     public void testFileTransferDeliveryExpiration() {
@@ -347,7 +391,7 @@ public class FileTransferLogTest extends AndroidTestCase {
             mMessagingLog.addOneToOneFileTransfer(fileTransferId, mContact, Direction.OUTGOING,
                     mContent, null, State.INITIATING, ReasonCode.UNSPECIFIED, mTimestamp,
                     mTimestampSent, mFileExpiration, FileTransferLog.UNKNOWN_EXPIRATION);
-            mMessagingLog.setFileInfoDequeued(fileTransferId, NtpTrustedTime.currentTimeMillis());
+            mMessagingLog.setFileInfoDequeued(fileTransferId, System.currentTimeMillis());
         }
         Cursor cursor = mMessagingLog.getUnDeliveredOneToOneFileTransfers();
         assertEquals(4, cursor.getCount());
@@ -357,5 +401,44 @@ public class FileTransferLogTest extends AndroidTestCase {
         cursor = mMessagingLog.getUnDeliveredOneToOneFileTransfers();
         assertEquals(0, cursor.getCount());
         CursorUtil.close(cursor);
+    }
+
+    public Boolean isFileTransferRead(String msgId) {
+        Uri uri = Uri.withAppendedPath(FileTransferLog.CONTENT_URI, msgId);
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, new String[] {
+                FileTransferLog.READ_STATUS
+            }, null, null, null);
+            if (cursor == null) {
+                throw new SQLException("Cannot query file transfer read status");
+            }
+            if (!cursor.moveToFirst()) {
+                return null;
+            }
+            return (cursor.getInt(cursor.getColumnIndexOrThrow(FileTransferLog.READ_STATUS)) == ReadStatus.READ
+                    .toInt());
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    public void testMarkFileTransferAsRead() {
+        long now = System.currentTimeMillis();
+        long fileIconExpiration = mRandom.nextLong();
+        assertFalse(mMessagingLog.markFileTransferAsRead(mFileTransferId, now));
+        // Add entry
+        mMessagingLog.addIncomingGroupFileTransfer(mFileTransferId, mChatId, mContact, mContent,
+                ICON_CONTENT, State.ACCEPTING, ReasonCode.UNSPECIFIED, mTimestamp, mTimestampSent,
+                mFileExpiration, fileIconExpiration);
+        assertFalse(isFileTransferRead(mFileTransferId));
+        assertTrue(mMessagingLog.markFileTransferAsRead(mFileTransferId, now));
+        assertTrue(isFileTransferRead(mFileTransferId));
+        assertFalse(mMessagingLog.markFileTransferAsRead(mFileTransferId, now));
+        mLocalContentResolver.delete(
+                Uri.withAppendedPath(FileTransferData.CONTENT_URI, mFileTransferId), null, null);
+        assertEquals(false, mMessagingLog.isFileTransfer(mFileTransferId));
     }
 }

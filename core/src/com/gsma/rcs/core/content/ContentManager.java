@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,6 +31,7 @@ import com.gsma.rcs.core.ims.protocol.sdp.MediaAttribute;
 import com.gsma.rcs.core.ims.protocol.sdp.MediaDescription;
 import com.gsma.rcs.core.ims.protocol.sdp.SdpParser;
 import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
+import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.platform.file.FileFactory;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.MimeManager;
@@ -49,9 +50,9 @@ public class ContentManager {
     /**
      * Generate an Uri for the received content
      * 
-     * @param fileName File name
-     * @param mime MIME type
-     * @param rcsSettings
+     * @param fileName the file name
+     * @param mime the MIME type
+     * @param rcsSettings the RCS settings accessor
      * @return Uri
      */
     public static Uri generateUriForReceivedContent(String fileName, String mime,
@@ -64,10 +65,12 @@ public class ContentManager {
         } else if (MimeManager.isVideoType(mime)) {
             path = rcsSettings.getVideoRootDirectory();
 
+        } else if (MimeManager.isAudioType(mime)) {
+            path = rcsSettings.getAudioRootDirectory();
+
         } else {
             path = rcsSettings.getFileRootDirectory();
         }
-
         /*
          * Check that the fileName will not overwrite existing file We modify it if a file of the
          * same name exists, by appending _1 before the extension For example if image.jpeg exists,
@@ -82,38 +85,16 @@ public class ContentManager {
         }
         String destination = fileName;
         int i = 1;
-        while (new File(new StringBuilder(path).append(destination).append(extension).toString())
-                .exists()) {
-            destination = new StringBuilder(fileName).append('_').append(i).toString();
+        while (new File(path + destination + extension).exists()) {
+            destination = fileName + '_' + i;
             i++;
         }
-
         /* Return free destination URI */
-        return Uri.fromFile(
-                new File(new StringBuilder(path).append(destination).append(extension).toString()));
+        return Uri.fromFile(new File(path + destination + extension));
     }
 
     /**
-     * Create a content object from URI description
-     * 
-     * @param uri Content URI
-     * @param size Content size
-     * @param fileName The file name
-     * @return Content instance
-     */
-    public static MmContent createMmContent(Uri uri, long size, String fileName) {
-        String extension = MimeManager.getFileExtension(fileName);
-        String mime = MimeManager.getInstance().getMimeType(extension);
-        if (size < 0 || fileName == null || mime == null) {
-            throw new IllegalArgumentException(new StringBuilder("Invalid file, size ").append(size)
-                    .append(" fileName ").append(fileName).append(" mimeType ").append(mime)
-                    .append(" unable to create MmContent.").toString());
-        }
-        return createMmContentFromMime(uri, mime, size, fileName);
-    }
-
-    /**
-     * Create a content object from MIME type
+     * Create a content object
      * 
      * @param uri Content URI
      * @param mime MIME type
@@ -121,8 +102,7 @@ public class ContentManager {
      * @param fileName The file name
      * @return Content instance
      */
-    public static MmContent createMmContentFromMime(Uri uri, String mime, long size,
-            String fileName) {
+    public static MmContent createMmContent(Uri uri, String mime, long size, String fileName) {
         if (mime != null) {
             if (MimeManager.isImageType(mime)) {
                 return new PhotoContent(uri, mime, size, fileName);
@@ -145,7 +125,7 @@ public class ContentManager {
 
     /**
      * Create a live video content object
-     * 
+     *
      * @param codec Codec
      * @param width Width
      * @param height Height
@@ -159,31 +139,12 @@ public class ContentManager {
     }
 
     /**
-     * Create a live audio content object
-     * 
-     * @param codec Codec
-     * @return Content instance
-     */
-    public static LiveAudioContent createLiveAudioContent(String codec) {
-        return new LiveAudioContent("audio/" + codec);
-    }
-
-    /**
      * Create a generic live video content object
      * 
      * @return Content instance
      */
     public static LiveVideoContent createGenericLiveVideoContent() {
         return new LiveVideoContent("video/*");
-    }
-
-    /**
-     * Create a generic live audio content object
-     * 
-     * @return Content instance
-     */
-    public static LiveAudioContent createGenericLiveAudioContent() {
-        return new LiveAudioContent("audio/*");
     }
 
     /**
@@ -223,8 +184,8 @@ public class ContentManager {
 
         String rtpmap = desc.getMediaAttribute("rtpmap").getValue();
         /* Extract the video encoding */
-        String encoding = rtpmap
-                .substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length() + 1);
+        String encoding = rtpmap.substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length()
+                + 1);
         String codec = encoding.toLowerCase().trim();
         int index = encoding.indexOf("/");
         if (index != -1) {
@@ -241,14 +202,14 @@ public class ContentManager {
                 index = value.indexOf(desc.mPayload);
                 int separator = value.indexOf('-');
                 if (index != -1 && separator != -1) {
-                    width = Integer.parseInt(
-                            value.substring(index + desc.mPayload.length() + 1, separator));
+                    width = Integer.parseInt(value.substring(index + desc.mPayload.length() + 1,
+                            separator));
                     height = Integer.parseInt(value.substring(separator + 1));
                 }
             } catch (NumberFormatException e) {
                 /* Use default value */
                 width = H264Config.QCIF_WIDTH;
-                height = H264Config.QCIF_WIDTH;
+                height = H264Config.QCIF_HEIGHT;
             }
         }
 
@@ -256,61 +217,10 @@ public class ContentManager {
     }
 
     /**
-     * Create a live audio content object
-     * 
-     * @param sdp SDP part
-     * @return Content instance
-     */
-    public static LiveAudioContent createLiveAudioContentFromSdp(byte[] sdp) {
-        /* Parse the remote SDP part */
-        SdpParser parser = new SdpParser(sdp);
-        Vector<MediaDescription> media = parser.getMediaDescriptions(); // TODO replace with
-                                                                        // getMediaDescriptions(audio)
-        if (media.size() == 0) {
-            return null;
-        }
-        MediaDescription desc = media.elementAt(0);
-        if (media.size() == 1) {
-            /*
-             * if only one media in SDP, test if 'audio', if not then return null.
-             */
-            if (!desc.mName.equals("audio")) {
-                return null;
-            }
-        }
-        if (media.size() == 2) {
-            /*
-             * if two media in SDP, test if first 'audio', if not then choose second and test if
-             * 'audio', if not return null.
-             */
-            if (!desc.mName.equals("audio")) {
-                desc = media.elementAt(1);
-                if (!desc.mName.equals("audio")) {
-                    return null;
-                }
-            }
-        }
-        if (!desc.mName.equals("audio")) {
-            return null;
-        }
-        String rtpmap = desc.getMediaAttribute("rtpmap").getValue();
-
-        /* Extract the audio encoding */
-        String encoding = rtpmap
-                .substring(rtpmap.indexOf(desc.mPayload) + desc.mPayload.length() + 1);
-        String codec = encoding.toLowerCase().trim();
-        int index = encoding.indexOf("/");
-        if (index != -1) {
-            codec = encoding.substring(0, index);
-        }
-        return createLiveAudioContent(codec);
-    }
-
-    /**
      * Create a content object from SDP description of a SIP invite request
      * 
      * @param invite SIP invite request
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return Content instance
      * @throws PayloadException
      */
@@ -328,13 +238,19 @@ public class ContentManager {
         long size = Long.parseLong(SipUtils.extractParameter(fileSelectorValue, "size:", "-1"));
         String filename = SipUtils.extractParameter(fileSelectorValue, "name:", "");
         Uri file = ContentManager.generateUriForReceivedContent(filename, mime, rcsSettings);
-        return ContentManager.createMmContent(file, size, filename);
+        MediaAttribute attr2 = desc.getMediaAttribute("file-disposition");
+        String fileDispoValue = attr2.getValue();
+        MmContent content = ContentManager.createMmContent(file, mime, size, filename);
+        if (FileSharingSession.FILE_DISPOSITION_RENDER.equals(fileDispoValue)) {
+            content.setPlayable(true);
+        }
+        return content;
     }
 
     /**
      * Get sent photo root directory
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return Path of sent photo root directory
      */
     public static String getSentPhotoRootDirectory(RcsSettings rcsSettings) {
@@ -344,7 +260,7 @@ public class ContentManager {
     /**
      * Get sent video root directory
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return Path of sent video root directory
      */
     public static String getSentVideoRootDirectory(RcsSettings rcsSettings) {
@@ -352,9 +268,19 @@ public class ContentManager {
     }
 
     /**
+     * Get sent audio root directory
+     *
+     * @param rcsSettings the RCS settings accessor
+     * @return Path of sent audio root directory
+     */
+    public static String getSentAudioRootDirectory(RcsSettings rcsSettings) {
+        return rcsSettings.getAudioRootDirectory().concat(FileFactory.SENT_DIRECTORY);
+    }
+
+    /**
      * Get sent file root directory
      * 
-     * @param rcsSettings
+     * @param rcsSettings the RCS settings accessor
      * @return Path of sent file root directory
      */
     public static String getSentFileRootDirectory(RcsSettings rcsSettings) {
@@ -364,9 +290,9 @@ public class ContentManager {
     /**
      * Generate Uri for saving the content that has to be transferred
      * 
-     * @param fileName
-     * @param mime
-     * @param rcsSettings
+     * @param fileName the file name
+     * @param mime the MIME type
+     * @param rcsSettings the RCS settings accessor
      * @return Uri
      */
     public static Uri generateUriForSentContent(String fileName, String mime,
@@ -374,8 +300,13 @@ public class ContentManager {
         String path;
         if (MimeManager.isImageType(mime)) {
             path = getSentPhotoRootDirectory(rcsSettings);
+
         } else if (MimeManager.isVideoType(mime)) {
             path = getSentVideoRootDirectory(rcsSettings);
+
+        } else if (MimeManager.isAudioType(mime)) {
+            path = getSentAudioRootDirectory(rcsSettings);
+
         } else {
             path = getSentFileRootDirectory(rcsSettings);
         }
@@ -402,4 +333,5 @@ public class ContentManager {
         }
         return Uri.fromFile(generatedFile);
     }
+
 }

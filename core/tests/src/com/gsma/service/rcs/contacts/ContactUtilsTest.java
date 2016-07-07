@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,6 @@ public class ContactUtilsTest extends AndroidTestCase {
         mContactUtils = ContactUtil.getInstance(new ContactUtilMockContext(getContext()));
         mNextCountryAreaCode = String.valueOf(Integer
                 .valueOf(ContactUtilMockContext.COUNTRY_AREA_CODE) + 1);
-    }
-
-    protected void tearDown() throws Exception {
-        super.tearDown();
     }
 
     public void testIsValidContactNull() {
@@ -99,9 +95,8 @@ public class ContactUtilsTest extends AndroidTestCase {
     }
 
     public void testIsValidContactNormalCase_7() throws RcsPermissionDeniedException {
-        assertTrue(mContactUtils.isValidContact(new StringBuilder(" ")
-                .append(ContactUtilMockContext.COUNTRY_AREA_CODE)
-                .append("-1 2-3 4-5 6-7 8-9 0-1 2-3 4 ").toString()));
+        assertTrue(mContactUtils.isValidContact(" " + ContactUtilMockContext.COUNTRY_AREA_CODE
+                + "-1 2-3 4-5 6-7 8-9 0-1 2-3 4 "));
     }
 
     public void testIsValidContactNormalCase_8() throws RcsPermissionDeniedException {
@@ -113,8 +108,7 @@ public class ContactUtilsTest extends AndroidTestCase {
         try {
             mContactUtils.formatContact(null);
             fail("Expected IllegalArgumentException to be thrown");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e instanceof IllegalArgumentException);
+        } catch (IllegalArgumentException ignore) {
         }
     }
 
@@ -162,7 +156,4 @@ public class ContactUtilsTest extends AndroidTestCase {
         assertEquals(ContactUtilMockContext.COUNTRY_AREA_CODE, mContactUtils.getMyCountryAreaCode());
     }
 
-    public void testGetMyCountryCode() throws RcsPermissionDeniedException {
-        assertEquals(ContactUtilMockContext.COUNTRY_CODE, mContactUtils.getMyCountryCode());
-    }
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
 w * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,7 +63,7 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
         super(imService, 
                 resumeUpload.getFileTransferId(), 
                 content, resumeUpload.getContact(),
-                resumeUpload.getFileicon() != null ? FileTransferUtils.createMmContent(resumeUpload.getFileicon()) : null, 
+                resumeUpload.getFileicon() != null ? FileTransferUtils.createIconContent(resumeUpload.getFileicon()) : null,
                 resumeUpload.getTId(), 
                 messagingLog, 
                 rcsSettings,
@@ -88,31 +88,16 @@ public class ResumeUploadFileSharingSession extends OriginatingHttpFileSharingSe
             if (mUploadManager.isCancelled() || mUploadManager.isPaused()) {
                 return;
             }
-            sLogger.error(
-                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
-                            .append(getSessionID()).append(" with fileTransferId : ")
-                            .append(getFileTransferId()).toString(), e);
+            sLogger.error("Failed to resume a file transfer session for sessionId : "
+                    + getSessionID() + " with fileTransferId : " + getFileTransferId(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
-        } catch (PayloadException e) {
-            sLogger.error(
-                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
-                            .append(getSessionID()).append(" with fileTransferId : ")
-                            .append(getFileTransferId()).toString(), e);
+        } catch (PayloadException | RuntimeException e) {
+            sLogger.error("Failed to resume a file transfer session for sessionId : "
+                    + getSessionID() + " with fileTransferId : " + getFileTransferId(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
         } catch (NetworkException e) {
-            handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (RuntimeException e) {
-            /*
-             * Intentionally catch runtime exceptions as else it will abruptly end the thread and
-             * eventually bring the whole system down, which is not intended.
-             */
-            sLogger.error(
-                    new StringBuilder("Failed to resume a file transfer session for sessionId : ")
-                            .append(getSessionID()).append(" with fileTransferId : ")
-                            .append(getFileTransferId()).toString(), e);
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
         }
     }

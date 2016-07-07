@@ -36,7 +36,7 @@ import android.os.Parcelable;
 /**
  * File transfer Data Object
  * 
- * @author YPLO6403
+ * @author Philippe LEMORDANT
  */
 public class FileTransferDAO implements Parcelable {
 
@@ -60,13 +60,13 @@ public class FileTransferDAO implements Parcelable {
     private final long mFileIconExpiration;
     private final FileTransfer.ReasonCode mReasonCode;
     private static ContentResolver sContentResolver;
+    private final FileTransfer.Disposition mDisposition;
+    private final String mIconMimeType;
+    private boolean mExpiredDelivery;
 
     public String getIconMimeType() {
         return mIconMimeType;
     }
-
-    private final String mIconMimeType;
-    private boolean mExpiredDelivery;
 
     public FileTransfer.State getState() {
         return mState;
@@ -132,6 +132,10 @@ public class FileTransferDAO implements Parcelable {
         return mThumbnail;
     }
 
+    public FileTransfer.Disposition getDisposition() {
+        return mDisposition;
+    }
+
     /**
      * Returns the time when the file on the content server is no longer valid to download.
      * 
@@ -154,12 +158,14 @@ public class FileTransferDAO implements Parcelable {
         return mReasonCode;
     }
 
-    private FileTransferDAO(String transferId, ContactId contact, Uri file, String filename,
-            String chatId, String mimeType, FileTransfer.State state, ReadStatus readStatus,
-            Direction direction, long timestamp, long timestampSent, long timestampDelivered,
-            long timestampDisplayed, long sizeTransferred, long size, Uri thumbnail,
-            long fileExpiration, long fileIconExpiration, FileTransfer.ReasonCode reasonCode,
-            boolean expiredDelivery, String iconMimeType) {
+    private FileTransferDAO(FileTransfer.Disposition disposition, String transferId,
+            ContactId contact, Uri file, String filename, String chatId, String mimeType,
+            FileTransfer.State state, ReadStatus readStatus, Direction direction, long timestamp,
+            long timestampSent, long timestampDelivered, long timestampDisplayed,
+            long sizeTransferred, long size, Uri thumbnail, long fileExpiration,
+            long fileIconExpiration, FileTransfer.ReasonCode reasonCode, boolean expiredDelivery,
+            String iconMimeType) {
+        mDisposition = disposition;
         mTransferId = transferId;
         mContact = contact;
         mFile = file;
@@ -230,6 +236,7 @@ public class FileTransferDAO implements Parcelable {
         } else {
             mIconMimeType = null;
         }
+        mDisposition = FileTransfer.Disposition.valueOf(source.readInt());
     }
 
     @Override
@@ -288,6 +295,7 @@ public class FileTransferDAO implements Parcelable {
         } else {
             dest.writeInt(0);
         }
+        dest.writeInt(mDisposition.toInt());
     }
 
     public static final Parcelable.Creator<FileTransferDAO> CREATOR = new Parcelable.Creator<FileTransferDAO>() {
@@ -355,11 +363,13 @@ public class FileTransferDAO implements Parcelable {
             long sizeTransferred = cursor.getLong(cursor
                     .getColumnIndexOrThrow(FileTransferLog.TRANSFERRED));
             long size = cursor.getLong(cursor.getColumnIndexOrThrow(FileTransferLog.FILESIZE));
-            String fileicon = cursor.getString(cursor
+            FileTransfer.Disposition disposition = FileTransfer.Disposition.valueOf(cursor
+                    .getInt(cursor.getColumnIndexOrThrow(FileTransferLog.DISPOSITION)));
+            String fileIcon = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferLog.FILEICON));
             Uri thumbnail = null;
-            if (fileicon != null) {
-                thumbnail = Uri.parse(fileicon);
+            if (fileIcon != null) {
+                thumbnail = Uri.parse(fileIcon);
             }
             FileTransfer.ReasonCode reasonCode = FileTransfer.ReasonCode.valueOf(cursor
                     .getInt(cursor.getColumnIndexOrThrow(FileTransferLog.REASON_CODE)));
@@ -373,10 +383,10 @@ public class FileTransferDAO implements Parcelable {
             String iconMimeType = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
 
-            return new FileTransferDAO(fileTransferId, contact, file, filename, chatId, mimeType,
-                    state, readStatus, direction, timestamp, timestampSent, timestampDelivered,
-                    timestampDisplayed, sizeTransferred, size, thumbnail, fileExpiration,
-                    fileIconExpiration, reasonCode, expiredDelivery, iconMimeType);
+            return new FileTransferDAO(disposition, fileTransferId, contact, file, filename,
+                    chatId, mimeType, state, readStatus, direction, timestamp, timestampSent,
+                    timestampDelivered, timestampDisplayed, sizeTransferred, size, thumbnail,
+                    fileExpiration, fileIconExpiration, reasonCode, expiredDelivery, iconMimeType);
 
         } finally {
             if (cursor != null) {

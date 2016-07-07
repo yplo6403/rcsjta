@@ -644,31 +644,30 @@ public class MessagingLog implements IGroupChatLog, IMessageLog, IFileTransferLo
     public void addOneToOneFileTransferOnSecondaryDevice(String fileTransferId, ContactId contact,
             Direction dir, Uri downloadUri, MmContent content, FileTransfer.State state,
             FileTransfer.ReasonCode reason, long timestamp, long timestampSent,
-            long fileExpiration, boolean seen) {
-        mFileTransferLog
-                .addOneToOneFileTransferOnSecondaryDevice(fileTransferId, contact, dir,
-                        downloadUri, content, state, reason, timestamp, timestampSent,
-                        fileExpiration, seen);
+            long fileExpiration, FileTransfer.Disposition disposition, boolean seen) {
+        mFileTransferLog.addOneToOneFileTransferOnSecondaryDevice(fileTransferId, contact, dir,
+                downloadUri, content, state, reason, timestamp, timestampSent, fileExpiration,
+                disposition, seen);
     }
 
     @Override
     public void addIncomingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
             ContactId contact, Uri downloadUri, MmContent content, FileTransfer.State state,
             FileTransfer.ReasonCode reasonCode, long timestamp, long timestampSent,
-            long fileExpiration, boolean seen) {
+            long fileExpiration, FileTransfer.Disposition disposition, boolean seen) {
         mFileTransferLog.addIncomingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
                 contact, downloadUri, content, state, reasonCode, timestamp, timestampSent,
-                fileExpiration, seen);
+                fileExpiration, disposition, seen);
     }
 
     @Override
     public void addOutgoingGroupFileTransferOnSecondaryDevice(String fileTransferId, String chatId,
             Uri downloadUri, MmContent localMmContent, Set<ContactId> recipients,
             FileTransfer.State state, FileTransfer.ReasonCode reasonCode, long timestamp,
-            long timestampSent, long fileExpiration) {
+            long timestampSent, long fileExpiration, FileTransfer.Disposition disposition) {
         mFileTransferLog.addOutgoingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
                 downloadUri, localMmContent, recipients, state, reasonCode, timestamp,
-                timestampSent, fileExpiration);
+                timestampSent, fileExpiration, disposition);
     }
 
     @Override

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,10 +24,7 @@ package com.gsma.rcs.utils;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.content.ContentManager;
-import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.platform.AndroidFactory;
-import com.gsma.rcs.platform.file.FileDescription;
-import com.gsma.rcs.platform.file.FileFactory;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.logger.Logger;
@@ -38,6 +35,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -47,7 +45,6 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -197,6 +194,10 @@ public class FileUtils {
             switch (scheme) {
                 case ContentResolver.SCHEME_CONTENT:
                     if (cursor != null && cursor.moveToFirst()) {
+                        /*
+                         * Warning: OpenableColumns.DISPLAY_NAME does not have to be a filename (eg.
+                         * for audio files)
+                         */
                         return cursor.getString(cursor
                                 .getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));
                     }
@@ -326,6 +327,45 @@ public class FileUtils {
         }
     }
 
+    private static String getMimeTypeFromFile(Context ctx, Uri file) {
+        MediaMetadataRetriever mmr = null;
+        try {
+            mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(ctx, file);
+            return mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+
+        } finally {
+            if (mmr != null) {
+                mmr.release();
+            }
+        }
+    }
+
+    /**
+     * Gets the duration from file Uri
+     * 
+     * @param ctx the context
+     * @param file the file Uri
+     * @return the duration in ms or -1 if it cannot be retrieved
+     */
+    public static long getDurationFromFile(Context ctx, Uri file) {
+        MediaMetadataRetriever mmr = null;
+        try {
+            mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(ctx, file);
+            return Long
+                    .parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+
+        } catch (NumberFormatException e) {
+            return -1;
+
+        } finally {
+            if (mmr != null) {
+                mmr.release();
+            }
+        }
+    }
+
     /**
      * Create copy of sent file in respective sent directory.
      * 
@@ -335,22 +375,23 @@ public class FileUtils {
      * @throws IOException
      */
     public static Uri createCopyOfSentFile(Uri file, RcsSettings rcsSettings) throws IOException {
-        FileDescription fileDescription = FileFactory.getFactory().getFileDescription(file);
-        MmContent content = ContentManager.createMmContent(file, fileDescription.getSize(),
-                fileDescription.getName());
-        return createCopyOfSentFile(file,content.getName(),content.getEncoding(), rcsSettings);
-    }
-
-    /**
-     * Create copy of sent file in respective sent directory.
-     *
-     * @param file The file Uri to copy
-     * @param rcsSettings The RcsSettings accessor
-     * @return Uri of copy or created file
-     * @throws IOException
-     */
-    public static Uri createCopyOfSentFile(Uri file, String fileName, String mimeType,
-            RcsSettings rcsSettings) throws IOException {
+        String mimeType = getMimeType(file);
+        Context ctx = AndroidFactory.getApplicationContext();
+        String fileName = getFileName(ctx, file);
+        String extension = MimeManager.getFileExtension(fileName);
+        /*
+         * Checks if filename contains extension.
+         */
+        if (extension == null) {
+            /*
+             * If extension is not provided by filename then guess extension from MimeType.
+             */
+            extension = MimeManager.getInstance().getExtensionFromMimeType(mimeType);
+            if (extension == null) {
+                throw new RuntimeException("Cannot retrieve file extension for Uri='" + file + "'!");
+            }
+            fileName = fileName + "." + extension;
+        }
         Uri destination = ContentManager.generateUriForSentContent(fileName, mimeType, rcsSettings);
         copyFile(file, destination);
         return destination;
@@ -358,7 +399,7 @@ public class FileUtils {
 
     /**
      * Get path from Uri
-     * 
+     *
      * @param context The context
      * @param uri the Uri
      * @return the file path
@@ -375,7 +416,6 @@ public class FileUtils {
                     if ("primary".equalsIgnoreCase(type)) {
                         return Environment.getExternalStorageDirectory() + "/" + split[1];
                     }
-
                 } else if (isDownloadsDocument(uri)) { // DownloadsProvider
                     String id = DocumentsContract.getDocumentId(uri);
                     Uri contentUri = ContentUris.withAppendedId(
@@ -398,7 +438,6 @@ public class FileUtils {
                             contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
                             break;
                     }
-
                     String[] selectionArgs = new String[] {
                         split[1]
                     };
@@ -479,18 +518,52 @@ public class FileUtils {
         return "com.google.android.apps.photos.content".equals(uri.getAuthority());
     }
 
-    public static byte[] getContent(String path) throws IOException {
-        File file = new File(path);
-        int size = (int) file.length();
-        byte[] bytes = new byte[size];
-        BufferedInputStream buf = null;
-        try {
-            buf = new BufferedInputStream(new FileInputStream(file));
-            buf.read(bytes, 0, bytes.length);
-            return bytes;
-
-        } finally {
-            CloseableUtils.tryToClose(buf);
+    /**
+     * Gets the mime-type from file Uri
+     *
+     * @param file the file Uri
+     * @return the mime-type or null
+     */
+    public static String getMimeType(Uri file) {
+        String scheme = file.getScheme();
+        Context ctx = AndroidFactory.getApplicationContext();
+        if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+            return ctx.getContentResolver().getType(file);
         }
+        if (ContentResolver.SCHEME_FILE.equals(scheme)) {
+            String path = file.getPath();
+            if (path == null) {
+                throw new RuntimeException("Invalid file path for Uri='" + file + "'!");
+            }
+            String extension = MimeManager.getFileExtension(path);
+            if (extension == null) {
+                throw new IllegalArgumentException("No file extension Uri='" + file + "'!");
+            }
+            String mimeType = MimeManager.getInstance().getMimeType(extension);
+            if (MimeManager.isVideoType(mimeType)) {
+                /*
+                 * Warning: Audio and Video files share the same extensions so we need to retrieve
+                 * mime type directly from file.
+                 */
+                String mimeTypeFromMediaFile = getMimeTypeFromFile(ctx, file);
+                if (mimeTypeFromMediaFile != null) {
+                    mimeType = mimeTypeFromMediaFile;
+                }
+            }
+            return mimeType;
+        }
+        throw new IllegalArgumentException("Unsupported URI scheme '" + scheme + "'!");
+    }
+
+    /**
+     * Gets mime type from extesion pparsed from path or filename
+     *
+     * @param pathOrFilename the path or filename
+     * @return the mime type or null if not found
+     */
+
+    public static String getMimeTypeFromExtension(String pathOrFilename) {
+        String ext = MimeManager.getFileExtension(pathOrFilename);
+        return MimeManager.getInstance().getMimeType(ext);
     }
 }

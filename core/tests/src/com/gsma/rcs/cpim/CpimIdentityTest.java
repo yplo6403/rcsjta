@@ -22,9 +22,6 @@ import com.gsma.rcs.core.ims.service.im.chat.cpim.CpimIdentity;
 
 import android.test.InstrumentationTestCase;
 
-/**
- * @author YPLO6403
- */
 public class CpimIdentityTest extends InstrumentationTestCase {
 
     public void testInvalidUri() {
@@ -40,7 +37,7 @@ public class CpimIdentityTest extends InstrumentationTestCase {
 
     public void testSipUri() {
         String uri = "sip:user@domain.com";
-        CpimIdentity id = new CpimIdentity("<"+uri+">");
+        CpimIdentity id = new CpimIdentity("<" + uri + ">");
         assertNull(id.getDisplayName());
         assertEquals(uri, id.getUri());
     }
@@ -48,7 +45,7 @@ public class CpimIdentityTest extends InstrumentationTestCase {
     public void testTelUriWithDisplayName() {
         String displayName = "\"Winnie the Pooh\"";
         String uri = "tel:+33674538159";
-        CpimIdentity id = new CpimIdentity(displayName+ " <"+uri+">");
+        CpimIdentity id = new CpimIdentity(displayName + " <" + uri + ">");
         assertEquals("Winnie the Pooh", id.getDisplayName());
         assertEquals(uri, id.getUri());
     }
@@ -56,7 +53,7 @@ public class CpimIdentityTest extends InstrumentationTestCase {
     public void testTelUriWithDisplayNameBis() {
         String displayName = "Winnie the Pooh";
         String uri = "tel:+33674538159";
-        CpimIdentity id = new CpimIdentity(displayName+ " <"+uri+">");
+        CpimIdentity id = new CpimIdentity(displayName + " <" + uri + ">");
         assertEquals(displayName, id.getDisplayName());
         assertEquals(uri, id.getUri());
     }
@@ -65,9 +62,10 @@ public class CpimIdentityTest extends InstrumentationTestCase {
         String displayName = "Winnie the Pooh";
         String uri = "tel:+33674538159";
         String acceptContact = "%2Bsip.instance%3D%22%3Curn%3Agsma%3Aimei%3A35824005-944763-1%3E%22";
-        CpimIdentity id = new CpimIdentity(displayName+ " <"+uri+"?Accept-Contact="+acceptContact+">");
+        CpimIdentity id = new CpimIdentity(displayName + " <" + uri + "?Accept-Contact="
+                + acceptContact + ">");
         assertEquals("Winnie the Pooh", id.getDisplayName());
-        assertEquals("tel:+33674538159?Accept-Contact="+acceptContact, id.getUri());
-        assertEquals("<urn:gsma:imei:35824005-944763-1>", id.getSipInstance());
+        assertEquals("tel:+33674538159?Accept-Contact=" + acceptContact, id.getUri());
     }
+
 }

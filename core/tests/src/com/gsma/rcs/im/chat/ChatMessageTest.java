@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2016 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,19 +22,21 @@
 
 package com.gsma.rcs.im.chat;
 
+import static com.gsma.rcs.utils.PhoneUtils.SIP_URI_HEADER;
+import static com.gsma.rcs.utils.PhoneUtils.initialize;
+
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.service.im.chat.ChatMessage;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.userprofile.UserProfile;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessageData;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.ContactUtilMockContext;
-import com.gsma.rcs.utils.PhoneUtils;
 import com.gsma.services.rcs.Geoloc;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.chat.ChatLog.Message;
@@ -51,7 +53,9 @@ import android.net.Uri;
 import android.test.AndroidTestCase;
 
 import java.io.IOException;
+import java.sql.SQLDataException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -72,28 +76,30 @@ public class ChatMessageTest extends AndroidTestCase {
 
     protected void setUp() throws Exception {
         super.setUp();
-        Context mContext = getContext();
-        mContentResolver = mContext.getContentResolver();
+        Context context = getContext();
+        mContentResolver = context.getContentResolver();
         mLocalContentResolver = new LocalContentResolver(mContentResolver);
-        RcsSettings mRcsSettings = RcsSettings.getInstance(mLocalContentResolver);
-        PhoneUtils.initialize(mRcsSettings);
-        mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mRcsSettings);
-        ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
+        RcsSettings rcsSettings = RcsSettingsMock.getMockSettings(context);
+        initialize(rcsSettings);
+        mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, rcsSettings);
+        ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(context));
         mContact = contactUtils.formatContact("+339000000");
         ImsModule.setImsUserProfile(new UserProfile(mContact, "homeDomain", "privateID",
                 "password", "realm", Uri.parse("xdmServerAddr"), "xdmServerLogin",
-                "xdmServerPassword", formatSipUri("imConferenceUri"), mRcsSettings));
+                "xdmServerPassword", formatSipUri("imConferenceUri"), rcsSettings));
         mTimestamp = mRandom.nextLong();
         mTimestampSent = mRandom.nextLong();
         mText = Long.toString(mRandom.nextLong());
     }
 
+    @Override
     protected void tearDown() throws Exception {
         super.tearDown();
+        RcsSettingsMock.restoreSettings();
     }
 
-    public void testTextMessage() throws PayloadException, IOException {
-        String msgId = Long.toString(NtpTrustedTime.currentTimeMillis());
+    public void testTextMessage() throws PayloadException, IOException, SQLDataException {
+        String msgId = Long.toString(System.currentTimeMillis());
         ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                 mTimestamp, mTimestampSent, "display");
 
@@ -104,35 +110,44 @@ public class ChatMessageTest extends AndroidTestCase {
         String[] whereArgs = new String[] {
             msgId
         };
-        Cursor cursor = mContentResolver.query(Message.CONTENT_URI, SELECTION, where, whereArgs,
-                Message.TIMESTAMP + " ASC");
-        assertNotNull(cursor);
-        assertEquals(cursor.getCount(), 1);
-        assertTrue(cursor.moveToNext());
-        Direction direction = Direction.valueOf(cursor.getInt(cursor
-                .getColumnIndex(Message.DIRECTION)));
-        String contact = cursor.getString(cursor.getColumnIndexOrThrow(Message.CONTACT));
-        String content = cursor.getString(cursor.getColumnIndexOrThrow(Message.CONTENT));
-        assertNotNull(content);
-        String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(Message.MIME_TYPE));
-        String id = cursor.getString(cursor.getColumnIndexOrThrow(Message.MESSAGE_ID));
-        long readTimestamp = cursor.getLong(cursor.getColumnIndexOrThrow(Message.TIMESTAMP));
-        long readTimestampSent = cursor.getLong(cursor
-                .getColumnIndexOrThrow(Message.TIMESTAMP_SENT));
-        cursor.close();
-        assertEquals(Direction.OUTGOING, direction);
-        assertEquals(mContact.toString(), contact);
-        assertEquals(mText, content);
-        assertEquals(Message.MimeType.TEXT_MESSAGE, mimeType);
-        assertEquals(msgId, id);
-        assertEquals(mTimestamp, readTimestamp);
-        assertEquals(mTimestampSent, readTimestampSent);
-        mLocalContentResolver.delete(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId), null,
-                null);
-        assertFalse(mMessagingLog.isMessagePersisted(msgId));
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(Message.CONTENT_URI, SELECTION, where, whereArgs,
+                    Message.TIMESTAMP + " ASC");
+            if (cursor == null) {
+                throw new SQLDataException("Cannot query uri:" + Message.CONTENT_URI);
+            }
+            assertEquals(cursor.getCount(), 1);
+            assertTrue(cursor.moveToNext());
+            Direction direction = Direction.valueOf(cursor.getInt(cursor
+                    .getColumnIndex(Message.DIRECTION)));
+            String contact = cursor.getString(cursor.getColumnIndex(Message.CONTACT));
+            String content = cursor.getString(cursor.getColumnIndex(Message.CONTENT));
+            assertNotNull(content);
+            String mimeType = cursor.getString(cursor.getColumnIndex(Message.MIME_TYPE));
+            String id = cursor.getString(cursor.getColumnIndex(Message.MESSAGE_ID));
+            long readTimestamp = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP));
+            long readTimestampSent = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP_SENT));
+
+            assertEquals(Direction.OUTGOING, direction);
+            assertEquals(mContact.toString(), contact);
+            assertEquals(mText, content);
+            assertEquals(Message.MimeType.TEXT_MESSAGE, mimeType);
+            assertEquals(msgId, id);
+            assertEquals(mTimestamp, readTimestamp);
+            assertEquals(mTimestampSent, readTimestampSent);
+            mLocalContentResolver.delete(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
+                    null, null);
+            assertFalse(mMessagingLog.isMessagePersisted(msgId));
+
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
-    public void testGeolocMessage() throws PayloadException, IOException {
+    public void testGeolocMessage() throws PayloadException, IOException, SQLDataException {
         Geoloc geoloc = new Geoloc(mText, 10.0, 11.0, 2000, 2);
         ChatMessage chatMsg = ChatUtils.createGeolocMessage(mContact, geoloc, mTimestamp,
                 mTimestampSent);
@@ -143,37 +158,46 @@ public class ChatMessageTest extends AndroidTestCase {
 
         // Read entry
         Uri uri = Uri.withAppendedPath(Message.CONTENT_URI, msgId);
-        Cursor cursor = mContentResolver.query(uri, SELECTION, null, null, Message.TIMESTAMP
-                + " ASC");
-        assertNotNull(cursor);
-        assertEquals(cursor.getCount(), 1);
-        assertTrue(cursor.moveToNext());
-        Direction direction = Direction.valueOf(cursor.getInt(cursor
-                .getColumnIndex(Message.DIRECTION)));
-        String contact = cursor.getString(cursor.getColumnIndex(Message.CONTACT));
-        String content = cursor.getString(cursor.getColumnIndex(Message.CONTENT));
-        assertNotNull(content);
-        Geoloc readGeoloc = new Geoloc(content);
-        assertNotNull(readGeoloc);
-        String contentType = cursor.getString(cursor.getColumnIndex(Message.MIME_TYPE));
-        String id = cursor.getString(cursor.getColumnIndex(Message.MESSAGE_ID));
-        long readTimestamp = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP));
-        long readTimestampSent = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP_SENT));
-        cursor.close();
-        assertEquals(Direction.OUTGOING, direction);
-        assertEquals(mContact.toString(), contact);
-        assertEquals(readGeoloc.getLabel(), geoloc.getLabel());
-        assertEquals(readGeoloc.getLatitude(), geoloc.getLatitude());
-        assertEquals(readGeoloc.getLongitude(), geoloc.getLongitude());
-        assertEquals(readGeoloc.getExpiration(), geoloc.getExpiration());
-        assertEquals(readGeoloc.getAccuracy(), geoloc.getAccuracy());
-        assertEquals(Message.MimeType.GEOLOC_MESSAGE, contentType);
-        assertEquals(msgId, id);
-        assertEquals(mTimestamp, readTimestamp);
-        assertEquals(mTimestampSent, readTimestampSent);
-        mLocalContentResolver.delete(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId), null,
-                null);
-        assertFalse(mMessagingLog.isMessagePersisted(msgId));
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, SELECTION, null, null, Message.TIMESTAMP + " ASC");
+            if (cursor == null) {
+                throw new SQLDataException("Cannot query Selection:" + Arrays.toString(SELECTION));
+            }
+
+            assertEquals(cursor.getCount(), 1);
+            assertTrue(cursor.moveToNext());
+            Direction direction = Direction.valueOf(cursor.getInt(cursor
+                    .getColumnIndex(Message.DIRECTION)));
+            String contact = cursor.getString(cursor.getColumnIndex(Message.CONTACT));
+            String content = cursor.getString(cursor.getColumnIndex(Message.CONTENT));
+            assertNotNull(content);
+            Geoloc readGeoloc = new Geoloc(content);
+            assertNotNull(readGeoloc);
+            String contentType = cursor.getString(cursor.getColumnIndex(Message.MIME_TYPE));
+            String id = cursor.getString(cursor.getColumnIndex(Message.MESSAGE_ID));
+            long readTimestamp = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP));
+            long readTimestampSent = cursor.getLong(cursor.getColumnIndex(Message.TIMESTAMP_SENT));
+
+            assertEquals(Direction.OUTGOING, direction);
+            assertEquals(mContact.toString(), contact);
+            assertEquals(readGeoloc.getLabel(), geoloc.getLabel());
+            assertEquals(readGeoloc.getLatitude(), geoloc.getLatitude());
+            assertEquals(readGeoloc.getLongitude(), geoloc.getLongitude());
+            assertEquals(readGeoloc.getExpiration(), geoloc.getExpiration());
+            assertEquals(readGeoloc.getAccuracy(), geoloc.getAccuracy());
+            assertEquals(Message.MimeType.GEOLOC_MESSAGE, contentType);
+            assertEquals(msgId, id);
+            assertEquals(mTimestamp, readTimestamp);
+            assertEquals(mTimestampSent, readTimestampSent);
+            mLocalContentResolver.delete(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId),
+                    null, null);
+            assertFalse(mMessagingLog.isMessagePersisted(msgId));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     /**
@@ -183,8 +207,7 @@ public class ChatMessageTest extends AndroidTestCase {
      * @return SIP-URI
      */
     private Uri formatSipUri(String path) {
-        return path.startsWith(PhoneUtils.SIP_URI_HEADER) ? Uri.parse(path) : Uri
-                .parse(PhoneUtils.SIP_URI_HEADER + path);
+        return path.startsWith(SIP_URI_HEADER) ? Uri.parse(path) : Uri.parse(SIP_URI_HEADER + path);
     }
 
     public void testChatMessageDeliveryExpiration() throws PayloadException {
@@ -192,7 +215,7 @@ public class ChatMessageTest extends AndroidTestCase {
         ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                 mTimestamp, mTimestampSent, "display");
         mMessagingLog.addOutgoingOneToOneChatMessage(msg, Status.SENDING, ReasonCode.UNSPECIFIED,
-                NtpTrustedTime.currentTimeMillis() + 30000L);
+                System.currentTimeMillis() + 30000L);
         assertFalse(mMessagingLog.isChatMessageExpiredDelivery(msgId));
         mMessagingLog.setChatMessageDeliveryExpired(msgId);
         assertTrue(mMessagingLog.isChatMessageExpiredDelivery(msgId));
@@ -218,7 +241,7 @@ public class ChatMessageTest extends AndroidTestCase {
             ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
                     mTimestamp, mTimestampSent, "display");
             mMessagingLog.addOutgoingOneToOneChatMessage(msg, Status.SENDING,
-                    ReasonCode.UNSPECIFIED, NtpTrustedTime.currentTimeMillis() + 30000L);
+                    ReasonCode.UNSPECIFIED, System.currentTimeMillis() + 30000L);
         }
         Cursor cursor = mMessagingLog.getUndeliveredOneToOneChatMessages();
         assertEquals(4, cursor.getCount());
@@ -228,5 +251,22 @@ public class ChatMessageTest extends AndroidTestCase {
         cursor = mMessagingLog.getUndeliveredOneToOneChatMessages();
         assertEquals(0, cursor.getCount());
         CursorUtil.close(cursor);
+    }
+
+    public void testMarkMessageAsRead() {
+        long now = System.currentTimeMillis();
+        String msgId = Long.toString(now);
+        assertEquals(null, mMessagingLog.isMessageRead(msgId));
+        assertFalse(mMessagingLog.markMessageAsRead(msgId, now));
+        ChatMessage msg = new ChatMessage(msgId, mContact, mText, MimeType.TEXT_MESSAGE,
+                mTimestamp, mTimestampSent, "display");
+        mMessagingLog.addIncomingOneToOneChatMessage(msg, "remote-sip-instance", true);
+        assertFalse(mMessagingLog.isMessageRead(msgId));
+        assertTrue(mMessagingLog.markMessageAsRead(msgId, now));
+        assertTrue(mMessagingLog.isMessageRead(msgId));
+        assertFalse(mMessagingLog.markMessageAsRead(msgId, now));
+        mLocalContentResolver.delete(Uri.withAppendedPath(MessageData.CONTENT_URI, msgId), null,
+                null);
+        assertFalse(mMessagingLog.isMessagePersisted(msgId));
     }
 }

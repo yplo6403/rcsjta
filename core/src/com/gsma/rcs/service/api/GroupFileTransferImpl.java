@@ -52,6 +52,7 @@ import com.gsma.rcs.service.broadcaster.IGroupFileTransferBroadcaster;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 import com.gsma.services.rcs.filetransfer.IFileTransfer;
@@ -433,6 +434,30 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
     }
 
     @Override
+    public int getDisposition() throws RemoteException {
+        try {
+            FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
+            if (session == null) {
+                return mPersistedStorage.getDisposition().toInt();
+            }
+            if (session.getContent().isPlayable()) {
+                return FileTransfer.Disposition.RENDER.toInt();
+            }
+            return FileTransfer.Disposition.ATTACH.toInt();
+
+        } catch (ServerApiBaseException e) {
+            if (!e.shouldNotBeLogged()) {
+                sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            }
+            throw e;
+
+        } catch (Exception e) {
+            sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            throw new ServerApiGenericException(e);
+        }
+    }
+
+    @Override
     public int getDirection() throws RemoteException {
         try {
             FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
@@ -505,8 +530,8 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     FileSharingSession session = new DownloadFromAcceptFileSharingSession(
                             mImService, ContentManager.createMmContent(resume.getFile(),
-                                    resume.getSize(), resume.getFileName()), download,
-                            mRcsSettings, mMessagingLog, mContactManager);
+                                    resume.getMimeType(), resume.getSize(), resume.getFileName()),
+                            download, mRcsSettings, mMessagingLog, mContactManager);
                     session.addListener(GroupFileTransferImpl.this);
                     session.startSession();
 
@@ -793,7 +818,7 @@ public class GroupFileTransferImpl extends IFileTransfer.Stub implements
                         return;
                     }
                     MmContent content = ContentManager.createMmContent(resume.getFile(),
-                            resume.getSize(), resume.getFileName());
+                            resume.getMimeType(), resume.getSize(), resume.getFileName());
                     if (Direction.OUTGOING == resume.getDirection()) {
                         session = new ResumeUploadGroupFileSharingSession(mImService, content,
                                 (FtHttpResumeUpload) resume, mRcsSettings, mMessagingLog,

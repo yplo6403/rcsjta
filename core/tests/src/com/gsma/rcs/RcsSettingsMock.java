@@ -16,7 +16,7 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.gsma.rcs.core.cms.integration;
+package com.gsma.rcs;
 
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.LocalContentResolver;

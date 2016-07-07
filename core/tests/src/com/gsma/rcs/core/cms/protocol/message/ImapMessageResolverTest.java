@@ -23,7 +23,7 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
@@ -48,6 +48,12 @@ public class ImapMessageResolverTest extends AndroidTestCase {
         super.setUp();
         mSettings = RcsSettingsMock.getMockSettings(mContext);
         AndroidFactory.setApplicationContext(mContext, mSettings);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        RcsSettingsMock.restoreSettings();
     }
 
     public void testSms() throws CmsSyncException, RcsPermissionDeniedException {

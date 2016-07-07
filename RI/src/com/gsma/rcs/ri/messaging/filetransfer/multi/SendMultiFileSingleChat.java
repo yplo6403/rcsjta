@@ -54,7 +54,13 @@ public class SendMultiFileSingleChat extends SendMultiFile implements ISendMulti
                             + "' to contact=" + contact + " icon=" + fileToTransfer.isFileicon());
                 }
                 FileTransfer fileTransfer = mFileTransferService.transferFile(contact,
-                        fileToTransfer.getUri(), fileToTransfer.isFileicon());
+                        fileToTransfer.getUri(),
+                        fileToTransfer.isAudioMessage() ? FileTransfer.Disposition.RENDER
+                                : FileTransfer.Disposition.ATTACH, fileToTransfer.isFileicon());
+                if (fileTransfer == null) {
+                    Log.e(LOGTAG, "Cannot transfer file: ID not found!");
+                    return false;
+                }
                 mFileTransfers.add(fileTransfer);
                 mTransferIds.add(fileTransfer.getTransferId());
             }

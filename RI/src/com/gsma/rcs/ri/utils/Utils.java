@@ -24,8 +24,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.widget.Toast;
 
@@ -73,7 +71,7 @@ public class Utils {
     }
 
     /**
-     * Show a picture
+     * Shows a picture
      * 
      * @param activity Activity
      * @param uri Picture to be displayed
@@ -114,6 +112,19 @@ public class Utils {
      */
     public static boolean isVideoType(String mime) {
         return mime.toLowerCase(Locale.getDefault()).startsWith("video/");
+    }
+
+    /**
+     * Plays audio document
+     *
+     * @param activity Activity
+     * @param uri Uri of audio file to be played
+     */
+    public static void playAudio(final Activity activity, Uri uri) {
+        Intent intent = new Intent();
+        intent.setAction(android.content.Intent.ACTION_VIEW);
+        intent.setDataAndType(uri, "audio/");
+        activity.startActivity(intent);
     }
 
     /**

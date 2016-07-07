@@ -59,6 +59,7 @@ import com.gsma.rcs.service.broadcaster.IOneToOneFileTransferBroadcaster;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer.Disposition;
 import com.gsma.services.rcs.filetransfer.FileTransfer.ReasonCode;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 import com.gsma.services.rcs.filetransfer.IFileTransfer;
@@ -111,10 +112,11 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
      * @param cmsSessionCtrl The CMS session controller
      */
     public OneToOneFileTransferImpl(InstantMessagingService imService, String transferId,
-                                    IOneToOneFileTransferBroadcaster broadcaster,
-                                    FileTransferPersistedStorageAccessor persistentStorage,
-                                    FileTransferServiceImpl fileTransferService, RcsSettings rcsSettings,
-                                    MessagingLog messagingLog, ContactManager contactManager, CmsSessionController cmsSessionCtrl) {
+            IOneToOneFileTransferBroadcaster broadcaster,
+            FileTransferPersistedStorageAccessor persistentStorage,
+            FileTransferServiceImpl fileTransferService, RcsSettings rcsSettings,
+            MessagingLog messagingLog, ContactManager contactManager,
+            CmsSessionController cmsSessionCtrl) {
         mImService = imService;
         mFileTransferId = transferId;
         mBroadcaster = broadcaster;
@@ -381,6 +383,30 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
     }
 
     @Override
+    public int getDisposition() throws RemoteException {
+        try {
+            FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
+            if (session == null) {
+                return mPersistentStorage.getDisposition().toInt();
+            }
+            if (session.getContent().isPlayable()) {
+                return Disposition.RENDER.toInt();
+            }
+            return Disposition.ATTACH.toInt();
+
+        } catch (ServerApiBaseException e) {
+            if (!e.shouldNotBeLogged()) {
+                sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            }
+            throw e;
+
+        } catch (Exception e) {
+            sLogger.error(ExceptionUtil.getFullStackTrace(e));
+            throw new ServerApiGenericException(e);
+        }
+    }
+
+    @Override
     public int getDirection() throws RemoteException {
         try {
             FileSharingSession session = mImService.getFileSharingSession(mFileTransferId);
@@ -521,8 +547,8 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     FileSharingSession session = new DownloadFromAcceptFileSharingSession(
                             mImService, ContentManager.createMmContent(resume.getFile(),
-                            resume.getSize(), resume.getFileName()), download,
-                            mRcsSettings, mMessagingLog, mContactManager);
+                                    resume.getMimeType(), resume.getSize(), resume.getFileName()),
+                            download, mRcsSettings, mMessagingLog, mContactManager);
                     session.addListener(OneToOneFileTransferImpl.this);
                     session.startSession();
 
@@ -836,12 +862,14 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     if (Direction.OUTGOING == resume.getDirection()) {
                         session = new ResumeUploadFileSharingSession(mImService, ContentManager
-                                .createMmContent(resume.getFile(), resume.getSize(),
-                                        resume.getFileName()), (FtHttpResumeUpload) resume,
-                                mRcsSettings, mMessagingLog, mContactManager);
+                                .createMmContent(resume.getFile(), resume.getMimeType(),
+                                        resume.getSize(), resume.getFileName()),
+                                (FtHttpResumeUpload) resume, mRcsSettings, mMessagingLog,
+                                mContactManager);
                     } else {
                         session = new DownloadFromResumeFileSharingSession(mImService,
-                                ContentManager.createMmContent(resume.getFile(), resume.getSize(),
+                                ContentManager.createMmContent(resume.getFile(),
+                                        resume.getMimeType(), resume.getSize(),
                                         resume.getFileName()), (FtHttpResumeDownload) resume,
                                 mRcsSettings, mMessagingLog, mContactManager);
                     }
@@ -940,10 +968,11 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
         mImService.scheduleImOperation(new Runnable() {
             public void run() {
                 try {
-                    MmContent file = FileTransferUtils.createMmContent(getFile());
+                    MmContent file = FileTransferUtils.createMmContent(getFile(), getMimeType(),
+                            Disposition.valueOf(getDisposition()));
                     Uri fileIcon = getFileIcon();
                     MmContent fileIconContent = fileIcon != null ? FileTransferUtils
-                            .createMmContent(fileIcon) : null;
+                            .createIconContent(fileIcon) : null;
 
                     mFileTransferService.resendOneToOneFile(getRemoteContact(), file,
                             fileIconContent, mFileTransferId);
@@ -1142,7 +1171,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onFileTransferred(MmContent content, ContactId contact, long fileExpiration,
-                                  long fileIconExpiration, FileTransferProtocol ftProtocol) {
+            long fileIconExpiration, FileTransferProtocol ftProtocol) {
         if (sLogger.isActivated()) {
             sLogger.info("Content transferred");
         }
@@ -1234,7 +1263,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onSessionInvited(ContactId contact, MmContent file, MmContent fileIcon,
-                                 long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
+            long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
         if (sLogger.isActivated()) {
             sLogger.info("Invited to one-to-one file transfer session");
         }
@@ -1254,7 +1283,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
 
     @Override
     public void onSessionAutoAccepted(ContactId contact, MmContent file, MmContent fileIcon,
-                                      long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
+            long timestamp, long timestampSent, long fileExpiration, long fileIconExpiration) {
         if (sLogger.isActivated()) {
             sLogger.info("Session auto accepted");
         }
@@ -1350,7 +1379,7 @@ public class OneToOneFileTransferImpl extends IFileTransfer.Stub implements
                     }
                     FileSharingSession session = new FileTransferDownloadSession(mImService,
                             fileTransferHttpInfoDocument, mFileTransferId, mPersistentStorage
-                            .getChatId(), mPersistentStorage.getRemoteContact(),
+                                    .getChatId(), mPersistentStorage.getRemoteContact(),
                             mRcsSettings, mMessagingLog, mPersistentStorage.getTimestamp());
                     session.addListener(OneToOneFileTransferImpl.this);
                     session.startSession();

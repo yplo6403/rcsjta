@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015 Sony Mobile Communications Inc.
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -64,7 +64,6 @@ public class GroupChatTerminalExceptionTask implements Runnable {
             int providerIdIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_PROVIDER_ID);
             int idIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_ID);
             int mimeTypeIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_MIME_TYPE);
-
             while (cursor.moveToNext()) {
                 int providerId = cursor.getInt(providerIdIdx);
                 String id = cursor.getString(idIdx);
@@ -79,12 +78,10 @@ public class GroupChatTerminalExceptionTask implements Runnable {
                                 State.FAILED, FileTransfer.ReasonCode.FAILED_NOT_ALLOWED_TO_SEND);
                         break;
                     default:
-                        throw new IllegalArgumentException(new StringBuilder(
-                                "Not expecting to handle provider id '").append(providerId)
-                                .append("'!").toString());
+                        throw new IllegalArgumentException("Not expecting to handle provider id '"
+                                + providerId + "'!");
                 }
             }
-
         } catch (RuntimeException e) {
             /*
              * Normally we are not allowed to catch runtime exceptions as these are genuine bugs
@@ -93,9 +90,8 @@ public class GroupChatTerminalExceptionTask implements Runnable {
              * exit the system and thus can bring the whole system down, which is not intended.
              */
             sLogger.error(
-                    new StringBuilder(
-                            "Exception occured while trying to mark queued group chat messages and group file transfers as failed with chatId ")
-                            .append(mChatId).toString(), e);
+                    "Exception occurred while trying to mark queued group chat messages and group file transfers as failed with chatId "
+                            + mChatId, e);
         } finally {
             if (cursor != null) {
                 cursor.close();

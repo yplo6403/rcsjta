@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2016 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.im.chat;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.messaging.MessageData;
 import com.gsma.rcs.provider.messaging.MessagingLog;
@@ -38,6 +39,7 @@ import com.gsma.services.rcs.contact.ContactUtil;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.net.Uri;
 import android.test.AndroidTestCase;
 
@@ -60,7 +62,7 @@ public class MessageLogTest extends AndroidTestCase {
         Context context = getContext();
         mContentResolver = context.getContentResolver();
         mLocalContentResolver = new LocalContentResolver(mContentResolver);
-        RcsSettings rcsSettings = RcsSettings.getInstance(mLocalContentResolver);
+        RcsSettings rcsSettings = RcsSettingsMock.getMockSettings(context);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, rcsSettings);
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact1 = contactUtils.formatContact("+339000000");
@@ -72,6 +74,7 @@ public class MessageLogTest extends AndroidTestCase {
     protected void tearDown() throws Exception {
         super.tearDown();
         mMessagingLog.deleteAllEntries();
+        RcsSettingsMock.restoreSettings();
     }
 
     public void testAddGroupChatEvent() {
@@ -80,33 +83,47 @@ public class MessageLogTest extends AndroidTestCase {
                 GroupChatEvent.Status.DEPARTED, mTimestamp);
         // Read entry
         Uri uri = Uri.withAppendedPath(MessageData.CONTENT_URI, messageId);
-        Cursor cursor = mContentResolver.query(uri, null, null, null, null);
-        // Check entry
-        assertEquals(cursor.getCount(), 1);
-        assertTrue(cursor.moveToFirst());
-        String id = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.MESSAGE_ID));
-        String chatId = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.CHAT_ID));
-        String contact = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.CONTACT));
-        String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.MIME_TYPE));
-        int direction = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.DIRECTION));
-        int status = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.STATUS));
-        int reason = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.REASON_CODE));
-        long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow(ChatLog.Message.TIMESTAMP));
-        long timestampSent = cursor.getLong(cursor
-                .getColumnIndexOrThrow(ChatLog.Message.TIMESTAMP_SENT));
+        Cursor cursor = null;
+        try {
+            cursor = mContentResolver.query(uri, null, null, null, null);
+            // Check entry
+            if (cursor == null) {
+                throw new SQLException("Can not query uri" + uri);
+            }
+            assertEquals(cursor.getCount(), 1);
+            assertTrue(cursor.moveToFirst());
+            String id = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.MESSAGE_ID));
+            String chatId = cursor.getString(cursor.getColumnIndexOrThrow(ChatLog.Message.CHAT_ID));
+            String contact = cursor
+                    .getString(cursor.getColumnIndexOrThrow(ChatLog.Message.CONTACT));
+            String mimeType = cursor.getString(cursor
+                    .getColumnIndexOrThrow(ChatLog.Message.MIME_TYPE));
+            int direction = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.DIRECTION));
+            int status = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.STATUS));
+            int reason = cursor.getInt(cursor.getColumnIndexOrThrow(ChatLog.Message.REASON_CODE));
+            long timestamp = cursor
+                    .getLong(cursor.getColumnIndexOrThrow(ChatLog.Message.TIMESTAMP));
+            long timestampSent = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(ChatLog.Message.TIMESTAMP_SENT));
 
-        assertEquals(messageId, id);
-        assertEquals(mContact1.toString(), contact);
-        assertEquals(mChatId, chatId);
-        assertEquals(Message.MimeType.GROUPCHAT_EVENT, mimeType);
-        assertEquals(Direction.IRRELEVANT.toInt(), direction);
-        assertEquals(Message.GroupChatEvent.Status.DEPARTED.toInt(), status);
-        assertEquals(ReasonCode.UNSPECIFIED.toInt(), reason);
-        assertEquals(mTimestamp, timestamp);
-        assertEquals(mTimestamp, timestampSent);
+            assertEquals(messageId, id);
+            assertEquals(mContact1.toString(), contact);
+            assertEquals(mChatId, chatId);
+            assertEquals(Message.MimeType.GROUPCHAT_EVENT, mimeType);
+            assertEquals(Direction.IRRELEVANT.toInt(), direction);
+            assertEquals(Message.GroupChatEvent.Status.DEPARTED.toInt(), status);
+            assertEquals(ReasonCode.UNSPECIFIED.toInt(), reason);
+            assertEquals(mTimestamp, timestamp);
+            assertEquals(mTimestamp, timestampSent);
 
-        mLocalContentResolver.delete(uri, null, null);
-        assertEquals(false, mMessagingLog.isMessagePersisted(messageId));
+            mLocalContentResolver.delete(uri, null, null);
+            assertEquals(false, mMessagingLog.isMessagePersisted(messageId));
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+
     }
 
     public void testGetGroupChatEventsSimpleCase() {

@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
     <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -129,17 +130,15 @@
             android:icon="@drawable/ri_quick_ft_icon"
             android:label="@string/menu_transfer_file">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-
-                <category android:name="android.intent.category.DEFAULT"/>
-
-                <data android:mimeType="vnd.android.cursor.item/com.gsma.services.rcs.file-transfer"/>
-            </intent-filter>
-            <intent-filter>
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="android.intent.category.DEFAULT"/>
 
                 <action android:name="com.gsma.services.rcs.action.INITIATE_ONE_TO_ONE_FILE_TRANSFER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="vnd.android.cursor.item/com.gsma.services.rcs.file-transfer"/>
             </intent-filter>
         </activity>
 
@@ -502,6 +501,9 @@
                 <action android:name="com.gsma.services.rcs.action.VIEW_FILE_TRANSFER"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.gsma.rcs.ri.messaging.filetransfer.AudioMessageRecordActivity"
+            android:label="@string/menu_transfer_file"/>
         <activity
             android:name="com.gsma.rcs.ri.cms.messaging.InitiateOneToOneTalk"
             android:label="@string/menu_cms_initiate_title"/>

@@ -133,7 +133,6 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                 sendDeliveryReport(ImdnDocument.DeliveryStatus.DISPLAYED,
                         NtpTrustedTime.currentTimeMillis());
             }
-
         } catch (NetworkException e) {
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
@@ -150,7 +149,6 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             sLogger.error("Download of file has failed for mRemoteInstanceId : "
                     + mRemoteInstanceId, e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
-
         }
     }
 
@@ -194,7 +192,7 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    fileTransferPaused();
+                    setFileTransferPaused();
                     interruptSession();
                     mDownloadManager.pauseTransferByUser();
 
@@ -219,7 +217,7 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    fileTransferResumed();
+                    setFileTransferResumed();
                     mDownloadManager.getListener().onHttpTransferResumed();
                     /* Download file from the HTTP server */
                     mDownloadManager.resumeDownload();

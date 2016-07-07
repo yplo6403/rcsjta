@@ -23,8 +23,10 @@
 package com.gsma.rcs.core.ims.service.im.filetransfer.http;
 
 import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.core.ims.service.im.filetransfer.FileSharingSession;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.utils.DateUtils;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 
 import android.net.Uri;
 
@@ -40,9 +42,9 @@ import java.nio.charset.Charset;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
- * A class to parse the XML descriptor containing the HTTP file transfer information. Created by
+ * A class to parse the XML descriptor containing the HTTP file transfer information.
  *
- * @author  Philippe LEMORDANT
+ * @author Philippe LEMORDANT
  */
 public class FileTransferXmlParser {
     // @formatter:off
@@ -103,9 +105,7 @@ public class FileTransferXmlParser {
             XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
             factory.setNamespaceAware(false);
             XmlPullParser xpp = factory.newPullParser();
-
             xpp.setInput(new StringReader(mXmlSource));
-
             int eventType = xpp.getEventType();
             String text = null;
             while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -127,18 +127,23 @@ public class FileTransferXmlParser {
                             } else if ("file".equalsIgnoreCase(type)) {
                                 mThumbnailProcessed = true;
                                 String typeDispo = xpp.getAttributeValue(null, "file-disposition");
-                                // if (typeDispo != null) {
-                                // mFtInfo.setFileDisposition(typeDispo);
-                                // }
+                                if (typeDispo != null) {
+                                    switch (typeDispo) {
+                                        case FileSharingSession.FILE_DISPOSITION_ATTACH:
+                                            mFtInfo.setFileDisposition(FileTransfer.Disposition.ATTACH);
+                                            break;
+                                        case FileSharingSession.FILE_DISPOSITION_RENDER:
+                                            mFtInfo.setFileDisposition(FileTransfer.Disposition.RENDER);
+                                            break;
+                                    }
+                                }
                             }
-
                         } else if ("data".equalsIgnoreCase(tagName)) {
                             if (mFtInfo == null) {
                                 break;
                             }
                             String url = xpp.getAttributeValue(null, "url");
                             String expiration = xpp.getAttributeValue(null, "until");
-
                             if (mThumbnailProcessed) {
                                 mFtInfo.setUri(Uri.parse(url));
                                 mFtInfo.setExpiration(DateUtils.decodeDate(expiration));
@@ -160,6 +165,10 @@ public class FileTransferXmlParser {
                         if (mFtInfo == null) {
                             break;
                         }
+                        if (text == null) {
+                            throw new ParseFailureException("Bad HTTP file transfer information "
+                                    + mXmlSource);
+                        }
                         if ("file-name".equalsIgnoreCase(tagName)) {
                             if (mThumbnailProcessed) {
                                 mFtInfo.setFilename(text);
@@ -177,7 +186,7 @@ public class FileTransferXmlParser {
                                 mThumbnailInfo.setMimeType(text);
                             }
                         } else if ("am:playing-length".equalsIgnoreCase(tagName)) {
-                            // mFtInfo.setPlayingLength(Integer.parseInt(text));
+                            mFtInfo.setPlayingLength(Integer.parseInt(text));
                         }
                         break;
 

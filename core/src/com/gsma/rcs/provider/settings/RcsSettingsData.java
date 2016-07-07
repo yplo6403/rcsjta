@@ -629,6 +629,12 @@ public class RcsSettingsData {
     /* package private */static final Long DEFAULT_MAX_VSH_DURATION = 54000000L;
 
     /**
+     * Max Audio Message Duration in millisecond
+     */
+    public static final String MAX_AUDIO_MESSAGE_DURATION = "MaxAudioMessageDuration";
+    /* package private */static final Long DEFAULT_MAX_AUDIO_DURATION = 600000L;
+
+    /**
      * Max number of simultaneous chat sessions
      */
     public static final String MAX_CHAT_SESSIONS = "MaxChatSessions";
@@ -1351,6 +1357,13 @@ public class RcsSettingsData {
             .getExternalStorageDirectory() + "/rcs/videos/";
 
     /**
+     * Directory path for audios
+     */
+    public static final String DIRECTORY_PATH_AUDIOS = "DirectoryPathAudios";
+    /* package private */static final String DEFAULT_DIRECTORY_PATH_AUDIOS = Environment
+            .getExternalStorageDirectory() + "/rcs/audios/";
+
+    /**
      * Directory path for files
      */
     public static final String DIRECTORY_PATH_FILES = "DirectoryPathFiles";
@@ -1636,6 +1649,8 @@ public class RcsSettingsData {
                 RcsSettingsData.DEFAULT_MAX_ISH_SIZE);
         sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_VIDEO_SHARE_DURATION,
                 RcsSettingsData.DEFAULT_MAX_VSH_DURATION);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_AUDIO_MESSAGE_DURATION,
+                RcsSettingsData.DEFAULT_MAX_AUDIO_DURATION);
         sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_CHAT_SESSIONS,
                 RcsSettingsData.DEFAULT_MAX_CHAT_SESSIONS);
         sSettingsKeyDefaultValue.put(RcsSettingsData.MAX_FILE_TRANSFER_SESSIONS,
@@ -1852,6 +1867,8 @@ public class RcsSettingsData {
                 RcsSettingsData.DEFAULT_DIRECTORY_PATH_PHOTOS);
         sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_VIDEOS,
                 RcsSettingsData.DEFAULT_DIRECTORY_PATH_VIDEOS);
+        sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_AUDIOS,
+                RcsSettingsData.DEFAULT_DIRECTORY_PATH_AUDIOS);
         sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_FILES,
                 RcsSettingsData.DEFAULT_DIRECTORY_PATH_FILES);
         sSettingsKeyDefaultValue.put(RcsSettingsData.DIRECTORY_PATH_FILEICONS,

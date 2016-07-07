@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -142,8 +142,8 @@ public abstract class HttpFileTransferSession extends FileSharingSession impleme
             return;
         }
         if (sLogger.isActivated()) {
-            sLogger.info(new StringBuilder("Transfer error: ").append(error.getErrorCode())
-                    .append(", reason=").append(error.getMessage()).toString());
+            sLogger.info("Transfer error: " + error.getErrorCode() + ", reason="
+                    + error.getMessage());
         }
         removeSession();
         ContactId contact = getRemoteContact();
@@ -179,7 +179,7 @@ public abstract class HttpFileTransferSession extends FileSharingSession impleme
      * file.
      */
     public void handleFileTransferred() {
-        fileTransfered();
+        setFileTransferred();
         removeSession();
 
         ContactId contact = getRemoteContact();

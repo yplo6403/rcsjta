@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class ContactUtilMockContext extends MockContext {
     @Override
     public Resources getResources() {
         mDelegatedContext.getResources();
-        Resources res = new MockResources() {
+        return new MockResources() {
 
             @Override
             public Configuration getConfiguration() {
@@ -55,6 +55,5 @@ public class ContactUtilMockContext extends MockContext {
             }
 
         };
-        return res;
     }
 }

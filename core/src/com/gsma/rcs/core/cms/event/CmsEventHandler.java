@@ -579,7 +579,7 @@ public class CmsEventHandler implements CmsEventListener {
             FileTransfer.ReasonCode reasonCode, FileTransferHttpInfoDocument ftInfo, boolean seen) {
         mMessagingLog.addOneToOneFileTransferOnSecondaryDevice(fileTransferId, contact, direction,
                 ftInfo.getUri(), ftInfo.getLocalMmContent(), state, reasonCode, timestamp,
-                timestamp, ftInfo.getExpiration(), seen);
+                timestamp, ftInfo.getExpiration(), ftInfo.getFileDisposition(), seen);
     }
 
     private void onNewGroupFileTransferMessage(String fileTransferId, ContactId contact,
@@ -587,9 +587,11 @@ public class CmsEventHandler implements CmsEventListener {
             FileTransfer.ReasonCode reasonCode, FileTransferHttpInfoDocument ftInfo, boolean seen)
             throws CmsSyncBadStateException {
         if (Direction.INCOMING == direction) {
-            mMessagingLog.addIncomingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
-                    contact, ftInfo.getUri(), ftInfo.getLocalMmContent(), state, reasonCode,
-                    timestamp, timestamp, ftInfo.getExpiration(), seen);
+            mMessagingLog
+                    .addIncomingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId, contact,
+                            ftInfo.getUri(), ftInfo.getLocalMmContent(), state, reasonCode,
+                            timestamp, timestamp, ftInfo.getExpiration(),
+                            ftInfo.getFileDisposition(), seen);
         } else {
             if (!mMessagingLog.isGroupChatPersisted(chatId)) {
                 throw new CmsSyncBadStateException("Group file transfer " + fileTransferId
@@ -600,7 +602,7 @@ public class CmsEventHandler implements CmsEventListener {
             mMessagingLog.addOutgoingGroupFileTransferOnSecondaryDevice(fileTransferId, chatId,
                     ftInfo.getUri(), ftInfo.getLocalMmContent(), gcAccessor.getParticipants()
                             .keySet(), state, reasonCode, timestamp, timestamp, ftInfo
-                            .getExpiration());
+                            .getExpiration(), ftInfo.getFileDisposition());
         }
     }
 

@@ -50,7 +50,13 @@ public class SendMultiFileGroupChat extends SendMultiFile implements ISendMultiF
             for (FileTransferProperties fileToTransfer : filesToTransfer) {
                 /* Initiate transfer */
                 FileTransfer fileTransfer = mFileTransferService.transferFileToGroupChat(mChatId,
-                        fileToTransfer.getUri(), fileToTransfer.isFileicon());
+                        fileToTransfer.getUri(),
+                        fileToTransfer.isAudioMessage() ? FileTransfer.Disposition.RENDER
+                                : FileTransfer.Disposition.ATTACH, fileToTransfer.isFileicon());
+                if (fileTransfer == null) {
+                    Log.e(LOGTAG, "Cannot transfer file: ID not found!");
+                    return false;
+                }
                 String fileTransferId = fileTransfer.getTransferId();
                 mTransferIds.add(fileTransferId);
                 mFileTransfers.add(fileTransfer);
@@ -158,7 +164,6 @@ public class SendMultiFileGroupChat extends SendMultiFile implements ISendMultiF
 
             @Override
             public void onRead(String chatId, String transferId) {
-
             }
 
         };

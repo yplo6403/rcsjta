@@ -168,7 +168,7 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
             String selector = getFileSelectorAttribute();
             StringBuilder sdp = new StringBuilder(SdpUtils.buildFileSDP(ipAddress, localMsrpPort,
                     mMsrpMgr.getLocalSocketProtocol(), encoding, getFileTransferIdAttribute(),
-                    selector, "attachment", localSetup, mMsrpMgr.getLocalMsrpPath(),
+                    selector, getFileDisposition(), localSetup, mMsrpMgr.getLocalMsrpPath(),
                     SdpUtils.DIRECTION_SENDONLY, maxSize));
             /* Set File-location attribute */
             Uri location = getFileLocationAttribute();
@@ -294,7 +294,7 @@ public class OriginatingMsrpFileSharingSession extends ImsFileSharingSession imp
                 sLogger.info("Data transferred");
             }
             long timestamp = NtpTrustedTime.currentTimeMillis();
-            fileTransfered();
+            setFileTransferred();
             closeMediaSession();
             closeSession(TerminationReason.TERMINATION_BY_USER);
             removeSession();

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +22,6 @@
 
 package com.gsma.rcs.service.api;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.service.SessionIdGenerator;
@@ -30,6 +29,7 @@ import com.gsma.rcs.core.ims.service.richcall.RichcallService;
 import com.gsma.rcs.core.ims.service.richcall.image.ImageTransferSession;
 import com.gsma.rcs.platform.file.FileDescription;
 import com.gsma.rcs.platform.file.FileFactory;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.ImageSharingPersistedStorageAccessor;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
@@ -78,7 +78,7 @@ public class ImageSharingServiceImpl extends IImageSharingService.Stub {
 
     private final RcsSettings mRcsSettings;
 
-    private final Map<String, IImageSharing> mImageSharingCache = new HashMap<String, IImageSharing>();
+    private final Map<String, IImageSharing> mImageSharingCache = new HashMap<>();
 
     private static final Logger sLogger = Logger.getLogger(ImageSharingServiceImpl.class
             .getSimpleName());
@@ -124,10 +124,9 @@ public class ImageSharingServiceImpl extends IImageSharingService.Stub {
      */
     private void addImageSharing(ImageSharingImpl imageSharing, String sharingId) {
         if (sLogger.isActivated()) {
-            sLogger.debug(new StringBuilder("Add an image sharing in the list (size=")
-                    .append(mImageSharingCache.size()).append(")").toString());
+            sLogger.debug("Add an image sharing in the list (size=" + mImageSharingCache.size()
+                    + ")");
         }
-
         mImageSharingCache.put(sharingId, imageSharing);
     }
 
@@ -141,7 +140,6 @@ public class ImageSharingServiceImpl extends IImageSharingService.Stub {
             sLogger.debug("Remove an image sharing from the list (size="
                     + mImageSharingCache.size() + ")");
         }
-
         mImageSharingCache.remove(sharingId);
     }
 
@@ -285,7 +283,8 @@ public class ImageSharingServiceImpl extends IImageSharingService.Stub {
         try {
             Uri localFile = FileUtils.createCopyOfSentFile(file, mRcsSettings);
             FileDescription desc = FileFactory.getFactory().getFileDescription(localFile);
-            MmContent content = ContentManager.createMmContent(localFile, desc.getSize(),
+            String mime = FileUtils.getMimeTypeFromExtension(desc.getName());
+            MmContent content = ContentManager.createMmContent(localFile, mime, desc.getSize(),
                     desc.getName());
             long timestamp = NtpTrustedTime.currentTimeMillis();
             final ImageTransferSession session = mRichcallService.createImageSharingSession(

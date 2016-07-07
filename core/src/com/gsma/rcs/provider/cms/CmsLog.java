@@ -118,10 +118,10 @@ public class CmsLog {
 
         private static final String SEL_TYPE_PROVIDER_ID_NOT_NULL = SEL_TYPE + " AND " + SEL_PROVIDER_ID_NOT_NULL;
 
-        private static final String SEL_XMS_TO_PUSH =
+        private static final String SEL_XMS_TO_PUSH = SEL_XMS + " AND (" +
                 CmsData.KEY_DEL_STATUS + "=" + DeleteStatus.DELETED_REPORT_REQUESTED.toInt() + " OR " +
-                        CmsData.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
-                        CmsData.KEY_PUSH_STATUS + "=" + PushStatus.PUSH_REQUESTED.toInt();
+                CmsData.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORT_REQUESTED.toInt() + " OR " +
+                CmsData.KEY_PUSH_STATUS + "=" + PushStatus.PUSH_REQUESTED.toInt() + ")";
 
         private static final String SEL_DEL_REPORTED = CmsData.KEY_DEL_STATUS + "=" + DeleteStatus.DELETED_REPORTED.toInt();
         private static final String SEL_READ_REPORTED = CmsData.KEY_READ_STATUS + "=" + ReadStatus.READ_REPORTED.toInt();

@@ -19,7 +19,7 @@
 package com.gsma.rcs.provider.xms;
 
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -116,6 +116,7 @@ public class XmsLogTest extends InstrumentationTestCase {
         super.tearDown();
         mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
         mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
+        RcsSettingsMock.restoreSettings();
     }
 
     public void testSmsMessage() {

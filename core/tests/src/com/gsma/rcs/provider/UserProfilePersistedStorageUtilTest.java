@@ -35,11 +35,11 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
 
     private static final int MAX_SAVED_ACCOUNT = 3;
 
-    private static final Logger sLogger = Logger.getLogger(UserProfilePersistedStorageUtilTest.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger
+            .getLogger(UserProfilePersistedStorageUtilTest.class.getSimpleName());
 
-    private static final String DB_PATH = Environment.getDataDirectory()
-            .toString() + UserProfilePersistedStorageUtil.DATABASE_LOCATION;
+    private static final String DB_PATH = Environment.getDataDirectory().toString()
+            + UserProfilePersistedStorageUtil.DATABASE_LOCATION;
 
     private File mSrcdir = new File(DB_PATH);
 
@@ -72,7 +72,11 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
     protected void setUp() throws Exception {
         super.setUp();
         if (!mSrcdir.exists()) {
-            mSrcdir.mkdir();
+            if (!mSrcdir.mkdir()) {
+                throw new RuntimeException("Impossible to create directory");
+
+            }
+
         }
         // Clean up all saved configurations
         mSavedAccounts = listOfSavedAccounts(mSrcdir);
@@ -102,9 +106,11 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
         UserProfilePersistedStorageUtil.tryToBackupAccount("4444");
 
         mSavedAccounts = listOfSavedAccounts(mSrcdir);
+        if (mSavedAccounts == null) {
+            throw new RcsAccountException("No Saved account found");
+        }
         for (File file : mSavedAccounts) {
-            sLogger.info("Account " + file.getName() +
-                    " last modified=" + file.lastModified());
+            sLogger.info("Account " + file.getName() + " last modified=" + file.lastModified());
         }
         assertTrue("listOfSavedAccounts failed", mSavedAccounts.length == 4);
 
@@ -129,13 +135,18 @@ public class UserProfilePersistedStorageUtilTest extends AndroidTestCase {
         UserProfilePersistedStorageUtil.tryToBackupAccount("3333");
         Thread.sleep(1010);
         UserProfilePersistedStorageUtil.tryToBackupAccount("4444");
-
         UserProfilePersistedStorageUtil.normalizeFileBackup("3333");
+
         mSavedAccounts = listOfSavedAccounts(mSrcdir);
-        for (File file : mSavedAccounts) {
-            sLogger.info("Account " + file.getName() +
-                    " last modified=" + file.lastModified());
+        if (mSavedAccounts == null) {
+            throw new RcsAccountException("No Saved account found");
+
         }
+
+        for (File file : mSavedAccounts) {
+            sLogger.info("Account " + file.getName() + " last modified=" + file.lastModified());
+        }
+
         assertTrue("listOfSavedAccounts MAX_SAVED_ACCOUNT failed",
                 mSavedAccounts.length == MAX_SAVED_ACCOUNT);
 

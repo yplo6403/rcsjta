@@ -90,6 +90,8 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         mHelper.setLongEditText(R.id.MaxImageShareSize, RcsSettingsData.MAX_IMAGE_SHARE_SIZE);
         mHelper.setLongEditText(R.id.MaxVideoShareDuration,
                 RcsSettingsData.MAX_VIDEO_SHARE_DURATION);
+        mHelper.setLongEditText(R.id.MaxAudioMessageDuration,
+                RcsSettingsData.MAX_AUDIO_MESSAGE_DURATION);
         mHelper.setIntEditText(R.id.MaxChatSessions, RcsSettingsData.MAX_CHAT_SESSIONS);
         mHelper.setIntEditText(R.id.MaxFileTransferSessions,
                 RcsSettingsData.MAX_FILE_TRANSFER_SESSIONS);
@@ -101,6 +103,7 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         mHelper.setIntEditText(R.id.MaxIpcallLogEntries, RcsSettingsData.MAX_IPCALL_LOG_ENTRIES);
         mHelper.setStringEditText(R.id.DirectoryPathPhotos, RcsSettingsData.DIRECTORY_PATH_PHOTOS);
         mHelper.setStringEditText(R.id.DirectoryPathVideos, RcsSettingsData.DIRECTORY_PATH_VIDEOS);
+        mHelper.setStringEditText(R.id.DirectoryPathAudios, RcsSettingsData.DIRECTORY_PATH_AUDIOS);
         mHelper.setStringEditText(R.id.DirectoryPathFiles, RcsSettingsData.DIRECTORY_PATH_FILES);
         mHelper.setStringEditText(R.id.DirectoryPathFileIcons,
                 RcsSettingsData.DIRECTORY_PATH_FILEICONS);
@@ -115,7 +118,6 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         spinner.setAdapter(adapter);
         mHelper.setSpinnerParameter(spinner, RcsSettingsData.IM_SESSION_START, true,
                 IM_SESSION_START_MODES);
-
         mHelper.setBoolCheckBox(R.id.SmsFallbackService, RcsSettingsData.SMS_FALLBACK_SERVICE);
         mHelper.setBoolCheckBox(R.id.StoreForwardServiceWarning, RcsSettingsData.WARN_SF_SERVICE);
         mHelper.setBoolCheckBox(R.id.AutoAcceptFileTransfer,
@@ -146,6 +148,8 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         mHelper.saveLongEditText(R.id.MaxImageShareSize, RcsSettingsData.MAX_IMAGE_SHARE_SIZE);
         mHelper.saveLongEditText(R.id.MaxVideoShareDuration,
                 RcsSettingsData.MAX_VIDEO_SHARE_DURATION);
+        mHelper.saveLongEditText(R.id.MaxAudioMessageDuration,
+                RcsSettingsData.MAX_AUDIO_MESSAGE_DURATION);
         mHelper.saveIntEditText(R.id.MaxChatSessions, RcsSettingsData.MAX_CHAT_SESSIONS);
         mHelper.saveIntEditText(R.id.MaxFileTransferSessions,
                 RcsSettingsData.MAX_FILE_TRANSFER_SESSIONS);
@@ -160,6 +164,7 @@ public class ServiceProvisioning extends Fragment implements IProvisioningFragme
         mHelper.saveLongEditText(R.id.GeolocExpirationTime, RcsSettingsData.GEOLOC_EXPIRATION_TIME);
         mHelper.saveStringEditText(R.id.DirectoryPathPhotos, RcsSettingsData.DIRECTORY_PATH_PHOTOS);
         mHelper.saveStringEditText(R.id.DirectoryPathVideos, RcsSettingsData.DIRECTORY_PATH_VIDEOS);
+        mHelper.saveStringEditText(R.id.DirectoryPathAudios, RcsSettingsData.DIRECTORY_PATH_AUDIOS);
         mHelper.saveStringEditText(R.id.DirectoryPathFiles, RcsSettingsData.DIRECTORY_PATH_FILES);
         mHelper.saveLongEditText(R.id.CallComposerIdleDuration,
                 RcsSettingsData.CALL_COMPOSER_INACTIVITY_TIMEOUT);

@@ -14,7 +14,8 @@ Limitations :
 	
 
 News:
-
+	
+	* Addition au audio messages (TAPI-1.6).
 	* RI: view details of messages: chat, file transfer, SMS and MMS.
 	* Core: refactor provisioning tool.
 	* Manage permissions for Android Marshmallow.
@@ -23,6 +24,7 @@ News:
 
 Bugs fixed:
 
+	* SQL request to push on CMS should restrict scope to XMS messages.
 	* CMS: MMS are duplicated if already pushed on CMS and resolved locally.
 	* FO 60 SMS correlation issue (SMS stored via the SMS-C) in the stack.
 	* CMS: bad initial state for synchronized GC

@@ -18,7 +18,7 @@
 
 package com.gsma.rcs.core.cms.event.framework;
 
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.platform.AndroidFactory;
 import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
@@ -54,6 +54,11 @@ public class EventReportingFrameworkDocumentTest extends AndroidTestCase {
         ContactUtil contactUtils = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mContact1 = contactUtils.formatContact("+33601020304");
         mContact2 = contactUtils.formatContact("+33699999999");
+    }
+
+    protected void tearDown() throws Exception {
+        RcsSettingsMock.restoreSettings();
+        super.tearDown();
     }
 
     public void testReportSeenObjectWithUid() throws RcsPermissionDeniedException {

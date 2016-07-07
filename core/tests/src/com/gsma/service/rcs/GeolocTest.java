@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@
 
 package com.gsma.service.rcs;
 
-import java.util.NoSuchElementException;
+import com.gsma.services.rcs.Geoloc;
 
 import android.test.AndroidTestCase;
 
-import com.gsma.services.rcs.Geoloc;
+import java.util.NoSuchElementException;
 
 public class GeolocTest extends AndroidTestCase {
 

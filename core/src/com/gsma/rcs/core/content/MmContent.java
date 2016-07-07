@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -49,6 +49,8 @@ public abstract class MmContent {
 
     private String mEncoding;
 
+    private boolean mPlayable = false;
+
     /**
      * Stream to write received data directly to file.
      */
@@ -56,7 +58,7 @@ public abstract class MmContent {
 
     /**
      * Constructor
-     * 
+     *
      * @param encoding Encoding
      */
     public MmContent(String encoding) {
@@ -66,7 +68,7 @@ public abstract class MmContent {
 
     /**
      * Constructor
-     * 
+     *
      * @param fileName File name
      * @param size Content size
      * @param encoding Encoding
@@ -79,7 +81,7 @@ public abstract class MmContent {
 
     /**
      * Constructor
-     * 
+     *
      * @param file Uri
      * @param encoding Encoding
      * @param size Content size
@@ -94,7 +96,7 @@ public abstract class MmContent {
 
     /**
      * Returns the uri
-     * 
+     *
      * @return uri
      */
     public Uri getUri() {
@@ -103,8 +105,8 @@ public abstract class MmContent {
 
     /**
      * Sets the uri
-     * 
-     * @param file Uri
+     *
+     * @param uri Uri
      */
     public void setUri(Uri uri) {
         mUri = uri;
@@ -112,7 +114,7 @@ public abstract class MmContent {
 
     /**
      * Returns the content size in bytes
-     * 
+     *
      * @return Size in bytes
      */
     public long getSize() {
@@ -120,26 +122,8 @@ public abstract class MmContent {
     }
 
     /**
-     * Returns the content size in Kbytes
-     * 
-     * @return Size in Kbytes
-     */
-    public long getKbSize() {
-        return mSize / 1024;
-    }
-
-    /**
-     * Returns the content size in Mbytes
-     * 
-     * @return Size in Mbytes
-     */
-    public long getMbSize() {
-        return mSize / (1024 * 1024);
-    }
-
-    /**
      * Returns the encoding type
-     * 
+     *
      * @return Encoding type
      */
     public String getEncoding() {
@@ -148,7 +132,7 @@ public abstract class MmContent {
 
     /**
      * Set the encoding type
-     * 
+     *
      * @param encoding Encoding type
      */
     public void setEncoding(String encoding) {
@@ -157,7 +141,7 @@ public abstract class MmContent {
 
     /**
      * Returns the codec from the encoding type
-     * 
+     *
      * @return Codec name
      */
     public String getCodec() {
@@ -170,7 +154,7 @@ public abstract class MmContent {
 
     /**
      * Get the name
-     * 
+     *
      * @return Name
      */
     public String getName() {
@@ -179,16 +163,34 @@ public abstract class MmContent {
 
     /**
      * Set the name
-     * 
-     * @param fileName
+     *
+     * @param fileName the file name
      */
     public void setName(String fileName) {
         mFileName = fileName;
     }
 
     /**
+     * Set content playable
+     *
+     * @param flag Playable flag
+     */
+    public void setPlayable(boolean flag) {
+        mPlayable = flag;
+    }
+
+    /**
+     * Is a playable content
+     *
+     * @return Boolean
+     */
+    public boolean isPlayable() {
+        return mPlayable;
+    }
+
+    /**
      * Returns the string representation of a content
-     * 
+     *
      * @return String
      */
     public String toString() {
@@ -197,7 +199,7 @@ public abstract class MmContent {
 
     /**
      * Write data chunk to file
-     * 
+     *
      * @param data Data to append to file
      * @throws FileAccessException
      */
@@ -210,6 +212,7 @@ public abstract class MmContent {
                 mOut = new BufferedOutputStream(fos, 8 * 1024);
             }
             mOut.write(data);
+
         } catch (IOException e) {
             throw new FileAccessException("Failed to write data chunk to file!", e);
         }
@@ -232,21 +235,15 @@ public abstract class MmContent {
      * @throws IOException
      */
     public void deleteFile() throws IOException {
-        if (mOut != null) {
-            try {
-                mOut.close();
-                mOut = null;
-            } finally {
-                Uri fileToDelete = getUri();
-                if (ContentResolver.SCHEME_FILE.equals(fileToDelete.getScheme())) {
-                    File file = new File(fileToDelete.getPath());
-                    if (!file.delete()) {
-                        throw new IOException("Unable to delete file: " + file.getAbsolutePath());
-                    }
-                } else {
-                    throw new IOException("Not possible to delete file: " + fileToDelete);
-                }
+        CloseableUtils.tryToClose(mOut);
+        Uri fileToDelete = getUri();
+        if (ContentResolver.SCHEME_FILE.equals(fileToDelete.getScheme())) {
+            File file = new File(fileToDelete.getPath());
+            if (!file.delete()) {
+                throw new IOException("Unable to delete file: " + file.getAbsolutePath());
             }
+        } else {
+            throw new IOException("Not possible to delete file: " + fileToDelete);
         }
     }
 }

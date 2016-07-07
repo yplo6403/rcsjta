@@ -94,7 +94,6 @@ public class DelayedDisplayNotificationDispatcher implements Runnable {
                     mChatApi.sendOne2OneDisplayedDeliveryReport(msgId, contact, sipInstance,
                             timestampDisplayed);
                 } else {
-
                     mChatApi.sendGroupChatDisplayedDeliveryReport(msgId, contact, sipInstance,
                             timestampDisplayed, chatId);
                 }

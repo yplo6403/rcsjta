@@ -18,9 +18,9 @@
 
 package com.gsma.rcs.core.cms.protocol.message;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
@@ -46,12 +46,14 @@ public class ImapCpmSessionMessageTest extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        init();
-    }
-
-    public void init() throws Exception {
         mContactUtil = ContactUtil.getInstance(new ContactUtilMockContext(mContext));
         mSettings = RcsSettingsMock.getMockSettings(mContext);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        RcsSettingsMock.restoreSettings();
     }
 
     @SmallTest

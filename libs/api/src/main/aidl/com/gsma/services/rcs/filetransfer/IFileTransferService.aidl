@@ -64,4 +64,8 @@ interface IFileTransferService {
 
 	boolean isAllowedToDownloadFile(in String transferId);
 
+	IFileTransfer transferFile2(in ContactId contact, in Uri file, in int disposition, in boolean attachFileicon);
+
+	IFileTransfer transferFileToGroupChat2(in String chatId, in Uri file, in int disposition, in boolean attachFileicon);
+
 }

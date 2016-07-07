@@ -22,6 +22,7 @@ import com.gsma.rcs.api.connection.ConnectionManager.RcsServiceName;
 import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.api.connection.utils.RcsActivity;
 import com.gsma.rcs.ri.R;
+import com.gsma.rcs.ri.messaging.filetransfer.AudioMessageRecordActivity;
 import com.gsma.rcs.ri.utils.FileUtils;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.rcs.ri.utils.RcsSessionUtil;
@@ -57,32 +58,25 @@ import android.widget.TextView;
 public abstract class SendFile extends RcsActivity implements ISendFile {
 
     private final static int RC_SELECT_IMAGE = 0;
+    private final static int RC_SELECT_AUDIO = 1;
+    private final static int RC_RECORD_AUDIO = 2;
 
     /**
      * UI handler
      */
     protected final Handler mHandler = new Handler();
-
     protected String mTransferId;
-
     protected String mFilename;
-
     private Uri mFile;
-
     protected long mFilesize = -1;
-
     protected FileTransfer mFileTransfer;
-
     protected Button mResumeBtn;
-
     protected Button mPauseBtn;
-
     private Button mInviteBtn;
-
     private Button mSelectBtn;
-
     protected FileTransferService mFileTransferService;
     private CheckBox mCheckThumNail;
+    private CheckBox mCheckAudio;
 
     private static final String LOGTAG = LogUtils.getTag(SendFile.class.getSimpleName());
     protected TextView mStatusView;
@@ -129,12 +123,14 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
     }
 
     private void initiateTransfer() {
-        transferFile(mFile, mCheckThumNail.isChecked());
+        transferFile(mFile, mCheckAudio.isChecked() ? FileTransfer.Disposition.RENDER
+                : FileTransfer.Disposition.ATTACH, mCheckThumNail.isChecked());
         /* Hide buttons */
         mInviteBtn.setVisibility(View.INVISIBLE);
         mSelectBtn.setVisibility(View.INVISIBLE);
         /* Disable checkboxes */
         mCheckThumNail.setEnabled(false);
+        mCheckAudio.setEnabled(false);
     }
 
     @Override
@@ -144,11 +140,27 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
         }
         switch (requestCode) {
             case RC_SELECT_IMAGE:
-                if ((data != null) && (data.getData() != null)) {
+            case RC_SELECT_AUDIO:
+                if (data != null && data.getData() != null) {
                     displayFileInfo(data);
-                    mInviteBtn.setEnabled(true);
-                    mCheckThumNail.setEnabled(true);
+                    boolean imageFile = RC_SELECT_IMAGE == requestCode;
+                    boolean audioFile = !imageFile;
+                    mCheckThumNail.setChecked(imageFile);
+                    mCheckThumNail.setEnabled(imageFile);
+                    mCheckAudio.setEnabled(audioFile);
+                    mCheckAudio.setChecked(audioFile);
                 }
+                break;
+
+            case RC_RECORD_AUDIO:
+                displayFileInfo(data);
+                if (LogUtils.isActive) {
+                    Log.d(LOGTAG, "Created audio file:" + mFile);
+                }
+                mInviteBtn.setEnabled(true);
+                mCheckAudio.setEnabled(true);
+                mCheckThumNail.setEnabled(false);
+                mCheckThumNail.setChecked(false);
                 break;
         }
     }
@@ -166,7 +178,10 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
             public void onClick(DialogInterface dialog, int which) {
                 if (RC_SELECT_IMAGE == which) {
                     FileUtils.openFile(SendFile.this, "image/*", RC_SELECT_IMAGE);
+                    return;
+
                 }
+                FileUtils.openFile(SendFile.this, "audio/*", RC_SELECT_AUDIO);
             }
         });
         registerDialog(builder.show());
@@ -246,13 +261,24 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = new MenuInflater(getApplicationContext());
-        inflater.inflate(R.menu.menu_ft, menu);
+        inflater.inflate(R.menu.menu_initiate_ft, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.menu_record_audio);
+        item.setVisible(mFileTransfer == null);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.menu_record_audio:
+                startActivityForResult(new Intent(this, AudioMessageRecordActivity.class),
+                        RC_RECORD_AUDIO);
+                break;
             case R.id.menu_close_session:
                 quitSession();
                 break;
@@ -352,6 +378,8 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
 
         mCheckThumNail = (CheckBox) findViewById(R.id.ft_thumb);
         mCheckThumNail.setEnabled(false);
-    }
 
+        mCheckAudio = (CheckBox) findViewById(R.id.send_audio_msg);
+        mCheckAudio.setEnabled(false);
+    }
 }

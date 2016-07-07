@@ -18,7 +18,6 @@ package com.gsma.rcs.provider.history;
 
 import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -27,6 +26,7 @@ import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
 import com.gsma.rcs.core.ims.service.im.chat.SessionUnavailableException;
 import com.gsma.rcs.core.ims.service.im.chat.imdn.ImdnManager;
 import com.gsma.rcs.core.ims.service.im.filetransfer.FileTransferUtils;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.contact.ContactManager;
 import com.gsma.rcs.provider.messaging.FileTransferData;
@@ -40,6 +40,7 @@ import com.gsma.rcs.service.api.OneToOneChatImpl;
 import com.gsma.rcs.service.api.OneToOneFileTransferImpl;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer.Disposition;
 import com.gsma.services.rcs.filetransfer.FileTransfer.State;
 
 import android.content.Context;
@@ -85,6 +86,7 @@ public class OneToOneChatDequeueTask extends DequeueTask {
         }
         int providerId = -1;
         String id = null;
+        Disposition disposition;
         ContactId contact = null;
         String mimeType = null;
         Cursor cursor = null;
@@ -114,6 +116,7 @@ public class OneToOneChatDequeueTask extends DequeueTask {
             int fileIconIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_FILEICON);
             int statusIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_STATUS);
             int fileSizeIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_FILESIZE);
+            int dispositionIdx = cursor.getColumnIndexOrThrow(HistoryLogData.KEY_DISPOSITION);
             while (cursor.moveToNext()) {
                 try {
                     if (!isImsConnected()) {
@@ -134,6 +137,7 @@ public class OneToOneChatDequeueTask extends DequeueTask {
                     contact = ContactUtil.createContactIdFromTrustedData(phoneNumber);
                     OneToOneChatImpl oneToOneChat = mChatService.getOrCreateOneToOneChat(contact);
                     mimeType = cursor.getString(mimeTypeIdx);
+                    disposition = Disposition.valueOf(cursor.getInt(dispositionIdx));
                     switch (providerId) {
                         case MessageData.HISTORYLOG_MEMBER_ID:
                             if (!isPossibleToDequeueOneToOneChatMessage(contact)) {
@@ -164,13 +168,14 @@ public class OneToOneChatDequeueTask extends DequeueTask {
                                             mFileTransferService)) {
                                         continue;
                                     }
-                                    MmContent fileContent = FileTransferUtils.createMmContent(file);
+                                    MmContent fileContent = FileTransferUtils.createMmContent(file,
+                                            mimeType, disposition);
                                     MmContent fileIconContent = null;
                                     String fileIcon = cursor.getString(fileIconIdx);
                                     if (fileIcon != null) {
                                         Uri fileIconUri = Uri.parse(fileIcon);
                                         fileIconContent = FileTransferUtils
-                                                .createMmContent(fileIconUri);
+                                                .createIconContent(fileIconUri);
                                     }
                                     mFileTransferService.dequeueOneToOneFileTransfer(id, contact,
                                             fileContent, fileIconContent);
@@ -201,14 +206,13 @@ public class OneToOneChatDequeueTask extends DequeueTask {
                     }
                 } catch (SessionUnavailableException | FileAccessException | NetworkException e) {
                     if (logActivated) {
-                        mLogger.debug(new StringBuilder("Failed to dequeue one-one entry with id '")
-                                .append(id).append("' for contact '").append(contact)
-                                .append("' due to: ").append(e.getMessage()).toString());
+                        mLogger.debug("Failed to dequeue one-one entry with id '" + id
+                                + "' for contact '" + contact + "' due to: " + e.getMessage());
                     }
 
                 } catch (PayloadException e) {
-                    mLogger.error(new StringBuilder("Failed to dequeue one-one entry with id '")
-                            .append(id).append("' for contact '").append(contact).toString(), e);
+                    mLogger.error("Failed to dequeue one-one entry with id '" + id
+                            + "' for contact '" + contact, e);
                     setOneToOneChatEntryAsFailedDequeue(providerId, contact, id, mimeType);
 
                 } catch (RuntimeException e) {
@@ -218,13 +222,11 @@ public class OneToOneChatDequeueTask extends DequeueTask {
                      * so the bug can then be properly tracked down and fixed. We also mark the
                      * respective entry that failed to dequeue as FAILED.
                      */
-                    mLogger.error(new StringBuilder("Failed to dequeue one-one entry with id '")
-                            .append(id).append("' for contact '").append(contact).append("'!")
-                            .toString(), e);
+                    mLogger.error("Failed to dequeue one-one entry with id '" + id
+                            + "' for contact '" + contact + "'!", e);
                     setOneToOneChatEntryAsFailedDequeue(providerId, contact, id, mimeType);
                 }
             }
-
         } catch (RuntimeException e) {
             /*
              * Normally all the terminal and non-terminal cases should be handled above so if we
@@ -233,10 +235,8 @@ public class OneToOneChatDequeueTask extends DequeueTask {
              * failed to dequeue as FAILED.
              */
             mLogger.error(
-                    new StringBuilder(
-                            "Exception occurred while dequeueing one-to-one chat message and one-to-one file transfer with id '")
-                            .append(id).append("' for contact '").append(contact).append("'!")
-                            .toString(), e);
+                    "Exception occurred while dequeueing one-to-one chat message and one-to-one file transfer with id '"
+                            + id + "' for contact '" + contact + "'!", e);
             if (id == null) {
                 return;
             }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -85,6 +85,10 @@ public class MimeManager {
                 sInstance.loadMap("png", "image/png");
                 sInstance.loadMap("bmp", "image/bmp");
 
+                // Audio type
+                sInstance.loadMap("3gp", "audio/3gpp");
+                sInstance.loadMap("mp4", "audio/mp4");
+
                 // Video type
                 sInstance.loadMap("3gp", "video/3gpp");
                 sInstance.loadMap("mp4", "video/mp4");
@@ -133,7 +137,7 @@ public class MimeManager {
     }
 
     private String getMimeTypeFromMap(String extension) {
-        return extensionToMimeTypeMap.get(extension);
+        return extensionToMimeTypeMap.get(extension.toLowerCase());
     }
 
     /**
@@ -146,12 +150,11 @@ public class MimeManager {
         if (TextUtils.isEmpty(extension)) {
             return null;
         }
-        extension = extension.toLowerCase();
         String mimeType = getMimeTypeFromMap(extension);
         if (mimeType != null) {
             return mimeType;
         }
-        mimeType = (MimeTypeMap.getSingleton()).getMimeTypeFromExtension(extension);
+        mimeType = (MimeTypeMap.getSingleton()).getMimeTypeFromExtension(extension.toLowerCase());
         return (mimeType != null) ? mimeType : DEFAULT_FILE_ENCONDING;
     }
 
@@ -174,33 +177,24 @@ public class MimeManager {
         if (TextUtils.isEmpty(mimeType)) {
             return null;
         }
-        return mimeTypeToExtensionMap.get(mimeType);
+        String extension = mimeTypeToExtensionMap.get(mimeType);
+        if (extension != null) {
+            return extension;
+        }
+        return (MimeTypeMap.getSingleton()).getExtensionFromMimeType(mimeType);
     }
 
     /**
-     * Returns URL extension
+     * Returns path extension
      * 
-     * @param url URL
+     * @param path The path or filename
      * @return Extension
      */
-    public static String getFileExtension(String url) {
-        if (url != null && url.indexOf('.') != -1) {
-            return url.substring(url.lastIndexOf('.') + 1);
+    public static String getFileExtension(String path) {
+        if (path.indexOf('.') != -1) {
+            return path.substring(path.lastIndexOf('.') + 1);
         }
         return null;
-    }
-
-    /**
-     * Returns MIME type extension
-     * 
-     * @param mime MIME type
-     * @return Extension
-     */
-    public static String getMimeExtension(String mime) {
-        if (mime != null && mime.indexOf('/') != -1) {
-            return mime.substring(mime.indexOf('/') + 1);
-        }
-        return "";
     }
 
     /**
@@ -210,7 +204,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isImageType(String mime) {
-        return mime != null && mime.toLowerCase().startsWith("image/");
+        return mime.toLowerCase().startsWith("image/");
     }
 
     /**
@@ -220,7 +214,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isVideoType(String mime) {
-        return mime != null && mime.toLowerCase().startsWith("video/");
+        return mime.toLowerCase().startsWith("video/");
     }
 
     /**
@@ -230,7 +224,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isAudioType(String mime) {
-        return mime != null && mime.toLowerCase().startsWith("audio/");
+        return mime.toLowerCase().startsWith("audio/");
     }
 
     /**
@@ -240,17 +234,7 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isTextType(String mime) {
-        return mime != null && mime.toLowerCase().startsWith("text/");
-    }
-
-    /**
-     * Is an application type
-     * 
-     * @param mime MIME type
-     * @return Boolean
-     */
-    public static boolean isApplicationType(String mime) {
-        return mime != null && mime.toLowerCase().startsWith("application/");
+        return mime.toLowerCase().startsWith("text/");
     }
 
     /**
@@ -260,9 +244,6 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isVCardType(String mime) {
-        if (mime == null) {
-            return false;
-        }
         mime = mime.toLowerCase();
         return "text/vcard".equals(mime) || "text/x-vcard".equals(mime);
     }
@@ -274,7 +255,6 @@ public class MimeManager {
      * @return Boolean
      */
     public static boolean isGeolocType(String mime) {
-        return mime != null
-                && "application/vnd.gsma.rcspushlocation+xml".equals(mime.toLowerCase());
+        return mime.toLowerCase().equals("application/vnd.gsma.rcspushlocation+xml");
     }
 }

@@ -18,7 +18,7 @@
 
 package com.gsma.rcs.provider.xms;
 
-import com.gsma.rcs.core.cms.integration.RcsSettingsMock;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
@@ -138,6 +138,7 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
         mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
         mCmsLog.removeMessages();
+        RcsSettingsMock.restoreSettings();
     }
 
     private void addMessageToCmsLog(CmsObject cmsObject) {

@@ -44,11 +44,14 @@
     <string name="label_file">Selected file:</string>
     <string name="label_size">Size:</string>
     <string name="label_contact">Contact:</string>
+    <string name="label_duration">Duration (sec):</string>
     <string name="label_remote">Remote contact:</string>
     <string name="label_select_file">Select file</string>
     <string name="label_invalid_contacts">Invalid list of participants</string>
     <string name="error_api_permission_denied">RCS API permission denied</string>
     <string name="error_not_registered">Not registered to IMS</string>
+    <string name="label_attach">Attachment</string>
+    <string name="label_render">Render</string>
     <string name="text_dummy">dummy text</string>
     <string name="timestamp_dummy">2016/01/02 03:00:00</string>
     <string name="contact_dummy">+33123456789</string>
@@ -128,6 +131,7 @@
     <string name="label_ft_isAutoAccept">AA enabled:</string>
     <string name="label_ft_isAutoAcceptInRoaming">AA enabled in roaming:</string>
     <string name="label_MaxFileTransfers">Max file transfers:</string>
+    <string name="label_max_audio_duration">Max audio file duration (msec):</string>
     <string name="label_GroupFileTransferSupported">Group supported:</string>
     <string name="menu_file_transfer_config">File transfer service configuration</string>
     <string name="label_ft_ImageResizeOption">Image resize option:</string>
@@ -163,12 +167,13 @@
     <string name="label_subject">Subject: </string>
     <string name="label_subject_notif">Subject: %s</string>
     <string name="label_max_participants">Can\'t add participants: max number of participants is reached (max=%d)</string>
-    <string name="label_sharing_warn_size">Do you confirm sending a file of %s ?</string>
+    <string name="label_sharing_warn_size">Do you confirm sending a file of %1$s ?</string>
     <string name="label_me">Me</string>
     <string name="label_no_participant_found">No participant found or available</string>
     <string name="label_no_subject">no subject</string>
     <string name="label_no_contact">&#8230;</string>
     <string name="label_ft_thumb">Thumbnail</string>
+    <string name="label_send_audio_msg">Audio message</string>
     <string name="menu_send_file">Send file</string>
     <string name="label_geoloc_msg">Geoloc</string>
     <string name="label_gc_from_subject">From: %1$s\nSubject: %2$s</string>
@@ -337,13 +342,11 @@
     <string name="menu_delete_message">Delete</string>
     <string name="menu_resend_message">Resend</string>
     <string name="menu_display_content">Display</string>
+    <string name="menu_listen_content">Listen to</string>
     <string name="menu_send_message">Send</string>
     <string name="menu_view_message">View</string>
-    <string name="menu_ft_resume_transfer">Resume transfer</string>
     <string name="menu_ft_download">Download</string>
-    <string name="menu_ft_accept">Accept</string>
-    <string name="menu_ft_decline">Decline</string>
-    <string name="hint_type_message">Enter your message ... </string>
+    <string name="hint_type_message">Enter your message … </string>
 
     <!-- HistoryLog  menu -->
     <string name="label_log_id">Id:</string>
@@ -385,6 +388,7 @@
     <string name="label_history_log_menu_filter">Change filter</string>
     <string name="label_history_log_empty">Log is empty</string>
     <string name="label_history_log_contact_spinner_default_value">No contact filter</string>
+    <string name="label_log_disposition">Disposition:</string>
 
     <!-- Common Message Store menu -->
     <string name="menu_cms_messaging_title">CMS messaging</string>
@@ -421,6 +425,13 @@
     <string name="LabelPermissionsError">You must accept permissions to use RSC RI</string>
     <string name="LabelTitlePermissionsError">ALERT</string>
     <string name="label_ungranted_permission">Below permissions are not granted!</string>
+    <string name="menu_record_audio">Record audio</string>
+    <string name="label_play_record">Play record</string>
+    <string name="label_start_record">Start audio record</string>
+    <string name="label_stop_record">Stop audio record</string>
+    <string name="label_audio_record">Recorded file:</string>
+    <string name="max_audio_record_reached">Maximum duration is reached!</string>
+    <string name="cannot_read_log">Cannot read RCS history log</string>
 
     <!-- States -->
 

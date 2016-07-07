@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.core.cms.integration;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.integration.MmsIntegrationUtils.Test1;

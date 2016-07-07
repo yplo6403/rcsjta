@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,6 +26,8 @@ import com.gsma.rcs.core.content.ContentManager;
 import com.gsma.rcs.core.content.MmContent;
 import com.gsma.rcs.provider.messaging.FileTransferData;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
+import com.gsma.services.rcs.filetransfer.FileTransfer.Disposition;
 
 import android.net.Uri;
 
@@ -40,36 +42,14 @@ public class FileTransferHttpInfoDocument {
      */
     public static final String MIME_TYPE = "application/vnd.gsma.rcs-ft-http+xml";
 
-    /**
-     * File size
-     */
     private int mSize = 0;
-
-    /**
-     * File mime type
-     */
     private String mMimeType;
-
-    /**
-     * URI of the file
-     */
     private Uri mFile;
-
-    /**
-     * Expiration of the file
-     */
     private long mExpiration = FileTransferData.UNKNOWN_EXPIRATION;
-
-    /**
-     * File thumbnail
-     */
     private FileTransferHttpThumbnail mFileIcon;
-
-    /**
-     * Filename
-     */
     private String mFileName;
-
+    private Disposition mFileDisposition = FileTransfer.Disposition.ATTACH;
+    private int mPlayingLength = -1;
     private final RcsSettings mRcsSettings;
 
     /**
@@ -140,7 +120,7 @@ public class FileTransferHttpInfoDocument {
     /**
      * Sets file URI
      * 
-     * @param file the file URI
+     * @param file the file Uri
      */
     public void setUri(Uri file) {
         mFile = file;
@@ -201,13 +181,52 @@ public class FileTransferHttpInfoDocument {
     }
 
     /**
+     * Sets the file disposition
+     *
+     * @param fileDisposition File disposition
+     */
+    public void setFileDisposition(Disposition fileDisposition) {
+        mFileDisposition = fileDisposition;
+    }
+
+    /**
+     * Gets the file disposition
+     *
+     * @return File disposition
+     */
+    public Disposition getFileDisposition() {
+        return mFileDisposition;
+    }
+
+    /**
+     * Sets the playing length
+     *
+     * @param length Length in seconds
+     */
+    public void setPlayingLength(int length) {
+        mPlayingLength = length;
+    }
+
+    /**
+     * Gets the playing length or -1 if not set
+     *
+     * @return playing length in seconds
+     */
+    public int getPlayingLength() {
+        return mPlayingLength;
+    }
+
+    /**
      * Gets local MmContent
      * 
-     * @return local MmCOntent
+     * @return local MmContent
      */
     public MmContent getLocalMmContent() {
-        return ContentManager.createMmContent(
-                ContentManager.generateUriForReceivedContent(mFileName, mMimeType, mRcsSettings),
-                mSize, mFileName);
+        Uri file = ContentManager.generateUriForReceivedContent(mFileName, mMimeType, mRcsSettings);
+        MmContent content = ContentManager.createMmContent(file, mMimeType, mSize, mFileName);
+        if (Disposition.RENDER == mFileDisposition) {
+            content.setPlayable(true);
+        }
+        return content;
     }
 }

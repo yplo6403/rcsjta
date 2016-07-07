@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class ResumeUploadGroupFileSharingSession extends OriginatingHttpGroupFil
         super(imService, 
                 resumeUpload.getFileTransferId(),
                 content,
-                resumeUpload.getFileicon() != null ? FileTransferUtils.createMmContent(resumeUpload.getFileicon()) : null, 
+                resumeUpload.getFileicon() != null ? FileTransferUtils.createIconContent(resumeUpload.getFileicon()) : null,
                 ImsModule.getImsUserProfile().getImConferenceUri(), 
                 resumeUpload.getChatId(),
                 resumeUpload.getTId(), 
@@ -90,14 +90,7 @@ public class ResumeUploadGroupFileSharingSession extends OriginatingHttpGroupFil
             }
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
 
-        } catch (PayloadException | NetworkException e) {
-            handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
-
-        } catch (RuntimeException e) {
-            /*
-             * Intentionally catch runtime exceptions as else it will abruptly end the thread and
-             * eventually bring the whole system down, which is not intended.
-             */
+        } catch (PayloadException | NetworkException | RuntimeException e) {
             handleError(new FileSharingError(FileSharingError.SESSION_INITIATION_FAILED, e));
         }
     }

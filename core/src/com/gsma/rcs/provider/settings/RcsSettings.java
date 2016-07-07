@@ -918,6 +918,15 @@ public class RcsSettings {
     }
 
     /**
+     * Get max audio message duration of a video share
+     *
+     * @return Duration in milliseconds
+     */
+    public long getMaxAudioMessageDuration() {
+        return readLong(RcsSettingsData.MAX_AUDIO_MESSAGE_DURATION);
+    }
+
+    /**
      * Get max number of simultaneous chat sessions
      * 
      * @return Number of sessions
@@ -1791,6 +1800,10 @@ public class RcsSettings {
      */
     public String getVideoRootDirectory() {
         return readString(RcsSettingsData.DIRECTORY_PATH_VIDEOS);
+    }
+
+    public String getAudioRootDirectory() {
+        return readString(RcsSettingsData.DIRECTORY_PATH_AUDIOS);
     }
 
     /**

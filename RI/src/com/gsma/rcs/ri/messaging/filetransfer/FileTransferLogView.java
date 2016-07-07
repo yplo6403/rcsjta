@@ -61,6 +61,7 @@ public class FileTransferLogView extends RcsActivity {
     private TextView mTxtViewIconUri;
     private TextView mTxtViewIconMime;
     private TextView mTxtViewId;
+    private TextView mTxtViewDisposition;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -92,6 +93,7 @@ public class FileTransferLogView extends RcsActivity {
         mTxtViewIconExpiration = (TextView) findViewById(R.id.history_log_item_date_icon_expiration);
         mTxtViewIconUri = (TextView) findViewById(R.id.history_log_item_icon);
         mTxtViewIconMime = (TextView) findViewById(R.id.history_log_item_icon_mime);
+        mTxtViewDisposition = (TextView) findViewById(R.id.history_log_item_disposition);
     }
 
     private String getDateFromDb(long timestamp) {
@@ -139,6 +141,7 @@ public class FileTransferLogView extends RcsActivity {
         mTxtViewIconUri.setText(dao.getThumbnail() == null ? "" : dao.getThumbnail().toString());
         mTxtViewIconMime
                 .setText(dao.getIconMimeType() == null ? "" : dao.getThumbnail().toString());
+        mTxtViewDisposition.setText(dao.getDisposition().toString());
     }
 
     /**
