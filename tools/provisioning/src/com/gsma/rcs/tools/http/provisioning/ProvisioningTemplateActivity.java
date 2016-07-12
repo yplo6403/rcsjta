@@ -181,8 +181,8 @@ public class ProvisioningTemplateActivity extends Activity {
                             String msisdn = extractMsisdnFromProvisioningResponse(content);
                             saveProvisioningTemplate(content, msisdn);
                         } catch (NoSuchElementException e) {
-                            return "Second request failed: code=" + respCode + " message='" + e.getMessage()
-                                    + "'!";
+                            return "Second request failed: code=" + respCode + " message='"
+                                    + e.getMessage() + "'!";
                         }
 
                         return "Success! /sdcard/provisioning_template.xml is available";
@@ -233,11 +233,12 @@ public class ProvisioningTemplateActivity extends Activity {
             uriBuilder.authority(buildProvisioningAddress());
             uriBuilder.appendQueryParameter(PARAM_RCS_VERSION, "5.1B");
             uriBuilder.appendQueryParameter(PARAM_RCS_PROFILE, "joyn_blackbird");
-            uriBuilder.appendQueryParameter(PARAM_TERMINAL_MODEL, Build.DEVICE );
+            uriBuilder.appendQueryParameter(PARAM_TERMINAL_MODEL, Build.DEVICE);
             return new URL(uriBuilder.build().toString());
         }
 
-        private void saveProvisioningTemplate(String provisioning, String msisdn) throws FileNotFoundException {
+        private void saveProvisioningTemplate(String provisioning, String msisdn)
+                throws FileNotFoundException {
             File dirProvTemplate = Environment.getExternalStorageDirectory();
             PrintWriter out = null;
             try {

@@ -255,7 +255,7 @@ public class RegistrationManager extends PeriodicRefresher {
             mNetworkInterface.setRetryAfterHeaderDuration(0);
 
             SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags,
-                    getExpiryValue(), mInstanceId);
+                    getExpiryValue(), mInstanceId, mRcsSettings.isSipKeepAliveEnabled());
 
             sendRegister(register);
 
@@ -313,7 +313,7 @@ public class RegistrationManager extends PeriodicRefresher {
 
             /* Create REGISTER request with expire 0 */
             SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, 0,
-                    mInstanceId);
+                    mInstanceId, mRcsSettings.isSipKeepAliveEnabled());
             sendRegister(register);
 
             mRegistered = false;
@@ -573,7 +573,8 @@ public class RegistrationManager extends PeriodicRefresher {
         }
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, ctx
                 .getTransaction().getRequest().getExpires().getExpires()
-                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId);
+                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId,
+                mRcsSettings.isSipKeepAliveEnabled());
         // Send REGISTER request
         sendRegister(register);
     }
@@ -613,7 +614,8 @@ public class RegistrationManager extends PeriodicRefresher {
         }
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, ctx
                 .getTransaction().getRequest().getExpires().getExpires()
-                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId);
+                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId,
+                mRcsSettings.isSipKeepAliveEnabled());
         // Send REGISTER request
         sendRegister(register);
     }
@@ -634,15 +636,13 @@ public class RegistrationManager extends PeriodicRefresher {
         SipResponse resp = ctx.getSipResponse();
         // Increment the Cseq number of the dialog path
         mDialogPath.incrementCseq();
-        // Set the expire value
         mExpirePeriod = SipUtils.getMinExpiresPeriod(resp);
         // Create a new REGISTER with the right expire period
         if (sLogger.isActivated()) {
             sLogger.info("Send new REGISTER");
         }
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags,
-                mExpirePeriod, mInstanceId);
-        // Send REGISTER request
+                mExpirePeriod, mInstanceId, mRcsSettings.isSipKeepAliveEnabled());
         sendRegister(register);
     }
 
@@ -763,7 +763,8 @@ public class RegistrationManager extends PeriodicRefresher {
         }
         SipRequest register = SipMessageFactory.createRegister(mDialogPath, mFeatureTags, ctx
                 .getTransaction().getRequest().getExpires().getExpires()
-                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId);
+                * SECONDS_TO_MILLISECONDS_CONVERSION_RATE, mInstanceId,
+                mRcsSettings.isSipKeepAliveEnabled());
         sendRegister(register);
     }
 }

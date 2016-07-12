@@ -137,12 +137,12 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (FileNotDownloadedException | IOException e) {
+            sLogger.error("Download of file has failed for mRemoteInstanceId : "
+                    + mRemoteInstanceId, e);
             /* Don't call handleError in case of Pause or Cancel */
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
-            sLogger.error("Download of file has failed for mRemoteInstanceId : "
-                    + mRemoteInstanceId, e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (PayloadException | RuntimeException e) {
@@ -234,12 +234,12 @@ public abstract class TerminatingHttpFileSharingSession extends HttpFileTransfer
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (FileNotDownloadedException | IOException e) {
+                    sLogger.error("Download of file has failed for mRemoteInstanceId : "
+                            + mRemoteInstanceId, e);
                     /* Don't call handleError in case of Pause or Cancel */
                     if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                         return;
                     }
-                    sLogger.error("Download of file has failed for mRemoteInstanceId : "
-                            + mRemoteInstanceId, e);
                     handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
                 } catch (PayloadException | RuntimeException e) {

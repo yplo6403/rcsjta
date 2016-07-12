@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,21 +22,21 @@
 
 package com.gsma.rcs.core.ims.service.im.chat.geoloc;
 
-import java.io.IOException;
-import java.util.StringTokenizer;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import com.gsma.rcs.core.ParseFailureException;
+import com.gsma.rcs.utils.DateUtils;
+import com.gsma.rcs.utils.logger.Logger;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.gsma.rcs.core.ParseFailureException;
-import com.gsma.rcs.utils.DateUtils;
-import com.gsma.rcs.utils.logger.Logger;
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 /**
  * Geolocation info parser
@@ -61,14 +61,9 @@ public class GeolocInfoParser extends DefaultHandler {
      * </rcspushlocation> </rcsenvelope>
      */
 
-    private StringBuffer accumulator;
-    private GeolocInfoDocument geoloc = null;
-
-    /**
-     * The logger
-     */
-    private Logger logger = Logger.getLogger(this.getClass().getName());
-
+    private StringBuilder mAccumulator;
+    private GeolocInfoDocument mGeoloc;
+    private static Logger sLogger = Logger.getLogger(GeolocInfoParser.class.getName());
     private final InputSource mInputSource;
 
     /**
@@ -102,61 +97,60 @@ public class GeolocInfoParser extends DefaultHandler {
     }
 
     public GeolocInfoDocument getGeoLocInfo() {
-        return geoloc;
+        return mGeoloc;
     }
 
+    @Override
     public void startDocument() {
-        if (logger.isActivated()) {
-            logger.debug("Start document");
-        }
-        accumulator = new StringBuffer();
+        mAccumulator = new StringBuilder();
     }
 
+    @Override
     public void characters(char buffer[], int start, int length) {
-        accumulator.append(buffer, start, length);
+        mAccumulator.append(buffer, start, length);
     }
 
+    @Override
     public void startElement(String namespaceURL, String localName, String qname, Attributes attr) {
-        accumulator.setLength(0);
-        if (localName.equals("rcsenvelope")) {
+        mAccumulator.setLength(0);
+        if ("rcsenvelope".equals(localName)) {
             String entity = attr.getValue("entity").trim();
-            geoloc = new GeolocInfoDocument(entity);
-        } else if (localName.equals("rcspushlocation")) {
-            if (logger.isActivated()) {
-                logger.debug("rcspushlocation");
+            mGeoloc = new GeolocInfoDocument(entity);
+
+        } else if ("rcspushlocation".equals(localName)) {
+            if (sLogger.isActivated()) {
+                sLogger.debug("rcspushlocation");
             }
-            if (geoloc != null) {
+            if (mGeoloc != null) {
                 String label = attr.getValue("label").trim();
-                geoloc.setLabel(label);
+                mGeoloc.setLabel(label);
             }
         }
     }
 
+    @Override
     public void endElement(String namespaceURL, String localName, String qname) {
-        if (localName.equals("radius")) {
-            if (geoloc != null) {
-                geoloc.setRadius(Float.parseFloat(accumulator.toString().trim()));
+        if ("radius".equals(localName)) {
+            if (mGeoloc != null) {
+                mGeoloc.setRadius(Float.parseFloat(mAccumulator.toString().trim()));
             }
-        } else if (localName.equals("retention-expiry")) {
-            if (geoloc != null) {
-                geoloc.setExpiration(DateUtils.decodeDate(accumulator.toString().trim()));
+
+        } else if ("retention-expiry".equals(localName)) {
+            if (mGeoloc != null) {
+                mGeoloc.setExpiration(DateUtils.decodeDate(mAccumulator.toString().trim()));
             }
-        } else if (localName.equals("pos")) {
-            if (geoloc != null) {
-                StringTokenizer st = new StringTokenizer(accumulator.toString().trim());
+
+        } else if ("pos".equals(localName)) {
+            if (mGeoloc != null) {
+                StringTokenizer st = new StringTokenizer(mAccumulator.toString().trim());
                 if (st.hasMoreTokens()) {
-                    geoloc.setLatitude(Double.parseDouble(st.nextToken()));
+                    mGeoloc.setLatitude(Double.parseDouble(st.nextToken()));
                 }
                 if (st.hasMoreTokens()) {
-                    geoloc.setLongitude(Double.parseDouble(st.nextToken()));
+                    mGeoloc.setLongitude(Double.parseDouble(st.nextToken()));
                 }
             }
         }
     }
 
-    public void endDocument() {
-        if (logger.isActivated()) {
-            logger.debug("End document");
-        }
-    }
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -515,7 +515,7 @@ public class ImsServiceDispatcher extends Thread {
                         .receiveNotification(notify);
             }
         } else if (eventHeader.getEventType().equalsIgnoreCase("presence")) {
-            if (notify.getTo().indexOf("anonymous") != -1) {
+            if (notify.getTo().contains("anonymous")) {
                 mImsModule.getCapabilityService().onNotificationReceived(notify);
             } else {
                 mImsModule.getPresenceService().getPresenceSubscriber().receiveNotification(notify);

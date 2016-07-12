@@ -1715,7 +1715,6 @@ public class ProvisioningParser {
             return;
         }
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
@@ -1871,7 +1870,6 @@ public class ProvisioningParser {
         String regRetryBasetime = null;
         String regRetryMaxtime = null;
         Node childnode = node.getFirstChild();
-
         if (childnode != null) {
             do {
                 if (childnode.getNodeName().equals("characteristic")) {
@@ -1899,7 +1897,6 @@ public class ProvisioningParser {
                         }
                     }
                 }
-
                 if (timert1 == null) {
                     if ((timert1 = getValueByParamName("Timer_T1", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.SIP_TIMER_T1,
@@ -1907,7 +1904,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (timert2 == null) {
                     if ((timert2 = getValueByParamName("Timer_T2", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.SIP_TIMER_T2,
@@ -1915,7 +1911,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (timert4 == null) {
                     if ((timert4 = getValueByParamName("Timer_T4", childnode, TYPE_INT)) != null) {
                         mRcsSettings.writeLong(RcsSettingsData.SIP_TIMER_T4,
@@ -1923,7 +1918,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (privateUserIdentity == null) {
                     if ((privateUserIdentity = getValueByParamName("Private_User_Identity",
                             childnode, TYPE_TXT)) != null) {
@@ -1933,7 +1927,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (homeDomain == null) {
                     if ((homeDomain = getValueByParamName("Home_network_domain_name", childnode,
                             TYPE_TXT)) != null) {
@@ -1942,7 +1935,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (keepAliveEnabled == null) {
                     if ((keepAliveEnabled = getValueByParamName("Keep_Alive_Enabled", childnode,
                             TYPE_INT)) != null) {
@@ -1951,7 +1943,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (regRetryBasetime == null) {
                     if ((regRetryBasetime = getValueByParamName("RegRetryBaseTime", childnode,
                             TYPE_INT)) != null) {
@@ -1961,7 +1952,6 @@ public class ProvisioningParser {
                         continue;
                     }
                 }
-
                 if (regRetryMaxtime == null) {
                     if ((regRetryMaxtime = getValueByParamName("RegRetryMaxTime", childnode,
                             TYPE_INT)) != null) {
@@ -1970,13 +1960,11 @@ public class ProvisioningParser {
                                         * SECONDS_TO_MILLISECONDS_CONVERSION_RATE);
                     }
                 }
-
                 // Not supported under Android: "PDP_ContextOperPref"
                 // Not used for RCS: "Voice_Domain_Preference_E_UTRAN"
                 // Not used for RCS: "SMS_Over_IP_Networks_Indication"
                 // Not used for RCS: "Voice_Domain_Preference_UTRAN"
                 // Not used for RCS: "Mobility_Management_IMS_Voice_Termination"
-
             } while ((childnode = childnode.getNextSibling()) != null);
         }
     }
@@ -1994,7 +1982,6 @@ public class ProvisioningParser {
                 || !(node.getNodeName().equals("parm") || node.getNodeName().equals("param"))) {
             return null;
         }
-
         if (node.getAttributes().getLength() > 0) {
             Node nameNode = node.getAttributes().getNamedItem("name");
             if (nameNode == null) {
@@ -2010,6 +1997,7 @@ public class ProvisioningParser {
                 if (type == TYPE_INT) {
                     try {
                         Integer.parseInt(value);
+
                     } catch (NumberFormatException e) {
                         if (sLogger.isActivated()) {
                             sLogger.warn("Bad value for integer parameter " + paramName);
@@ -2017,7 +2005,6 @@ public class ProvisioningParser {
                         return null;
                     }
                 }
-
                 return value;
             }
             return null;
@@ -2037,7 +2024,6 @@ public class ProvisioningParser {
             int startIndexOfUriAddress = uri.indexOf("@", indexOfSipHeader);
             return uri.substring(indexOfSipHeader + PhoneUtils.SIP_URI_HEADER.length(),
                     startIndexOfUriAddress);
-
         }
         return uri;
     }

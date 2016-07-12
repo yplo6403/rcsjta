@@ -147,7 +147,6 @@ public class GroupTalkView extends RcsFragmentActivity implements
     private final static String EXTRA_PARTICIPANTS = "participants";
     private final static String EXTRA_SUBJECT = "subject";
     private final static String EXTRA_MODE = "mode";
-    private boolean mFileTransferListenerSet;
 
     private enum GroupChatMode {
         INCOMING, OUTGOING, OPEN
@@ -174,6 +173,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
     private Set<ContactId> mParticipants = new HashSet<>();
     private GroupChatListener mChatListener;
     private GroupFileTransferListener mFileTransferListener;
+    private boolean mFileTransferListenerSet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -635,7 +635,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
                     if (Direction.OUTGOING == direction) {
                         menu.findItem(R.id.menu_display_content).setVisible(true);
 
-                    } else if (RcsService.Direction.INCOMING == direction) {
+                    } else {
                         Long transferred = cursor.getLong(cursor
                                 .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
                         Long size = cursor.getLong(cursor
@@ -648,7 +648,7 @@ public class GroupTalkView extends RcsFragmentActivity implements
                     if (Direction.OUTGOING == direction) {
                         menu.findItem(R.id.menu_listen_content).setVisible(true);
 
-                    } else if (RcsService.Direction.INCOMING == direction) {
+                    } else {
                         Long transferred = cursor.getLong(cursor
                                 .getColumnIndexOrThrow(HistoryLog.TRANSFERRED));
                         Long size = cursor.getLong(cursor

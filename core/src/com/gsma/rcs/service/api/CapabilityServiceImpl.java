@@ -63,8 +63,7 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
      */
     private final Object mLock = new Object();
 
-    private static final Logger sLogger = Logger.getLogger(CapabilityServiceImpl.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CapabilityServiceImpl.class.getName());
 
     private final ContactManager mContactManager;
 
@@ -298,7 +297,6 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
         synchronized (mLock) {
             // Create capabilities instance
             Capabilities c = ContactServiceImpl.getCapabilities(capabilities);
-
             // Notify capabilities listeners
             notifyListeners(contact, c);
         }
@@ -335,7 +333,6 @@ public class CapabilityServiceImpl extends ICapabilityService.Stub {
         ServerApiUtils.testIms();
         if (contacts == null) {
             throw new ServerApiIllegalArgumentException("contacts must not be null!");
-
         }
         final Set<ContactId> setOfContacts = new HashSet<>(contacts);
         mCapabilityService.scheduleCapabilityOperation(new Runnable() {

@@ -249,9 +249,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (LogUtils.isActive) {
-            Log.d(LOGTAG, "--> onCreate");
-        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_view);
         if (!isServiceConnected(ConnectionManager.RcsServiceName.CONTACT,
@@ -1005,7 +1002,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case ChatLog.Message.HISTORYLOG_MEMBER_ID:
-                    if (direction == Direction.OUTGOING) {
+                    if (Direction.OUTGOING == direction) {
                         ChatLog.Message.Content.Status status = ChatLog.Message.Content.Status
                                 .valueOf(cursor.getInt(cursor
                                         .getColumnIndexOrThrow(HistoryLog.STATUS)));
@@ -1015,7 +1012,6 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                             if (number != null) {
                                 ContactId contact = ContactUtil.formatContact(number);
                                 OneToOneChat chat = mChatService.getOneToOneChat(contact);
-
                                 if (chat != null && chat.isAllowedToSendMessage()) {
                                     menu.findItem(R.id.menu_resend_message).setVisible(true);
                                 } else {

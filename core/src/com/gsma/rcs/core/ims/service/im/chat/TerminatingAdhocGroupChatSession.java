@@ -54,9 +54,7 @@ import com.gsma.services.rcs.contact.ContactId;
 import android.net.Uri;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -116,49 +114,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                 || mRcsSettings.isGroupChatAutoAccepted();
     }
 
-    private Set<ContactId> getContactToBeInvited(Map<ContactId, ParticipantStatus> participants) {
-        String chatId = getContributionID();
-        Set<ContactId> storedContacts = new HashSet<ContactId>();
-        for (Map.Entry<ContactId, ParticipantStatus> participant : mMessagingLog.getParticipants(
-                chatId).entrySet()) {
-            switch (participant.getValue()) {
-                case INVITING:
-                case INVITED:
-                case CONNECTED:
-                case DISCONNECTED:
-                    storedContacts.add(participant.getKey());
-                    break;
-                default:
-                    break;
-            }
-        }
-        if (storedContacts.isEmpty()) {
-            if (sLogger.isActivated()) {
-                sLogger.info("No initial Group Chat");
-            }
-            return storedContacts;
-        }
-        Set<ContactId> contactsToBeInvited = storedContacts;
-        /*
-         * Only contacts we have stored since before but didn't receive in the group chat invitation
-         * are missing and should be re-invited.
-         */
-        contactsToBeInvited.removeAll(participants.keySet());
-        if (!contactsToBeInvited.isEmpty()) {
-            /* Early exit if set of contacts to be invited is empty */
-            return contactsToBeInvited;
-        }
-        StringBuilder contactsBuilder = new StringBuilder(
-                "Invite to restart with missing contacts: ");
-        for (ContactId contactToBeInvited : contactsToBeInvited) {
-            contactsBuilder.append(contactToBeInvited.toString()).append(" ");
-        }
-        if (sLogger.isActivated()) {
-            sLogger.info(contactsBuilder.toString());
-        }
-        return contactsToBeInvited;
-    }
-
     @Override
     public void run() {
         final boolean logActivated = sLogger.isActivated();
@@ -189,9 +144,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                     ((GroupChatSessionListener) listener).onSessionInvited(contact, subject,
                             participants, timestamp);
                 }
-
                 send180Ringing(dialogPath.getInvite(), dialogPath.getLocalTag());
-
                 InvitationStatus answer = waitInvitationAnswer();
                 switch (answer) {
                     case INVITATION_REJECTED_DECLINE:
@@ -269,9 +222,7 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             String remotePath = attr1.getValue();
             String remoteHost = SdpUtils.extractRemoteHost(parser.sessionDescription, mediaDesc);
             int remotePort = mediaDesc.mPort;
-
             String fingerprint = SdpUtils.extractFingerprint(parser, mediaDesc);
-
             /* Extract the "setup" parameter */
             String remoteSetup = "passive";
             MediaAttribute attr2 = mediaDesc.getMediaAttribute("setup");
@@ -298,10 +249,8 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             String sdp = SdpUtils.buildGroupChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
                     getMsrpMgr().getLocalMsrpPath(), SdpUtils.DIRECTION_SENDRECV);
-
             /* Set the local SDP part in the dialog path */
             dialogPath.setLocalContent(sdp);
-
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -315,7 +264,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             }
             SipResponse resp = SipMessageFactory.create200OkInviteResponse(dialogPath,
                     getFeatureTags(), getAcceptContactTags(), sdp);
-
             dialogPath.setSigEstablished();
             SipTransactionContext ctx = getImsService().getImsModule().getSipManager()
                     .sendSipMessage(resp);
@@ -334,7 +282,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
             }
             /* wait a response */
             getImsService().getImsModule().getSipManager().waitResponse(ctx);
-
             /* Test if the session should be interrupted */
             if (isInterrupted()) {
                 if (logActivated) {
@@ -348,7 +295,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                     sLogger.info("ACK request received");
                 }
                 dialogPath.setSessionEstablished();
-
                 /* Create the MSRP client session */
                 if (localSetup.equals("active")) {
                     /* Active mode: client should connect */
@@ -359,17 +305,10 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
                     getMsrpMgr().openMsrpSession();
                     sendEmptyDataChunk();
                 }
-
                 for (ImsSessionListener listener : listeners) {
                     listener.onSessionStarted(contact);
                 }
-                Set<ContactId> contactsToBeInvited = getContactToBeInvited(participants);
-                if (!contactsToBeInvited.isEmpty()) {
-                    inviteMissingParticipants(contactsToBeInvited);
-                }
-
                 getConferenceEventSubscriber().subscribe();
-
                 SessionTimerManager sessionTimerManager = getSessionTimerManager();
                 if (sessionTimerManager.isSessionTimerActivated(resp)) {
                     sessionTimerManager.start(SessionTimerManager.UAS_ROLE,
@@ -382,22 +321,6 @@ public class TerminatingAdhocGroupChatSession extends GroupChatSession {
         } catch (PayloadException | RuntimeException | NetworkException e) {
             handleError(new ChatError(ChatError.SEND_RESPONSE_FAILED, e));
         }
-    }
-
-    /**
-     * Invite missing participants.
-     * 
-     * @param participants Set of missing participant identifiers
-     * @throws NetworkException
-     * @throws PayloadException
-     */
-    private void inviteMissingParticipants(final Set<ContactId> participants)
-            throws PayloadException, NetworkException {
-        final boolean logActivated = sLogger.isActivated();
-        if (logActivated) {
-            sLogger.info("Invite missing participants: ".concat(participants.toString()));
-        }
-        inviteParticipants(participants);
     }
 
     @Override

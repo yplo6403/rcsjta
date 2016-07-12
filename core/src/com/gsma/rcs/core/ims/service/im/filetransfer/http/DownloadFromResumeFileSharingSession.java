@@ -106,11 +106,11 @@ public class DownloadFromResumeFileSharingSession extends TerminatingHttpFileSha
                         NtpTrustedTime.currentTimeMillis());
             }
         } catch (FileNotDownloadedException | IOException e) {
+            sLogger.error("Resume Download file has failed for " + mResume, e);
             /* Don't call handleError in case of Pause or Cancel */
             if (mDownloadManager.isCancelled() || mDownloadManager.isPaused()) {
                 return;
             }
-            sLogger.error("Resume Download file has failed for " + mResume, e);
             handleError(new FileSharingError(FileSharingError.MEDIA_DOWNLOAD_FAILED, e));
 
         } catch (PayloadException | RuntimeException e) {

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.Vector;
 
 /**
  * SDP parser
- * 
+ *
  * @author jexa7410
  */
 public class SdpParser extends Parser {
@@ -35,7 +35,7 @@ public class SdpParser extends Parser {
     /**
      * Media description
      */
-    public Vector<MediaDescription> mediaDescriptions = new Vector<MediaDescription>();
+    public Vector<MediaDescription> mediaDescriptions = new Vector<>();
 
     /**
      * Input stream
@@ -98,12 +98,13 @@ public class SdpParser extends Parser {
         }
 
         // Bandwidth information
-        if (getToken(bin, "b=")) {
+        while (getToken(bin, "b=")) {
+            // session bandwidth information is not used right now; just consumed for parsing
             sessionDescription.bandwidthInfo = getLine(bin);
         }
 
         // Time description
-        sessionDescription.timeDescriptions = new Vector<TimeDescription>();
+        sessionDescription.timeDescriptions = new Vector<>();
         while (getToken(bin, "t=")) {
             TimeDescription timeDescription = parseTimeDescription();
             this.sessionDescription.timeDescriptions.addElement(timeDescription);
@@ -120,7 +121,7 @@ public class SdpParser extends Parser {
         }
 
         // Session attributes
-        sessionDescription.sessionAttributes = new Vector<MediaAttribute>();
+        sessionDescription.sessionAttributes = new Vector<>();
         while (getToken(bin, "a=")) {
             String sessionAttribute = getLine(bin);
             int index = sessionAttribute.indexOf(':');
@@ -145,7 +146,7 @@ public class SdpParser extends Parser {
         td.timeActive = getLine(bin);
 
         // Repeat times
-        td.repeatTimes = new Vector<String>();
+        td.repeatTimes = new Vector<>();
         while (getToken(bin, "r=")) {
             String repeatTime = getLine(bin);
             td.repeatTimes.addElement(repeatTime);
@@ -159,7 +160,7 @@ public class SdpParser extends Parser {
      */
     private void parseMediaDescriptions() {
         while (getToken(bin, "m=")) {
-            Vector<MediaDescription> descs = new Vector<MediaDescription>();
+            Vector<MediaDescription> descs = new Vector<>();
 
             // Media name and transport address
             String line = getLine(bin);
@@ -314,7 +315,7 @@ public class SdpParser extends Parser {
      * @return Medias
      */
     public Vector<MediaDescription> getMediaDescriptions(String name) {
-        Vector<MediaDescription> result = new Vector<MediaDescription>();
+        Vector<MediaDescription> result = new Vector<>();
         if (mediaDescriptions != null) {
             for (int i = 0; i < mediaDescriptions.size(); i++) {
                 MediaDescription entry = mediaDescriptions.elementAt(i);

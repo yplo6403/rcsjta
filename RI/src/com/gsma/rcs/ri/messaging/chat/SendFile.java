@@ -179,7 +179,6 @@ public abstract class SendFile extends RcsActivity implements ISendFile {
                 if (RC_SELECT_IMAGE == which) {
                     FileUtils.openFile(SendFile.this, "image/*", RC_SELECT_IMAGE);
                     return;
-
                 }
                 FileUtils.openFile(SendFile.this, "audio/*", RC_SELECT_AUDIO);
             }

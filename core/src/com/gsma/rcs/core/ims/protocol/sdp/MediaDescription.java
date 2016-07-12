@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -94,7 +94,7 @@ public class MediaDescription {
     /**
      * Media attributes
      */
-    public Vector<MediaAttribute> mMediaAttributes = new Vector<MediaAttribute>();
+    public Vector<MediaAttribute> mMediaAttributes = new Vector<>();
 
     /**
      * Constructor

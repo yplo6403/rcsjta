@@ -62,7 +62,7 @@ public class FileTransferDAO implements Parcelable {
     private static ContentResolver sContentResolver;
     private final FileTransfer.Disposition mDisposition;
     private final String mIconMimeType;
-    private boolean mExpiredDelivery;
+    private final boolean mExpiredDelivery;
 
     public String getIconMimeType() {
         return mIconMimeType;
@@ -379,10 +379,8 @@ public class FileTransferDAO implements Parcelable {
                     .getColumnIndexOrThrow(FileTransferLog.FILEICON_EXPIRATION));
             boolean expiredDelivery = cursor.getInt(cursor
                     .getColumnIndexOrThrow(FileTransferLog.EXPIRED_DELIVERY)) == 1;
-
             String iconMimeType = cursor.getString(cursor
                     .getColumnIndexOrThrow(FileTransferLog.FILEICON_MIME_TYPE));
-
             return new FileTransferDAO(disposition, fileTransferId, contact, file, filename,
                     chatId, mimeType, state, readStatus, direction, timestamp, timestampSent,
                     timestampDelivered, timestampDisplayed, sizeTransferred, size, thumbnail,

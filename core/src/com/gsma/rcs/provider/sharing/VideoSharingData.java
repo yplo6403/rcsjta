@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@
 
 package com.gsma.rcs.provider.sharing;
 
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.sharing.video.VideoSharing;
 import com.gsma.services.rcs.sharing.video.VideoSharingLog;
 
@@ -80,7 +81,7 @@ public class VideoSharingData {
     /**
      * Incoming sharing or outgoing sharing.
      * 
-     * @see Direction
+     * @see RcsService.Direction
      */
     /* package private */static final String KEY_DIRECTION = VideoSharingLog.DIRECTION;
 

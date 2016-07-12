@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -113,7 +113,7 @@ public class NetworkUtils {
                 /* ~ 1-23 Mbps */
             case TelephonyManager.NETWORK_TYPE_HSUPA:
                 /* Intentional fall back */
-                /* ~10+ Mbps */
+                /* ~10-20 Mbps */
             case TelephonyManager.NETWORK_TYPE_HSPAP:
                 return NETWORK_ACCESS_3GPLUS;
 

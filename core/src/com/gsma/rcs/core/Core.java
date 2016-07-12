@@ -186,29 +186,19 @@ public class Core {
         if (logActivated) {
             sLogger.info("My device UUID is ".concat(String.valueOf(DeviceUtils.getDeviceUUID(ctx))));
         }
-
-        // Initialize the phone utils
         PhoneUtils.initialize(rcsSettings);
-
-        // Create the address book manager
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
         mXmsManager = new XmsManager(ctx, contentResolver);
-
         XmsSynchronizer xmsSynchronizer = new XmsSynchronizer(ctx.getContentResolver(),
                 rcsSettings, xmsLog, cmsLog);
         // Synchronize with native XMS content providers (not performed in background)
         xmsSynchronizer.execute();
         // instantiate Xms Observer on native SMS/MMS content provider
         mXmsObserver = new XmsObserver(contentResolver, rcsSettings);
-
-        /* Create the IMS module */
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
                 messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
-
-        /* Create the NTP manager */
         mNtpManager = new NtpManager(ctx, rcsSettings);
-
         if (logActivated) {
             sLogger.info("Terminal core is created with success");
         }
@@ -223,7 +213,6 @@ public class Core {
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
-
         mImsModule.initialize(xmsEventHandler);
         mXmsObserver.registerListener(xmsEventHandler);
     }

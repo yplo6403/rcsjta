@@ -28,6 +28,7 @@ import com.gsma.services.rcs.chat.ChatLog;
 import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
+import com.gsma.services.rcs.filetransfer.FileTransfer;
 import com.gsma.services.rcs.filetransfer.FileTransferLog;
 import com.gsma.services.rcs.history.HistoryLog;
 import com.gsma.services.rcs.history.HistoryUriBuilder;
@@ -63,7 +64,8 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
             HistoryLog.TIMESTAMP,
             HistoryLog.DIRECTION,
             HistoryLog.CONTACT,
-            HistoryLog.READ_STATUS
+            HistoryLog.READ_STATUS,
+            HistoryLog.STATUS
     };
     // @formatter:on
 
@@ -103,6 +105,40 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
         void onTaskComplete(Collection<TalkListArrayItem> result);
     }
 
+    private boolean isUnread(int providerId, RcsService.Direction dir,
+            RcsService.ReadStatus readStatus, int status) {
+        switch (providerId) {
+            case ChatLog.GroupChat.HISTORYLOG_MEMBER_ID:
+                return false;
+
+            case ChatLog.Message.HISTORYLOG_MEMBER_ID:
+            case XmsMessageLog.HISTORYLOG_MEMBER_ID:
+                return RcsService.Direction.INCOMING == dir
+                        && RcsService.ReadStatus.UNREAD == readStatus;
+
+            case FileTransferLog.HISTORYLOG_MEMBER_ID:
+                if (RcsService.Direction.INCOMING != dir) {
+                    return false;
+                }
+                FileTransfer.State state = FileTransfer.State.valueOf(status);
+                switch (state) {
+                    case INVITED:
+                    case TRANSFERRED:
+                    case ACCEPTING:
+                    case PAUSED:
+                    case STARTED:
+                        return RcsService.ReadStatus.UNREAD == readStatus;
+                    default:
+                        /*
+                         * We consider that if the file transfer is rejected or failed then it
+                         * cannot be read but should not be considered as unread.
+                         */
+                        return false;
+                }
+        }
+        throw new IllegalArgumentException("Invalid provider ID=" + providerId);
+    }
+
     Collection<TalkListArrayItem> queryHistoryLogAndRefreshView() {
         HistoryUriBuilder uriBuilder = new HistoryUriBuilder(HistoryLog.CONTENT_URI);
         uriBuilder.appendProvider(ChatLog.GroupChat.HISTORYLOG_MEMBER_ID);
@@ -128,6 +164,7 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
             int columnMimeType = cursor.getColumnIndexOrThrow(HistoryLog.MIME_TYPE);
             int columnReadStatus = cursor.getColumnIndexOrThrow(HistoryLog.READ_STATUS);
             int columnFilename = cursor.getColumnIndexOrThrow(HistoryLog.FILENAME);
+            int columnStatus = cursor.getColumnIndexOrThrow(HistoryLog.STATUS);
             while (cursor.moveToNext()) {
                 long timestamp = cursor.getLong(columnTimestamp);
                 String chatId = cursor.getString(columnChatId);
@@ -142,14 +179,17 @@ public class TalkListUpdate extends AsyncTask<Void, Void, Collection<TalkListArr
                         .getInt(columnReadStatus));
                 TalkListArrayItem item = dataMap.get(chatId);
                 int providerId = cursor.getInt(columnProviderId);
-                boolean unread = ChatLog.GroupChat.HISTORYLOG_MEMBER_ID != providerId
-                        && RcsService.Direction.INCOMING == dir
-                        && RcsService.ReadStatus.UNREAD == readStatus;
+                int status = cursor.getInt(columnStatus);
+                boolean unread = isUnread(providerId, dir, readStatus, status);
                 int unreadCount = unread ? 1 : 0;
                 if (item != null) {
+                    /* Is it the newest item ? */
                     if (timestamp < item.getTimestamp()) {
-                        if (RcsService.Direction.INCOMING == dir
-                                && RcsService.ReadStatus.UNREAD == readStatus) {
+                        /*
+                         * it is not the newest item then increment unread count of newest one then
+                         * read next
+                         */
+                        if (unread) {
                             item.incrementUnreadCount();
                         }
                         continue;

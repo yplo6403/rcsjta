@@ -102,24 +102,20 @@ public class RestartGroupChatSession extends GroupChatSession {
             if (sLogger.isActivated()) {
                 sLogger.info("Restart a group chat session");
             }
-
             String localSetup = createSetupOffer();
             if (sLogger.isActivated()) {
                 sLogger.debug("Local setup attribute is ".concat(localSetup));
             }
-
             int localMsrpPort;
             if ("active".equals(localSetup)) {
                 localMsrpPort = 9; /* See RFC4145, Page 4 */
             } else {
                 localMsrpPort = getMsrpMgr().getLocalMsrpPort();
             }
-
             String ipAddress = getDialogPath().getSipStack().getLocalIpAddress();
             String sdp = SdpUtils.buildGroupChatSDP(ipAddress, localMsrpPort, getMsrpMgr()
                     .getLocalSocketProtocol(), getAcceptTypes(), getWrappedTypes(), localSetup,
                     getMsrpMgr().getLocalMsrpPath(), SdpUtils.DIRECTION_SENDRECV);
-
             Set<ContactId> invitees = new HashSet<>();
             Map<ContactId, ParticipantStatus> participants = getParticipants();
             for (Map.Entry<ContactId, ParticipantStatus> participant : participants.entrySet()) {
@@ -137,7 +133,6 @@ public class RestartGroupChatSession extends GroupChatSession {
                 }
             }
             String resourceList = ChatUtils.generateChatResourceList(invitees);
-
             String multipart = Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG + SipUtils.CRLF
                     + "Content-Type: application/sdp" + SipUtils.CRLF + "Content-Length: "
                     + sdp.getBytes(UTF8).length + SipUtils.CRLF + SipUtils.CRLF + sdp
@@ -147,22 +142,17 @@ public class RestartGroupChatSession extends GroupChatSession {
                     + "Content-Disposition: recipient-list" + SipUtils.CRLF + SipUtils.CRLF
                     + resourceList + SipUtils.CRLF + Multipart.BOUNDARY_DELIMITER + BOUNDARY_TAG
                     + Multipart.BOUNDARY_DELIMITER;
-
             getDialogPath().setLocalContent(multipart);
-
             if (sLogger.isActivated()) {
                 sLogger.info("Send INVITE");
             }
             SipRequest invite = createInviteRequest(multipart);
-
             getAuthenticationAgent().setAuthorizationHeader(invite);
-
             getDialogPath().setInvite(invite);
-
             sendInvite(invite);
 
-        } catch (InvalidArgumentException | ParseException | FileAccessException | PayloadException
-                | NetworkException | RuntimeException e) {
+        } catch (InvalidArgumentException | FileAccessException | PayloadException
+                | NetworkException | RuntimeException | ParseException e) {
             handleError(new ChatError(ChatError.SESSION_RESTART_FAILED, e));
         }
     }

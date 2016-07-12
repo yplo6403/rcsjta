@@ -290,11 +290,11 @@ public abstract class FileSharingSession extends ImsServiceSession {
 
     /**
      * Convert Disposition to string for payload insertion.
-     * 
+     *
      * @param disposition the disposition
      * @return the string for payload insertion.
      */
-    public static String DispositionToString(FileTransfer.Disposition disposition) {
+    /* package private */static String DispositionToString(FileTransfer.Disposition disposition) {
         return FileTransfer.Disposition.ATTACH == disposition ? FILE_DISPOSITION_ATTACH
                 : FILE_DISPOSITION_RENDER;
     }

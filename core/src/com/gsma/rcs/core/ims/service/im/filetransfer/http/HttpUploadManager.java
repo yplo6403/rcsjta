@@ -131,7 +131,7 @@ public class HttpUploadManager extends HttpTransferManager {
      * @param fileIcon content of the file icon
      * @param listener HTTP transfer event listener
      * @param tId TID of the upload
-     * @param rcsSettings the RCS session accessor
+     * @param rcsSettings the RCS settings accessor
      */
     public HttpUploadManager(MmContent content, MmContent fileIcon,
             HttpUploadTransferEventListener listener, String tId, RcsSettings rcsSettings) {
@@ -478,8 +478,7 @@ public class HttpUploadManager extends HttpTransferManager {
     private static byte[] convertStreamToString(InputStream is) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
-
-        String line = null;
+        String line;
         try {
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
@@ -605,6 +604,7 @@ public class HttpUploadManager extends HttpTransferManager {
                 }
                 byte[] result = null;
                 boolean success = false;
+                boolean retry = false; // TODO PLM check why no retry ?
                 switch (responseCode) {
                     case HttpURLConnection.HTTP_OK:
                         success = true;
@@ -619,6 +619,8 @@ public class HttpUploadManager extends HttpTransferManager {
                 }
                 if (success) {
                     return result;
+                } else if (retry) {
+                    return sendPutForResumingUpload(resumeInfo);
                 } else {
                     throw new IOException("Received " + responseCode + " from server");
                 }

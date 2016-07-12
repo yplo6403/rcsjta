@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2014 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,6 @@ package com.gsma.rcs.core.ims.network.sip;
 
 import static com.gsma.rcs.utils.StringUtils.UTF8;
 
-import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
 import com.gsma.rcs.core.ims.protocol.sip.SipDialogPath;
@@ -32,6 +31,7 @@ import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.protocol.sip.SipResponse;
 import com.gsma.rcs.core.ims.service.SessionTimerManager;
 import com.gsma.rcs.core.ims.service.im.chat.ChatUtils;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.services.rcs.contact.ContactId;
 
@@ -92,11 +92,13 @@ public class SipMessageFactory {
      * @param featureTags Feature tags
      * @param expirePeriod Expiration period in milliseconds
      * @param instanceId UA SIP instance ID
+     * @param announceKeepAlive propagate support of keep alive
      * @return SIP request
      * @throws PayloadException
      */
     public static SipRequest createRegister(SipDialogPath dialog, String[] featureTags,
-            long expirePeriod, String instanceId) throws PayloadException {
+            long expirePeriod, String instanceId, boolean announceKeepAlive)
+            throws PayloadException {
         try {
             // Set request line header
             URI requestURI = SipUtils.ADDR_FACTORY.createURI(dialog.getTarget());
@@ -120,7 +122,7 @@ public class SipMessageFactory {
 
             // Insert "keep" flag to Via header (RFC6223 "Indication of Support for Keep-Alive")
             List<ViaHeader> viaHeaders = dialog.getSipStack().getViaHeaders();
-            if (viaHeaders != null && !viaHeaders.isEmpty()) {
+            if (viaHeaders != null && !viaHeaders.isEmpty() && announceKeepAlive) {
                 ViaHeader viaHeader = viaHeaders.get(0);
                 viaHeader.setParameter(new NameValue("keep", null, true));
             }
@@ -170,13 +172,8 @@ public class SipMessageFactory {
 
             return new SipRequest(register);
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP message for instanceId : ").append(instanceId).toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP message for instanceId : ").append(instanceId).toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP message for instanceId : " + instanceId, e);
         }
     }
 
@@ -245,10 +242,7 @@ public class SipMessageFactory {
 
             return new SipRequest(subscribe);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (InvalidArgumentException e) {
+        } catch (ParseException | InvalidArgumentException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -350,15 +344,9 @@ public class SipMessageFactory {
 
             return new SipRequest(message);
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP message for featureTag : ").append(featureTag)
-                    .append(" with contentType : ").append(contentType).toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP message for featureTag : ").append(featureTag)
-                    .append(" with contentType : ").append(contentType).toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP message for featureTag : " + featureTag
+                    + " with contentType : " + contentType, e);
         }
     }
 
@@ -443,10 +431,7 @@ public class SipMessageFactory {
 
             return new SipRequest(publish);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message", e);
-
-        } catch (InvalidArgumentException e) {
+        } catch (ParseException | InvalidArgumentException e) {
             throw new PayloadException("Can't create SIP message", e);
         }
     }
@@ -486,8 +471,7 @@ public class SipMessageFactory {
             return createInvite(dialog, featureTags, acceptTags, sdp, contentType);
 
         } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP message with SDP : ")
-                    .append(sdp).toString(), e);
+            throw new PayloadException("Can't create SIP message with SDP : " + sdp, e);
         }
     }
 
@@ -529,8 +513,7 @@ public class SipMessageFactory {
             return createInvite(dialog, featureTags, acceptTags, multipart, contentType);
 
         } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP message with multipart : ").append(multipart).toString(), e);
+            throw new PayloadException("Can't create SIP message with multipart : " + multipart, e);
         }
     }
 
@@ -629,15 +612,8 @@ public class SipMessageFactory {
 
             return new SipRequest(invite);
 
-        } catch (ParseException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message with content : ").append(content)
-                            .toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message with content : ").append(content)
-                            .toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP message with content : " + content, e);
         }
     }
 
@@ -698,9 +674,9 @@ public class SipMessageFactory {
                 // Set Session-Timer header
                 Header sessionExpiresHeader = SipUtils.HEADER_FACTORY.createHeader(
                         SipUtils.HEADER_SESSION_EXPIRES,
-                        new StringBuilder(String.valueOf(dialog.getSessionExpireTime()
-                                / SECONDS_TO_MILLISECONDS_CONVERSION_RATE)).append(";refresher=")
-                                .append(dialog.getInvite().getSessionTimerRefresher()).toString());
+                        String.valueOf(dialog.getSessionExpireTime()
+                                / SECONDS_TO_MILLISECONDS_CONVERSION_RATE)
+                                + ";refresher=" + dialog.getInvite().getSessionTimerRefresher());
                 response.addHeader(sessionExpiresHeader);
             }
 
@@ -716,13 +692,8 @@ public class SipMessageFactory {
             resp.setStackTransaction(dialog.getInvite().getStackTransaction());
             return resp;
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP response with SDP : ")
-                    .append(sdp).toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP response with SDP : ")
-                    .append(sdp).toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP response with SDP : " + sdp, e);
         }
     }
 
@@ -735,8 +706,7 @@ public class SipMessageFactory {
      */
     public static SipRequest createAck(SipDialogPath dialog) throws PayloadException {
         try {
-            Request ack = null;
-
+            Request ack;
             // Set request line header
             URI requestURI = SipUtils.ADDR_FACTORY.createURI(dialog.getTarget());
 
@@ -789,10 +759,7 @@ public class SipMessageFactory {
 
             return new SipRequest(ack);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (InvalidArgumentException e) {
+        } catch (ParseException | InvalidArgumentException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -823,8 +790,7 @@ public class SipMessageFactory {
      * Works just like SipResponse createResponse(SipRequest request, String localTag, int code,
      * String warning) except the warning is always null
      * 
-     * @see #SipResponse createResponse(SipRequest request, String localTag, int code, String
-     *      warning)
+     * @see #createResponse(SipRequest, String, int)
      */
     public static SipResponse createResponse(SipRequest request, String localTag, int code)
             throws PayloadException {
@@ -861,15 +827,8 @@ public class SipMessageFactory {
             resp.setStackTransaction(request.getStackTransaction());
             return resp;
 
-        } catch (ParseException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message for localTag : ").append(localTag)
-                            .toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message for localTag : ").append(localTag)
-                            .toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP message for localTag : " + localTag, e);
         }
     }
 
@@ -899,13 +858,7 @@ public class SipMessageFactory {
 
             return new SipRequest(bye);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (SipException e) {
+        } catch (ParseException | SipException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -935,16 +888,9 @@ public class SipMessageFactory {
             // Set "rport" (RFC3581)
             ViaHeader viaHeader = (ViaHeader) cancel.getHeader(ViaHeader.NAME);
             viaHeader.setRPort();
-
             return new SipRequest(cancel);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (SipException e) {
+        } catch (ParseException | SipException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -1015,13 +961,9 @@ public class SipMessageFactory {
             // Set "rport" (RFC3581)
             ViaHeader viaHeader = (ViaHeader) options.getHeader(ViaHeader.NAME);
             viaHeader.setRPort();
-
             return new SipRequest(options);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (InvalidArgumentException e) {
+        } catch (ParseException | InvalidArgumentException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -1073,13 +1015,8 @@ public class SipMessageFactory {
             resp.setStackTransaction(options.getStackTransaction());
             return resp;
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP response for SDP : ")
-                    .append(sdp).toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP response for SDP : ")
-                    .append(sdp).toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create SIP response for SDP : " + sdp, e);
         }
     }
 
@@ -1140,15 +1077,9 @@ public class SipMessageFactory {
 
             return new SipRequest(refer);
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP REFER for contact '")
-                    .append(toContact).append("' with contributionId : ").append(contributionId)
-                    .toString(), e);
-
-        } catch (SipException e) {
-            throw new PayloadException(new StringBuilder("Can't create SIP REFER for contact '")
-                    .append(toContact).append("' with contributionId : ").append(contributionId)
-                    .toString(), e);
+        } catch (ParseException | SipException e) {
+            throw new PayloadException("Can't create SIP REFER for contact '" + toContact
+                    + "' with contributionId : " + contributionId, e);
         }
     }
 
@@ -1184,10 +1115,8 @@ public class SipMessageFactory {
 
             // Set Refer-To header
             String homeDomain = ImsModule.getImsUserProfile().getHomeDomain();
-            StringBuilder referToValue = new StringBuilder("<cid:").append(listID).append("@")
-                    .append(homeDomain).append(">");
-            refer.addHeader(SipUtils.HEADER_FACTORY.createHeader(ReferToHeader.NAME,
-                    referToValue.toString()));
+            String referToValue = "<cid:" + listID + "@" + homeDomain + ">";
+            refer.addHeader(SipUtils.HEADER_FACTORY.createHeader(ReferToHeader.NAME, referToValue));
 
             // Set Refer-Sub header
             refer.addHeader(SipUtils.HEADER_FACTORY
@@ -1206,10 +1135,9 @@ public class SipMessageFactory {
             refer.addHeader(SipUtils.buildUserAgentHeader());
 
             // Set the Content-ID header
-            StringBuilder contentIdHeadervalue = new StringBuilder("<").append(listID).append("@")
-                    .append(homeDomain).append(">");
+            String contentIdHeadervalue = "<" + listID + "@" + homeDomain + ">";
             refer.addHeader(SipUtils.HEADER_FACTORY.createHeader(SipUtils.HEADER_CONTENT_ID,
-                    contentIdHeadervalue.toString()));
+                    contentIdHeadervalue));
 
             // Generate the resource list for given participants
             String resourceList = ChatUtils.generateChatResourceList(participants);
@@ -1239,15 +1167,9 @@ public class SipMessageFactory {
 
             return new SipRequest(refer);
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP REFER for contributionId : ").append(contributionId)
-                    .toString(), e);
-
-        } catch (SipException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create SIP REFER for contributionId : ").append(contributionId)
-                    .toString(), e);
+        } catch (ParseException | SipException e) {
+            throw new PayloadException("Can't create SIP REFER for contributionId : "
+                    + contributionId, e);
         }
     }
 
@@ -1304,13 +1226,9 @@ public class SipMessageFactory {
                 // Add remote SIP instance ID
                 SipUtils.setRemoteInstanceID(firstInvite.getStackMessage(), remoteInstanceId);
             }
-
             return new SipRequest(reInvite);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (SipException e) {
+        } catch (ParseException | SipException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }
@@ -1397,15 +1315,8 @@ public class SipMessageFactory {
                     .getBytes(UTF8).length));
             return new SipRequest(reInvite);
 
-        } catch (ParseException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message with content : ").append(content)
-                            .toString(), e);
-
-        } catch (SipException e) {
-            throw new PayloadException(
-                    new StringBuilder("Can't create SIP message with content : ").append(content)
-                            .toString(), e);
+        } catch (ParseException | SipException e) {
+            throw new PayloadException("Can't create SIP message with content : " + content, e);
         }
 
     }
@@ -1508,15 +1419,9 @@ public class SipMessageFactory {
             resp.setStackTransaction(request.getStackTransaction());
             return resp;
 
-        } catch (ParseException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create response for re-invite with content : ").append(content)
-                    .toString(), e);
-
-        } catch (InvalidArgumentException e) {
-            throw new PayloadException(new StringBuilder(
-                    "Can't create response for re-invite with content : ").append(content)
-                    .toString(), e);
+        } catch (ParseException | InvalidArgumentException e) {
+            throw new PayloadException("Can't create response for re-invite with content : "
+                    + content, e);
         }
     }
 
@@ -1548,10 +1453,7 @@ public class SipMessageFactory {
 
             return new SipRequest(update);
 
-        } catch (ParseException e) {
-            throw new PayloadException("Can't create SIP message!", e);
-
-        } catch (SipException e) {
+        } catch (ParseException | SipException e) {
             throw new PayloadException("Can't create SIP message!", e);
         }
     }

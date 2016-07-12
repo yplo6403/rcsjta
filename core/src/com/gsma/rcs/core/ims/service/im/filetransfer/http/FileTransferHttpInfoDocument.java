@@ -183,10 +183,10 @@ public class FileTransferHttpInfoDocument {
     /**
      * Sets the file disposition
      *
-     * @param fileDisposition File disposition
+     * @param disposition File disposition
      */
-    public void setFileDisposition(Disposition fileDisposition) {
-        mFileDisposition = fileDisposition;
+    public void setFileDisposition(Disposition disposition) {
+        mFileDisposition = disposition;
     }
 
     /**

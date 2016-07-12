@@ -179,7 +179,6 @@ public class TerminatingMsrpFileSharingSession extends ImsFileSharingSession imp
                         }
                         sendErrorResponse(dialogPath.getInvite(), dialogPath.getLocalTag(), answer);
                         removeSession();
-
                         for (ImsSessionListener listener : listeners) {
                             listener.onSessionRejected(contact,
                                     TerminationReason.TERMINATION_BY_USER);

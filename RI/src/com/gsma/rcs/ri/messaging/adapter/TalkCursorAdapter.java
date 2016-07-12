@@ -335,8 +335,7 @@ public class TalkCursorAdapter extends CursorAdapter {
     private void bindRcsFileTransferOutView(View view, Cursor cursor) {
         RcsFileTransferOutViewHolder holder = (RcsFileTransferOutViewHolder) view.getTag();
         String mimeType = cursor.getString(holder.getColumnMimetypeIdx());
-        StringBuilder stringBuilder = new StringBuilder(cursor.getString(holder
-                .getColumnFilenameIdx()));
+        StringBuilder sb = new StringBuilder(cursor.getString(holder.getColumnFilenameIdx()));
         long filesize = cursor.getLong(holder.getColumnFilesizeIdx());
         long transferred = cursor.getLong(holder.getColumnTransferredIdx());
         final ImageView imageView = holder.getFileImageView();
@@ -345,13 +344,12 @@ public class TalkCursorAdapter extends CursorAdapter {
         imageView.setImageResource(R.drawable.ri_filetransfer_on);
         if (filesize != transferred) {
             holder.getProgressText().setText(
-                    stringBuilder.append(" : ")
-                            .append(Utils.getProgressLabel(transferred, filesize)).toString());
+                    sb.append(" : ").append(Utils.getProgressLabel(transferred, filesize))
+                            .toString());
         } else {
             holder.getProgressText().setText(
-                    stringBuilder.append(" (")
-                            .append(FileUtils.humanReadableByteCount(filesize, true)).append(")")
-                            .toString());
+                    sb.append(" (").append(FileUtils.humanReadableByteCount(filesize, true))
+                            .append(")").toString());
             final Uri file = Uri.parse(cursor.getString(holder.getColumnContentIdx()));
             if (Utils.isImageType(mimeType)) {
                 String filePath = FileUtils.getPath(mContext, file);

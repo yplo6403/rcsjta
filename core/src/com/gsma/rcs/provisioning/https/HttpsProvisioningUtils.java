@@ -72,8 +72,7 @@ public class HttpsProvisioningUtils {
      * @return Device language (like fr-FR)
      */
     /* package private */static String getUserLanguage() {
-        return new StringBuilder(Locale.getDefault().getLanguage()).append("-")
-                .append(Locale.getDefault().getCountry()).toString();
+        return Locale.getDefault().getLanguage() + "-" + Locale.getDefault().getCountry();
     }
 
     /**
@@ -87,7 +86,7 @@ public class HttpsProvisioningUtils {
 
     /**
      * Returns the RCS profile
-     * 
+     *
      * @return String(15)
      */
     /* package private */static String getRcsProfile() {

@@ -8,7 +8,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -112,7 +112,6 @@ public class RcsSettingsProvider extends ContentProvider {
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE + '(' + RcsSettingsData.KEY_KEY
                     + " TEXT NOT NULL PRIMARY KEY," + RcsSettingsData.KEY_VALUE + " TEXT)");
-
             /* Insert default values for parameters */
             for (Map.Entry<String, Object> entry : RcsSettingsData.sSettingsKeyDefaultValue
                     .entrySet()) {

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Software Name : RCS IMS Stack
  *
- * Copyright (C) 2010 France Telecom S.A.
+ * Copyright (C) 2010-2016 Orange.
  * Copyright (C) 2015 Sony Mobile Communications Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,8 +53,8 @@ public class UserProfilePersistedStorageUtil {
     /**
      * The location of the database
      */
-    public static final String DATABASE_LOCATION = new StringBuilder("/data/")
-            .append(RcsServiceControl.RCS_STACK_PACKAGENAME).append("/databases/").toString();
+    public static final String DATABASE_LOCATION = "/data/"
+            + RcsServiceControl.RCS_STACK_PACKAGENAME + "/databases/";
 
     /**
      * The maximum number of saved accounts
@@ -114,19 +114,18 @@ public class UserProfilePersistedStorageUtil {
         }
         String[] listOfDbFiles = databasesDir.list(sFilenameDbFilter);
         if (listOfDbFiles == null) {
-            throw new FileNotFoundException(new StringBuilder("Failed to find ")
-                    .append(DB_FILE_EXTENSION).append(" files at : ")
-                    .append(databasesDir.getPath()).toString());
+            throw new FileNotFoundException("Failed to find " + DB_FILE_EXTENSION + " files at : "
+                    + databasesDir.getPath());
         }
         File dstDir = new File(databasesDir, account);
         for (String dbFile : listOfDbFiles) {
             File srcFile = new File(databasesDir, dbFile);
             FileUtils.copyFileToDirectory(srcFile, dstDir, true);
             if (sLogger.isActivated()) {
-                sLogger.info(new StringBuilder("Save file '").append(srcFile).append("' to '")
-                        .append(dstDir).append("'").toString());
+                sLogger.info("Save file '" + srcFile + "' to '" + dstDir + "'");
             }
         }
+        // noinspection ResultOfMethodCallIgnored
         dstDir.setLastModified(NtpTrustedTime.currentTimeMillis());
     }
 
@@ -142,9 +141,8 @@ public class UserProfilePersistedStorageUtil {
         File srcDir = new File(databasesDir, account);
         String[] listOfDbFiles = srcDir.list(sFilenameDbFilter);
         if (listOfDbFiles == null) {
-            throw new FileNotFoundException(new StringBuilder("Failed to find ")
-                    .append(DB_FILE_EXTENSION).append(" files at : ")
-                    .append(databasesDir.getPath()).toString());
+            throw new FileNotFoundException("Failed to find " + DB_FILE_EXTENSION + " files at : "
+                    + databasesDir.getPath());
         }
         for (String dbFile : listOfDbFiles) {
             File srcFile = new File(srcDir, dbFile);
@@ -192,13 +190,13 @@ public class UserProfilePersistedStorageUtil {
     /**
      * Normalize file backup and manages old user files if not more then MAX_SAVED_ACCOUNT
      * 
-     * @param databasesDir the database directory
      * @param currentUserAccount the account
      * @throws IOException
      */
     public static void normalizeFileBackup(String currentUserAccount) throws IOException {
-        normalizeFileBackup(new File(new StringBuilder(Environment.getDataDirectory().toString())
-                .append(DATABASE_LOCATION).toString()), currentUserAccount);
+        normalizeFileBackup(
+                new File(Environment.getDataDirectory().toString() + DATABASE_LOCATION),
+                currentUserAccount);
     }
 
     /**
@@ -211,8 +209,7 @@ public class UserProfilePersistedStorageUtil {
      * @param account the Account to backup
      */
     public static void tryToBackupAccount(String account) {
-        File userProfile = new File(new StringBuilder(Environment.getDataDirectory().toString())
-                .append(DATABASE_LOCATION).toString());
+        File userProfile = new File(Environment.getDataDirectory().toString() + DATABASE_LOCATION);
         try {
             saveUserProfile(userProfile, account);
         } catch (FileNotFoundException e) {
@@ -264,8 +261,7 @@ public class UserProfilePersistedStorageUtil {
      * @param account Account
      */
     public static void tryToRestoreAccount(String account) {
-        File userProfile = new File(new StringBuilder(Environment.getDataDirectory().toString())
-                .append(DATABASE_LOCATION).toString());
+        File userProfile = new File(Environment.getDataDirectory().toString() + DATABASE_LOCATION);
         try {
             restoreUserProfile(userProfile, account);
         } catch (FileNotFoundException e) {
