@@ -392,7 +392,7 @@ public class XmsLog {
                         try {
                             if (pdu == null) {
                                 Uri localFile = FileUtils.createCopyOfSentFile(fileUri,
-                                        mRcsSettings);
+                                        mmsPart.getFileName(), mimeType, mRcsSettings);
                                 String filename = FileUtils.getFileName(mCtx, localFile);
                                 long fileSize = FileUtils.getFileSize(mCtx, localFile);
                                 build.withValue(PartData.KEY_FILENAME, filename)

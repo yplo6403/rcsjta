@@ -392,6 +392,19 @@ public class FileUtils {
             }
             fileName = fileName + "." + extension;
         }
+        return createCopyOfSentFile(file, fileName, mimeType, rcsSettings);
+    }
+
+    /**
+     * Create copy of sent file in respective sent directory.
+     *
+     * @param file The file Uri to copy
+     * @param rcsSettings The RcsSettings accessor
+     * @return Uri of copy or created file
+     * @throws IOException
+     */
+    public static Uri createCopyOfSentFile(Uri file, String fileName, String mimeType,
+            RcsSettings rcsSettings) throws IOException {
         Uri destination = ContentManager.generateUriForSentContent(fileName, mimeType, rcsSettings);
         copyFile(file, destination);
         return destination;
