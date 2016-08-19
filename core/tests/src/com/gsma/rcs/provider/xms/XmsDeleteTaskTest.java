@@ -33,6 +33,7 @@ import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
@@ -118,10 +119,11 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
                 DeleteStatus.NOT_DELETED, null);
 
         mCmsLog = CmsLog.getInstance(mContext);
+        SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mContext, mContext.getContentResolver());
         MessagingLog mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
-        mCmsSessionCtrl = new CmsSessionController(mContext, null, null, settings,
-                mLocalContentResolver, mXmsLog, mMessagingLog, mCmsLog);
-        XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
+        mCmsSessionCtrl = new CmsSessionController(mContext, null, settings, mLocalContentResolver,
+                mXmsLog, mMessagingLog, mCmsLog);
+        XmsManager xmsManager = new XmsManager(mContext, mXmsLog, smsMmsLog);
         InstantMessagingService imService = new InstantMessagingService(null, settings, null,
                 mMessagingLog, null, mLocalContentResolver, mContext, null, mCmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null, settings,
@@ -129,8 +131,8 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(imService,
                 chatService, mMessagingLog, settings, null, mContext, mCmsSessionCtrl);
         mCmsServiceImpl = new CmsServiceImpl(mContext, mCmsSessionCtrl, chatService,
-                fileTransferService, imService, mXmsLog, settings, xmsManager,
-                mLocalContentResolver);
+                fileTransferService, imService, mXmsLog, xmsManager, mLocalContentResolver,
+                smsMmsLog);
     }
 
     protected void tearDown() throws Exception {

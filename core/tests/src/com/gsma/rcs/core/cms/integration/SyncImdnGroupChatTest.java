@@ -42,6 +42,7 @@ import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.messaging.ChatMessagePersistedStorageAccessor;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
@@ -80,20 +81,21 @@ public class SyncImdnGroupChatTest extends AndroidTestCase {
         RcsSettings mSettings = RcsSettingsMock.getMockSettings(mContext);
         AndroidFactory.setApplicationContext(mContext, mSettings);
         mCmsLog = CmsLog.getInstance(mContext);
+        SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mContext, mContext.getContentResolver());
         LocalContentResolver localContentResolver = new LocalContentResolver(mContext);
         XmsLog xmsLog = XmsLog.getInstance(mContext, mSettings, localContentResolver);
         mMessagingLog = MessagingLog.getInstance(localContentResolver, mSettings);
-        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, null,
-                mSettings, localContentResolver, xmsLog, mMessagingLog, mCmsLog);
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, mSettings,
+                localContentResolver, xmsLog, mMessagingLog, mCmsLog);
         InstantMessagingService imService = new InstantMessagingService(null, mSettings, null,
                 mMessagingLog, null, localContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null,
                 mSettings, null, cmsSessionCtrl);
         FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(imService,
                 chatService, mMessagingLog, mSettings, null, mContext, cmsSessionCtrl);
-        XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
+        XmsManager xmsManager = new XmsManager(mContext, xmsLog, smsMmsLog);
         CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsSessionCtrl, chatService,
-                fileTransferService, imService, xmsLog, mSettings, xmsManager, localContentResolver);
+                fileTransferService, imService, xmsLog, xmsManager, localContentResolver, smsMmsLog);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, localContentResolver,
                 mCmsLog, xmsLog, mMessagingLog, chatService, fileTransferService, cmsServiceImpl,
                 imService, mSettings);
@@ -153,8 +155,8 @@ public class SyncImdnGroupChatTest extends AndroidTestCase {
         // Check that CMS log is correctly updated
         String imdnId = imdnMessage.getMessageId();
         CmsRcsObject cmsObjectFromDb = mCmsLog.getChatOrImdnOrFileTransferData(imdnId);
-        CmsRcsObject cmsObject = new CmsRcsObject(MessageType.IMDN, imdnMessage.getFolder(), imdnId,
-                PushStatus.PUSHED, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, chatId);
+        CmsRcsObject cmsObject = new CmsRcsObject(MessageType.IMDN, imdnMessage.getFolder(),
+                imdnId, PushStatus.PUSHED, ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, chatId);
         cmsObject.setUid(imdnMessage.getUid());
         assertEquals(cmsObject, cmsObjectFromDb);
 

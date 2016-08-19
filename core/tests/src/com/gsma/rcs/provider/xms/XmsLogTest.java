@@ -18,8 +18,8 @@
 
 package com.gsma.rcs.provider.xms;
 
-import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.RcsSettingsMock;
+import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
 import com.gsma.rcs.platform.ntp.NtpTrustedTime;
 import com.gsma.rcs.provider.LocalContentResolver;
@@ -317,24 +317,6 @@ public class XmsLogTest extends InstrumentationTestCase {
                 assertFalse(file.exists());
             }
         }
-    }
-
-    public void testSetStateAndReasonCode() {
-        mXmsLog.addIncomingMms(mMms);
-        XmsMessage.ReasonCode reasonCode = mXmsLog.getReasonCode(mMms.getContact(),
-                mMms.getMessageId());
-        assertEquals(XmsMessage.ReasonCode.UNSPECIFIED, reasonCode);
-        XmsMessage.State state = mXmsLog.getState(mMms.getContact(), mMms.getMessageId());
-        assertEquals(XmsMessage.State.QUEUED, state);
-        assertTrue(mXmsLog.setStateAndReasonCode(mMms.getContact(), mMms.getMessageId(),
-                XmsMessage.State.FAILED, XmsMessage.ReasonCode.FAILED_ERROR_RADIO_OFF));
-        reasonCode = mXmsLog.getReasonCode(mMms.getContact(), mMms.getMessageId());
-        assertEquals(XmsMessage.ReasonCode.FAILED_ERROR_RADIO_OFF, reasonCode);
-        state = mXmsLog.getState(mMms.getContact(), mMms.getMessageId());
-        assertEquals(XmsMessage.State.FAILED, state);
-        mXmsLog.updateState(mMms.getContact(), mMms.getMessageId(), XmsMessage.State.DISPLAYED);
-        state = mXmsLog.getState(mMms.getContact(), mMms.getMessageId());
-        assertEquals(XmsMessage.State.DISPLAYED, state);
     }
 
     public void testSetStateAndTimestamp() {

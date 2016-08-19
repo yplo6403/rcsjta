@@ -19,22 +19,17 @@
 package com.gsma.rcs.ri.settings;
 
 import com.gsma.rcs.api.connection.ConnectionManager;
-import com.gsma.rcs.api.connection.utils.ExceptionUtil;
 import com.gsma.rcs.api.connection.utils.RcsPreferenceActivity;
 import com.gsma.rcs.ri.R;
-import com.gsma.rcs.ri.utils.LogUtils;
-import com.gsma.services.rcs.RcsServiceException;
-import com.gsma.services.rcs.cms.CmsService;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 /**
- * Created by yplo6403 on 05/01/2016.
+ * @author Philippe LEMORDANT
  */
 public class RiSettings extends RcsPreferenceActivity {
 
@@ -43,10 +38,6 @@ public class RiSettings extends RcsPreferenceActivity {
     private static final String KEY_PREFERENCE_RESEND_FT = "resend_ft";
 
     private static final String KEY_PREFERENCE_SYNC_MODE = "sync_mode";
-
-    private static CmsService sCmsService;
-
-    private static final String LOGTAG = LogUtils.getTag(RiSettings.class.getSimpleName());
 
     /**
      * The RCS undelivered message resend preference.
@@ -87,7 +78,6 @@ public class RiSettings extends RcsPreferenceActivity {
             showMessageThenExit(R.string.label_service_not_available);
             return;
         }
-        sCmsService = getCmsApi();
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new RiSettingsPreferenceFragment()).commit();
     }
@@ -97,16 +87,7 @@ public class RiSettings extends RcsPreferenceActivity {
         @Override
         public void onCreate(final Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            try {
-                if (sCmsService.isAllowedToSendMultimediaMessage()) {
-                    addPreferencesFromResource(R.xml.ri_preferences);
-                } else {
-                    addPreferencesFromResource(R.xml.ri_preferences_without_mms);
-                }
-            } catch (RcsServiceException e) {
-                Log.w(LOGTAG, ExceptionUtil.getFullStackTrace(e));
-                addPreferencesFromResource(R.xml.ri_preferences_without_mms);
-            }
+            addPreferencesFromResource(R.xml.ri_preferences);
         }
     }
 

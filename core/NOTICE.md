@@ -1,6 +1,13 @@
 #RCS-CMS stack for Android 
 
+Licensing :
 
+The RCS stack is under Apache 2 license (see LICENSE-2.0.txt) and uses the following open source libraries:
+
+ - NIST SIP: see LICENSE-NIST.txt.
+ - [DNS Java](http://www.dnsjava.org/): see LICENSE-DNS.txt.
+ - The [Legion Of The Bouncy Castle](http://www.bouncycastle.org/java.html): see LICENSE-BOUNCYCASTLE.txt.
+ - The [Android SMS/MMS Sending Library](https://github.com/klinker41/android-smsmms): see LICENSE-KLINKER41.txt.
 
 > Installation:
 > The RCS\_core.apk must be first installed on the device. Client applications (i.e. RCS_RI.apk, RCS_settings.apk and cmsToolKit.apk) must be installed afterwards otherwise permission to bind to the core service is denied.
@@ -8,19 +15,22 @@
 Limitations :
 
 	* MMS received while mobile data is OFF are converted by the network into indirect notification. 
-	Those messages are not discovered by the RCS stack. They are retrieved once the data network is recovered.
+	Those messages are not discovered by the RCS stack.
 	* Group chat is not tested since group chat messages are not correctly pushed on CMS.
 	* RCS File transfer is not tested since object is not correctly pushed on CMS.
-	
+
 
 News:
 	
-	* Addition au audio messages (TAPI-1.6).
-	* RI: view details of messages: chat, file transfer, SMS and MMS.
-	* Core: refactor provisioning tool.
-	* Manage permissions for Android Marshmallow.
-	* CMS RI: manage accept/reject of file transfer within talk views.
-	* CMS RI: replace subject by body text for MMS in TalkListView.
+	* 26/08/2016: Core stack can/must be set as default SMS app.
+	* 26/08/2016: Use of Klinker library for sending SMS and MMS for Android devices.
+	* 26/08/2016: Min SDK is set to 19 (KitKat).
+	* 01/07/2016: Addition of audio messages (TAPI-1.6).
+	* 30/06/2016: RI: view details of messages: chat, file transfer, SMS and MMS.
+	* 24/05/2016: Core: refactor provisioning tool.
+	* 13/05/2016: CMS RI: replace subject by body text for MMS in TalkListView.
+	* 12/05/2016: CMS RI: manage accept/reject of file transfer within talk views.
+	* 03/05/2016: Manage permissions for Android Marshmallow.
 
 Bugs fixed:
 

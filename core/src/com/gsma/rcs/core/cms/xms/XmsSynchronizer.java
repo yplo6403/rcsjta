@@ -7,22 +7,19 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.core.cms.xms;
 
 import com.gsma.rcs.core.FileAccessException;
 import com.gsma.rcs.core.cms.utils.CmsUtils;
-import com.gsma.rcs.core.cms.utils.MmsUtils;
-import com.gsma.rcs.core.cms.utils.SmsUtils;
 import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.cms.CmsData;
 import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
@@ -32,6 +29,9 @@ import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.cms.CmsObject;
 import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.MmsLog;
+import com.gsma.rcs.provider.smsmms.SmsLog;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
@@ -42,8 +42,8 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
-import android.net.Uri;
 import android.provider.BaseColumns;
+import android.provider.Telephony;
 import android.provider.Telephony.TextBasedSmsColumns;
 
 import java.util.HashSet;
@@ -57,17 +57,23 @@ import java.util.Set;
  */
 public class XmsSynchronizer {
 
-    private static final Logger sLogger = Logger.getLogger(XmsSynchronizer.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(XmsSynchronizer.class.getName());
 
-    private final static Uri sSmsUri = Uri.parse("content://sms/");
-    private final static Uri sMmsUri = Uri.parse("content://mms/");
-
-    private static final String[] PROJECTION_SMS = new String[] {
-            BaseColumns._ID, TextBasedSmsColumns.THREAD_ID, TextBasedSmsColumns.ADDRESS,
-            TextBasedSmsColumns.DATE, TextBasedSmsColumns.DATE_SENT, TextBasedSmsColumns.PROTOCOL,
-            TextBasedSmsColumns.BODY, TextBasedSmsColumns.READ, TextBasedSmsColumns.TYPE,
-            TextBasedSmsColumns.STATUS
+    // @formatter:off
+    private static final String[] PROJECTION_SMS = new String[]{
+            BaseColumns._ID,
+            TextBasedSmsColumns.THREAD_ID,
+            TextBasedSmsColumns.ADDRESS,
+            TextBasedSmsColumns.DATE,
+            TextBasedSmsColumns.DATE_SENT,
+            TextBasedSmsColumns.PROTOCOL,
+            TextBasedSmsColumns.BODY,
+            TextBasedSmsColumns.READ,
+            TextBasedSmsColumns.TYPE,
+            TextBasedSmsColumns.STATUS,
+            TextBasedSmsColumns.ERROR_CODE
     };
+    // @formatter:on
 
     private static final String[] PROJECTION_ID_READ = new String[] {
             BaseColumns._ID, TextBasedSmsColumns.READ
@@ -78,20 +84,24 @@ public class XmsSynchronizer {
     static final String SELECTION_BASE_ID = BaseColumns._ID + "=?" + " AND "
             + SELECTION_CONTACT_NOT_NULL;
 
+    private static final String WHERE_MSG_ID_NOT_NULL = Telephony.Mms.MESSAGE_ID + " is not null";
+
     private final ContentResolver mContentResolver;
     private final XmsLog mXmsLog;
     private final CmsLog mCmsLog;
     private final RcsSettings mSettings;
+    private final SmsMmsLog mSmsMmsLog;
 
     private Set<Long> mNativeIds;
     private Set<Long> mNativeReadIds;
 
     public XmsSynchronizer(ContentResolver resolver, RcsSettings settings, XmsLog xmsLog,
-            CmsLog cmsLog) {
+            CmsLog cmsLog, SmsMmsLog smsMmsLog) {
         mContentResolver = resolver;
         mXmsLog = xmsLog;
         mCmsLog = cmsLog;
         mSettings = settings;
+        mSmsMmsLog = smsMmsLog;
     }
 
     private void syncSms() throws FileAccessException {
@@ -115,8 +125,8 @@ public class XmsSynchronizer {
         mNativeReadIds = new HashSet<>();
         Cursor cursor = null;
         try {
-            cursor = mContentResolver.query(sSmsUri, PROJECTION_ID_READ, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
+            cursor = mContentResolver.query(SmsLog.Sms.URI, PROJECTION_ID_READ, null, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, SmsLog.Sms.URI);
             int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
             int readIdx = cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ);
             while (cursor.moveToNext()) {
@@ -136,8 +146,9 @@ public class XmsSynchronizer {
         mNativeIds = new HashSet<>();
         mNativeReadIds = new HashSet<>();
         try {
-            cursor = mContentResolver.query(sMmsUri, PROJECTION_ID_READ, null, null, null);
-            CursorUtil.assertCursorIsNotNull(cursor, sMmsUri);
+            cursor = mContentResolver.query(MmsLog.Mms.Pdu.URI, PROJECTION_ID_READ,
+                    WHERE_MSG_ID_NOT_NULL, null, null);
+            CursorUtil.assertCursorIsNotNull(cursor, MmsLog.Mms.Pdu.URI);
             int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
             int readIdx = cursor.getColumnIndexOrThrow(TextBasedSmsColumns.READ);
             while (cursor.moveToNext()) {
@@ -210,8 +221,7 @@ public class XmsSynchronizer {
                             CmsData.DeleteStatus.NOT_DELETED, smsData.getNativeProviderId()));
                 }
             } else if (MessageType.MMS == messageType) {
-                for (MmsDataObject mmsData : MmsUtils.getMmsFromNativeProvider(mContentResolver,
-                        id, ntpTimeOffset)) {
+                for (MmsDataObject mmsData : mSmsMmsLog.getMmsFromNativeProvider(id, ntpTimeOffset)) {
                     String msgId = mmsData.getMessageId();
                     ContactId remote = mmsData.getContact();
                     if (sLogger.isActivated()) {
@@ -219,7 +229,7 @@ public class XmsSynchronizer {
                                 + " mmsId=" + msgId);
                     }
                     if (Direction.OUTGOING == mmsData.getDirection()) {
-                        mXmsLog.addOutgoingMms(mmsData);
+                        msgId = mXmsLog.addOutgoingMms(mmsData);
                     } else {
                         mXmsLog.addIncomingMms(mmsData);
                     }
@@ -261,12 +271,12 @@ public class XmsSynchronizer {
     private SmsDataObject getSmsFromNativeProvider(Long id, long ntpTimeOffset) {
         Cursor cursor = null;
         try {
-            cursor = mContentResolver.query(sSmsUri, PROJECTION_SMS, SELECTION_BASE_ID,
+            cursor = mContentResolver.query(SmsLog.Sms.URI, PROJECTION_SMS, SELECTION_BASE_ID,
                     new String[] {
                         String.valueOf(id)
                     }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, sSmsUri);
-            List<SmsDataObject> smsDataObjects = SmsUtils.getSmsFromNativeProvider(cursor,
+            CursorUtil.assertCursorIsNotNull(cursor, SmsLog.Sms.URI);
+            List<SmsDataObject> smsDataObjects = mSmsMmsLog.getSmsFromNativeProvider(cursor, null,
                     ntpTimeOffset);
             if (smsDataObjects.isEmpty()) {
                 return null;

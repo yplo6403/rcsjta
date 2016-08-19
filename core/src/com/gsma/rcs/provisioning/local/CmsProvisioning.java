@@ -27,15 +27,22 @@ import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.settings.RcsSettingsData;
 import com.gsma.rcs.provider.settings.RcsSettingsData.EventReportingFrameworkConfig;
 import com.gsma.rcs.utils.logger.Logger;
+import com.gsma.services.rcs.RcsServiceControl;
+
+import com.klinker.android.send_message.Utils;
 
 import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Telephony;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.Spinner;
 
@@ -44,7 +51,7 @@ import android.widget.Spinner;
  */
 public class CmsProvisioning extends Fragment implements IProvisioningFragment {
 
-    private static final Logger sLogger = Logger.getLogger(StackProvisioning.class.getName());
+    private static final Logger sLogger = Logger.getLogger(CmsProvisioning.class.getName());
 
     private static RcsSettings sRcsSettings;
 
@@ -61,6 +68,7 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
     private View mRootView;
     private ProvisioningHelper mHelper;
     private LocalContentResolver mLocalContentResolver;
+    private Button mSetDefaultSmsAppButton;
 
     public static CmsProvisioning newInstance(RcsSettings rcsSettings) {
         if (sLogger.isActivated()) {
@@ -81,14 +89,26 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
         mRootView = inflater.inflate(R.layout.provisioning_cms, container, false);
         mHelper = new ProvisioningHelper(mRootView, sRcsSettings);
         mLocalContentResolver = new LocalContentResolver(getContext().getContentResolver());
+        mSetDefaultSmsAppButton = (Button) mRootView.findViewById(R.id.set_sms_as_default);
         displayRcsSettings();
         return mRootView;
     }
 
     @Override
     public void displayRcsSettings() {
+        final Context ctx = getContext();
         if (sLogger.isActivated()) {
-            sLogger.debug("displayRcsSettings");
+            sLogger.debug("Default SMS app = '" + Telephony.Sms.getDefaultSmsPackage(ctx) + "'");
+        }
+        if (Utils.isDefaultSmsApp(ctx)) {
+            mSetDefaultSmsAppButton.setVisibility(View.GONE);
+        } else {
+            mSetDefaultSmsAppButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    setDefaultSmsApp();
+                }
+            });
         }
         mHelper.setUriEditText(R.id.message_store_url, RcsSettingsData.MESSAGE_STORE_URI);
         mHelper.setStringEditText(R.id.message_store_auth, RcsSettingsData.MESSAGE_STORE_AUTH);
@@ -153,11 +173,22 @@ public class CmsProvisioning extends Fragment implements IProvisioningFragment {
      * @param messageType the type
      * @param pushStatus the push status
      */
-    public void updatePushStatus(MessageType messageType, PushStatus pushStatus) {
+    private void updatePushStatus(MessageType messageType, PushStatus pushStatus) {
         ContentValues values = new ContentValues();
         values.put(KEY_PUSH_STATUS, pushStatus.toInt());
         mLocalContentResolver.update(CONTENT_URI, values, SEL_TYPE, new String[] {
             messageType.toString()
         });
+    }
+
+    private void setDefaultSmsApp() {
+        if (sLogger.isActivated()) {
+            sLogger.debug("Set Default SMS App");
+        }
+        mSetDefaultSmsAppButton.setVisibility(View.GONE);
+        Intent intent = new Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
+        intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME,
+                RcsServiceControl.RCS_STACK_PACKAGENAME);
+        startActivity(intent);
     }
 }

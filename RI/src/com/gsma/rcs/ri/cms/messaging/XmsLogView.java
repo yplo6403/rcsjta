@@ -29,7 +29,9 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * A class to view the persisted information for XMS message<br>
@@ -80,7 +82,7 @@ public class XmsLogView extends RcsActivity {
             return "";
         }
         if (sDateFormat == null) {
-            sDateFormat = DateFormat.getInstance();
+            sDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.getDefault());
         }
         return sDateFormat.format(new Date(timestamp));
     }
@@ -101,8 +103,8 @@ public class XmsLogView extends RcsActivity {
             mTxtViewContact.setText("");
         }
         String mime = dao.getMimeType();
-        mTxtViewState.setText(RiApplication.sMessagesStatuses[dao.getState().toInt()]);
-        mTxtViewReason.setText(RiApplication.sMessageReasonCodes[dao.getReasonCode().toInt()]);
+        mTxtViewState.setText(RiApplication.sXmsMessageStates[dao.getState().toInt()]);
+        mTxtViewReason.setText(RiApplication.sXmsMessageReasonCodes[dao.getReasonCode().toInt()]);
         mTxtViewContent.setText(dao.getContent() == null ? "" : dao.getContent());
         mTxtViewDir.setText(RiApplication.getDirection(dao.getDirection()));
         mTxtViewDate.setText(getDateFromDb(dao.getTimestamp()));

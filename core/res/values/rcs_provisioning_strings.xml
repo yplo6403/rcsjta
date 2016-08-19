@@ -153,6 +153,10 @@
     <string name="Allow_extensions">Allow extensions</string>
     <string name="load">Load</string>
     <string name="save">Save</string>
+    <string name="info">Info</string>
+    <string name="label_about_title">RCS stack</string>
+    <string name="label_about">About RCS service</string>
+    <string name="label_about_app_version">App release %s</string>
     <!-- provisioning_cms.xml -->
     <string name="message_store_url_label">Message store url</string>
     <string name="message_store_auth_label">Message store authentication</string>
@@ -166,5 +170,6 @@
     <string name="ntp_servers">NTP servers (comma separated list)</string>
     <string name="ntp_server_timeout">Timeout for NTP server (milliseconds)</string>
     <string name="ntp_cache_validity">NTP cache validity (milliseconds)</string>
+    <string name="message_set_sms_as_default">Set SMS default App</string>
 
 </resources>

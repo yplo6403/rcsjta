@@ -88,7 +88,7 @@ public class CmsLogTestIntegration {
                 CmsData.ReadStatus readStatus = CmsData.ReadStatus.valueOf(cursor.getInt(seenIdx));
                 DeleteStatus delStatus = DeleteStatus.valueOf(cursor.getInt(delIdx));
                 PushStatus pushStatus = PushStatus.valueOf(cursor.getInt(pushIdx));
-                MessageType msgType = MessageType.valueOf(cursor.getString(msgTypeIdx));
+                MessageType msgType = MessageType.valueOf(cursor.getInt(msgTypeIdx));
                 String msgId = cursor.getString(msgIdIdx);
                 String chatId = cursor.getString(chatIdIdx);
                 Long nativeId = cursor.isNull(nativeIdIdx) ? null : cursor.getLong(nativeIdIdx);
@@ -160,7 +160,7 @@ public class CmsLogTestIntegration {
             int pushIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_PUSH_STATUS);
             PushStatus pushStatus = PushStatus.valueOf(cursor.getInt(pushIdx));
             int msgTypeIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_MSG_TYPE);
-            MessageType msgType = MessageType.valueOf(cursor.getString(msgTypeIdx));
+            MessageType msgType = MessageType.valueOf(cursor.getInt(msgTypeIdx));
             int msgIdIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_MSG_ID);
             String msgId = cursor.getString(msgIdIdx);
             int chatIdIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_CHAT_ID);
@@ -206,7 +206,7 @@ public class CmsLogTestIntegration {
                 CmsData.ReadStatus readStatus = CmsData.ReadStatus.valueOf(cursor.getInt(seenIdx));
                 DeleteStatus delStatus = DeleteStatus.valueOf(cursor.getInt(delIdx));
                 PushStatus pushStatus = PushStatus.valueOf(cursor.getInt(pushIdx));
-                MessageType msgType = MessageType.valueOf(cursor.getString(msgTypeIdx));
+                MessageType msgType = MessageType.valueOf(cursor.getInt(msgTypeIdx));
                 String msgId = cursor.getString(msgIdIdx);
                 String chatId = cursor.getString(chatIdIdx);
                 Long nativeId = cursor.isNull(nativeIdIdx) ? null : cursor.getLong(nativeIdIdx);

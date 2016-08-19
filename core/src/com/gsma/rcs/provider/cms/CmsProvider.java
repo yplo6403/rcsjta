@@ -127,7 +127,7 @@ public class CmsProvider extends ContentProvider {
                     CmsData.KEY_READ_STATUS + " INTEGER NOT NULL," +
                     CmsData.KEY_DEL_STATUS + " INTEGER NOT NULL," +
                     CmsData.KEY_PUSH_STATUS + " INTEGER NOT NULL," +
-                    CmsData.KEY_MSG_TYPE + " TEXT NOT NULL," +
+                    CmsData.KEY_MSG_TYPE + " INTEGER NOT NULL," +
                     CmsData.KEY_MSG_ID + " TEXT NOT NULL," +
                     CmsData.KEY_CHAT_ID + " TEXT," +
                     CmsData.KEY_NATIVE_ID + " INTEGER)");

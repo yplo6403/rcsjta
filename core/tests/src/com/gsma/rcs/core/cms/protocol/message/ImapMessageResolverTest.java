@@ -99,7 +99,7 @@ public class ImapMessageResolverTest extends AndroidTestCase {
                 + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
                 + "imdn.Message-ID: 1443517760826" + Constants.CRLF
                 + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF + Constants.CRLF
-                + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF + Constants.CRLF
+                + "Content-Type: multipart/related; charset=utf-8" + Constants.CRLF + Constants.CRLF
                 + "1)" + Constants.CRLF;
 
         Integer uid = 12;

@@ -77,8 +77,50 @@ public abstract class CmsData {
      */
     /* package private */static final String KEY_CHAT_ID = "chatId";
 
+    /**
+     * CMS message type
+     */
     public enum MessageType {
-        SMS, MMS, MESSAGE_CPIM, CHAT_MESSAGE, IMDN, CPM_SESSION, GROUP_STATE, FILE_TRANSFER
+        SMS(0), MMS(1), MESSAGE_CPIM(2), CHAT_MESSAGE(3), IMDN(4), CPM_SESSION(5), GROUP_STATE(6), FILE_TRANSFER(
+                7);
+
+        private final int mValue;
+
+        MessageType(int value) {
+            mValue = value;
+        }
+
+        private static SparseArray<MessageType> mValueToEnum = new SparseArray<>();
+
+        static {
+            for (MessageType entry : MessageType.values()) {
+                mValueToEnum.put(entry.toInt(), entry);
+            }
+        }
+
+        /**
+         * Gets integer value associated to MessageType instance
+         *
+         * @return value
+         */
+        public final int toInt() {
+            return mValue;
+        }
+
+        /**
+         * Returns a MessageType instance for the specified integer value.
+         *
+         * @param value the value representing the message type
+         * @return instance
+         */
+        public static MessageType valueOf(int value) {
+            MessageType entry = mValueToEnum.get(value);
+            if (entry != null) {
+                return entry;
+            }
+            throw new IllegalArgumentException("No enum const class " + MessageType.class.getName()
+                    + "." + value + "!");
+        }
     }
 
     /**
@@ -128,7 +170,7 @@ public abstract class CmsData {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value the valure representing the read status
+         * @param value the value representing the read status
          * @return instance
          */
         public static ReadStatus valueOf(int value) {
@@ -188,7 +230,7 @@ public abstract class CmsData {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value the valure representing the delete status
+         * @param value the value representing the delete status
          * @return instance
          */
         public static DeleteStatus valueOf(int value) {
@@ -239,7 +281,7 @@ public abstract class CmsData {
         /**
          * Returns a ReadStatus instance for the specified integer value.
          *
-         * @param value the valure representing the push status
+         * @param value the value representing the push status
          * @return instance
          */
         public static PushStatus valueOf(int value) {

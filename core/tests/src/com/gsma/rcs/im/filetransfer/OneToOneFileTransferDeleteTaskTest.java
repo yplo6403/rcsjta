@@ -21,8 +21,8 @@ package com.gsma.rcs.im.filetransfer;
 import static com.gsma.rcs.utils.FileUtilsTest.doesFileExist;
 import static com.gsma.rcs.utils.FileUtilsTest.getFileContent;
 
-import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.RcsSettingsMock;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.content.MmContent;
@@ -40,6 +40,7 @@ import com.gsma.rcs.provider.cms.CmsXmsObject;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.messaging.OneToOneFileTransferDeleteTask;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
@@ -111,19 +112,20 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
         mCmsObjectFt3 = new CmsRcsObject(MessageType.FILE_TRANSFER, mFolder2, mFt3.mFtId, 2,
                 PushStatus.PUSHED, ReadStatus.READ_REPORT_REQUESTED, DeleteStatus.NOT_DELETED, null);
         mCmsLog = CmsLog.getInstance(mCtx);
+        SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mCtx, mCtx.getContentResolver());
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
-        mCmsSessionCtrl = new CmsSessionController(mCtx, null, null, settings,
-                mLocalContentResolver, mXmsLog, mMessagingLog, mCmsLog);
+        mCmsSessionCtrl = new CmsSessionController(mCtx, null, settings, mLocalContentResolver,
+                mXmsLog, mMessagingLog, mCmsLog);
         mInstantMessagingService = new InstantMessagingService(null, settings, null, mMessagingLog,
                 null, mLocalContentResolver, mCtx, null, mCmsSessionCtrl);
         ChatServiceImpl mChatService = new ChatServiceImpl(mInstantMessagingService, mMessagingLog,
                 null, settings, null, mCmsSessionCtrl);
-        XmsManager xmsManager = new XmsManager(mCtx, mCtx.getContentResolver());
+        XmsManager xmsManager = new XmsManager(mCtx, mXmsLog, smsMmsLog);
         mFileTransferService = new FileTransferServiceImpl(mInstantMessagingService, mChatService,
                 mMessagingLog, settings, null, mCtx, mCmsSessionCtrl);
         CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mCtx, mCmsSessionCtrl, mChatService,
-                mFileTransferService, mInstantMessagingService, mXmsLog, settings, xmsManager,
-                mLocalContentResolver);
+                mFileTransferService, mInstantMessagingService, mXmsLog, xmsManager,
+                mLocalContentResolver, smsMmsLog);
         mCmsSessionCtrl.register(cmsServiceImpl, mChatService, mFileTransferService,
                 mInstantMessagingService);
         XmsEventHandler xmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, settings,

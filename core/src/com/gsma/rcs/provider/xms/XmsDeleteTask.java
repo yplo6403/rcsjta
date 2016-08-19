@@ -113,6 +113,7 @@ public class XmsDeleteTask extends DeleteTask.GroupedByContactId {
 
     @Override
     protected void onRowDelete(ContactId contactId, String messageId) throws PayloadException {
+        mCmsService.deleteNativeXms(contactId, messageId);
         mCmsService.removeXmsMessage(contactId, messageId);
         mCmsService.deleteMmsParts(contactId, messageId);
     }

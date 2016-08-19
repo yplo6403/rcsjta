@@ -25,7 +25,11 @@
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.RECEIVE_MMS"/>
     <uses-permission android:name="com.gsma.services.permission.RCS"/>
+    <uses-permission android:name="android.provider.Telephony.SMS_RECEIVED"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"/>
 
     <!-- CMS Multi devices -->
     <permission
@@ -239,6 +243,18 @@
             android:label="@string/provisioning_app_name"
             android:theme="@style/Theme.AppCompat">
             <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <action android:name="android.intent.action.SENDTO"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data android:scheme="sms"/>
+                <data android:scheme="smsto"/>
+                <data android:scheme="mms"/>
+                <data android:scheme="mmsto"/>
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
@@ -252,6 +268,60 @@
         <activity
             android:name=".service.permissions.PermissionsAlertDialog"
             android:theme="@style/Theme.Transparent"/>
+
+        <service android:name="com.android.mms.transaction.TransactionService"/>
+
+        <receiver
+            android:name=".core.cms.xms.SmsReceiver"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVER"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.android.mms.transaction.PushReceiver"
+            android:permission="android.permission.BROADCAST_WAP_PUSH">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.WAP_PUSH_DELIVER"/>
+                <data android:mimeType="application/vnd.wap.mms-message"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.klinker.android.send_message.SentReceiver">
+            <intent-filter>
+                <action android:name="com.gsma.rcs.SMS_SENT"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.klinker.android.send_message.DeliveredReceiver">
+            <intent-filter>
+                <action android:name="com.gsma.rcs.SMS_DELIVERED"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- Your custom receiver which is child of com.klinker.android.send_message.MmsSentReceiver -->
+        <receiver android:name="com.klinker.android.send_message.MmsSentReceiver">
+            <intent-filter>
+                <action android:name="com.klinker.android.messaging.MMS_SENT"/>
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="com.gsma.rcs.core.cms.xms.HeadlessSmsSendService"
+            android:exported="true"
+            android:permission="android.permission.SEND_RESPOND_VIA_MESSAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.RESPOND_VIA_MESSAGE"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+
+                <data android:scheme="sms"/>
+                <data android:scheme="smsto"/>
+                <data android:scheme="mms"/>
+                <data android:scheme="mmsto"/>
+            </intent-filter>
+        </service>
 
     </application>
 

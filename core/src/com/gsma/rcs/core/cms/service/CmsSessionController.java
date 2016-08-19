@@ -19,13 +19,11 @@
 
 package com.gsma.rcs.core.cms.service;
 
-import com.gsma.rcs.core.Core;
 import com.gsma.rcs.core.cms.event.ChatEventHandler;
 import com.gsma.rcs.core.cms.event.CmsEventHandler;
 import com.gsma.rcs.core.cms.event.FileTransferEventHandler;
 import com.gsma.rcs.core.cms.event.GroupChatEventHandler;
 import com.gsma.rcs.core.cms.event.ImdnDeliveryReportHandler;
-import com.gsma.rcs.core.cms.event.MmsSessionHandler;
 import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.event.framework.EventFrameworkManager;
 import com.gsma.rcs.core.cms.event.framework.TerminatingEventFrameworkSession;
@@ -39,31 +37,23 @@ import com.gsma.rcs.core.ims.protocol.sip.SipRequest;
 import com.gsma.rcs.core.ims.service.ImsService;
 import com.gsma.rcs.core.ims.service.ImsServiceSession;
 import com.gsma.rcs.core.ims.service.im.InstantMessagingService;
-import com.gsma.rcs.provider.CursorUtil;
 import com.gsma.rcs.provider.LocalContentResolver;
 import com.gsma.rcs.provider.cms.CmsData.DeleteStatus;
 import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
-import com.gsma.rcs.provider.xms.UpdateMmsStateAfterUngracefulTerminationTask;
-import com.gsma.rcs.provider.xms.XmsData;
 import com.gsma.rcs.provider.xms.XmsLog;
-import com.gsma.rcs.provider.xms.model.MmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
-import com.gsma.rcs.service.api.ServerApiUtils;
-import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.os.Handler;
 import android.os.HandlerThread;
 
-import java.util.List;
 import java.util.Set;
 
 import javax2.sip.message.Response;
@@ -80,15 +70,14 @@ import javax2.sip.message.Response;
  */
 public class CmsSessionController extends ImsService {
 
-    private static final String CMS_OPERATION_THREAD_NAME = "CmsOperations";
-    private final static Logger sLogger = Logger.getLogger(CmsSessionController.class.getName());
+    private static final String CMS_OPERATION_THREAD_NAME = CmsSessionController.class.getName();
+    private static final Logger sLogger = Logger.getLogger(CMS_OPERATION_THREAD_NAME);
 
     private final Handler mOperationHandler;
     private final XmsLog mXmsLog;
     private final CmsLog mCmsLog;
     private final ImdnDeliveryReportHandler mImdnDeliveryReportHandler;
     private final Context mCtx;
-    private final Core mCore;
     private final RcsSettings mRcsSettings;
     private final ImsModule mImsModule;
     private final MessagingLog mMessagingLog;
@@ -102,7 +91,6 @@ public class CmsSessionController extends ImsService {
     private EventFrameworkManager mEventFrameworkManager;
     private ChatEventHandler mChatEventHandler;
     private GroupChatEventHandler mGroupChatEventHandler;
-    private MmsSessionHandler mMmsSessionHandler;
     private FileTransferEventHandler mFileTransferEventHandler;
     private InstantMessagingService mImService;
 
@@ -110,7 +98,6 @@ public class CmsSessionController extends ImsService {
      * Constructor
      *
      * @param ctx the context
-     * @param core The core service
      * @param parent IMS module
      * @param rcsSettings The RCS settings accessor
      * @param localContentResolver the local content resolver
@@ -118,7 +105,7 @@ public class CmsSessionController extends ImsService {
      * @param messagingLog The Chat log accessor
      * @param cmsLog The Imap log accessor
      */
-    public CmsSessionController(Context ctx, Core core, ImsModule parent, RcsSettings rcsSettings,
+    public CmsSessionController(Context ctx, ImsModule parent, RcsSettings rcsSettings,
             LocalContentResolver localContentResolver, XmsLog xmsLog, MessagingLog messagingLog,
             CmsLog cmsLog) {
         super(parent, true);
@@ -129,7 +116,6 @@ public class CmsSessionController extends ImsService {
         mXmsLog = xmsLog;
         mMessagingLog = messagingLog;
         mCmsLog = cmsLog;
-        mCore = core;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog);
     }
@@ -192,15 +178,12 @@ public class CmsSessionController extends ImsService {
         mGroupChatEventHandler = new GroupChatEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
 
-        mMmsSessionHandler = new MmsSessionHandler(mCmsLog, mRcsSettings, mSyncScheduler);
         /*
          * instantiate FileTransferEventHandler in charge of handling events from
          * FileSharingSession, read or deletion of file transfer.
          */
         mFileTransferEventHandler = new FileTransferEventHandler(mEventFrameworkManager, mCmsLog,
                 mMessagingLog, mRcsSettings, mImdnDeliveryReportHandler);
-        // must be started before trying to dequeue MMS messages
-        tryToDequeueMmsMessages();
     }
 
     @Override
@@ -229,12 +212,6 @@ public class CmsSessionController extends ImsService {
 
     public void scheduleImOperation(Runnable runnable) {
         mOperationHandler.post(runnable);
-    }
-
-    public void onCoreLayerStarted() {
-        /* Update interrupted MMS transfer status */
-        scheduleImOperation(new UpdateMmsStateAfterUngracefulTerminationTask(mXmsLog,
-                mCmsServiceImpl));
     }
 
     public void syncAll() {
@@ -341,74 +318,6 @@ public class CmsSessionController extends ImsService {
         });
     }
 
-    public void tryToDequeueMmsMessages() {
-        mOperationHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    boolean logActivated = sLogger.isActivated();
-                    if (logActivated) {
-                        sLogger.debug("Execute task to dequeue MMS");
-                    }
-                    if (!ServerApiUtils.isMmsConnectionAvailable(mCtx)) {
-                        if (logActivated) {
-                            sLogger.debug("MMS mobile connection not available, exiting dequeue task to dequeue MMS");
-                        }
-                        return;
-                    }
-                    if (isShuttingDownOrStopped()) {
-                        if (logActivated) {
-                            sLogger.debug("Core service is shutting down/stopped, exiting MMS dequeue task");
-                        }
-                        return;
-                    }
-                    Cursor cursor = null;
-                    String id;
-                    ContactId contact;
-                    String subject;
-                    try {
-                        cursor = mXmsLog.getQueuedMms();
-                        int msgIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
-                        int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
-                        int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
-                        while (cursor.moveToNext()) {
-                            id = cursor.getString(msgIdIdx);
-                            String contactNumber = cursor.getString(contactIdx);
-                            contact = ContactUtil.createContactIdFromTrustedData(contactNumber);
-                            subject = cursor.getString(contentIdx);
-                            if (logActivated) {
-                                sLogger.debug("Dequeue MMS ID=" + id + " contact=" + contact
-                                        + " subject=" + subject);
-                            }
-                            List<MmsDataObject.MmsPart> parts = mXmsLog.getParts(id);
-                            mCmsServiceImpl.dequeueMmsMessage(id, contact, subject, parts);
-                        }
-                    } finally {
-                        CursorUtil.close(cursor);
-                    }
-                } catch (RuntimeException e) {
-                    /*
-                     * Normally we are not allowed to catch runtime exceptions as these are genuine
-                     * bugs which should be handled/fixed within the code. However the cases when we
-                     * are executing operations on a thread unhandling such exceptions will
-                     * eventually lead to exit the system and thus can bring the whole system down,
-                     * which is not intended.
-                     */
-                    sLogger.error("Failed to dequeue MMS!", e);
-                }
-            }
-        });
-    }
-
-    /**
-     * Is Core shutting down right now or already stopped
-     *
-     * @return boolean
-     */
-    private boolean isShuttingDownOrStopped() {
-        return mCore.isStopping() || !mCore.isStarted();
-    }
-
     public void deleteCmsData() {
         mCmsLog.removeFolders(true);
     }
@@ -455,10 +364,6 @@ public class CmsSessionController extends ImsService {
 
     public GroupChatEventHandler getGroupChatEventHandler() {
         return mGroupChatEventHandler;
-    }
-
-    public MmsSessionHandler getMmsSessionHandler() {
-        return mMmsSessionHandler;
     }
 
     public FileTransferEventHandler getFileTransferEventHandler() {

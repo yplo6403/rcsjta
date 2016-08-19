@@ -27,8 +27,8 @@ import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody.Part;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
-import com.gsma.rcs.core.cms.utils.MmsUtils;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.MmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.FileUtils;
@@ -50,8 +50,7 @@ import java.util.List;
 
 public class XmsDataObjectFactory {
 
-    private final static Logger sLogger = Logger.getLogger(XmsDataObjectFactory.class
-            .getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(XmsDataObjectFactory.class.getName());
 
     public static SmsDataObject createSmsDataObject(ImapSmsMessage imapSmsMessage) {
         ContactId contact = imapSmsMessage.getContact();
@@ -84,7 +83,7 @@ public class XmsDataObjectFactory {
                 } else {
                     data = part.getContent().getBytes();
                 }
-                Uri uri = MmsUtils.saveContent(rcsSettings, contentType, part.getContentId(), data);
+                Uri uri = MmsLog.saveContent(rcsSettings, contentType, part.getContentId(), data);
                 String fileName = FileUtils.getFileName(context, uri);
                 Long fileLength = (long) data.length;
                 long maxIconSize = rcsSettings.getMaxFileIconSize();

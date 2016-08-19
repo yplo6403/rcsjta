@@ -30,6 +30,7 @@ import com.gsma.rcs.service.api.ServerApiPersistentStorageException;
 import com.gsma.rcs.utils.CloseableUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.FileUtils;
+import com.gsma.rcs.utils.IdGenerator;
 import com.gsma.rcs.utils.MimeManager;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.RcsService;
@@ -64,11 +65,9 @@ import java.util.Set;
  */
 public class XmsLog {
 
-    private static final Logger sLogger = Logger.getLogger(XmsLog.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(XmsLog.class.getName());
 
     private static final int FIRST_COLUMN_IDX = 0;
-
-    private static final String SORT_BY_DATE_ASC = XmsData.KEY_TIMESTAMP + " ASC";
 
     private static final String SORT_BY_DATE_DESC = XmsData.KEY_TIMESTAMP + " DESC";
 
@@ -98,6 +97,8 @@ public class XmsLog {
 
     private static final String SEL_XMS_SMS_NATIVE_ID = SEL_XMS_NATIVE_ID + " AND " + SEL_XMS_SMS;
 
+    private static final String SEL_XMS_MMS_NATIVE_ID = SEL_XMS_NATIVE_ID + " AND " + SEL_XMS_MMS;
+
     private static final String SEL_NATIVE_THREAD_ID_MMS_UNREAD_INCOMING = SEL_NATIVE_THREAD_ID_UNREAD
             + " AND " + SEL_DIR_INCOMING + " AND " + SEL_XMS_MMS;
 
@@ -105,13 +106,6 @@ public class XmsLog {
     private static final String SEL_XMS_CORRELATOR = XmsData.KEY_MESSAGE_CORRELATOR + "=?";
     private static final String SEL_XMS_CONTACT_DIR_CORRELATOR = SEL_XMS_CONTACT + " AND "
             + SEL_XMS_DIR + " AND " + SEL_XMS_CORRELATOR + " AND " + SEL_XMS_SMS;
-
-    private static final String SEL_QUEUED_MMS = XmsData.KEY_STATE + "=" + State.QUEUED.toInt()
-            + " AND " + XmsData.KEY_DIRECTION + "=" + Direction.OUTGOING.toInt() + " AND "
-            + SEL_XMS_MMS + " AND " + XmsData.KEY_NATIVE_ID + " IS NULL";
-
-    private static final String SEL_BY_INTERRUPTED_MMS_TRANSFERS = XmsData.KEY_STATE + "='"
-            + State.SENDING.toInt() + "'" + " AND " + XmsData.KEY_NATIVE_ID + " IS NULL";
 
     private static final String[] PROJ_MSGID = new String[] {
         XmsData.KEY_MESSAGE_ID
@@ -270,23 +264,6 @@ public class XmsLog {
                 }) > 0;
     }
 
-    public void updateState(ContactId contact, String messageId, State state) {
-        if (sLogger.isActivated()) {
-            sLogger.debug("Update message status for Id=" + messageId + ", state="
-                    + state.toString());
-        }
-        ContentValues values = new ContentValues();
-        values.put(XmsData.KEY_STATE, state.toInt());
-        if (mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
-                new String[] {
-                        contact.toString(), messageId
-                }) < 1) {
-            if (sLogger.isActivated()) {
-                sLogger.warn("There was no message with msgId '" + messageId);
-            }
-        }
-    }
-
     public void addIncomingMms(MmsDataObject mms) {
         ContactId remote = mms.getContact();
         String contact = remote.toString();
@@ -359,13 +336,17 @@ public class XmsLog {
         }
     }
 
-    public void addOutgoingMms(MmsDataObject mms) throws FileAccessException {
+    public String addOutgoingMms(MmsDataObject mms) throws FileAccessException {
         ContactId remote = mms.getContact();
         String contact = remote.toString();
         String mmsId = mms.getMessageId();
-        if (isMessagePersisted(remote, mmsId)) {
-            throw new ServerApiPersistentStorageException("MMS already exists ID=" + mmsId
-                    + " for contact=" + contact);
+        if (mmsId == null) {
+            mmsId = IdGenerator.generateMessageID();
+        } else {
+            if (isMessagePersisted(remote, mmsId)) {
+                throw new ServerApiPersistentStorageException("MMS already exists ID=" + mmsId
+                        + " for contact=" + contact);
+            }
         }
         if (sLogger.isActivated()) {
             sLogger.debug("Insert mms: " + mms);
@@ -379,8 +360,7 @@ public class XmsLog {
             for (MmsDataObject.MmsPart mmsPart : mms.getMmsParts()) {
                 String mimeType = mmsPart.getMimeType();
                 ContentProviderOperation.Builder build = ContentProviderOperation
-                        .newInsert(PartData.CONTENT_URI)
-                        .withValue(PartData.KEY_MESSAGE_ID, mmsPart.getMessageId())
+                        .newInsert(PartData.CONTENT_URI).withValue(PartData.KEY_MESSAGE_ID, mmsId)
                         .withValue(PartData.KEY_MIME_TYPE, mimeType);
                 String content = mmsPart.getContentText();
                 if (content == null) {
@@ -453,6 +433,7 @@ public class XmsLog {
         values.put(XmsData.KEY_READ_STATUS, mms.getReadStatus().toInt());
         values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
         mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
+        return mmsId;
     }
 
     private Set<Uri> getPartUris(String mmsId) {
@@ -650,13 +631,6 @@ public class XmsLog {
         return cursor;
     }
 
-    public Cursor getQueuedMms() {
-        Cursor cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null, SEL_QUEUED_MMS,
-                null, SORT_BY_DATE_ASC);
-        CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-        return cursor;
-    }
-
     public boolean setStateAndTimestamp(ContactId contact, String messageId, State state,
             XmsMessage.ReasonCode reasonCode, long timestamp, long timestampSent) {
         ContentValues values = new ContentValues();
@@ -736,29 +710,51 @@ public class XmsLog {
         }
     }
 
-    public Cursor getInterruptedMmsTransfers() {
-        Cursor cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
-                SEL_BY_INTERRUPTED_MMS_TRANSFERS, null, SORT_BY_DATE_ASC);
-        CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-        return cursor;
+    public boolean setMessageDelivered(ContactId contact, String msgId, long timestampDelivered) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("setMessageDelivered msgId=" + msgId + ", timestamp="
+                    + timestampDelivered);
+        }
+        ContentValues values = new ContentValues();
+        values.put(XmsData.KEY_STATE, State.DELIVERED.toInt());
+        values.put(XmsData.KEY_REASON_CODE, XmsMessage.ReasonCode.UNSPECIFIED.toInt());
+        values.put(XmsData.KEY_TIMESTAMP_DELIVERED, timestampDelivered);
+        return mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
+                new String[] {
+                        contact.toString(), msgId
+                }) > 0;
+    }
+
+    public boolean setMessageSent(ContactId contact, String msgId, long timestampSent) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("setMessageSent  msgId=" + msgId + ", timestamp=" + timestampSent);
+        }
+        ContentValues values = new ContentValues();
+        values.put(XmsData.KEY_STATE, State.SENT.toInt());
+        values.put(XmsData.KEY_REASON_CODE, XmsMessage.ReasonCode.UNSPECIFIED.toInt());
+        values.put(XmsData.KEY_TIMESTAMP_SENT, timestampSent);
+        return mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
+                new String[] {
+                        contact.toString(), msgId
+                }) > 0;
     }
 
     /**
      * Set state and reason code. Note that this method should not be used for State.DELIVERED and
-     * State.DISPLAYED. These states require timestamps and should be set through
-     * setMessageDelivered and setMessageDisplayed respectively. TODO
+     * State.SENT. These states require timestamps and should be set through setMessageDelivered and
+     * setMessageSent respectively.
      *
      * @param contact the contact ID (i.e. the folder name)
-     * @param messageId The message ID
+     * @param msgId The message ID
      * @param state The state
      * @param reasonCode The reason code
      * @return True if set is successful
      */
-    public boolean setStateAndReasonCode(ContactId contact, String messageId,
-            XmsMessage.State state, XmsMessage.ReasonCode reasonCode) {
+    public boolean setStateAndReasonCode(ContactId contact, String msgId, XmsMessage.State state,
+            XmsMessage.ReasonCode reasonCode) {
         switch (state) {
             case DELIVERED:
-            case DISPLAYED:
+            case SENT:
                 throw new IllegalArgumentException("State that requires "
                         + "timestamp passed, use specific method taking timestamp"
                         + " to set state " + state);
@@ -769,7 +765,7 @@ public class XmsLog {
         values.put(XmsData.KEY_REASON_CODE, reasonCode.toInt());
         return mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
                 new String[] {
-                        contact.toString(), messageId
+                        contact.toString(), msgId
                 }) > 0;
     }
 
@@ -816,6 +812,46 @@ public class XmsLog {
         return mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
                 new String[] {
                         contact.toString(), msgId
+                }) > 0;
+    }
+
+    private String getMmsMessageId(long nativeId) {
+        Cursor cursor = null;
+        try {
+            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, PROJ_MSGID,
+                    SEL_XMS_MMS_NATIVE_ID, new String[] {
+                        String.valueOf(nativeId)
+                    }, null);
+            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
+            if (!cursor.moveToNext()) {
+                return null;
+            }
+            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
+            return cursor.getString(messageIdIdx);
+
+        } finally {
+            CursorUtil.close(cursor);
+        }
+    }
+
+    public boolean updateMmsMessageId(ContactId contact, Long nativeId, String msgId) {
+        String oldMsgId = getMmsMessageId(nativeId);
+        if (oldMsgId == null) {
+            if (sLogger.isActivated()) {
+                sLogger.error("Failed to update message-id for MMS id=" + nativeId);
+            }
+            return false;
+        }
+        ContentValues values = new ContentValues();
+        values.put(PartData.KEY_MESSAGE_ID, msgId);
+        mLocalContentResolver.update(PartData.CONTENT_URI, values, SEL_PART_MSID, new String[] {
+            oldMsgId
+        });
+        values.clear();
+        values.put(XmsData.KEY_MESSAGE_ID, msgId);
+        return mLocalContentResolver.update(XmsData.CONTENT_URI, values, SEL_XMS_CONTACT_MSGID,
+                new String[] {
+                        contact.toString(), oldMsgId
                 }) > 0;
     }
 }

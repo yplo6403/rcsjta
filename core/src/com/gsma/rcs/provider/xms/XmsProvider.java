@@ -271,6 +271,13 @@ public class XmsProvider extends ContentProvider {
             case UriType.InternalPart.PART_WITH_ID:
                 //$FALL-THROUGH$
             case UriType.InternalPart.PART:
+                db = mOpenHelper.getWritableDatabase();
+                 count = db.update(TABLE_PART, values, selection, selectionArgs);
+                if (count > 0) {
+                    getContext().getContentResolver().notifyChange(MmsPartLog.CONTENT_URI, null);
+                }
+                return count;
+
                 //$FALL-THROUGH$
             case UriType.Xms.XMS:
                 //$FALL-THROUGH$

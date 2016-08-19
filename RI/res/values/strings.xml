@@ -432,6 +432,7 @@
     <string name="label_audio_record">Recorded file:</string>
     <string name="max_audio_record_reached">Maximum duration is reached!</string>
     <string name="cannot_read_log">Cannot read RCS history log</string>
+    <string name="default_sms_app">The package \'%1$s\' is the default messaging application!</string>
 
     <!-- States -->
 

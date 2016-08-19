@@ -32,6 +32,7 @@ import com.gsma.rcs.ri.messaging.filetransfer.multi.SendMultiFile;
 import com.gsma.rcs.ri.settings.RiSettings;
 import com.gsma.rcs.ri.utils.LogUtils;
 import com.gsma.services.rcs.RcsGenericException;
+import com.gsma.services.rcs.RcsServiceControl;
 import com.gsma.services.rcs.RcsServiceException;
 import com.gsma.services.rcs.RcsServiceNotAvailableException;
 import com.gsma.services.rcs.chat.ChatLog;
@@ -57,7 +58,10 @@ import com.gsma.services.rcs.groupdelivery.GroupDeliveryInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.provider.Telephony;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -67,6 +71,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -83,11 +89,11 @@ import java.util.Set;
  */
 public class TalkList extends RcsActivity {
 
+    private static final String LOGTAG = LogUtils.getTag(TalkList.class.getName());
+
     private CmsService mCmsService;
     private TalkListArrayAdapter mAdapter;
     private List<TalkListArrayItem> mMessageLogs;
-    private static final String LOGTAG = LogUtils.getTag(TalkList.class.getSimpleName());
-
     private CmsSynchronizationListener mCmsSynchronizationListener;
     private boolean mCmsSynchronizationListenerSet;
     private XmsMessageListener mXmsMessageListener;
@@ -106,6 +112,9 @@ public class TalkList extends RcsActivity {
     private GroupFileTransferListener mGroupFileTransferListener;
     private boolean mGroupFileTransferListenerSet;
     private boolean mTalkListOpenedToSendFile;
+    private LinearLayout mLinearLayoutDefaultSmsApp;
+    private ImageView mImageViewDefaultSmsApp;
+    private TextView mTextViewDefaultSmsApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -313,6 +322,23 @@ public class TalkList extends RcsActivity {
 
     private void updateView() {
         if (sActivityVisible) {
+            String defaultSmsApp = Telephony.Sms.getDefaultSmsPackage(mCtx);
+            if (!RcsServiceControl.RCS_STACK_PACKAGENAME.equals(defaultSmsApp)) {
+                if (LogUtils.isActive) {
+                    Log.w(LOGTAG, "Default SMS app: " + defaultSmsApp);
+                }
+                try {
+                    Drawable icon = mCtx.getPackageManager().getApplicationIcon(defaultSmsApp);
+                    mImageViewDefaultSmsApp.setImageDrawable(icon);
+
+                } catch (PackageManager.NameNotFoundException ignore) {
+                }
+                mLinearLayoutDefaultSmsApp.setVisibility(View.VISIBLE);
+                mTextViewDefaultSmsApp.setText(getString(R.string.default_sms_app, defaultSmsApp));
+
+            } else {
+                mLinearLayoutDefaultSmsApp.setVisibility(View.GONE);
+            }
             TalkListUpdate updateTalkList = new TalkListUpdate(mCtx, mUpdateTalkListListener);
             updateTalkList.execute();
         }
@@ -324,6 +350,9 @@ public class TalkList extends RcsActivity {
         mCmsService = getCmsApi();
         mChatService = getChatApi();
         mFileTransferService = getFileTransferApi();
+        mLinearLayoutDefaultSmsApp = (LinearLayout) findViewById(R.id.default_sms_app);
+        mImageViewDefaultSmsApp = (ImageView) findViewById(R.id.icon_default_sms_app);
+        mTextViewDefaultSmsApp = (TextView) findViewById(R.id.text_default_sms_app);
         ListView listView = (ListView) findViewById(android.R.id.list);
         TextView emptyView = (TextView) findViewById(android.R.id.empty);
         listView.setEmptyView(emptyView);

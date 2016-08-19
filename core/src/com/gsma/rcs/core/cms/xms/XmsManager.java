@@ -20,414 +20,299 @@
 
 package com.gsma.rcs.core.cms.xms;
 
-import com.gsma.rcs.core.cms.xms.mms.MmsSessionListener;
-import com.gsma.rcs.utils.CloseableUtils;
-import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.core.FileAccessException;
+import com.gsma.rcs.core.cms.event.XmsEventHandler;
+import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
+import com.gsma.rcs.platform.ntp.NtpTrustedTime;
+import com.gsma.rcs.provider.CursorUtil;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
+import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.SmsDataObject;
+import com.gsma.rcs.service.api.ExceptionUtil;
 import com.gsma.rcs.utils.logger.Logger;
-import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.RcsServiceControl;
+import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.annotation.TargetApi;
-import android.app.Activity;
-import android.app.PendingIntent;
+import com.klinker.android.send_message.ApnUtils;
+import com.klinker.android.send_message.Message;
+import com.klinker.android.send_message.Settings;
+import com.klinker.android.send_message.Transaction;
+
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.ContentValues;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Parcelable;
-import android.provider.Telephony.TextBasedSmsColumns;
-import android.telephony.SmsManager;
+import android.preference.PreferenceManager;
+import android.text.TextUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * XMS Manager
- * 
+ *
  * @author Philippe LEMORDANT
  */
 public class XmsManager {
 
-    private final static Logger sLogger = Logger.getLogger(XmsManager.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(XmsManager.class.getName());
+    private static final String XMS_EVENT_ACTION = RcsServiceControl.RCS_STACK_PACKAGENAME
+            .concat(Transaction.XMS_EVENT);
 
-    private static final String MMS_SENT_ACTION = "MMS_SENT";
-    private static final String SMS_SENT_ACTION = "SMS_SENT";
-    private static final String SMS_DELIVERED_ACTION = "SMS_DELIVERED";
-
-    private static final String EXTRA_TRANSACTION_ID = "trans_id";
-    private static final String EXTRA_MMS_ID = "mms_id";
-    private static final String EXTRA_CONTACT = "contact";
-    private static final String EXTRA_PART_ID = "part_id";
-    private static final String EXTRA_SMS_URI = "sms_uri";
-
-    private static final String MMS_FILE_PROVIDER_AUTH = "com.gsma.rcs.provider.xms.MmsFileProvider";
-
-    private final ContentResolver mContentResolver;
     private final Context mCtx;
-    private final Map<String, MmsSessionListener> mMmsCallbacks;
-
-    private ReceiveSmsEventSent mReceiveSmsEventSent;
-    private ReceiveSmsEventDelivered mReceiveSmsEventDelivered;
-    private ReceiveMmsEventSent mReceiveMmsEventSent;
+    private final SmsMmsLog mSmsMmsLog;
+    private final XmsLog mXmsLog;
+    private ReceiveXmsEvent mReceiveXmsEvent;
+    private MmsSettings mMmsSettings;
+    private XmsEventHandler mXmsEventHandler;
 
     /**
      * Constructor
      *
-     * @param ctx The context
-     * @param contentResolver The content resolver
+     * @param ctx the context
+     * @param xmsLog the XMS log accessor
+     * @param smsMmsLog the SMS/MMS native log accessor
      */
-    public XmsManager(Context ctx, ContentResolver contentResolver) {
+    public XmsManager(Context ctx, XmsLog xmsLog, SmsMmsLog smsMmsLog) {
         mCtx = ctx;
-        mContentResolver = contentResolver;
-        mMmsCallbacks = new HashMap<>();
+        mXmsLog = xmsLog;
+        mSmsMmsLog = smsMmsLog;
+    }
+
+    public void initialize(XmsEventHandler xmsEventHandler) {
+        mXmsEventHandler = xmsEventHandler;
+        mMmsSettings = MmsSettings.get(mCtx);
+        PreferenceManager.getDefaultSharedPreferences(mCtx).edit()
+                .putBoolean("system_mms_sending", true).commit();
+        if (TextUtils.isEmpty(mMmsSettings.getMmsc())) {
+            initApns();
+        }
     }
 
     public void start() {
-        /* Register the broadcast receiver to get SMS sent and delivery events */
-        mReceiveSmsEventSent = new ReceiveSmsEventSent();
-        mCtx.registerReceiver(mReceiveSmsEventSent, new IntentFilter(SMS_SENT_ACTION));
-        mReceiveSmsEventDelivered = new ReceiveSmsEventDelivered();
-        mCtx.registerReceiver(mReceiveSmsEventDelivered, new IntentFilter(SMS_DELIVERED_ACTION));
-        /* Register the broadcast receiver to get MMS sent events */
-        mReceiveMmsEventSent = new ReceiveMmsEventSent();
-        mCtx.registerReceiver(mReceiveMmsEventSent, new IntentFilter(MMS_SENT_ACTION));
+        // /* Register the broadcast receiver to get XMS events */
+        mReceiveXmsEvent = new ReceiveXmsEvent();
+        mCtx.registerReceiver(mReceiveXmsEvent, new IntentFilter(XMS_EVENT_ACTION));
+    }
+
+    private void initApns() {
+        ApnUtils.initDefaultApns(mCtx, new ApnUtils.OnApnFinishedListener() {
+            @Override
+            public void onFinished() {
+                mMmsSettings = MmsSettings.get(mCtx, true);
+            }
+        });
     }
 
     public void stop() {
-        mMmsCallbacks.clear();
-        if (mReceiveSmsEventSent != null) {
-            mCtx.unregisterReceiver(mReceiveSmsEventSent);
-            mReceiveSmsEventSent = null;
-        }
-        if (mReceiveSmsEventDelivered != null) {
-            mCtx.unregisterReceiver(mReceiveSmsEventDelivered);
-            mReceiveSmsEventDelivered = null;
-        }
-        if (mReceiveMmsEventSent != null) {
-            mCtx.unregisterReceiver(mReceiveMmsEventSent);
-            mReceiveMmsEventSent = null;
+        if (mReceiveXmsEvent != null) {
+            mCtx.unregisterReceiver(mReceiveXmsEvent);
+            mReceiveXmsEvent = null;
         }
     }
 
-    private void persistMmsIntoLocalFile(File sendFile, byte[] content) throws IOException {
-        FileOutputStream writer = null;
+    /**
+     * Sends a MMS
+     *
+     * @param contact the remote contact
+     * @param files the file images to be sent
+     * @param subject the subject
+     * @param body the body text
+     * @throws MmsFileSizeException
+     * @throws FileAccessException
+     */
+    public void sendMultimediaMessage(ContactId contact, List<Uri> files, String subject,
+            String body) throws MmsFileSizeException, FileAccessException {
+        Settings sendSettings = new Settings();
+        sendSettings.setMmsc(mMmsSettings.getMmsc());
+        sendSettings.setProxy(mMmsSettings.getMmsProxy());
+        sendSettings.setPort(mMmsSettings.getMmsPort());
+        sendSettings.setUseSystemSending(true);
+        Transaction transaction = new Transaction(mCtx, sendSettings);
+        Message message = mSmsMmsLog.getMms(contact, files, subject, body);
+        transaction.sendNewMessage(message, Transaction.NO_THREAD_ID);
+    }
+
+    /**
+     * Sends a SMS
+     *
+     * @param contact the remote contact
+     * @param text the body text
+     */
+    public void sendTextMessage(ContactId contact, String text) {
+        Settings sendSettings = new Settings();
+        sendSettings.setMmsc(mMmsSettings.getMmsc());
+        sendSettings.setProxy(mMmsSettings.getMmsProxy());
+        sendSettings.setPort(mMmsSettings.getMmsPort());
+        sendSettings.setUseSystemSending(true);
+        Transaction transaction = new Transaction(mCtx, sendSettings);
+        Message message = new Message(text, new String[] {
+            contact.toString()
+        });
+        transaction.sendNewMessage(message, Transaction.NO_THREAD_ID);
+    }
+
+    private class ReceiveXmsEvent extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                String action = intent.getAction();
+                if (!XMS_EVENT_ACTION.equals(action)) {
+                    sLogger.error("Discard XMS event: invalid action " + action);
+                    return;
+                }
+                Transaction.XmsEvent event = (Transaction.XmsEvent) intent
+                        .getSerializableExtra("event");
+                Uri uri = intent.getParcelableExtra("message_uri");
+                if (uri == null) {
+                    sLogger.error("Discard XMS event (" + event + "): invalid URI");
+                    return;
+                }
+                long ntpOffset = NtpTrustedTime.currentTimeMillis() - System.currentTimeMillis();
+                switch (event) {
+                    case SMS_RECEIVED:
+                        SmsDataObject smsDataObject = mSmsMmsLog.getSmsFromNativeProvider(uri,
+                                null, ntpOffset);
+                        if (smsDataObject == null) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot insert SMS into XMS provider for URI=" + uri);
+                            }
+                            return;
+                        }
+                        mXmsEventHandler.onIncomingSms(smsDataObject);
+                        break;
+
+                    case SMS_INSERT:
+                        smsDataObject = mSmsMmsLog.getSmsFromNativeProvider(uri, null, ntpOffset);
+                        if (smsDataObject == null) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot insert SMS into XMS provider for URI=" + uri);
+                            }
+                            return;
+                        }
+                        mXmsEventHandler.onOutgoingSms(smsDataObject);
+                        break;
+
+                    case SMS_SENT_OR_FAILED:
+                        smsDataObject = getSmsDataObjectFromProviders(uri, ntpOffset);
+                        if (smsDataObject == null) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot mark SMS as sent into XMS provider for URI="
+                                        + uri);
+                            }
+                            return;
+                        }
+                        mXmsEventHandler.onSmsMessageStateChanged(smsDataObject);
+                        break;
+
+                    case SMS_DELIVERED_OR_FAILED:
+                        smsDataObject = getSmsDataObjectFromProviders(uri, ntpOffset);
+                        if (smsDataObject == null) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot mark SMS as delivered into XMS provider for URI="
+                                        + uri);
+                            }
+                            return;
+                        }
+                        mXmsEventHandler.onSmsMessageStateChanged(smsDataObject);
+                        break;
+
+                    case MMS_RECEIVED:
+                        if (sLogger.isActivated()) {
+                            sLogger.debug("Received MMS URI=" + uri);
+                        }
+                        long nativeId = ContentUris.parseId(uri);
+                        List<MmsDataObject> mmsMessages = mSmsMmsLog.getMmsFromNativeProvider(
+                                nativeId, ntpOffset);
+                        for (MmsDataObject mms : mmsMessages) {
+                            mXmsEventHandler.onIncomingMms(mms);
+                        }
+                        break;
+
+                    case MMS_INSERT:
+                        if (sLogger.isActivated()) {
+                            sLogger.debug("New outgoing MMS uri=" + uri);
+                        }
+                        nativeId = ContentUris.parseId(uri);
+                        List<MmsDataObject> mmsDataObjects = mSmsMmsLog.getMmsFromNativeProvider(
+                                nativeId, ntpOffset);
+                        if (mmsDataObjects == null || mmsDataObjects.isEmpty()) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot insert MMS into XMS provider for URI=" + uri);
+                            }
+                            return;
+                        }
+                        for (MmsDataObject mms : mmsDataObjects) {
+                            mXmsEventHandler.onOutgoingMms(mms);
+                        }
+                        break;
+
+                    case MMS_SENT_OR_FAILED:
+                        nativeId = ContentUris.parseId(uri);
+                        if (nativeId == -1) {
+                            sLogger.error("Discard MMS event: invalid URI " + uri);
+                            return;
+                        }
+                        if (sLogger.isActivated()) {
+                            sLogger.debug("Sent or failed notification for outgoing MMS uri=" + uri);
+                        }
+                        mmsMessages = mSmsMmsLog.getMmsFromNativeProvider(nativeId, ntpOffset);
+                        if (mmsMessages.isEmpty()) {
+                            if (sLogger.isActivated()) {
+                                sLogger.error("Cannot mark MMS as sent into XMS provider for URI="
+                                        + uri);
+                            }
+                        } else {
+                            for (MmsDataObject mms : mmsMessages) {
+                                if (mms.getMessageId() == null) {
+                                    if (sLogger.isActivated()) {
+                                        sLogger.error("Cannot mark MMS as sent for URI=" + uri
+                                                + " : Message-Id is null");
+                                    }
+                                } else {
+                                    mXmsEventHandler.onMmsMessageStateChanged(mms);
+                                }
+                            }
+                        }
+                        break;
+                }
+            } catch (RuntimeException e) {
+                sLogger.error(ExceptionUtil.getFullStackTrace(e));
+
+            } catch (FileAccessException e) {
+                sLogger.error("Failed to persist outgoing MMS "
+                        + ExceptionUtil.getFullStackTrace(e));
+            }
+        }
+    }
+
+    private SmsDataObject getSmsDataObjectFromProviders(Uri uri, long ntpOffset) {
+        long nativeId = ContentUris.parseId(uri);
+        /*
+         * Checks that SMS has already been inserted into XMS provider and retrieved its assigned
+         * msgId.
+         */
+        Cursor cursor = null;
         try {
-            writer = new FileOutputStream(sendFile);
-            writer.write(content);
+            cursor = mXmsLog.getSmsMessage(nativeId);
+            if (!cursor.moveToNext()) {
+                return null;
+            }
+            String msgId = cursor.getString(cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID));
+            if (msgId == null) {
+                sLogger.debug("Cannot get SMS from XMS provider for URI= " + uri);
+                return null;
+            }
+            return mSmsMmsLog.getSmsFromNativeProvider(uri, msgId, ntpOffset);
 
         } finally {
-            // noinspection ThrowableResultOfMethodCallIgnored
-            CloseableUtils.tryToClose(writer);
+            CursorUtil.close(cursor);
         }
     }
 
-    private String getTemporaryMmsPduFile(String transactionId) {
-        return "SendMms_" + transactionId + ".dat";
-    }
-
-    /**
-     * Send MMS
-     * 
-     * @param messageId The message ID
-     * @param contact The remote contact
-     * @param pdu The PDU
-     * @param callback The callback
-     * @throws IOException
-     */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public void sendMms(String messageId, ContactId contact, byte[] pdu, MmsSessionListener callback)
-            throws IOException {
-        String transId = IdGenerator.generateMessageID();
-        String fileName = getTemporaryMmsPduFile(transId);
-        File sendFile = new File(mCtx.getCacheDir(), fileName);
-        Uri writerUri = (new Uri.Builder()).authority(MMS_FILE_PROVIDER_AUTH).path(fileName)
-                .scheme(ContentResolver.SCHEME_CONTENT).build();
-        persistMmsIntoLocalFile(sendFile, pdu);
-        Intent mmsSentIntent = new Intent(MMS_SENT_ACTION);
-        mmsSentIntent.putExtra(EXTRA_TRANSACTION_ID, transId);
-        mmsSentIntent.putExtra(EXTRA_MMS_ID, messageId);
-        mmsSentIntent.putExtra(EXTRA_CONTACT, (Parcelable) contact);
-        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0, mmsSentIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        mMmsCallbacks.put(transId, callback);
-        SmsManager.getDefault().sendMultimediaMessage(mCtx, writerUri, null, null,
-                mSentPendingIntent);
-        if (sLogger.isActivated()) {
-            sLogger.debug("Send MMS mId=" + messageId + " tId=" + transId + " contact=" + contact
-                    + " size=" + pdu.length);
-        }
-    }
-
-    /**
-     * Send SMS
-     * 
-     * @param contact The remote contact
-     * @param text The body text
-     */
-    public void sendSms(final ContactId contact, final String text) {
-        SmsManager smsManager = SmsManager.getDefault();
-        String transactionId = IdGenerator.generateMessageID();
-        Intent smsSentIntent = new Intent(SMS_SENT_ACTION);
-        smsSentIntent.putExtra(EXTRA_TRANSACTION_ID, transactionId);
-        Intent smsDeliveredIntent = new Intent(SMS_DELIVERED_ACTION);
-        smsDeliveredIntent.putExtra(EXTRA_TRANSACTION_ID, transactionId);
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-            /*
-             * Insert SMS into the native SMS provider if release is before KitKat.
-             */
-            ContentValues values = new ContentValues();
-            values.put("address", contact.toString());
-            values.put("body", text);
-            Uri smsUri = mContentResolver.insert(Uri.parse("content://sms/sent"), values);
-            smsSentIntent.putExtra(EXTRA_SMS_URI, smsUri.toString());
-            smsDeliveredIntent.putExtra(EXTRA_SMS_URI, smsUri.toString());
-        }
-        PendingIntent mSentPendingIntent = PendingIntent.getBroadcast(mCtx, 0, smsSentIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        PendingIntent mDeliveredPendingIntent = PendingIntent.getBroadcast(mCtx, 0,
-                smsDeliveredIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        ArrayList<String> parts = smsManager.divideMessage(text);
-
-        /* Message too large for a single SMS, but may be sent as a multi-part SMS */
-        if (parts.size() > 1) {
-            ArrayList<PendingIntent> sentPIs = new ArrayList<>(parts.size());
-            ArrayList<PendingIntent> deliveredPIs = new ArrayList<>(parts.size());
-            for (int i = 0; i < parts.size(); i++) {
-                smsSentIntent.putExtra(EXTRA_PART_ID, i);
-                sentPIs.add(mSentPendingIntent);
-                smsDeliveredIntent.putExtra(EXTRA_PART_ID, i);
-                deliveredPIs.add(mDeliveredPendingIntent);
-            }
-            if (sLogger.isActivated()) {
-                sLogger.debug("Sending split message of " + text.length() + " characters into "
-                        + parts.size() + " parts.");
-            }
-            smsManager.sendMultipartTextMessage(contact.toString(), null, parts, sentPIs,
-                    deliveredPIs);
-        } else {
-            if (sLogger.isActivated()) {
-                sLogger.debug("sendTextMessage to " + contact + " text='" + text
-                        + "' with transactionId=" + transactionId);
-            }
-            smsManager.sendTextMessage(contact.toString(), null, text, mSentPendingIntent,
-                    mDeliveredPendingIntent);
-        }
-
-    }
-
-    private class ReceiveSmsEventSent extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle extras = intent.getExtras();
-            if (extras == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveSmsEventSent: ignore intent with no extra data");
-                }
-                return;
-            }
-            String transId = intent.getStringExtra(EXTRA_TRANSACTION_ID);
-            if (transId == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveSmsEventSent: ignore intent with no transaction ID");
-                }
-                return;
-            }
-            int partIndex = intent.getIntExtra(EXTRA_PART_ID, -1);
-            if (partIndex != -1) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("ReceiveSmsEventSent for transaction ID=" + transId
-                            + " for part number " + partIndex);
-                }
-            } else {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("ReceiveSmsEventSent for transaction ID=" + transId);
-                }
-            }
-            int resultCode = getResultCode();
-            switch (resultCode) {
-                case Activity.RESULT_OK:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("SMS sent successfully");
-                    }
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                        String smsUri = intent.getStringExtra(EXTRA_SMS_URI);
-                        ContentValues values = new ContentValues();
-                        values.put(TextBasedSmsColumns.STATUS, TextBasedSmsColumns.STATUS_PENDING);
-                        mContentResolver.update(Uri.parse(smsUri), values, null, null);
-                    }
-                    break;
-                case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Generic failure cause");
-                    }
-                    break;
-                case SmsManager.RESULT_ERROR_NO_SERVICE:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Service is currently unavailable");
-                    }
-                    break;
-                case SmsManager.RESULT_ERROR_NULL_PDU:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("No PDU provided");
-                    }
-                    break;
-                case SmsManager.RESULT_ERROR_RADIO_OFF:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Radio was explicitly turned off");
-                    }
-                    break;
-                default:
-                    if (sLogger.isActivated()) {
-                        sLogger.warn("Unknown result code=" + resultCode);
-                    }
-                    break;
-            }
-        }
-    }
-
-    private class ReceiveSmsEventDelivered extends ReceiveSmsEventSent {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle extras = intent.getExtras();
-            if (extras == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveSmsEventDelivered: ignore intent with no extra data");
-                }
-                return;
-            }
-            String transId = intent.getStringExtra(EXTRA_TRANSACTION_ID);
-            if (transId == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveSmsEventSent: ignore intent with no transaction ID");
-                }
-                return;
-            }
-            int partIndex = intent.getIntExtra(EXTRA_PART_ID, -1);
-            if (partIndex != -1) {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("ReceiveSmsEventDelivered for transaction ID=" + transId
-                            + " for part number " + partIndex);
-                }
-            } else {
-                if (sLogger.isActivated()) {
-                    sLogger.debug("ReceiveSmsEventDelivered for transaction ID=" + transId);
-                }
-            }
-            int resultCode = getResultCode();
-            switch (resultCode) {
-                case Activity.RESULT_OK:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("SMS delivered");
-                    }
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                        String smsUri = intent.getStringExtra(EXTRA_SMS_URI);
-                        ContentValues values = new ContentValues();
-                        values.put(TextBasedSmsColumns.STATUS, TextBasedSmsColumns.STATUS_COMPLETE);
-                        mContentResolver.update(Uri.parse(smsUri), values, null, null);
-                    }
-                    break;
-                case Activity.RESULT_CANCELED:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("SMS not delivered");
-                    }
-                    break;
-                default:
-                    if (sLogger.isActivated()) {
-                        sLogger.warn("Unknown result code=" + resultCode);
-                    }
-                    break;
-            }
-        }
-    }
-
-    private class ReceiveMmsEventSent extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Bundle extras = intent.getExtras();
-            if (extras == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveMmsEventSent: ignore intent with no extra data");
-                }
-                return;
-            }
-            String transId = intent.getStringExtra(EXTRA_TRANSACTION_ID);
-            if (transId == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveMmsEventSent: ignore intent with no transaction ID");
-                }
-                return;
-            }
-            String mmsId = intent.getStringExtra(EXTRA_MMS_ID);
-            if (mmsId == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveMmsEventSent: ignore intent with no MMS ID");
-                }
-                return;
-            }
-            ContactId contact = intent.getParcelableExtra(EXTRA_CONTACT);
-            if (contact == null) {
-                if (sLogger.isActivated()) {
-                    sLogger.warn("ReceiveMmsEventSent: ignore intent with no contact");
-                }
-                return;
-            }
-            int resultCode = getResultCode();
-            switch (resultCode) {
-                case Activity.RESULT_OK:
-                    MmsSessionListener callback = mMmsCallbacks.get(transId);
-                    if (callback != null) {
-                        if (sLogger.isActivated()) {
-                            sLogger.debug("MMS sent successfully message ID=" + mmsId
-                                    + " to contact " + contact);
-                        }
-                        callback.onMmsTransferred(contact, mmsId);
-                        mMmsCallbacks.remove(transId);
-                    } else {
-                        if (sLogger.isActivated()) {
-                            sLogger.warn("Cannot notify MMS sent successfully message ID=" + mmsId
-                                    + " to contact " + contact);
-                        }
-                    }
-                    break;
-
-                default:
-                    if (sLogger.isActivated()) {
-                        sLogger.debug("Unknown result code=" + resultCode + " for messageId="
-                                + mmsId);
-                    }
-                    callback = mMmsCallbacks.get(transId);
-                    if (callback != null) {
-                        if (sLogger.isActivated()) {
-                            sLogger.debug("MMS sent failure message ID=" + mmsId + " to contact "
-                                    + contact);
-                        }
-                        // TODO give detailed error
-                        callback.onMmsTransferError(
-                                XmsMessage.ReasonCode.FAILED_ERROR_GENERIC_FAILURE, contact, mmsId);
-                        mMmsCallbacks.remove(transId);
-                    } else {
-                        if (sLogger.isActivated()) {
-                            sLogger.warn("Cannot notify MMS sent failure message ID=" + mmsId
-                                    + " to contact " + contact);
-                        }
-                    }
-                    break;
-            }
-            String tempMmsPduFile = getTemporaryMmsPduFile(transId);
-            File sentFile = new File(mCtx.getCacheDir(), tempMmsPduFile);
-            if (sentFile.exists()) {
-                // noinspection ResultOfMethodCallIgnored
-                sentFile.delete();
-            }
-        }
-    }
 }

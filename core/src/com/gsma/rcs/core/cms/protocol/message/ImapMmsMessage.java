@@ -27,7 +27,7 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.multipart.MultipartCpimBody;
 import com.gsma.rcs.core.cms.utils.DateUtils;
-import com.gsma.rcs.core.cms.utils.MmsUtils;
+import com.gsma.rcs.provider.smsmms.MmsLog;
 import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.utils.Base64;
 import com.gsma.rcs.utils.MimeManager;
@@ -109,7 +109,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
             // If not text or SMIL ?
             if (MimeManager.isImageType(mimeType)) { // base 64
                 try {
-                    byte[] bytes = MmsUtils.getContent(resolver, mmsPart.getFile());
+                    byte[] bytes = MmsLog.readContent(resolver, mmsPart.getFile());
                     transferEncoding = Constants.HEADER_BASE64;
                     content = Base64.encodeBase64ToString(bytes);
 

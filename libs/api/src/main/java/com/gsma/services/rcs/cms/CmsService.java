@@ -310,19 +310,19 @@ public final class CmsService extends RcsService {
     }
 
     /**
-     * Returns true if it's possible and allowed to send MMS messages right now, else returns false.
+     * Returns true if it's possible and allowed to send XMS messages right now, else returns false.
      *
      * @return boolean
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public boolean isAllowedToSendMultimediaMessage() throws RcsServiceNotAvailableException,
+    public boolean isAllowedToSendXms() throws RcsServiceNotAvailableException,
             RcsGenericException {
         if (mApi == null) {
             throw new RcsServiceNotAvailableException();
         }
         try {
-            return mApi.isAllowedToSendMultimediaMessage();
+            return mApi.isAllowedToSendXms();
 
         } catch (Exception e) {
             throw new RcsGenericException(e);
@@ -339,7 +339,7 @@ public final class CmsService extends RcsService {
      * @throws RcsServiceNotAvailableException
      * @throws RcsGenericException
      */
-    public XmsMessage sendMultimediaMessage(ContactId contact, List<Uri> files, String subject,
+    public void sendMultimediaMessage(ContactId contact, List<Uri> files, String subject,
             String body) throws RcsGenericException, RcsServiceNotAvailableException,
             RcsPersistentStorageException, RcsPermissionDeniedException {
         if (mApi == null) {
@@ -349,8 +349,7 @@ public final class CmsService extends RcsService {
             for (Uri file : files) {
                 tryToGrantUriPermissionToStackServices(file);
             }
-            IXmsMessage xms = mApi.sendMultimediaMessage(contact, files, subject, body);
-            return new XmsMessage(xms);
+            mApi.sendMultimediaMessage(contact, files, subject, body);
 
         } catch (Exception e) {
             RcsIllegalArgumentException.assertException(e);

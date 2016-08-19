@@ -83,11 +83,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.provider.Telephony;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -197,7 +195,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
     private boolean mSaveDoNotAskAgainResend;
     private RiSettings.PreferenceResendRcs mPreferenceResendChat;
     private RiSettings.PreferenceResendRcs mPreferenceResendFt;
-    private boolean mCanSendMms;
+    private boolean mCanSendXms;
     private Context mCtx;
     // @formatter:off
     private static final Set<String> sAllowedIntentActions = new HashSet<>(Arrays.asList(
@@ -526,7 +524,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
             }
         };
         mCmsService = getCmsApi();
-        mCanSendMms = mCmsService.isAllowedToSendMultimediaMessage();
+        mCanSendXms = mCmsService.isAllowedToSendXms();
         mChatService = getChatApi();
         mCapabilityService = getCapabilityApi();
         mFileTransferService = getFileTransferApi();
@@ -702,7 +700,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case FileTransferIntent.ACTION_FILE_TRANSFER_DELIVERY_EXPIRED:
-                    processUndeliveredFileTransfers(displayName, mCanSendMms);
+                    processUndeliveredFileTransfers(displayName, mCanSendXms);
                     break;
 
                 case XmsMessageIntent.ACTION_NEW_XMS_MESSAGE:
@@ -865,6 +863,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
         menu.findItem(R.id.menu_send_geoloc).setVisible(rcsModeEstablished);
         menu.findItem(R.id.menu_send_rcs_file).setVisible(rcsModeEstablished);
         menu.findItem(R.id.menu_switch_to_rcs).setVisible(!rcsModeEstablished);
+        menu.findItem(R.id.menu_send_mms).setVisible(mCanSendXms);
         menu.findItem(R.id.menu_switch_to_sms).setVisible(rcsModeEstablished);
         menu.findItem(R.id.menu_sync_cms).setVisible(!RiSettings.isSyncAutomatic(this));
         return true;
@@ -930,20 +929,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                     break;
 
                 case R.id.menu_send_mms:
-                    if (mCanSendMms) {
-                        selectMimeTypeThenSendMms();
-                    } else {
-                        Uri _uri = Uri.parse("tel:" + mContact);
-                        Intent sendIntent = new Intent(Intent.ACTION_VIEW, _uri);
-                        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT) {
-                            String defaultSmsPackageName = Telephony.Sms.getDefaultSmsPackage(this);
-                            sendIntent.setPackage(defaultSmsPackageName);
-                        }
-                        sendIntent.putExtra("address", mContact.toString());
-                        sendIntent.putExtra("sms_body", "");
-                        sendIntent.setType("vnd.android-dir/mms-sms");
-                        startActivity(sendIntent);
-                    }
+                    selectMimeTypeThenSendMms();
                     break;
 
                 case R.id.menu_delete_talk:
@@ -1039,7 +1025,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                         if (transfer != null && transfer.isAllowedToResendTransfer()) {
                             menu.findItem(R.id.menu_resend_message).setVisible(true);
 
-                        } else if (mCanSendMms && Utils.isImageType(mimeType)) {
+                        } else if (mCanSendXms && Utils.isImageType(mimeType)) {
                             menu.findItem(R.id.menu_resend_via_xms).setVisible(true);
                         }
                     } else if (mFileTransferService.isAllowedToDownloadFile(id)) {
@@ -1072,7 +1058,7 @@ public class OneToOneTalkView extends RcsFragmentActivity implements
                             }
                         }
                     }
-                    if (mCanSendMms && Utils.isImageType(mimeType)) {
+                    if (mCanSendXms && Utils.isImageType(mimeType)) {
                         boolean expiredDelivery = cursor.getInt(cursor
                                 .getColumnIndexOrThrow(HistoryLog.EXPIRED_DELIVERY)) == 1;
                         if (expiredDelivery) {

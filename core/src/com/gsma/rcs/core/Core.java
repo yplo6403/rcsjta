@@ -28,7 +28,6 @@ import com.gsma.rcs.core.cms.event.XmsEventHandler;
 import com.gsma.rcs.core.cms.service.CmsSessionController;
 import com.gsma.rcs.core.cms.xms.XmsManager;
 import com.gsma.rcs.core.cms.xms.XmsSynchronizer;
-import com.gsma.rcs.core.cms.xms.observer.XmsObserver;
 import com.gsma.rcs.core.ims.ImsModule;
 import com.gsma.rcs.core.ims.network.NetworkException;
 import com.gsma.rcs.core.ims.protocol.PayloadException;
@@ -46,6 +45,7 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.DeviceUtils;
 import com.gsma.rcs.utils.PhoneUtils;
@@ -68,24 +68,15 @@ import java.security.KeyStoreException;
 public class Core {
 
     private static final String BACKGROUND_THREAD_NAME = Core.class.getSimpleName();
-
+    private static final Logger sLogger = Logger.getLogger(BACKGROUND_THREAD_NAME);
     private static volatile Core sInstance;
 
     private final XmsManager mXmsManager;
-
-    private final XmsObserver mXmsObserver;
-
     private CoreListener mListener;
-
     private boolean mStarted = false;
-
     private ImsModule mImsModule;
-
     private AddressBookManager mAddressBookManager;
-
     private NtpManager mNtpManager;
-
-    private static final Logger sLogger = Logger.getLogger(BACKGROUND_THREAD_NAME);
 
     /**
      * Handler to process messages & runnable associated with background thread.
@@ -121,6 +112,7 @@ public class Core {
      * @param historyLog The history log accessor
      * @param richCallHistory The richcall log accessor
      * @param xmsLog The XMS log accessor
+     * @param smsMmsLog the SmsMms log accessor
      * @return Core instance
      * @throws IOException
      * @throws KeyStoreException
@@ -128,8 +120,8 @@ public class Core {
     public static Core createCore(Context ctx, CoreListener listener, RcsSettings rcsSettings,
             ContentResolver contentResolver, LocalContentResolver localContentResolver,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog) throws IOException,
-            KeyStoreException {
+            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog, SmsMmsLog smsMmsLog)
+            throws IOException, KeyStoreException {
         if (sInstance != null) {
             return sInstance;
         }
@@ -138,7 +130,7 @@ public class Core {
                 KeyStoreManager.loadKeyStore(rcsSettings);
                 sInstance = new Core(ctx, listener, contentResolver, localContentResolver,
                         rcsSettings, contactManager, messagingLog, historyLog, richCallHistory,
-                        xmsLog, cmsLog);
+                        xmsLog, cmsLog, smsMmsLog);
             }
         }
         return sInstance;
@@ -173,11 +165,12 @@ public class Core {
      * @param historyLog The history log accessor
      * @param richCallHistory The richcall log accessor
      * @param xmsLog The XMS log accessor
+     * @param smsMmsLog the SmsMms log accessor
      */
     private Core(Context ctx, CoreListener listener, ContentResolver contentResolver,
             LocalContentResolver localContentResolver, RcsSettings rcsSettings,
             ContactManager contactManager, MessagingLog messagingLog, HistoryLog historyLog,
-            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog) {
+            RichCallHistory richCallHistory, XmsLog xmsLog, CmsLog cmsLog, SmsMmsLog smsMmsLog) {
         boolean logActivated = sLogger.isActivated();
         if (logActivated) {
             sLogger.info("Terminal core initialization");
@@ -189,13 +182,11 @@ public class Core {
         PhoneUtils.initialize(rcsSettings);
         mAddressBookManager = new AddressBookManager(contentResolver, contactManager);
         mLocaleManager = new LocaleManager(ctx, this, rcsSettings, contactManager);
-        mXmsManager = new XmsManager(ctx, contentResolver);
+        mXmsManager = new XmsManager(ctx, xmsLog, smsMmsLog);
         XmsSynchronizer xmsSynchronizer = new XmsSynchronizer(ctx.getContentResolver(),
-                rcsSettings, xmsLog, cmsLog);
+                rcsSettings, xmsLog, cmsLog, smsMmsLog);
         // Synchronize with native XMS content providers (not performed in background)
         xmsSynchronizer.execute();
-        // instantiate Xms Observer on native SMS/MMS content provider
-        mXmsObserver = new XmsObserver(contentResolver, rcsSettings);
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
                 messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
         mNtpManager = new NtpManager(ctx, rcsSettings);
@@ -214,7 +205,7 @@ public class Core {
         backgroundThread.start();
         mBackgroundHandler = new Handler(backgroundThread.getLooper());
         mImsModule.initialize(xmsEventHandler);
-        mXmsObserver.registerListener(xmsEventHandler);
+        mXmsManager.initialize(xmsEventHandler);
     }
 
     /**
@@ -263,7 +254,6 @@ public class Core {
         mXmsManager.start();
         mLocaleManager.start();
         mNtpManager.start();
-        mXmsObserver.start();
         mListener.onCoreLayerStarted();
 
         mStarted = true;
@@ -298,7 +288,6 @@ public class Core {
         mXmsManager.stop();
         mImsModule.stop();
         mNtpManager.stop();
-        mXmsObserver.stop();
         mStopping = false;
         mStarted = false;
         if (logActivated) {

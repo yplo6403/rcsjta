@@ -46,6 +46,7 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.CapabilityServiceImpl;
 import com.gsma.rcs.service.api.ChatServiceImpl;
@@ -97,7 +98,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class RcsCoreService extends Service implements CoreListener {
 
-    private static final String BACKGROUND_THREAD_NAME = RcsCoreService.class.getSimpleName();
+    private static final String BACKGROUND_THREAD_NAME = RcsCoreService.class.getName();
 
     private CpuManager mCpuManager;
 
@@ -152,6 +153,8 @@ public class RcsCoreService extends Service implements CoreListener {
 
     private CmsLog mCmsLog;
 
+    private SmsMmsLog mSmsMmsLog;
+
     private CountDownLatch mLatch;
 
     /**
@@ -174,6 +177,7 @@ public class RcsCoreService extends Service implements CoreListener {
                 mRcsSettings);
         mXmsLog = XmsLog.getInstance(mCtx, mRcsSettings, mLocalContentResolver);
         mCmsLog = CmsLog.getInstance(mCtx);
+        mSmsMmsLog = SmsMmsLog.getInstance(mCtx, mContentResolver);
         AndroidFactory.setApplicationContext(mCtx, mRcsSettings);
         final HandlerThread backgroundThread = new HandlerThread(BACKGROUND_THREAD_NAME);
         backgroundThread.start();
@@ -292,7 +296,7 @@ public class RcsCoreService extends Service implements CoreListener {
         try {
             core = Core.createCore(mCtx, this, mRcsSettings, mContentResolver,
                     mLocalContentResolver, mContactManager, mMessagingLog, mHistoryLog,
-                    mRichCallHistory, mXmsLog, mCmsLog);
+                    mRichCallHistory, mXmsLog, mCmsLog, mSmsMmsLog);
 
             InstantMessagingService imService = core.getImService();
             RichcallService richCallService = core.getRichcallService();
@@ -314,7 +318,7 @@ public class RcsCoreService extends Service implements CoreListener {
             mMmSessionApi = new MultimediaSessionServiceImpl(sipService, mRcsSettings);
             mUploadApi = new FileUploadServiceImpl(imService, mRcsSettings);
             mCmsApi = new CmsServiceImpl(mCtx, cmsSessionCtrl, mChatApi, mFtApi, imService,
-                    mXmsLog, mRcsSettings, core.getXmsManager(), mLocalContentResolver);
+                    mXmsLog, core.getXmsManager(), mLocalContentResolver, mSmsMmsLog);
             // instantiate XmsEventHandler in charge of handling xms events from XmsObserver
             XmsEventHandler xmsEventHandler = new XmsEventHandler(mCmsLog, mXmsLog, mRcsSettings,
                     mCmsApi);
@@ -598,7 +602,6 @@ public class RcsCoreService extends Service implements CoreListener {
         Core core = Core.getInstance();
         core.getImService().onCoreLayerStarted();
         core.getRichcallService().onCoreLayerStarted();
-        core.getCmsSessionCtrl().onCoreLayerStarted();
         IntentUtils.sendBroadcastEvent(mCtx, RcsService.ACTION_SERVICE_UP);
     }
 

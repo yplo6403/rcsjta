@@ -9,6 +9,13 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <android.support.v7.widget.AppCompatButton
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/set_sms_as_default"
+            android:paddingTop="5dip"
+            android:text="@string/message_set_sms_as_default"/>
+
         <android.support.v7.widget.AppCompatTextView
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

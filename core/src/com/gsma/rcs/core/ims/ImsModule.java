@@ -128,8 +128,8 @@ public class ImsModule implements SipEventListener {
         CapabilityService capabilityService = new CapabilityService(this, rcsSettings,
                 contactManager, addressBookManager);
         mServices.put(ImsServiceType.CAPABILITY, capabilityService);
-        CmsSessionController cmsSessionCtrl = new CmsSessionController(ctx, mCore, this,
-                rcsSettings, localContentResolver, xmsLog, messagingLog, cmsLog);
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(ctx, this, rcsSettings,
+                localContentResolver, xmsLog, messagingLog, cmsLog);
         mServices.put(ImsServiceType.CMS, cmsSessionCtrl);
         mServices.put(ImsServiceType.INSTANT_MESSAGING, new InstantMessagingService(this,
                 rcsSettings, contactManager, messagingLog, historyLog, localContentResolver, ctx,

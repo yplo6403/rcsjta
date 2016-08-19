@@ -42,6 +42,7 @@ import com.gsma.rcs.provider.cms.CmsRcsObject;
 import com.gsma.rcs.provider.messaging.ChatMessagePersistedStorageAccessor;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
@@ -83,21 +84,22 @@ public class SyncGroupChatTest extends AndroidTestCase {
         RcsSettings mSettings = RcsSettingsMock.getMockSettings(mContext);
         AndroidFactory.setApplicationContext(mContext, mSettings);
         mCmsLog = CmsLog.getInstance(mContext);
+        SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mContext, mContext.getContentResolver());
         LocalContentResolver mLocalContentResolver = new LocalContentResolver(mContext);
         XmsLog xmsLog = XmsLog.getInstance(mContext, mSettings, mLocalContentResolver);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mSettings);
-        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, null,
-                mSettings, mLocalContentResolver, xmsLog, mMessagingLog, mCmsLog);
+        CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, mSettings,
+                mLocalContentResolver, xmsLog, mMessagingLog, mCmsLog);
         InstantMessagingService imService = new InstantMessagingService(null, mSettings, null,
                 mMessagingLog, null, mLocalContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null,
                 mSettings, null, cmsSessionCtrl);
         FileTransferServiceImpl fileTransferService = new FileTransferServiceImpl(imService,
                 chatService, mMessagingLog, mSettings, null, mContext, cmsSessionCtrl);
-        XmsManager xmsManager = new XmsManager(mContext, mContext.getContentResolver());
+        XmsManager xmsManager = new XmsManager(mContext, xmsLog, smsMmsLog);
         CmsServiceImpl cmsServiceImpl = new CmsServiceImpl(mContext, cmsSessionCtrl, chatService,
-                fileTransferService, imService, xmsLog, mSettings, xmsManager,
-                mLocalContentResolver);
+                fileTransferService, imService, xmsLog, xmsManager, mLocalContentResolver,
+                smsMmsLog);
         CmsEventHandler cmsEventHandler = new CmsEventHandler(mContext, mLocalContentResolver,
                 mCmsLog, xmsLog, mMessagingLog, chatService, fileTransferService, cmsServiceImpl,
                 imService, mSettings);

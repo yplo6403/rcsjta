@@ -87,16 +87,21 @@ public class CmsLog {
         private static final String SEL_DEL_STATUS = CmsData.KEY_DEL_STATUS + "=?";
         private static final String SEL_READ_STATUS_OR_DELETE_STATUS = "(" + SEL_READ_STATUS + " OR " + SEL_DEL_STATUS + ")";
 
-        private static final String SEL_CHAT = CmsData.KEY_MSG_TYPE + "='" + MessageType.CHAT_MESSAGE + "'";
-        private static final String SEL_IMDN = CmsData.KEY_MSG_TYPE + "='" + MessageType.IMDN + "'";
-        private static final String SEL_FT = CmsData.KEY_MSG_TYPE + "='" + MessageType.FILE_TRANSFER + "'";
-        private static final String SEL_GC_STATE = CmsData.KEY_MSG_TYPE + "='" + MessageType.GROUP_STATE + "'";
-        private static final String SEL_CPM_SESSION = CmsData.KEY_MSG_TYPE + "='" + MessageType.CPM_SESSION + "'";
-        private static final String SEL_SMS = CmsData.KEY_MSG_TYPE + "='" + MessageType.SMS + "'";
-        private static final String SEL_MMS = CmsData.KEY_MSG_TYPE + "='" + MessageType.MMS + "'";
-        private static final String SEL_XMS = "(" + SEL_SMS + " OR " + SEL_MMS + ")";
+        private static final String SEL_CHAT = CmsData.KEY_MSG_TYPE + "='" + MessageType.CHAT_MESSAGE.toInt() + "'";
+        private static final String SEL_GC_STATE = CmsData.KEY_MSG_TYPE + "='" + MessageType.GROUP_STATE.toInt() + "'";
+        private static final String SEL_CPM_SESSION = CmsData.KEY_MSG_TYPE + "='" + MessageType.CPM_SESSION.toInt() + "'";
+        private static final String SEL_SMS = CmsData.KEY_MSG_TYPE + "='" + MessageType.SMS.toInt() + "'";
+        private static final String SEL_MMS = CmsData.KEY_MSG_TYPE + "='" + MessageType.MMS.toInt() + "'";
 
-        private static final String SEL_CHAT_IMDN_FT = "(" + SEL_CHAT + " OR " + SEL_IMDN + " OR " + SEL_FT + ")";
+        private static final String SEL_XMS = CmsData.KEY_MSG_TYPE + " IN ('" +
+                                                    MessageType.MMS.toInt() + "','" +
+                                                    MessageType.SMS.toInt() + "')";
+
+        private static final String SEL_CHAT_IMDN_FT = CmsData.KEY_MSG_TYPE + " IN ('" +
+                                                        MessageType.CHAT_MESSAGE.toInt() + "','" +
+                                                        MessageType.IMDN.toInt() + "','" +
+                                                        MessageType.FILE_TRANSFER.toInt() + "')";
+
         private static final String SEL_XMS_MSGID_FOLDER = SEL_XMS + " AND " + SEL_MSGID + " AND " + SEL_FOLDER_NAME;
         private static final String SEL_CHAT_MSGID = SEL_CHAT + " AND " + SEL_MSGID;
         private static final String SEL_CHAT_IMDN_FT_MSGID = SEL_CHAT_IMDN_FT + " AND " + SEL_MSGID;
@@ -309,7 +314,7 @@ public class CmsLog {
         values.put(CmsData.KEY_FOLDER, message.getFolder());
         values.put(CmsData.KEY_MSG_ID, message.getMessageId());
         values.put(CmsData.KEY_READ_STATUS, message.getReadStatus().toInt());
-        values.put(CmsData.KEY_MSG_TYPE, message.getMessageType().name());
+        values.put(CmsData.KEY_MSG_TYPE, message.getMessageType().toInt());
         values.put(CmsData.KEY_DEL_STATUS, message.getDeleteStatus().toInt());
         values.put(CmsData.KEY_PUSH_STATUS, message.getPushStatus().toInt());
         Integer uid = message.getUid();
@@ -602,12 +607,12 @@ public class CmsLog {
         if (MessageType.CPM_SESSION == messageType) {
             return mLocalContentResolver.update(CmsData.CONTENT_URI, values,
                     Message.SEL_TYPE_CHATID, new String[] {
-                            messageType.toString(), messageId
+                            String.valueOf(messageType.toInt()), messageId
                     });
         } else {
             return mLocalContentResolver.update(CmsData.CONTENT_URI, values,
                     Message.SEL_TYPE_MSGID, new String[] {
-                            messageType.toString(), messageId
+                            String.valueOf(messageType.toInt()), messageId
                     });
         }
     }
@@ -717,7 +722,7 @@ public class CmsLog {
         }
         return mLocalContentResolver.update(CmsData.CONTENT_URI, values, Message.SEL_TYPE_MSGID,
                 new String[] {
-                        messageType.toString(), messageId
+                        String.valueOf(messageType.toInt()), messageId
                 });
     }
 
@@ -811,7 +816,7 @@ public class CmsLog {
      */
     public Map<Long, CmsXmsObject> getNativeMessages(MessageType messageType) {
         List<CmsObject> cmData = getCmsObjects(Message.SEL_TYPE_PROVIDER_ID_NOT_NULL, new String[] {
-            messageType.toString()
+            String.valueOf(messageType.toInt())
         }, null);
         Map<Long, CmsXmsObject> messages = new HashMap<>();
         for (CmsObject item : cmData) {
@@ -887,7 +892,7 @@ public class CmsLog {
             int chatIdIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_CHAT_ID);
             int nativeIdIdx = cursor.getColumnIndexOrThrow(CmsData.KEY_NATIVE_ID);
             while (cursor.moveToNext()) {
-                MessageType msgType = MessageType.valueOf(cursor.getString(msgTypeIdx));
+                MessageType msgType = MessageType.valueOf(cursor.getInt(msgTypeIdx));
                 String folder = cursor.getString(folderIdx);
                 String msgId = cursor.getString(msgIdIdx);
                 Integer uid = cursor.isNull(uidIdx) ? null : cursor.getInt(uidIdx);
