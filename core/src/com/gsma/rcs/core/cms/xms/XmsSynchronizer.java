@@ -218,7 +218,7 @@ public class XmsSynchronizer {
                             : PushStatus.PUSHED;
                     mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.SMS, folder, smsData
                             .getMessageId(), pushStatus, readStatus,
-                            CmsData.DeleteStatus.NOT_DELETED, smsData.getNativeProviderId()));
+                            CmsData.DeleteStatus.NOT_DELETED, smsData.getNativeId()));
                 }
             } else if (MessageType.MMS == messageType) {
                 for (MmsDataObject mmsData : mSmsMmsLog.getMmsFromNativeProvider(id, ntpTimeOffset)) {
@@ -242,8 +242,7 @@ public class XmsSynchronizer {
                     PushStatus pushStatus = mSettings.shouldPushMms() ? PushStatus.PUSH_REQUESTED
                             : PushStatus.PUSHED;
                     mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, msgId, null,
-                            pushStatus, readStatus, DeleteStatus.NOT_DELETED, mmsData
-                                    .getNativeProviderId()));
+                            pushStatus, readStatus, DeleteStatus.NOT_DELETED, mmsData.getNativeId()));
                 }
             }
         }

@@ -72,23 +72,31 @@ public class ImapFolder {
     }
 
     /**
-     * @return messages
+     * Gets the number of messages
+     * 
+     * @return the number of messages
      */
-    public Integer getMessages() {
+    public Integer getMessageCount() {
         return getValueAsInteger(Constants.METADATA_MESSAGES);
     }
 
+    /**
+     * Checks if the folder is empty
+     * 
+     * @return true if the folder is empty
+     */
     public boolean isEmpty() {
-        return 0 == getValueAsInteger(Constants.METADATA_MESSAGES);
+        Integer numberOfMessages = getValueAsInteger(Constants.METADATA_MESSAGES);
+        return numberOfMessages == null || numberOfMessages == 0;
     }
 
     @Override
     public String toString() {
         return "ImapFolder [mName=" + mName + ", " + Constants.METADATA_MESSAGES + "="
-                + getMessages() + ", " + Constants.METADATA_UIDVALIDITY + "=" + getUidValidity()
-                + ", " + Constants.METADATA_HIGHESTMODSEQ + "=" + getHighestModseq() + ", "
-                + Constants.METADATA_UIDNEXT + "=" + getUidNext() + ", " + "]";
-
+                + getMessageCount() + ", " + Constants.METADATA_UIDVALIDITY + "="
+                + getUidValidity() + ", " + Constants.METADATA_HIGHESTMODSEQ + "="
+                + getHighestModseq() + ", " + Constants.METADATA_UIDNEXT + "=" + getUidNext()
+                + ", " + "]";
     }
 
     private Integer getValueAsInteger(String key) {

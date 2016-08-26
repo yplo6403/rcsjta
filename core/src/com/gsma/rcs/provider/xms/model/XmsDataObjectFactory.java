@@ -57,7 +57,7 @@ public class XmsDataObjectFactory {
         Direction direction = imapSmsMessage.getDirection();
         ReadStatus readStatus = imapSmsMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
         CpimMessage cpimMessage = imapSmsMessage.getCpimMessage();
-        // when fetching only headers cpim message is null
+        // when fetching only headers CPIM message is null
         String content = (cpimMessage == null ? "" : ((TextCpimBody) cpimMessage.getBody())
                 .getContent());
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contact,
@@ -102,9 +102,9 @@ public class XmsDataObjectFactory {
             }
         }
         ReadStatus readStatus = imapMmsMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
-        MmsDataObject mmsDataObject = new MmsDataObject(imapMmsMessage.getMmsId(), messageId,
-                contactId, imapMmsMessage.getSubject(), direction, readStatus,
-                imapMmsMessage.getDate(), null, null, mmsParts);
+        MmsDataObject mmsDataObject = new MmsDataObject(messageId, contactId,
+                imapMmsMessage.getSubject(), direction, readStatus, imapMmsMessage.getDate(), null,
+                mmsParts);
         mmsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT);
         return mmsDataObject;
     }

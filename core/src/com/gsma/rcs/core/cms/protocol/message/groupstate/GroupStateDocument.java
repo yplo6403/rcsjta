@@ -34,18 +34,18 @@ public class GroupStateDocument {
     public static final String COMM_ADDR_ATTR = "comm-addr";
 
     private final String mTimestamp;
-    private final String mLastfocussessionid;
+    private final String mLastFocusSessionId;
     private final List<ContactId> mParticipants;
 
-    public GroupStateDocument(String lastfocussessionid, String timestamp,
+    public GroupStateDocument(String lastFocusSessionId, String timestamp,
             List<ContactId> participants) {
-        mLastfocussessionid = lastfocussessionid;
+        mLastFocusSessionId = lastFocusSessionId;
         mTimestamp = timestamp;
         mParticipants = participants;
     }
 
-    public String getLastfocussessionid() {
-        return mLastfocussessionid;
+    public String getLastFocusSessionId() {
+        return mLastFocusSessionId;
     }
 
     public String getTimestamp() {

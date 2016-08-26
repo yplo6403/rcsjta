@@ -18,128 +18,31 @@
 
 package com.gsma.rcs.provider.xms.model;
 
-import com.gsma.rcs.core.FileAccessException;
-import com.gsma.rcs.core.cms.xms.mms.MmsFileSizeException;
-import com.gsma.rcs.utils.FileUtils;
-import com.gsma.rcs.utils.ImageUtils;
-import com.gsma.rcs.utils.MimeManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 
-import android.content.Context;
 import android.net.Uri;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * A class to model the MMS data object
+ */
 public class MmsDataObject extends XmsDataObject {
 
-    private static final int MAX_IMAGE_HEIGHT = 480;
-    private static final int MAX_IMAGE_WIDTH = 640;
-
-    public static final int MMS_PARTS_MAX_FILE_SIZE = 200000; /* International limit */
-
     private final List<MmsPart> mMmsParts;
-
-    /**
-     * The MMS Identifier created by the native SMS/MMS application.
-     */
     private final String mSubject;
-    /**
-     * The transaction ID to be used by the content observer of the native provider. If an outgoing
-     * MMS already exists in local provider having a messageId equals to the transaction ID then
-     * message is sent by the CMS and then already persisted.
-     */
-    private final String mTransId;
-
-    public MmsDataObject(String transId, String messageId, ContactId contact, String subject,
-            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
-            Long nativeThreadId, List<MmsPart> mmsParts) {
-        super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
-                nativeId, nativeThreadId);
-        mReadStatus = readStatus;
-        mMmsParts = mmsParts;
-        mSubject = subject;
-        mTransId = transId;
-    }
 
     public MmsDataObject(String messageId, ContactId contact, String subject,
             RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
-            Long nativeThreadId, List<MmsPart> mmsParts) {
+            List<MmsPart> mmsParts) {
         super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
-                nativeId, nativeThreadId);
+                nativeId);
         mReadStatus = readStatus;
         mMmsParts = mmsParts;
         mSubject = subject;
-        mTransId = null;
-    }
-
-    public MmsDataObject(Context ctx, String messageId, ContactId contact, String subject,
-            String body, RcsService.Direction dir, long timestamp, List<Uri> files, Long nativeId,
-            long maxFileIconSize) throws FileAccessException, MmsFileSizeException {
-        super(messageId, contact, XmsMessageLog.MimeType.MULTIMEDIA_MESSAGE, dir, timestamp,
-                nativeId, null);
-        mTransId = null;
-        mSubject = subject;
-        mMmsParts = new ArrayList<>();
-        for (Uri file : files) {
-            String filename = FileUtils.getFileName(ctx, file);
-            long fileSize = FileUtils.getFileSize(ctx, file);
-            String extension = MimeManager.getFileExtension(filename);
-            String mimeType = MimeManager.getInstance().getMimeType(extension);
-            byte[] fileIcon = null;
-            if (MimeManager.isImageType(mimeType)) {
-                String imageFilename = FileUtils.getPath(ctx, file);
-                fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxFileIconSize);
-            }
-            mMmsParts.add(new MmsPart(messageId, filename, fileSize, mimeType, file, fileIcon));
-        }
-        long availableSize = MMS_PARTS_MAX_FILE_SIZE;
-        /* Remove size of the body text */
-        if (body != null) {
-            mMmsParts.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, body));
-            availableSize -= body.length();
-        }
-        /* remove size of the un-compressible parts */
-        long imageSize = 0;
-        for (MmsPart part : mMmsParts) {
-            Long fileSize = part.getFileSize();
-            if (fileSize != null) {
-                /* The part is a file */
-                if (!MimeManager.isImageType(part.getMimeType())) {
-                    /* The part cannot be compressed: not an image */
-                    availableSize -= fileSize;
-                } else {
-                    imageSize += fileSize;
-                }
-            }
-        }
-        if (availableSize < 0) {
-            throw new MmsFileSizeException("Sum of un-compressible MMS parts is too high!");
-        }
-        if (imageSize > availableSize) {
-            /* Image compression is required */
-            Map<MmsPart, Long> imagesWithTargetSize = new HashMap<>();
-            for (MmsPart part : mMmsParts) {
-                if (MimeManager.isImageType(part.getMimeType())) {
-                    Long targetSize = (part.getFileSize() * availableSize) / imageSize;
-                    imagesWithTargetSize.put(part, targetSize);
-                }
-            }
-            for (Map.Entry<MmsPart, Long> entry : imagesWithTargetSize.entrySet()) {
-                MmsPart part = entry.getKey();
-                Long maxSize = entry.getValue();
-                String imagePath = FileUtils.getPath(ctx, part.getFile());
-                part.setPdu(ImageUtils.compressImage(imagePath, maxSize, MAX_IMAGE_WIDTH,
-                        MAX_IMAGE_HEIGHT));
-                // images are compressed in jpeg format
-                part.setMimeType("image/jpeg");
-            }
-        }
     }
 
     public String getSubject() {
@@ -148,10 +51,6 @@ public class MmsDataObject extends XmsDataObject {
 
     public List<MmsPart> getMmsParts() {
         return mMmsParts;
-    }
-
-    public String getTransId() {
-        return mTransId;
     }
 
     @Override

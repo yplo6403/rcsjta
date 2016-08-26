@@ -224,7 +224,6 @@ public class MmsLog implements IMmsLog {
     @Override
     public List<MmsDataObject> getMmsFromNativeProvider(long id, long ntpLocalOffset) {
         List<MmsDataObject> mmsDataObject = new ArrayList<>();
-        Long threadId;
         String mmsId;
         RcsService.Direction direction = RcsService.Direction.INCOMING;
         RcsService.ReadStatus readStatus;
@@ -243,8 +242,6 @@ public class MmsLog implements IMmsLog {
             if (!cursor.moveToNext()) {
                 return mmsDataObject;
             }
-            threadId = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.THREAD_ID));
             mmsId = cursor.getString(cursor
                     .getColumnIndexOrThrow(Telephony.BaseMmsColumns.MESSAGE_ID));
             readStatus = cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.READ)) == 0 ? RcsService.ReadStatus.UNREAD
@@ -265,7 +262,8 @@ public class MmsLog implements IMmsLog {
              */
             date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.DATE)) * 1000;
             date += ntpLocalOffset;
-            dateSent = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.BaseMmsColumns.DATE_SENT));
+            dateSent = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(Telephony.BaseMmsColumns.DATE_SENT));
             if (dateSent != 0) {
                 dateSent += ntpLocalOffset;
             }
@@ -315,7 +313,7 @@ public class MmsLog implements IMmsLog {
         }
         for (ContactId contact : contacts) {
             MmsDataObject mms = new MmsDataObject(mmsId, contact, subject, direction, readStatus,
-                    date, id, threadId, parts);
+                    date, id, parts);
             mms.setState(state);
             mms.setTimestampSent(dateSent);
             mmsDataObject.add(mms);

@@ -49,7 +49,7 @@ public interface IMmsLog {
     /**
      * Gets the MMS message to be sent and performs image compression if required
      *
-     * @param contact the remtoe contact
+     * @param contact the remote contact
      * @param files the files to be sent
      * @param subject the subject
      * @param body the body text

@@ -141,8 +141,7 @@ public class SyncLogUtilTest {
                     }, SORT_BY_DATE_DESC);
             CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
             int messageIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_MESSAGE_ID);
-            int nativeProviderIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
-            int nativeThreadIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_THREAD_ID);
+            int nativeIdIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
             int contactIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTACT);
             int contentIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_CONTENT);
             int dateIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP);
@@ -156,20 +155,16 @@ public class SyncLogUtilTest {
                             .getString(contentIdx), RcsService.Direction.valueOf(cursor
                             .getInt(directionIdx)),
                             ReadStatus.valueOf(cursor.getInt(readStatusIdx)), cursor
-                                    .getLong(dateIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                    : cursor.getLong(nativeProviderIdIdx), cursor
-                                    .isNull(nativeThreadIdIdx) ? null : cursor
-                                    .getLong(nativeThreadIdIdx)));
+                                    .getLong(dateIdx), cursor.isNull(nativeIdIdx) ? null : cursor
+                                    .getLong(nativeIdIdx)));
                 } else {
                     messages.add(new MmsDataObject(cursor.getString(messageIdIdx), ContactUtil
                             .createContactIdFromTrustedData(cursor.getString(contactIdx)), cursor
                             .getString(contentIdx), RcsService.Direction.valueOf(cursor
                             .getInt(directionIdx)),
                             ReadStatus.valueOf(cursor.getInt(readStatusIdx)), cursor
-                                    .getLong(dateIdx), cursor.isNull(nativeProviderIdIdx) ? null
-                                    : cursor.getLong(nativeProviderIdIdx), cursor
-                                    .isNull(nativeThreadIdIdx) ? null : cursor
-                                    .getLong(nativeThreadIdIdx), parts));
+                                    .getLong(dateIdx), cursor.isNull(nativeIdIdx) ? null : cursor
+                                    .getLong(nativeIdIdx), parts));
                 }
             }
             return messages;

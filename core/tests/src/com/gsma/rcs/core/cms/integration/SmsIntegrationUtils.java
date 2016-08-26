@@ -44,16 +44,16 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact, "Hello!",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() - 4000, 1L, 1L),
+                        NtpTrustedTime.currentTimeMillis() - 4000, 1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact, "How are you?",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() - 3000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() - 3000, 2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact, "Fine, and you?",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() - 2000, 3L, 1L),
+                        NtpTrustedTime.currentTimeMillis() - 2000, 3L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact, "Fine, thanks",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis(), 4L, 1L),
+                        NtpTrustedTime.currentTimeMillis(), 4L),
         };
     }
 
@@ -99,15 +99,15 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "How are you?",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000,
-                        2L, 1L),
+                        2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Fine, and you?",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000,
-                        3L, 1L),
+                        3L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Fine, thanks",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L, 1L),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L),
         };
     }
 
@@ -123,15 +123,15 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 4000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
                         Direction.OUTGOING, readStatus, NtpTrustedTime.currentTimeMillis() - 2000,
-                        3L, 1L),
+                        3L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() - 3000,
-                        2L, 1L),
+                        2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contactId, "yes",
-                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L, 1L),
+                        Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis(), 4L),
         };
     }
 
@@ -144,22 +144,22 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation_remote = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
-                        2L, 1L),
+                        2L),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
-                        2L, 1L),
+                        2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000,
-                        3L, 1L),
+                        3L),
 
         };
     }
@@ -173,19 +173,19 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation_remote = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 3000,
-                        2L, 1L),
+                        2L),
         };
 
         public static SmsDataObject[] conversation_local = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        1L, 1L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), Test1.contact, "Hello!",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 2000,
-                        2L, 1L),
+                        2L),
         };
 
     }
@@ -206,34 +206,34 @@ public class SmsIntegrationUtils {
         public static SmsDataObject[] conversation_1 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hello 1!",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() + 1000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 1000, 2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hi 1",
                         Direction.INCOMING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Ciao 1",
                         Direction.OUTGOING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Bye 1",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
         };
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact2, "Hi 2!",
                         Direction.OUTGOING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact2, "Ciao 2",
                         Direction.OUTGOING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
         };
 
         public static SmsDataObject[] conversation_3 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Hello 3!",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() + 1000, 1L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 1000, 1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Bye 3",
                         Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                        NtpTrustedTime.currentTimeMillis() + 2000, 2L, 1L),
+                        NtpTrustedTime.currentTimeMillis() + 2000, 2L),
         };
     }
 
@@ -247,7 +247,7 @@ public class SmsIntegrationUtils {
         public static SmsDataObject smsDataObject = new SmsDataObject(
                 IdGenerator.generateMessageID(), contact, "Je vous remercie d'avance ",
                 Direction.INCOMING, RcsService.ReadStatus.UNREAD,
-                NtpTrustedTime.currentTimeMillis() + 1000, 2L, 1L);
+                NtpTrustedTime.currentTimeMillis() + 1000, 2L);
     }
 
     public static class TestLoad {
@@ -263,26 +263,25 @@ public class SmsIntegrationUtils {
 
         public static SmsDataObject[] conversation_1 = new SmsDataObject[] {
             new SmsDataObject(IdGenerator.generateMessageID(), contact1, "Hello !",
-                    Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L,
-                    1L),
+                    Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L),
         };
 
         public static SmsDataObject[] conversation_2 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact2, "Hi",
                         Direction.INCOMING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 1000, 1L, 2L),
+                        NtpTrustedTime.currentTimeMillis() + 1000, 1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact2, "Ciao",
                         Direction.INCOMING, RcsService.ReadStatus.READ,
-                        NtpTrustedTime.currentTimeMillis() + 1000, 2L, 2L),
+                        NtpTrustedTime.currentTimeMillis() + 1000, 2L),
         };
 
         public static SmsDataObject[] conversation_3 = new SmsDataObject[] {
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Hello",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        1L, 3L),
+                        1L),
                 new SmsDataObject(IdGenerator.generateMessageID(), contact3, "Bye",
                         Direction.INCOMING, readStatus, NtpTrustedTime.currentTimeMillis() + 1000,
-                        2L, 3L),
+                        2L),
         };
     }
 }

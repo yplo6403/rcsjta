@@ -62,13 +62,13 @@ public class ListStatusCmdHandlerTest extends AndroidTestCase {
 
         for (ImapFolder imapFolder : folders) {
             if ("+33642575779".equals(imapFolder.getName())) {
-                Assert.assertEquals(Integer.valueOf(1), imapFolder.getMessages());
+                Assert.assertEquals(Integer.valueOf(1), imapFolder.getMessageCount());
                 Assert.assertEquals(Integer.valueOf(4), imapFolder.getUidNext());
                 Assert.assertEquals(Integer.valueOf(7), imapFolder.getHighestModseq());
                 Assert.assertEquals(Integer.valueOf(1437039675), imapFolder.getUidValidity());
 
             } else if ("INBOX".equals(imapFolder.getName())) {
-                Assert.assertEquals(Integer.valueOf(2), imapFolder.getMessages());
+                Assert.assertEquals(Integer.valueOf(2), imapFolder.getMessageCount());
                 Assert.assertEquals(Integer.valueOf(1), imapFolder.getUidNext());
                 Assert.assertEquals(Integer.valueOf(1), imapFolder.getHighestModseq());
                 Assert.assertEquals(Integer.valueOf(1437039422), imapFolder.getUidValidity());

@@ -463,7 +463,6 @@ public class XmsProvider extends ContentProvider {
                     + XmsData.KEY_REASON_CODE + " INTEGER NOT NULL,"
                     + XmsData.KEY_READ_STATUS + " INTEGER NOT NULL,"
                     + XmsData.KEY_NATIVE_ID + " INTEGER,"
-                    + XmsData.KEY_NATIVE_THREAD_ID + " INTEGER,"
                     + XmsData.KEY_MESSAGE_CORRELATOR + " TEXT)" );
 
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MESSAGE_ID + "_idx" +
@@ -475,15 +474,10 @@ public class XmsProvider extends ContentProvider {
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_NATIVE_ID + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_NATIVE_ID + ')');
 
-            db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_NATIVE_THREAD_ID + "_idx" +
-                    " ON " + TABLE_XMS + '(' + XmsData.KEY_NATIVE_THREAD_ID + ')');
-
             db.execSQL("CREATE INDEX " + TABLE_XMS + '_' + XmsData.KEY_MESSAGE_CORRELATOR + "_idx" +
                     " ON " + TABLE_XMS + '(' + XmsData.KEY_MESSAGE_CORRELATOR + ')');
 
             // @formatter:on
-
-            // TODO add index on mimetype
 
             // define another index
 

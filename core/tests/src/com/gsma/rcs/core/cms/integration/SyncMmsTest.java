@@ -527,11 +527,11 @@ public class SyncMmsTest extends AndroidTestCase {
         for (MmsDataObject mms : TestLoad.conversation_2) {
             mXmsLog.addOutgoingMms(new MmsDataObject(mms.getMessageId(), mms.getContact(), mms
                     .getSubject(), mms.getDirection(), ReadStatus.UNREAD, mms.getTimestamp(), mms
-                    .getNativeProviderId(), mms.getNativeThreadId(), mms.getMmsParts()));
+                    .getNativeId(), mms.getMmsParts()));
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, mms.getMessageId(),
                     PushStatus.PUSHED, CmsData.ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, mms
-                            .getNativeThreadId()));
+                            .getNativeId()));
         }
         mImapCmsUtilTest.createRemoteXmsMessages(TestLoad.conversation_3);
         mSyncStrategy.execute();

@@ -20,8 +20,6 @@
 package com.gsma.rcs.core.cms.protocol.message.cpmsession;
 
 import com.gsma.rcs.core.ParseFailureException;
-import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.core.cms.utils.CmsUtils;
 import com.gsma.rcs.utils.ContactUtil;
 import com.gsma.rcs.utils.logger.Logger;
 import com.gsma.services.rcs.contact.ContactId;
@@ -44,14 +42,9 @@ public class CpmSessionParser extends DefaultHandler {
 
     private String mSessionType;
     private List<ContactId> mParticipants = new ArrayList<>();
-
     private final InputSource mInputSource;
     private StringBuffer accumulator;
-
-    /**
-     * The logger
-     */
-    private Logger logger = Logger.getLogger(this.getClass().getName());
+    private static final Logger sLogger = Logger.getLogger(CpmSessionParser.class.getName());
 
     /**
      * Constructor
@@ -105,10 +98,11 @@ public class CpmSessionParser extends DefaultHandler {
 
         } else if (CpmSessionDocument.INVITED_PARTICIPANTS.equals(localName)) {
             for (String participant : accumulator.toString().split(";")) {
-                ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(participant);
+                ContactUtil.PhoneNumber phoneNumber = ContactUtil
+                        .getValidPhoneNumberFromUri(participant);
                 if (phoneNumber == null) {
-                    if (logger.isActivated()) {
-                        logger.error("Invalid participant " + participant);
+                    if (sLogger.isActivated()) {
+                        sLogger.error("Invalid participant " + participant);
                     }
                 } else {
                     mParticipants.add(ContactUtil.createContactIdFromValidatedData(phoneNumber));
@@ -118,21 +112,23 @@ public class CpmSessionParser extends DefaultHandler {
     }
 
     public void warning(SAXParseException exception) {
-        if (logger.isActivated()) {
-            logger.error("Warning: line " + exception.getLineNumber() + ": "
+        if (sLogger.isActivated()) {
+            sLogger.error("Warning: line " + exception.getLineNumber() + ": "
                     + exception.getMessage());
         }
     }
 
     public void error(SAXParseException exception) {
-        if (logger.isActivated()) {
-            logger.error("Error: line " + exception.getLineNumber() + ": " + exception.getMessage());
+        if (sLogger.isActivated()) {
+            sLogger.error("Error: line " + exception.getLineNumber() + ": "
+                    + exception.getMessage());
         }
     }
 
     public void fatalError(SAXParseException exception) throws SAXException {
-        if (logger.isActivated()) {
-            logger.error("Fatal: line " + exception.getLineNumber() + ": " + exception.getMessage());
+        if (sLogger.isActivated()) {
+            sLogger.error("Fatal: line " + exception.getLineNumber() + ": "
+                    + exception.getMessage());
         }
         throw exception;
     }

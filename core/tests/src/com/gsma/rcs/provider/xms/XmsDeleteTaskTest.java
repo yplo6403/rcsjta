@@ -58,8 +58,8 @@ import java.util.List;
  * @author Philippe LEMORDANT
  */
 public class XmsDeleteTaskTest extends InstrumentationTestCase {
-    private XmsLog mXmsLog;
 
+    private XmsLog mXmsLog;
     private LocalContentResolver mLocalContentResolver;
     private SmsDataObject mSms;
     private SmsDataObject mSms1;
@@ -88,7 +88,7 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
 
         long timestamp = 1;
         mSms = new SmsDataObject("sms-id", mContact2, "SMS test message",
-                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L, null);
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L);
         mCmsObjectSms = new CmsXmsObject(MessageType.SMS, mFolder2, mSms.getMessageId(), 1,
                 PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED, null);
@@ -111,7 +111,7 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         ArrayList<Uri> fileUris = new ArrayList<>();
         fileUris.add(mUriCat1);
         fileUris.add(mUriCat2);
-        mMms = new MmsDataObject(mContext, "mms-id", mContact1, "MMS test subject",
+        mMms = XmsLogTest.getMmsDataObject(mContext, "mms-id", mContact1, "MMS test subject",
                 "MMS test message", RcsService.Direction.INCOMING, timestamp, fileUris, 100L,
                 50000L);
         mCmsObjectMms = new CmsXmsObject(MessageType.MMS, mFolder1, mMms.getMessageId(), 1,

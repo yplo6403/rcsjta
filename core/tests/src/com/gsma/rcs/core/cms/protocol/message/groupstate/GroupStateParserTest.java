@@ -32,7 +32,9 @@ import java.io.ByteArrayInputStream;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
- * Created by VGZL8743 on 14/01/2016.
+ * Class to test GroupStateParser
+ * 
+ * @author VGZL8743 on 14/01/2016.
  */
 public class GroupStateParserTest extends AndroidTestCase {
 
@@ -53,7 +55,7 @@ public class GroupStateParserTest extends AndroidTestCase {
         parser.parse();
         GroupStateDocument doc = parser.getGroupStateDocument();
         Assert.assertEquals("2012-06-13T16:39:57-05:00", doc.getTimestamp());
-        Assert.assertEquals("sip:da9274453@company.com", doc.getLastfocussessionid());
+        Assert.assertEquals("sip:da9274453@company.com", doc.getLastFocusSessionId());
         Assert.assertEquals(3, doc.getParticipants().size());
         Assert.assertEquals("+16135551210", doc.getParticipants().get(0).toString());
         Assert.assertEquals("+16135551211", doc.getParticipants().get(1).toString());

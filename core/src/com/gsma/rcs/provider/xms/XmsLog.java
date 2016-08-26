@@ -38,6 +38,7 @@ import com.gsma.services.rcs.RcsService.Direction;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.MmsPartLog;
 import com.gsma.services.rcs.cms.XmsMessage;
+import com.gsma.services.rcs.cms.XmsMessage.ReasonCode;
 import com.gsma.services.rcs.cms.XmsMessage.State;
 import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
@@ -54,10 +55,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -79,16 +78,10 @@ public class XmsLog {
 
     private static final String SEL_UNREAD = XmsData.KEY_READ_STATUS + "="
             + ReadStatus.UNREAD.toInt();
-    private static final String SEL_NATIVE_THREAD_ID = XmsData.KEY_NATIVE_THREAD_ID + "=?";
 
     private static final String SEL_XMS_MMS = XmsData.KEY_MIME_TYPE + "='"
             + MimeType.MULTIMEDIA_MESSAGE + "'";
 
-    private static final String SEL_NATIVE_THREAD_ID_MMS = SEL_NATIVE_THREAD_ID + " AND "
-            + SEL_XMS_MMS;
-
-    private static final String SEL_NATIVE_THREAD_ID_UNREAD = SEL_NATIVE_THREAD_ID + " AND "
-            + SEL_UNREAD;
     private static final String SEL_DIR_INCOMING = XmsData.KEY_DIRECTION + "="
             + Direction.INCOMING.toInt();
 
@@ -98,9 +91,6 @@ public class XmsLog {
     private static final String SEL_XMS_SMS_NATIVE_ID = SEL_XMS_NATIVE_ID + " AND " + SEL_XMS_SMS;
 
     private static final String SEL_XMS_MMS_NATIVE_ID = SEL_XMS_NATIVE_ID + " AND " + SEL_XMS_MMS;
-
-    private static final String SEL_NATIVE_THREAD_ID_MMS_UNREAD_INCOMING = SEL_NATIVE_THREAD_ID_UNREAD
-            + " AND " + SEL_DIR_INCOMING + " AND " + SEL_XMS_MMS;
 
     private static final String SEL_XMS_DIR = XmsData.KEY_DIRECTION + "=?";
     private static final String SEL_XMS_CORRELATOR = XmsData.KEY_MESSAGE_CORRELATOR + "=?";
@@ -239,8 +229,7 @@ public class XmsLog {
         values.put(XmsData.KEY_STATE, sms.getState().toInt());
         values.put(XmsData.KEY_REASON_CODE, sms.getReasonCode().toInt());
         values.put(XmsData.KEY_READ_STATUS, sms.getReadStatus().toInt());
-        values.put(XmsData.KEY_NATIVE_ID, sms.getNativeProviderId());
-        values.put(XmsData.KEY_NATIVE_THREAD_ID, sms.getNativeThreadId());
+        values.put(XmsData.KEY_NATIVE_ID, sms.getNativeId());
         values.put(XmsData.KEY_MESSAGE_CORRELATOR, sms.getCorrelator());
         mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
     }
@@ -311,7 +300,7 @@ public class XmsLog {
         values.put(XmsData.KEY_STATE, mms.getState().toInt());
         values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
         values.put(XmsData.KEY_READ_STATUS, mms.getReadStatus().toInt());
-        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
+        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeId());
         mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
     }
 
@@ -431,7 +420,7 @@ public class XmsLog {
         values.put(XmsData.KEY_STATE, mms.getState().toInt());
         values.put(XmsData.KEY_REASON_CODE, mms.getReasonCode().toInt());
         values.put(XmsData.KEY_READ_STATUS, mms.getReadStatus().toInt());
-        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeProviderId());
+        values.put(XmsData.KEY_NATIVE_ID, mms.getNativeId());
         mLocalContentResolver.insert(XmsData.CONTENT_URI, values);
         return mmsId;
     }
@@ -486,81 +475,6 @@ public class XmsLog {
                 }, null);
         CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
         return cursor;
-    }
-
-    /**
-     * Get unread MMS from native thread ID
-     * 
-     * @param nativeThreadId the native thread ID
-     * @return set of unread MMS Ids by contact
-     */
-    public Map<ContactId, Set<String>> getUnreadMms(Long nativeThreadId) {
-        Cursor cursor = null;
-        Map<ContactId, Set<String>> unreads = new HashMap<>();
-        try {
-            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, PROJ_MSGID_CONTACT,
-                    SEL_NATIVE_THREAD_ID_MMS_UNREAD_INCOMING, new String[] {
-                        String.valueOf(nativeThreadId)
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
-            int contactIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
-            while (cursor.moveToNext()) {
-                String msgId = cursor.getString(messageIdIdx);
-                String number = cursor.getString(contactIdx);
-                ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
-                if (unreads.containsKey(contact)) {
-                    Set<String> msgIds = unreads.get(contact);
-                    msgIds.add(msgId);
-
-                } else {
-                    Set<String> msgIds = new HashSet<>();
-                    msgIds.add(msgId);
-                    unreads.put(contact, msgIds);
-                }
-            }
-            return unreads;
-
-        } finally {
-            CursorUtil.close(cursor);
-        }
-    }
-
-    /**
-     * Gets the MMSs by native thread ID
-     * 
-     * @param nativeThreadId the native thread ID
-     * @return the MMSs by native thread ID
-     */
-    public Map<ContactId, Set<String>> getMmsMessages(Long nativeThreadId) {
-        Cursor cursor = null;
-        Map<ContactId, Set<String>> mmss = new HashMap<>();
-        try {
-            cursor = mLocalContentResolver.query(XmsData.CONTENT_URI, null,
-                    SEL_NATIVE_THREAD_ID_MMS, new String[] {
-                        String.valueOf(nativeThreadId)
-                    }, null);
-            CursorUtil.assertCursorIsNotNull(cursor, XmsData.CONTENT_URI);
-            int messageIdIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.MESSAGE_ID);
-            int contactIdx = cursor.getColumnIndexOrThrow(XmsMessageLog.CONTACT);
-            while (cursor.moveToNext()) {
-                String msgId = cursor.getString(messageIdIdx);
-                String number = cursor.getString(contactIdx);
-                ContactId contact = ContactUtil.createContactIdFromTrustedData(number);
-                if (mmss.containsKey(contact)) {
-                    Set<String> msgIds = mmss.get(contact);
-                    msgIds.add(msgId);
-
-                } else {
-                    Set<String> msgIds = new HashSet<>();
-                    msgIds.add(msgId);
-                    mmss.put(contact, msgIds);
-                }
-            }
-            return mmss;
-        } finally {
-            CursorUtil.close(cursor);
-        }
     }
 
     /**
@@ -658,13 +572,35 @@ public class XmsLog {
             ReadStatus readStatus = ReadStatus.valueOf(cursor.getInt(cursor
                     .getColumnIndexOrThrow(XmsData.KEY_READ_STATUS)));
             long date = cursor.getLong(cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP));
+            long dateSent = cursor
+                    .getLong(cursor.getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP_SENT));
+            long dateDelivered = cursor.getLong(cursor
+                    .getColumnIndexOrThrow(XmsData.KEY_TIMESTAMP_DELIVERED));
+            State state = State.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(XmsData.KEY_STATE)));
+            ReasonCode reason = ReasonCode.valueOf(cursor.getInt(cursor
+                    .getColumnIndexOrThrow(XmsData.KEY_REASON_CODE)));
             if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
-                return new SmsDataObject(messageId, contact, content, dir, date, readStatus);
+                SmsDataObject sms = new SmsDataObject(messageId, contact, content, dir, date,
+                        readStatus);
+                sms.setTimestampSent(dateSent);
+                sms.setTimestampDelivered(dateDelivered);
+                sms.setState(state);
+                sms.setReasonCode(reason);
+                return sms;
 
             } else {
+                int nativeIdColumnIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
+                Long nativeId = cursor.isNull(nativeIdColumnIdx) ? null : cursor
+                        .getLong(nativeIdColumnIdx);
                 List<MmsDataObject.MmsPart> mmsParts = new ArrayList<>(getParts(messageId));
-                return new MmsDataObject(messageId, contact, content, dir, readStatus, date, null,
-                        null, mmsParts);
+                MmsDataObject mms = new MmsDataObject(messageId, contact, content, dir, readStatus,
+                        date, nativeId, mmsParts);
+                mms.setTimestampSent(dateSent);
+                mms.setTimestampDelivered(dateDelivered);
+                mms.setState(state);
+                mms.setReasonCode(reason);
+                return mms;
             }
         } finally {
             CursorUtil.close(cursor);

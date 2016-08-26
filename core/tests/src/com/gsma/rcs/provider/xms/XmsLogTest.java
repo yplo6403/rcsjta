@@ -29,7 +29,11 @@ import com.gsma.rcs.provider.xms.model.MmsDataObject.MmsPart;
 import com.gsma.rcs.provider.xms.model.SmsDataObject;
 import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.utils.ContactUtilMockContext;
+import com.gsma.rcs.utils.FileUtils;
 import com.gsma.rcs.utils.FileUtilsTest;
+import com.gsma.rcs.utils.IdGenerator;
+import com.gsma.rcs.utils.ImageUtils;
+import com.gsma.rcs.utils.MimeManager;
 import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessage;
@@ -37,7 +41,6 @@ import com.gsma.services.rcs.cms.XmsMessageLog;
 import com.gsma.services.rcs.contact.ContactId;
 import com.gsma.services.rcs.contact.ContactUtil;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
@@ -48,6 +51,7 @@ import android.test.InstrumentationTestCase;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,12 +60,12 @@ import java.util.Set;
  * @author Philippe LEMORDANT
  */
 public class XmsLogTest extends InstrumentationTestCase {
+
     private XmsLog mXmsLog;
     private String mFileName1;
     private String mFileName2;
     private Long mFileSize1;
     private Long mFileSize2;
-
     private LocalContentResolver mLocalContentResolver;
     private MmsDataObject mMms;
     private SmsDataObject mSms;
@@ -70,6 +74,10 @@ public class XmsLogTest extends InstrumentationTestCase {
     private SmsDataObject mSms1;
     private SmsDataObject mSms2;
     private ContactId mContact1;
+
+    private static final int MAX_IMAGE_HEIGHT = 480;
+    private static final int MAX_IMAGE_WIDTH = 640;
+    public static final int MMS_PARTS_MAX_FILE_SIZE = 200000; /* International limit */
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -95,17 +103,17 @@ public class XmsLogTest extends InstrumentationTestCase {
         fileUris.add(mUriCat1);
         fileUris.add(mUriCat2);
         long timestamp = NtpTrustedTime.currentTimeMillis();
-        mMms = new MmsDataObject(mContext, "mms-id", mContact1, "MMS test subject",
+        mMms = getMmsDataObject(mContext, "mms-id", mContact1, "MMS test subject",
                 "MMS test message", RcsService.Direction.INCOMING, timestamp++, fileUris, 100L,
                 50000L);
-        mMms1 = new MmsDataObject(mContext, "mms-id1", mContact1, "MMS1 test subject",
+        mMms1 = getMmsDataObject(mContext, "mms-id1", mContact1, "MMS1 test subject",
                 "MMS1 test message", RcsService.Direction.OUTGOING, timestamp++, fileUris, 101L,
                 50000L);
-        mMms2 = new MmsDataObject(mContext, "mms-id1", mContact2, "MMS2 test subject",
+        mMms2 = getMmsDataObject(mContext, "mms-id1", mContact2, "MMS2 test subject",
                 "MMS2 test message", RcsService.Direction.OUTGOING, timestamp++, fileUris, 102L,
                 50000L);
         mSms = new SmsDataObject("sms-id", mContact2, "SMS test message",
-                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L, null);
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L);
         mSms1 = new SmsDataObject("sms-id1", mContact1, "SMS1 test message",
                 RcsService.Direction.INCOMING, timestamp++, ReadStatus.UNREAD, "c'est vrai");
         mSms2 = new SmsDataObject("sms-id2", mContact1, "SMS2 test message",
@@ -117,6 +125,68 @@ public class XmsLogTest extends InstrumentationTestCase {
         mLocalContentResolver.delete(PartData.CONTENT_URI, null, null);
         mLocalContentResolver.delete(XmsData.CONTENT_URI, null, null);
         RcsSettingsMock.restoreSettings();
+    }
+
+    public static MmsDataObject getMmsDataObject(Context ctx, String messageId, ContactId contact,
+            String subject, String body, RcsService.Direction dir, long timestamp, List<Uri> files,
+            Long nativeId, long maxFileIconSize) throws FileAccessException, MmsFileSizeException {
+        List<MmsPart> mMmsParts = new ArrayList<>();
+        for (Uri file : files) {
+            String filename = FileUtils.getFileName(ctx, file);
+            long fileSize = FileUtils.getFileSize(ctx, file);
+            String extension = MimeManager.getFileExtension(filename);
+            String mimeType = MimeManager.getInstance().getMimeType(extension);
+            byte[] fileIcon = null;
+            if (MimeManager.isImageType(mimeType)) {
+                String imageFilename = FileUtils.getPath(ctx, file);
+                fileIcon = ImageUtils.tryGetThumbnail(imageFilename, maxFileIconSize);
+            }
+            mMmsParts.add(new MmsPart(messageId, filename, fileSize, mimeType, file, fileIcon));
+        }
+        long availableSize = MMS_PARTS_MAX_FILE_SIZE;
+        /* Remove size of the body text */
+        if (body != null) {
+            mMmsParts.add(new MmsPart(messageId, XmsMessageLog.MimeType.TEXT_MESSAGE, body));
+            availableSize -= body.length();
+        }
+        /* remove size of the un-compressible parts */
+        long imageSize = 0;
+        for (MmsPart part : mMmsParts) {
+            Long fileSize = part.getFileSize();
+            if (fileSize != null) {
+                /* The part is a file */
+                if (!MimeManager.isImageType(part.getMimeType())) {
+                    /* The part cannot be compressed: not an image */
+                    availableSize -= fileSize;
+                } else {
+                    imageSize += fileSize;
+                }
+            }
+        }
+        if (availableSize < 0) {
+            throw new MmsFileSizeException("Sum of un-compressible MMS parts is too high!");
+        }
+        if (imageSize > availableSize) {
+            /* Image compression is required */
+            Map<MmsPart, Long> imagesWithTargetSize = new HashMap<>();
+            for (MmsPart part : mMmsParts) {
+                if (MimeManager.isImageType(part.getMimeType())) {
+                    Long targetSize = (part.getFileSize() * availableSize) / imageSize;
+                    imagesWithTargetSize.put(part, targetSize);
+                }
+            }
+            for (Map.Entry<MmsPart, Long> entry : imagesWithTargetSize.entrySet()) {
+                MmsPart part = entry.getKey();
+                Long maxSize = entry.getValue();
+                String imagePath = FileUtils.getPath(ctx, part.getFile());
+                part.setPdu(ImageUtils.compressImage(imagePath, maxSize, MAX_IMAGE_WIDTH,
+                        MAX_IMAGE_HEIGHT));
+                // images are compressed in jpeg format
+                part.setMimeType("image/jpeg");
+            }
+        }
+        return new MmsDataObject(messageId, contact, subject, dir, RcsService.ReadStatus.UNREAD,
+                timestamp, nativeId, mMmsParts);
     }
 
     public void testSmsMessage() {
@@ -203,33 +273,6 @@ public class XmsLogTest extends InstrumentationTestCase {
         }
     }
 
-    private boolean updateThreadId(ContactId contact, String messageId, Long threadId) {
-        ContentValues values = new ContentValues();
-        values.put(XmsData.KEY_NATIVE_THREAD_ID, threadId);
-        return mLocalContentResolver.update(XmsData.CONTENT_URI, values,
-                XmsLog.SEL_XMS_CONTACT_MSGID, new String[] {
-                        contact.toString(), messageId
-                }) > 0;
-    }
-
-    public void testGetMmsMessages() {
-        mXmsLog.addIncomingMms(mMms);
-        mXmsLog.addIncomingMms(mMms1);
-        Map<ContactId, Set<String>> mmss = mXmsLog.getMmsMessages(300L);
-        assertEquals(0, mmss.size());
-        assertTrue(updateThreadId(mMms.getContact(), mMms.getMessageId(), 300L));
-        assertTrue(updateThreadId(mMms.getContact(), mMms1.getMessageId(), 300L));
-        mmss = mXmsLog.getMmsMessages(300L);
-        assertEquals(1, mmss.size());
-        Map.Entry<ContactId, Set<String>> entry = mmss.entrySet().iterator().next();
-        ContactId contact = entry.getKey();
-        assertEquals(mMms.getContact(), contact);
-        Set<String> mmsIds = entry.getValue();
-        assertEquals(2, mmsIds.size());
-        assertTrue(mmsIds.contains(mMms.getMessageId()));
-        assertTrue(mmsIds.contains(mMms1.getMessageId()));
-    }
-
     public RcsService.ReadStatus getReadStatus(ContactId contact, String xmsId) {
         Cursor cursor = mXmsLog.getXmsMessage(contact, xmsId);
         assertEquals(cursor.getCount(), 1);
@@ -243,22 +286,6 @@ public class XmsLogTest extends InstrumentationTestCase {
         mXmsLog.addSms(mSms);
         assertTrue(mXmsLog.markMessageAsRead(mSms.getContact(), mSms.getMessageId()));
         assertEquals(ReadStatus.READ, getReadStatus(mSms.getContact(), mSms.getMessageId()));
-    }
-
-    public void testGetUnreadMms() {
-        mXmsLog.addIncomingMms(mMms);
-        assertEquals(ReadStatus.UNREAD, getReadStatus(mMms.getContact(), mMms.getMessageId()));
-        Map<ContactId, Set<String>> mmss = mXmsLog.getUnreadMms(300L);
-        assertTrue(mmss.isEmpty());
-        assertTrue(updateThreadId(mMms.getContact(), mMms.getMessageId(), 300L));
-        mmss = mXmsLog.getUnreadMms(300L);
-        assertEquals(1, mmss.size());
-        Map.Entry<ContactId, Set<String>> entry = mmss.entrySet().iterator().next();
-        ContactId contact = entry.getKey();
-        assertEquals(mMms.getContact(), contact);
-        Set<String> mmsIds = entry.getValue();
-        assertEquals(1, mmsIds.size());
-        assertEquals(mMms.getMessageId(), mmsIds.toArray()[0]);
     }
 
     public void testGetContactsForXmsId() {
@@ -342,7 +369,7 @@ public class XmsLogTest extends InstrumentationTestCase {
 
     public void testGetSmsMessage() {
         SmsDataObject sms = new SmsDataObject("messageId", mContact1, "testGetSmsMessage",
-                RcsService.Direction.INCOMING, ReadStatus.READ, 1234L, 56789L, 123456789L);
+                RcsService.Direction.INCOMING, ReadStatus.READ, 1234L, 56789L);
         mXmsLog.addSms(sms);
         Cursor cursor = mXmsLog.getSmsMessage(56789L);
         assertTrue(cursor.moveToNext());
@@ -355,5 +382,48 @@ public class XmsLogTest extends InstrumentationTestCase {
         assertTrue(xms instanceof MmsDataObject);
         MmsDataObject mms = (MmsDataObject) xms;
         assertEquals(mMms, mms);
+    }
+
+    public void testUpdateMmsMessageId() throws FileAccessException {
+        mXmsLog.addOutgoingMms(mMms1);
+        ContactId contact = mMms1.getContact();
+        String newMessageId = IdGenerator.generateMessageID();
+        mXmsLog.updateMmsMessageId(contact, mMms1.getNativeId(), newMessageId);
+        XmsDataObject xms = mXmsLog.getXmsDataObject(contact, newMessageId);
+        assertTrue(xms instanceof MmsDataObject);
+    }
+
+    public void testSetMessageDelivered() throws FileAccessException {
+        mXmsLog.addOutgoingMms(mMms1);
+        ContactId contact = mMms1.getContact();
+        String messageId = mMms1.getMessageId();
+        long timestampDelivered = System.currentTimeMillis();
+        mXmsLog.setMessageDelivered(contact, messageId, timestampDelivered);
+        XmsDataObject xms = mXmsLog.getXmsDataObject(contact, messageId);
+        assertTrue(xms instanceof MmsDataObject);
+        assertEquals(timestampDelivered, xms.getTimestampDelivered());
+    }
+
+    public void testSetMessageSent() throws FileAccessException {
+        mXmsLog.addOutgoingMms(mMms1);
+        ContactId contact = mMms1.getContact();
+        String messageId = mMms1.getMessageId();
+        long timestampSent = System.currentTimeMillis();
+        mXmsLog.setMessageSent(contact, messageId, timestampSent);
+        XmsDataObject xms = mXmsLog.getXmsDataObject(contact, messageId);
+        assertTrue(xms instanceof MmsDataObject);
+        assertEquals(timestampSent, xms.getTimestampSent());
+    }
+
+    public void testSetStateAndReasonCode() throws FileAccessException {
+        mXmsLog.addOutgoingMms(mMms1);
+        ContactId contact = mMms1.getContact();
+        String messageId = mMms1.getMessageId();
+        mXmsLog.setStateAndReasonCode(contact, messageId, XmsMessage.State.FAILED,
+                XmsMessage.ReasonCode.FAILED_MMS_ERROR_HTTP_FAILURE);
+        XmsDataObject xms = mXmsLog.getXmsDataObject(contact, messageId);
+        assertTrue(xms instanceof MmsDataObject);
+        assertEquals(XmsMessage.State.FAILED, xms.getState());
+        assertEquals(XmsMessage.ReasonCode.FAILED_MMS_ERROR_HTTP_FAILURE, xms.getReasonCode());
     }
 }

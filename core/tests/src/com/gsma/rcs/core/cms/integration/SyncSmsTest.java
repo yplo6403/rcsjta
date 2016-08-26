@@ -493,7 +493,7 @@ public class SyncSmsTest extends AndroidTestCase {
         });
         SmsDataObject localSms = new SmsDataObject(sms.getMessageId(), contact, sms.getBody(),
                 sms.getDirection(), RcsService.ReadStatus.READ, sms.getTimestamp(),
-                sms.getTimestampSent(), sms.getTimestampDelivered());
+                sms.getNativeId());
         mXmsLog.addSms(localSms);
         mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.SMS, folder, localSms.getMessageId(),
                 PushStatus.PUSH_REQUESTED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
@@ -521,14 +521,13 @@ public class SyncSmsTest extends AndroidTestCase {
             for (SmsDataObject sms : SmsIntegrationUtils.Test10.conversation_2) {
                 String msgId = IdGenerator.generateMessageID();
                 mXmsLog.addSms(new SmsDataObject(msgId, sms.getContact(), sms.getBody(), sms
-                        .getDirection(), sms.getReadStatus(), sms.getTimestamp(), sms
-                        .getNativeProviderId(), sms.getNativeThreadId()));
+                        .getDirection(), sms.getReadStatus(), sms.getTimestamp(), sms.getNativeId()));
                 String folder = CmsUtils.contactToCmsFolder(sms.getContact());
                 mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.SMS, folder, msgId,
                         PushStatus.PUSHED,
                         sms.getReadStatus() == RcsService.ReadStatus.READ ? CmsData.ReadStatus.READ
                                 : CmsData.ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, sms
-                                .getNativeThreadId()));
+                                .getNativeId()));
             }
             mImapCmsUtilTest.createRemoteXmsMessages(SmsIntegrationUtils.Test10.conversation_3);
         }

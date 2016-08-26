@@ -36,7 +36,6 @@ public class CmsLogTest extends AndroidTestCase {
 
     private CmsLog mCmsLog;
     private CmsLogTestIntegration mCmsLogTestIntegration;
-
     private CmsFolder[] mFolders;
     private CmsObject[] mMessages;
     private ContactId mContact1;
@@ -240,7 +239,7 @@ public class CmsLogTest extends AndroidTestCase {
         }
     }
 
-    public void testUpdateMessage() {
+    public void testUpdateMessageUponCreation() {
         CmsObject message = mMessages[0];
         addMessageToCmsLog(message);
         CmsObject msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
@@ -455,5 +454,19 @@ public class CmsLogTest extends AndroidTestCase {
         CmsXmsObject msgFromLog = mCmsLog.getSmsData(mContact1, "new-message-id");
         assertEquals("new-message-id", msgFromLog.getMessageId());
         assertEquals(message.getUid(), msgFromLog.getUid());
+    }
+
+    public void testUpdateMessage() {
+        CmsObject message = mMessages[0];
+        String messageId = message.getMessageId();
+        String folderName = message.getFolder();
+        Integer uid = message.getUid();
+        addMessageToCmsLog(message);
+        CmsObject msgFromLog = mCmsLog.getMessage(folderName, uid);
+        assertEquals(message, msgFromLog);
+        mCmsLog.updateMessage(messageId, folderName, uid, true, true);
+        msgFromLog = mCmsLog.getMessage(message.getFolder(), message.getUid());
+        assertEquals(DeleteStatus.DELETED, msgFromLog.getDeleteStatus());
+        assertEquals(ReadStatus.READ, msgFromLog.getReadStatus());
     }
 }

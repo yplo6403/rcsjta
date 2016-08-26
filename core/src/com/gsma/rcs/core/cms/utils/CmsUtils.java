@@ -55,16 +55,4 @@ public class CmsUtils {
                 + Constants.CMS_DIRECTORY_SEPARATOR + contributionId;
     }
 
-    public static String cmsFolderToChatId(String cmsFolder) {
-        String folder = StringUtils.removeQuotes(cmsFolder);
-        String prefix = Constants.CMS_ROOT_DIRECTORY + Constants.CMS_DIRECTORY_SEPARATOR;
-        if (cmsFolder.startsWith(prefix)) {
-            folder = folder.substring(prefix.length());
-        }
-        String[] val = folder.split(Constants.CMS_DIRECTORY_SEPARATOR, 2);
-        if (val.length != 2) {
-            return null;
-        }
-        return val[0];
-    }
 }

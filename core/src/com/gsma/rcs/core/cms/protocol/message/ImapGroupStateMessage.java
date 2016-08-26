@@ -23,8 +23,6 @@ import com.gsma.rcs.core.ParseFailureException;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncXmlFormatException;
-import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
-import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateDocument;
 import com.gsma.rcs.core.cms.protocol.message.groupstate.GroupStateParser;
 import com.gsma.rcs.provider.settings.RcsSettings;
@@ -82,7 +80,7 @@ public class ImapGroupStateMessage extends ImapMessage {
             GroupStateParser parser = new GroupStateParser(new InputSource(
                     new ByteArrayInputStream(content.getBytes())));
             GroupStateDocument document = parser.parse().getGroupStateDocument();
-            mRejoinId = document.getLastfocussessionid();
+            mRejoinId = document.getLastFocusSessionId();
             mParticipants = document.getParticipants();
             mParticipants.remove(mRcsSettings.getUserProfileImsUserName());
             if (mParticipants == null || mParticipants.isEmpty()) {

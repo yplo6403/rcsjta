@@ -93,7 +93,7 @@ public class XmsMessage {
             if (entry != null) {
                 return entry;
             }
-            throw new IllegalArgumentException("No enum const class " + State.class.getName() + ""
+            throw new IllegalArgumentException("No enum const class " + State.class.getName() + " "
                     + value + "!");
         }
 

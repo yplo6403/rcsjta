@@ -53,8 +53,6 @@ public class SmsLog implements ISmsLog {
 
     public static class Sms {
         public final static Uri URI = Uri.parse("content://sms/");
-
-        public static final String WHERE = BaseColumns._ID + "=?";
     }
 
     /* package private */SmsLog(ContentResolver resolver) {
@@ -107,7 +105,7 @@ public class SmsLog implements ISmsLog {
 
     @Override
     public List<SmsDataObject> getSmsFromNativeProvider(Cursor cursor, String messageId,
-                                                        long ntpLocalOffset) {
+            long ntpLocalOffset) {
         List<SmsDataObject> smsObjects = new ArrayList<>();
         if (!cursor.moveToFirst()) {
             return smsObjects;
@@ -116,7 +114,6 @@ public class SmsLog implements ISmsLog {
             messageId = IdGenerator.generateMessageID();
         }
         int idIdx = cursor.getColumnIndexOrThrow(BaseColumns._ID);
-        int threadIdIdx = cursor.getColumnIndexOrThrow(Telephony.TextBasedSmsColumns.THREAD_ID);
         int addressIdx = cursor.getColumnIndexOrThrow(Telephony.TextBasedSmsColumns.ADDRESS);
         int dateIdx = cursor.getColumnIndexOrThrow(Telephony.TextBasedSmsColumns.DATE);
         int dateSentIdx = cursor.getColumnIndexOrThrow(Telephony.TextBasedSmsColumns.DATE_SENT);
@@ -127,7 +124,6 @@ public class SmsLog implements ISmsLog {
         int errorCodeIdx = cursor.getColumnIndexOrThrow(Telephony.TextBasedSmsColumns.ERROR_CODE);
         do {
             Long _id = cursor.getLong(idIdx);
-            Long threadId = cursor.getLong(threadIdIdx);
             String address = cursor.getString(addressIdx);
             ContactUtil.PhoneNumber phoneNumber = ContactUtil
                     .getValidPhoneNumberFromAndroid(address);
@@ -154,7 +150,7 @@ public class SmsLog implements ISmsLog {
                 readStatus = RcsService.ReadStatus.UNREAD;
             }
             SmsDataObject smsDataObject = new SmsDataObject(messageId, contactId, body, direction,
-                    readStatus, date, _id, threadId);
+                    readStatus, date, _id);
             if (date_sent != 0) {
                 smsDataObject.setTimestampSent(date_sent + ntpLocalOffset);
             }
@@ -195,9 +191,8 @@ public class SmsLog implements ISmsLog {
     }
 
     @Override
-    public int deleteSms(long nativeID) {
-        Uri uri = ContentUris.withAppendedId(Sms.URI,nativeID);
-        return mContentResolver.delete(uri, null, null);
+    public int deleteSms(long nativeId) {
+        return mContentResolver.delete(ContentUris.withAppendedId(Sms.URI, nativeId), null, null);
     }
 
 }

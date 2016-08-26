@@ -49,11 +49,7 @@ public class TextCpimBody extends CpimBody {
 
     @Override
     public String toPayload() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(mHeaders);
-        sb.append(Constants.CRLF);
-        sb.append(mContent);
-        return sb.toString();
+        return String.valueOf(mHeaders) + Constants.CRLF + mContent;
     }
 
     public String getContent() {

@@ -75,7 +75,7 @@ public class XmsEventHandler implements XmsEventListener {
         ContactId contact = message.getContact();
         String folder = CmsUtils.contactToCmsFolder(contact);
         CmsXmsObject cms = new CmsXmsObject(msgType, folder, message.getMessageId(), push,
-                ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, message.getNativeProviderId());
+                ReadStatus.UNREAD, DeleteStatus.NOT_DELETED, message.getNativeId());
         mCmsLog.addXmsMessage(cms);
         if (mCmsSyncScheduler != null) {
             mCmsSyncScheduler.schedulePushMessages(contact);
@@ -161,7 +161,6 @@ public class XmsEventHandler implements XmsEventListener {
             sLogger.debug("onMmsMessageStateChanged MMS=" + mms);
         }
         ContactId contact = mms.getContact();
-        long nativeId = mms.getNativeProviderId();
         String msgId = mms.getMessageId();
         XmsMessage.State state = mms.getState();
         XmsMessage.ReasonCode reason = mms.getReasonCode();
@@ -173,13 +172,13 @@ public class XmsEventHandler implements XmsEventListener {
                 break;
 
             case SENT:
-                if (mXmsLog.updateMmsMessageId(contact, nativeId, msgId)) {
+                if (mXmsLog.updateMmsMessageId(contact, mms.getNativeId(), msgId)) {
                     updated = mXmsLog.setMessageSent(contact, msgId, mms.getTimestampSent());
                 }
                 break;
 
             default:
-                if (mXmsLog.updateMmsMessageId(contact, nativeId, msgId)) {
+                if (mXmsLog.updateMmsMessageId(contact, mms.getNativeId(), msgId)) {
                     updated = mXmsLog.setStateAndReasonCode(contact, msgId, state, reason);
                 }
         }

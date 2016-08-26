@@ -31,10 +31,8 @@ public class SmsDataObject extends XmsDataObject {
     private final String mBody;
 
     public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId,
-            Long nativeThreadId) {
-        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId,
-                nativeThreadId);
+            RcsService.Direction dir, ReadStatus readStatus, long timestamp, Long nativeId) {
+        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, nativeId);
         mBody = body;
         mCorrelator = HeaderCorrelatorUtils.buildHeader(mBody);
         mReadStatus = readStatus;
@@ -42,13 +40,13 @@ public class SmsDataObject extends XmsDataObject {
 
     public SmsDataObject(String messageId, ContactId contact, String body,
             RcsService.Direction dir, long timestamp, ReadStatus readStatus) {
-        this(messageId, contact, body, dir, readStatus, timestamp, null, null);
+        this(messageId, contact, body, dir, readStatus, timestamp, null);
     }
 
     public SmsDataObject(String messageId, ContactId contact, String body,
             RcsService.Direction dir, long timestamp, ReadStatus readStatus,
             String messageCorrelator) {
-        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, null, null);
+        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, null);
         mReadStatus = readStatus;
         mCorrelator = messageCorrelator;
         mBody = body;

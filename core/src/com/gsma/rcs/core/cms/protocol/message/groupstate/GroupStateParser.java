@@ -41,15 +41,11 @@ import javax.xml.parsers.SAXParserFactory;
 public class GroupStateParser extends DefaultHandler {
 
     private String mTimestamp;
-    private String mLastfocussessionid;
+    private String mLastFocusSessionId;
     private List<ContactId> mParticipants = new ArrayList<>();
-
     private final InputSource mInputSource;
 
-    /**
-     * The logger
-     */
-    private Logger logger = Logger.getLogger(this.getClass().getName());
+    private static final Logger sLogger = Logger.getLogger(GroupStateParser.class.getName());
 
     /**
      * Constructor
@@ -83,15 +79,15 @@ public class GroupStateParser extends DefaultHandler {
 
     public void startElement(String namespaceURL, String localName, String qname, Attributes attr) {
         if (GroupStateDocument.GROUP_STATE_ELEMENT.equals(localName)) {
-            mLastfocussessionid = attr.getValue(GroupStateDocument.LASTFOCUSSESSIONID_ATTR);
+            mLastFocusSessionId = attr.getValue(GroupStateDocument.LASTFOCUSSESSIONID_ATTR);
             mTimestamp = attr.getValue(GroupStateDocument.TIMESTAMP_ATTR);
 
         } else if (GroupStateDocument.PARTICIPANT_ELEMENT.equals(localName)) {
             String participant = attr.getValue(GroupStateDocument.COMM_ADDR_ATTR);
             ContactUtil.PhoneNumber phoneNumber = ContactUtil.getValidPhoneNumberFromUri(participant);
             if (phoneNumber == null) {
-                if (logger.isActivated()) {
-                    logger.error("Invalid participant " + participant);
+                if (sLogger.isActivated()) {
+                    sLogger.error("Invalid participant " + participant);
                 }
             } else {
                 mParticipants.add(ContactUtil.createContactIdFromValidatedData(phoneNumber));
@@ -100,29 +96,29 @@ public class GroupStateParser extends DefaultHandler {
     }
 
     public void warning(SAXParseException exception) {
-        if (logger.isActivated()) {
-            logger.error("Warning: line " + exception.getLineNumber() + ": "
+        if (sLogger.isActivated()) {
+            sLogger.error("Warning: line " + exception.getLineNumber() + ": "
                     + exception.getMessage());
         }
     }
 
     public void error(SAXParseException exception) {
-        if (logger.isActivated()) {
-            logger.error("Error: line " + exception.getLineNumber() + ": " + exception.getMessage());
+        if (sLogger.isActivated()) {
+            sLogger.error("Error: line " + exception.getLineNumber() + ": " + exception.getMessage());
         }
     }
 
     public void fatalError(SAXParseException exception) throws SAXException {
-        if (logger.isActivated()) {
-            logger.error("Fatal: line " + exception.getLineNumber() + ": " + exception.getMessage());
+        if (sLogger.isActivated()) {
+            sLogger.error("Fatal: line " + exception.getLineNumber() + ": " + exception.getMessage());
         }
         throw exception;
     }
 
     public GroupStateDocument getGroupStateDocument() {
-        if (mTimestamp == null || mLastfocussessionid == null) {
+        if (mTimestamp == null || mLastFocusSessionId == null) {
             return null;
         }
-        return new GroupStateDocument(mLastfocussessionid, mTimestamp, mParticipants);
+        return new GroupStateDocument(mLastFocusSessionId, mTimestamp, mParticipants);
     }
 }
