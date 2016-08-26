@@ -58,7 +58,6 @@ public class Constants {
     public static final String HEADER_SUBJECT = "Subject";
     public static final String HEADER_MESSAGE_CONTEXT = "Message-Context";
     public static final String HEADER_MESSAGE_CORRELATOR = "Message-Correlator";
-    public static final String HEADER_MESSAGE_ID = "Message-ID";
     public static final String HEADER_CONVERSATION_ID = "Conversation-ID";
     public static final String HEADER_CONTRIBUTION_ID = "Contribution-ID";
     public static final String HEADER_DATE = "Date";

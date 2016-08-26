@@ -42,7 +42,7 @@ import java.util.List;
 
 public class ImapMmsMessage extends ImapCpimMessage {
 
-    private final static Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getName());
 
     private String mSubject;
     private String mMmsId;
@@ -58,10 +58,10 @@ public class ImapMmsMessage extends ImapCpimMessage {
     public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
             throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
-        mMmsId = getHeader(Constants.HEADER_MESSAGE_ID);
+        mMmsId = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
         if (mMmsId == null) {
             throw new CmsSyncMissingHeaderException(
-                    Constants.HEADER_MESSAGE_ID.concat(" IMAP header is missing"));
+                    Constants.HEADER_MESSAGE_CORRELATOR.concat(" IMAP header is missing"));
         }
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
@@ -81,7 +81,7 @@ public class ImapMmsMessage extends ImapCpimMessage {
                 DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
         addHeader(Constants.HEADER_CONVERSATION_ID, conversationId);
         addHeader(Constants.HEADER_CONTRIBUTION_ID, contributionId);
-        addHeader(Constants.HEADER_MESSAGE_ID, mmsId);
+        addHeader(Constants.HEADER_MESSAGE_CORRELATOR, mmsId);
         addHeader(Constants.HEADER_IMDN_MESSAGE_ID, imdnMessageId);
         addHeader(Constants.HEADER_DIRECTION, direction);
         addHeader(Constants.HEADER_MESSAGE_CONTEXT, Constants.MULTIMEDIA_MESSAGE);

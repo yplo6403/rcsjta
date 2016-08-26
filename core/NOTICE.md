@@ -9,6 +9,8 @@ The RCS stack is under Apache 2 license (see LICENSE-2.0.txt) and uses the follo
  - The [Legion Of The Bouncy Castle](http://www.bouncycastle.org/java.html): see LICENSE-BOUNCYCASTLE.txt.
  - The [Android SMS/MMS Sending Library](https://github.com/klinker41/android-smsmms): see LICENSE-KLINKER41.txt.
 
+----------
+
 > Installation:
 > The RCS\_core.apk must be first installed on the device. Client applications (i.e. RCS_RI.apk, RCS_settings.apk and cmsToolKit.apk) must be installed afterwards otherwise permission to bind to the core service is denied.
 
@@ -19,6 +21,13 @@ Limitations :
 	* Group chat is not tested since group chat messages are not correctly pushed on CMS.
 	* RCS File transfer is not tested since object is not correctly pushed on CMS.
 
+----------
+
+Release identification:
+
+	- RCS stack: 2.0.3
+
+----------
 
 News:
 	
@@ -34,6 +43,7 @@ News:
 
 Bugs fixed:
 
+	* QC defect 173: MMS Message ID must be stored in IMAP Message-Correlator header. 
 	* SQL request to push on CMS should restrict scope to XMS messages.
 	* CMS: MMS are duplicated if already pushed on CMS and resolved locally.
 	* FO 60 SMS correlation issue (SMS stored via the SMS-C) in the stack.

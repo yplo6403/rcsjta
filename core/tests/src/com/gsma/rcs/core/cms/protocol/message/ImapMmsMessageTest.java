@@ -18,6 +18,7 @@
 
 package com.gsma.rcs.core.cms.protocol.message;
 
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.Constants;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
@@ -36,12 +37,42 @@ import android.test.suitebuilder.annotation.SmallTest;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.List;
+import java.util.Locale;
 
 public class ImapMmsMessageTest extends AndroidTestCase {
 
+    // @formatter:off
+    private static final String FORMAT_PAYLOAD = "From: +33642575779\r\n" +
+            "To: +33640332859\r\n" +
+            "Date: %1$s\r\n" +
+            "Conversation-ID: 1443517760826\r\n" +
+            "Contribution-ID: 1443517760826\r\n" +
+            "Message-Correlator: myMmsId\r\n" +
+            "IMDN-Message-ID: 1443517760826\r\n" +
+            "Message-Direction: received\r\n" +
+            "Message-Context: multimedia-message\r\n" +
+            "Content-Type: message/cpim\r\n\r\n" +
+            "From: +33642575779\r\n" +
+            "To: +33640332859\r\n" +
+            "DateTime: %2$s\r\n" +
+            "NS: imdn <urn:ietf:params:imdn>\r\n" +
+            "NS: rcs <http://www.gsma.com>\r\n" +
+            "imdn.Message-ID: 1443517760826\r\n\r\n" +
+            "Content-Type: multipart/related;boundary=\"boundary_1446218793256\";\r\n\r\n" +
+            "--boundary_1446218793256\r\n" +
+            "Content-Type: text/plain\r\n\r\n" +
+            "myContent\r\n\r\n" +
+            "--boundary_1446218793256\r\n" +
+           "Content-Type: text/plain; charset=utf-8\r\n\r\n" +
+            "1\r\n\r\n" +
+            "--boundary_1446218793256--";
+    // @formatter:on
+
+    private static final String MULTIPART_BOUNDARY = "boundary_1446218793256";
+
     private String mPayload;
-    private String mBoundary;
     private long mDate;
     private String mImapDate;
     private String mCpimDate;
@@ -50,28 +81,13 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mBoundary = "boundary_1446218793256";
+        RcsSettingsMock.getMockSettings(getContext());
         mDate = NtpTrustedTime.currentTimeMillis();
         mImapDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_IMAP_DATE_FORMAT);
         mCpimDate = DateUtils.getDateAsString(mDate, DateUtils.CMS_CPIM_DATE_FORMAT);
         mRemote = ContactUtil.createContactIdFromTrustedData("+33642575779");
-        mPayload = "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                + "Date: " + mImapDate + Constants.CRLF + "Conversation-ID: 1443517760826"
-                + Constants.CRLF + "Contribution-ID: 1443517760826" + Constants.CRLF
-                + "Message-ID: myMmsId" + Constants.CRLF + "IMDN-Message-ID: 1443517760826"
-                + Constants.CRLF + "Message-Direction: received" + Constants.CRLF
-                + "Message-Context: multimedia-message" + Constants.CRLF
-                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
-                + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                + "DateTime: " + mCpimDate + Constants.CRLF + "NS: imdn <urn:ietf:params:imdn>"
-                + Constants.CRLF + "NS: rcs <http://www.gsma.com>" + Constants.CRLF
-                + "imdn.Message-ID: 1443517760826" + Constants.CRLF + Constants.CRLF
-                + "Content-Type: multipart/related;boundary=\"boundary_1446218793256\";"
-                + Constants.CRLF + Constants.CRLF + "--boundary_1446218793256" + Constants.CRLF
-                + "Content-Type: text/plain" + Constants.CRLF + Constants.CRLF + "myContent"
-                + Constants.CRLF + Constants.CRLF + "--boundary_1446218793256" + Constants.CRLF
-                + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF + Constants.CRLF + "1"
-                + Constants.CRLF + Constants.CRLF + "--boundary_1446218793256--";
+        Formatter formatter = new Formatter(new StringBuilder(), Locale.US);
+        mPayload = formatter.format(FORMAT_PAYLOAD, mImapDate, mCpimDate).toString();
     }
 
     @SmallTest
@@ -88,7 +104,8 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                 imapMmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
         Assert.assertEquals("1443517760826",
                 imapMmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
-        Assert.assertEquals("myMmsId", imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_ID));
+        Assert.assertEquals("myMmsId",
+                imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
         Assert.assertEquals("1443517760826",
                 imapMmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
         Assert.assertEquals("received", imapMmsMessage.getHeader(Constants.HEADER_DIRECTION));
@@ -131,7 +148,8 @@ public class ImapMmsMessageTest extends AndroidTestCase {
                 "+33640332859", "received", mDate, null, "1443517760826", "1443517760826",
                 "1443517760826", "myMmsId", parts);
 
-        ((MultipartCpimBody) imapMmsMessage.getCpimMessage().getBody()).setBoundary(mBoundary);
+        ((MultipartCpimBody) imapMmsMessage.getCpimMessage().getBody())
+                .setBoundary(MULTIPART_BOUNDARY);
 
         Assert.assertEquals(mPayload, imapMmsMessage.toPayload());
 

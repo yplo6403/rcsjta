@@ -68,7 +68,6 @@ public class ImapCmsUtilTest {
     private final RcsSettings mRcsSettings;
     private final Context mContext;
     private final BasicImapService mImapService;
-    // private static final Logger sLogger = Logger.getLogger(ImapCmsUtilTest.class.getName());
     private final CmsLog mCmsLog;
 
     /**

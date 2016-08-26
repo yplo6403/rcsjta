@@ -88,7 +88,8 @@ import java.util.Map;
 
 public class CmsEventHandler implements CmsEventListener {
 
-    private static final Logger sLogger = Logger.getLogger(CmsEventHandler.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(CmsEventHandler.class.getName());
+
     private final Context mCtx;
     private final XmsLog mXmsLog;
     private final CmsLog mCmsLog;
@@ -752,9 +753,9 @@ public class CmsEventHandler implements CmsEventListener {
 
     private CmsXmsObject searchLocalMmsMessage(ImapMmsMessage message)
             throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
-        String mmsId = message.getHeader(Constants.HEADER_MESSAGE_ID);
+        String mmsId = message.getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
         if (mmsId == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_ID
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR
                     + " IMAP header is missing");
         }
         return mCmsLog.getMmsData(message.getContact(), mmsId);

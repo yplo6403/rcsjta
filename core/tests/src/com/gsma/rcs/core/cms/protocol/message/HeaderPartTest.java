@@ -24,19 +24,19 @@ import android.test.AndroidTestCase;
 
 public class HeaderPartTest extends AndroidTestCase {
 
-    public static StringBuilder headerContent = new StringBuilder();
-    static {
-        headerContent.append("From: +33643202148").append(Constants.CRLF);
-        headerContent.append("To: +33643209850").append(Constants.CRLF);
-        headerContent.append("Date: ven., 30 10 2015 16:26:16.0 +0100").append(Constants.CRLF);
-        headerContent.append("Conversation-ID: 1446218776000").append(Constants.CRLF);
-        headerContent.append("Contribution-ID: 1446218776000").append(Constants.CRLF);
-        headerContent.append("Message-ID: 103015261610014200000").append(Constants.CRLF);
-        headerContent.append("IMDN-Message-ID: 1446218776000").append(Constants.CRLF);
-        headerContent.append("Message-Direction: received").append(Constants.CRLF);
-        headerContent.append("Message-Context: \"multimedia-message\"").append(Constants.CRLF);
-        headerContent.append("Content-Type: message/cpim").append(Constants.CRLF);
-    }
+    // @formatter:off
+    private static final String HEADER =
+            "From: +33643202148\r\n" +
+            "To: +33643209850\r\n" +
+            "Date: ven., 30 10 2015 16:26:16.0 +0100\r\n" +
+            "Conversation-ID: 1446218776000\r\n" +
+            "Contribution-ID: 1446218776000\r\n" +
+            "Message-Correlator: 103015261610014200000\r\n" +
+            "IMDN-Message-ID: 1446218776000\r\n" +
+            "Message-Direction: received\r\n" +
+            "Message-Context: \"multimedia-message\"\r\n" +
+            "Content-Type: message/cpim\r\n";
+    // @formatter:on
 
     public void test() {
         HeaderPart headers = new HeaderPart();
@@ -45,11 +45,11 @@ public class HeaderPartTest extends AndroidTestCase {
         headers.addHeader(Constants.HEADER_DATE, "ven., 30 10 2015 16:26:16.0 +0100");
         headers.addHeader(Constants.HEADER_CONVERSATION_ID, "1446218776000");
         headers.addHeader(Constants.HEADER_CONTRIBUTION_ID, "1446218776000");
-        headers.addHeader(Constants.HEADER_MESSAGE_ID, "103015261610014200000");
+        headers.addHeader(Constants.HEADER_MESSAGE_CORRELATOR, "103015261610014200000");
         headers.addHeader(Constants.HEADER_IMDN_MESSAGE_ID, "1446218776000");
         headers.addHeader(Constants.HEADER_DIRECTION, "received");
         headers.addHeader(Constants.HEADER_MESSAGE_CONTEXT, "\"multimedia-message\"");
         headers.addHeader(Constants.HEADER_CONTENT_TYPE, "message/cpim");
-        assertEquals(headerContent.toString(), headers.toString());
+        assertEquals(HEADER, headers.toString());
     }
 }
