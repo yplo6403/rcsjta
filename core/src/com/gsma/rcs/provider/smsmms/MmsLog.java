@@ -40,6 +40,7 @@ import com.klinker.android.send_message.Message;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -449,8 +450,19 @@ public class MmsLog implements IMmsLog {
     }
 
     @Override
-    public int deleteMms(long nativeID) {
-        Uri uri = ContentUris.withAppendedId(Mms.Pdu.URI, nativeID);
+    public int deleteMms(long nativeId) {
+        Uri uri = ContentUris.withAppendedId(Mms.Pdu.URI, nativeId);
         return mContentResolver.delete(uri, null, null);
+    }
+
+    @Override
+    public boolean markMmsAsRead(Long nativeId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("markMmsAsRead nativeId=" + nativeId);
+        }
+        Uri uri = ContentUris.withAppendedId(Mms.Pdu.URI, nativeId);
+        ContentValues values = new ContentValues();
+        values.put(Telephony.TextBasedSmsColumns.READ, 1);
+        return mContentResolver.update(uri, values, null, null) > 0;
     }
 }

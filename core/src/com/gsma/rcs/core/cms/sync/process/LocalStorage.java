@@ -58,7 +58,8 @@ import java.util.TreeSet;
  */
 public class LocalStorage {
 
-    private static Logger sLogger = Logger.getLogger(LocalStorage.class.getSimpleName());
+    private static final Logger sLogger = Logger.getLogger(LocalStorage.class.getName());
+
     protected final CmsLog mCmsLog;
     private final CmsEventListener mCmsEventListener;
     private ImapMessageResolver mMessageResolver;
@@ -116,7 +117,7 @@ public class LocalStorage {
                 if (msg == null) {
                     if (sLogger.isActivated()) {
                         sLogger.info("Cannot find (" + folder + "," + uid
-                                + ") in imap message provider");
+                                + ") in CMS message provider");
                     }
                     continue;
                 }
@@ -159,7 +160,8 @@ public class LocalStorage {
                 IImapMessage resolvedMessage = mMessageResolver.resolveMessage(msgType, header,
                         remote, true);
                 CmsObject imapData = mCmsEventListener.searchLocalMessage(msgType, resolvedMessage);
-                boolean isDeleted = header.getMetadata().getFlags().contains(Flag.Deleted);
+                Set<Flag> flags = header.getMetadata().getFlags();
+                boolean isDeleted = flags.contains(Flag.Deleted);
                 if (imapData == null) {
                     // message not present in local storage
                     if (!isDeleted) {
@@ -168,7 +170,7 @@ public class LocalStorage {
                     }
                 } else {
                     // If we are here, this means that local message is pushed
-                    boolean isSeen = header.getMetadata().getFlags().contains(Flag.Seen);
+                    boolean isSeen = flags.contains(Flag.Seen);
                     switch (imapData.getDeleteStatus()) {
                         case NOT_DELETED:
                             if (isDeleted) {

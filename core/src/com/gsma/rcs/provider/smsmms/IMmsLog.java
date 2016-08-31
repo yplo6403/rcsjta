@@ -67,4 +67,12 @@ public interface IMmsLog {
      * @return The number of rows deleted.
      */
     int deleteMms(long nativeID);
+
+    /**
+     * Marks native MMS as read
+     *
+     * @param nativeId the native Id
+     * @return true if operation is successful
+     */
+    boolean markMmsAsRead(Long nativeId);
 }

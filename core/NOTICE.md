@@ -25,7 +25,7 @@ Limitations :
 
 Release identification:
 
-	- RCS stack: 2.0.3
+	- RCS stack: 2.0.4
 
 ----------
 
@@ -43,6 +43,7 @@ News:
 
 Bugs fixed:
 
+	* 31/08/2016 CMS: update read status of SMS/MMS native provider.
 	* QC defect 173: MMS Message ID must be stored in IMAP Message-Correlator header. 
 	* SQL request to push on CMS should restrict scope to XMS messages.
 	* CMS: MMS are duplicated if already pushed on CMS and resolved locally.

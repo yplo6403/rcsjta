@@ -28,23 +28,23 @@ import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
  */
 public final class CmsXmsObject extends CmsObject {
 
-    private final Long mNativeProviderId;
+    private final Long mNativeId;
 
     /**
      * Constructor
      *
      * @param messageType the message type
      * @param folder the folder
+     * @param messageId the message ID
+     * @param pushStatus the push status
      * @param readStatus the read status
      * @param deleteStatus the delete status
-     * @param pushStatus the push status
-     * @param messageId the message ID @param nativeProviderId the native provider ID
+     * @param nativeId the native ID
      */
     public CmsXmsObject(MessageType messageType, String folder, String messageId,
-            PushStatus pushStatus, ReadStatus readStatus, DeleteStatus deleteStatus,
-            Long nativeProviderId) {
+            PushStatus pushStatus, ReadStatus readStatus, DeleteStatus deleteStatus, Long nativeId) {
         super(folder, messageId, pushStatus, readStatus, deleteStatus, messageType);
-        mNativeProviderId = nativeProviderId;
+        mNativeId = nativeId;
     }
 
     /**
@@ -56,33 +56,17 @@ public final class CmsXmsObject extends CmsObject {
      * @param uid the cms UID
      * @param pushStatus the push status
      * @param readStatus the read status
-     * @param deleteStatus the delete status @param nativeProviderId the native provider ID
+     * @param deleteStatus the delete status
+     * @param nativeId the native ID
      */
     public CmsXmsObject(MessageType messageType, String folder, String messageId, Integer uid,
-            PushStatus pushStatus, ReadStatus readStatus, DeleteStatus deleteStatus,
-            Long nativeProviderId) {
+            PushStatus pushStatus, ReadStatus readStatus, DeleteStatus deleteStatus, Long nativeId) {
         super(folder, messageId, uid, pushStatus, readStatus, deleteStatus, messageType);
-        mNativeProviderId = nativeProviderId;
+        mNativeId = nativeId;
     }
 
-    /**
-     * Constructor
-     *
-     * @param messageType the message type
-     * @param folder the folder
-     * @param messageId the message ID
-     * @param readStatus the read status
-     * @param deleteStatus the delete status @param messageType the message type
-     * @param nativeProviderId the native provider ID
-     */
-    public CmsXmsObject(MessageType messageType, String folder, String messageId,
-            ReadStatus readStatus, DeleteStatus deleteStatus, Long nativeProviderId) {
-        super(folder, messageId, readStatus, deleteStatus, messageType);
-        mNativeProviderId = nativeProviderId;
-    }
-
-    public Long getNativeProviderId() {
-        return mNativeProviderId;
+    public Long getNativeId() {
+        return mNativeId;
     }
 
     @Override
@@ -94,20 +78,19 @@ public final class CmsXmsObject extends CmsObject {
         if (!super.equals(o))
             return false;
         CmsXmsObject that = (CmsXmsObject) o;
-        return mNativeProviderId != null ? mNativeProviderId.equals(that.mNativeProviderId)
-                : that.mNativeProviderId == null;
+        return mNativeId != null ? mNativeId.equals(that.mNativeId) : that.mNativeId == null;
 
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (mNativeProviderId != null ? mNativeProviderId.hashCode() : 0);
+        result = 31 * result + (mNativeId != null ? mNativeId.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "CmsXmsData{" + super.toString() + " nativeId=" + mNativeProviderId + '}';
+        return "CmsXmsData{" + super.toString() + " nativeId=" + mNativeId + '}';
     }
 }

@@ -103,7 +103,7 @@ public class OneToOneChatMessageDeleteTaskTest extends InstrumentationTestCase {
         SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mContext, mContext.getContentResolver());
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
         mCmsSessionCtrl = new CmsSessionController(mContext, null, settings, mLocalContentResolver,
-                mXmsLog, mMessagingLog, mCmsLog);
+                mXmsLog, mMessagingLog, mCmsLog, null);
         mImService = new InstantMessagingService(null, settings, null, mMessagingLog, null,
                 mLocalContentResolver, mContext, null, mCmsSessionCtrl);
         mChatService = new ChatServiceImpl(mImService, mMessagingLog, null, settings, null,

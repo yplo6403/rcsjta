@@ -676,15 +676,15 @@ public class CmsEventHandler implements CmsEventListener {
         if (logActive) {
             sLogger.debug("searchLocalSmsMessage " + message);
         }
-        String folder = message.getFolder();
-        Integer uid = message.getUid();
-        // check if an entry already exists in imapData provider
-        CmsObject cmsObject = mCmsLog.getMessage(folder, uid);
         String msgId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (msgId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
+        String folder = message.getFolder();
+        Integer uid = message.getUid();
+        // check if an entry already exists in CMS provider
+        CmsObject cmsObject = mCmsLog.getMessage(folder, uid);
         if (cmsObject != null) {
             if (!msgId.equals(cmsObject.getMessageId())) {
                 if (logActive) {
@@ -693,23 +693,19 @@ public class CmsEventHandler implements CmsEventListener {
             }
             if (cmsObject instanceof CmsXmsObject) {
                 return (CmsXmsObject) cmsObject;
-
-            } else {
-                if (logActive) {
-                    sLogger.warn("searchLocalSmsMessage messageID " + msgId
-                            + " matches but not type!");
-                }
-                return null;
             }
+            if (logActive) {
+                sLogger.warn("searchLocalSmsMessage messageID " + msgId + " matches but not type!");
+            }
+            return null;
         }
         /*
          * get messages from provider with contact, direction and correlator fields messages are
          * sorted by Date DESC (more recent first).
          */
-        SmsDataObject smsData = XmsDataObjectFactory.createSmsDataObject(message);
-        String correlator = smsData.getCorrelator();
-        ContactId contact = smsData.getContact();
-        Direction dir = smsData.getDirection();
+        String correlator = message.getCorrelator();
+        ContactId contact = message.getContact();
+        Direction dir = message.getDirection();
         if (logActive) {
             sLogger.debug("searchLocalSmsMessage correlator='" + correlator + "' dir=" + dir);
         }
@@ -718,16 +714,15 @@ public class CmsEventHandler implements CmsEventListener {
             sLogger.debug("searchLocalSmsMessage matching IDs=" + Arrays.toString(ids.toArray()));
         }
         // take the first message which is not synchronized with CMS server (have no uid)
-        for (String id : ids) {
-            CmsXmsObject xmsObject = mCmsLog.getSmsData(contact, id);
+        for (String cmsId : ids) {
+            CmsXmsObject xmsObject = mCmsLog.getSmsData(contact, cmsId);
             if (xmsObject != null && xmsObject.getUid() == null) {
                 if (logActive) {
                     sLogger.debug("searchLocalSmsMessage select 1rst=" + xmsObject);
                 }
-                String cmsId = xmsObject.getMessageId();
                 if (!msgId.equals(cmsId)) {
                     /*
-                     * If SMS is pushed by SMSC then message-id should be different from the local
+                     * If SMS is pushed by SMS-C then message-id should be different from the local
                      * one. Update the local SMS message ID to reflect CMS.
                      */
                     if (mCmsLog.updateSmsMessageId(contact, cmsId, msgId)) {
@@ -740,7 +735,7 @@ public class CmsEventHandler implements CmsEventListener {
                     }
                     xmsObject = new CmsXmsObject(MessageType.SMS, folder, msgId, null,
                             xmsObject.getPushStatus(), xmsObject.getReadStatus(),
-                            xmsObject.getDeleteStatus(), xmsObject.getNativeProviderId());
+                            xmsObject.getDeleteStatus(), xmsObject.getNativeId());
                 }
                 return xmsObject;
             }

@@ -115,7 +115,7 @@ public class OneToOneFileTransferDeleteTaskTest extends InstrumentationTestCase 
         SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mCtx, mCtx.getContentResolver());
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
         mCmsSessionCtrl = new CmsSessionController(mCtx, null, settings, mLocalContentResolver,
-                mXmsLog, mMessagingLog, mCmsLog);
+                mXmsLog, mMessagingLog, mCmsLog, null);
         mInstantMessagingService = new InstantMessagingService(null, settings, null, mMessagingLog,
                 null, mLocalContentResolver, mCtx, null, mCmsSessionCtrl);
         ChatServiceImpl mChatService = new ChatServiceImpl(mInstantMessagingService, mMessagingLog,

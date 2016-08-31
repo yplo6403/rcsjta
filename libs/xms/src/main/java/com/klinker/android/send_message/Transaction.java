@@ -748,17 +748,22 @@ public class Transaction {
     private static int addTextPart(PduBody pb, MMSPart p, int id) {
         String filename = p.MimeType.split("/")[0] + "_" + id + ".mms";
         final PduPart part = new PduPart();
+        // Set Content-Type.
+        part.setContentType(p.MimeType.getBytes());
         // Set Charset if it's a text media.
         if (p.MimeType.startsWith("text")) {
             part.setCharset(CharacterSets.UTF_8);
+            // Set Content-Location.
+            part.setContentLocation(filename.getBytes());
+            int index = filename.lastIndexOf(".");
+            String contentId = (index == -1) ? filename : filename.substring(0, index);
+            part.setContentId(contentId.getBytes());
+
+        } else {
+            // Set Content-Location.
+            part.setContentLocation(p.Name.getBytes());
+            part.setContentId(p.Name.getBytes());
         }
-        // Set Content-Type.
-        part.setContentType(p.MimeType.getBytes());
-        // Set Content-Location.
-        part.setContentLocation(filename.getBytes());
-        int index = filename.lastIndexOf(".");
-        String contentId = (index == -1) ? filename : filename.substring(0, index);
-        part.setContentId(contentId.getBytes());
         part.setData(p.Data);
         pb.addPart(part);
 

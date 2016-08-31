@@ -60,6 +60,7 @@ import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
+import com.gsma.services.rcs.RcsService;
 import com.gsma.services.rcs.RcsService.ReadStatus;
 import com.gsma.services.rcs.cms.XmsMessageLog.MimeType;
 
@@ -95,7 +96,7 @@ public class SyncMmsTest extends AndroidTestCase {
                 settings);
         mLogUtilTest = SyncLogUtilTest.getInstance(mContext);
         CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, settings,
-                mLocalContentResolver, mXmsLog, messagingLog, mCmsLog);
+                mLocalContentResolver, mXmsLog, messagingLog, mCmsLog, null);
         InstantMessagingService imService = new InstantMessagingService(null, settings, null,
                 messagingLog, null, mLocalContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, messagingLog, null, settings,
@@ -316,10 +317,15 @@ public class SyncMmsTest extends AndroidTestCase {
         mImapCmsUtilTest.createRemoteXmsMessages(Test1.conversation);
         // create messages in local storage
         for (MmsDataObject mms : Test1.conversation) {
-            mXmsLog.addIncomingMms(mms);
+            if (RcsService.Direction.OUTGOING == mms.getDirection()) {
+                mXmsLog.addOutgoingMms(mms);
+            } else {
+                mXmsLog.addIncomingMms(mms);
+            }
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, mms.getMessageId(),
-                    PushStatus.PUSHED, CmsData.ReadStatus.READ, DeleteStatus.NOT_DELETED, null));
+                    PushStatus.PUSHED, CmsData.ReadStatus.READ, DeleteStatus.NOT_DELETED, mms
+                            .getNativeId()));
         }
         mSyncStrategy.execute();
         assertEquals(Test1.conversation.length,
@@ -339,11 +345,16 @@ public class SyncMmsTest extends AndroidTestCase {
         mImapCmsUtilTest.createRemoteXmsMessages(Test7.conversation);
         // create messages in local storage
         for (MmsDataObject mms : Test7.conversation) {
-            mXmsLog.addIncomingMms(mms);
+            if (RcsService.Direction.OUTGOING == mms.getDirection()) {
+                mXmsLog.addOutgoingMms(mms);
+            } else {
+                mXmsLog.addIncomingMms(mms);
+            }
             String messageId = mms.getMessageId();
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, messageId,
-                    PushStatus.PUSHED, Test7.imapReadStatus, Test7.imapDeleteStatus, null));
+                    PushStatus.PUSHED, Test7.imapReadStatus, Test7.imapDeleteStatus, mms
+                            .getNativeId()));
         }
         mSyncStrategy.execute();
         List<XmsDataObject> mms = mLogUtilTest.getMessages(MimeType.MULTIMEDIA_MESSAGE,
@@ -373,10 +384,15 @@ public class SyncMmsTest extends AndroidTestCase {
         mImapCmsUtilTest.createRemoteXmsMessages(Test8.conversation_remote);
         // create messages in local storage
         for (MmsDataObject mms : Test8.conversation_local) {
-            mXmsLog.addIncomingMms(mms);
+            if (RcsService.Direction.OUTGOING == mms.getDirection()) {
+                mXmsLog.addOutgoingMms(mms);
+            } else {
+                mXmsLog.addIncomingMms(mms);
+            }
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, mms.getMessageId(),
-                    PushStatus.PUSHED, Test8.imapReadStatus, Test8.imapDeleteStatus, null));
+                    PushStatus.PUSHED, Test8.imapReadStatus, Test8.imapDeleteStatus, mms
+                            .getNativeId()));
         }
         mSyncStrategy.execute();
         List<XmsDataObject> mms = mLogUtilTest.getMessages(MimeType.MULTIMEDIA_MESSAGE,
@@ -405,11 +421,16 @@ public class SyncMmsTest extends AndroidTestCase {
         mImapCmsUtilTest.createRemoteXmsMessages(Test9.conversation_remote);
         // create messages in local storage
         for (MmsDataObject mms : Test9.conversation_local) {
-            mXmsLog.addIncomingMms(mms);
+            if (RcsService.Direction.OUTGOING == mms.getDirection()) {
+                mXmsLog.addOutgoingMms(mms);
+            } else {
+                mXmsLog.addIncomingMms(mms);
+            }
             String messageId = mms.getMessageId();
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, messageId,
-                    PushStatus.PUSHED, Test9.imapReadStatus, Test9.imapDeleteStatus, null));
+                    PushStatus.PUSHED, Test9.imapReadStatus, Test9.imapDeleteStatus, mms
+                            .getNativeId()));
         }
         mSyncStrategy.execute();
         List<XmsDataObject> mms = mLogUtilTest.getMessages(MimeType.MULTIMEDIA_MESSAGE,
@@ -432,7 +453,8 @@ public class SyncMmsTest extends AndroidTestCase {
             mXmsLog.addOutgoingMms(mms);
             String folder = CmsUtils.contactToCmsFolder(mms.getContact());
             mCmsLog.addXmsMessage(new CmsXmsObject(MessageType.MMS, folder, mms.getMessageId(),
-                    PushStatus.PUSHED, Test9.imapReadStatus, Test9.imapDeleteStatus, null));
+                    PushStatus.PUSHED, Test9.imapReadStatus, Test9.imapDeleteStatus, mms
+                            .getNativeId()));
         }
         mSyncStrategy.execute();
         mImapCmsUtilTest.createRemoteXmsMessages(MmsIntegrationUtils.Test10.conversation_3);

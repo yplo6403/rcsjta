@@ -38,20 +38,6 @@ public class SmsDataObject extends XmsDataObject {
         mReadStatus = readStatus;
     }
 
-    public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, long timestamp, ReadStatus readStatus) {
-        this(messageId, contact, body, dir, readStatus, timestamp, null);
-    }
-
-    public SmsDataObject(String messageId, ContactId contact, String body,
-            RcsService.Direction dir, long timestamp, ReadStatus readStatus,
-            String messageCorrelator) {
-        super(messageId, contact, XmsMessageLog.MimeType.TEXT_MESSAGE, dir, timestamp, null);
-        mReadStatus = readStatus;
-        mCorrelator = messageCorrelator;
-        mBody = body;
-    }
-
     public String getCorrelator() {
         return mCorrelator;
     }

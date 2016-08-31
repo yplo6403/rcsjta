@@ -57,6 +57,7 @@ import com.gsma.rcs.provider.history.HistoryLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.rcs.provider.sharing.RichCallHistory;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
 import com.gsma.rcs.utils.logger.Logger;
 
@@ -109,12 +110,13 @@ public class ImsModule implements SipEventListener {
      * @param richCallHistory The rich call accessor
      * @param addressBookManager The address book manager instance
      * @param xmsLog The XMS log accessor
-     * @param cmsLog The Imap log accessor
+     * @param cmsLog The CMS log accessor
+     * @param smsMmsLog the SMS/MMS log accessor
      */
     public ImsModule(Core core, Context ctx, LocalContentResolver localContentResolver,
             RcsSettings rcsSettings, ContactManager contactManager, MessagingLog messagingLog,
             HistoryLog historyLog, RichCallHistory richCallHistory,
-            AddressBookManager addressBookManager, XmsLog xmsLog, CmsLog cmsLog) {
+            AddressBookManager addressBookManager, XmsLog xmsLog, CmsLog cmsLog, SmsMmsLog smsMmsLog) {
         mCore = core;
         mRcsSettings = rcsSettings;
 
@@ -129,7 +131,7 @@ public class ImsModule implements SipEventListener {
                 contactManager, addressBookManager);
         mServices.put(ImsServiceType.CAPABILITY, capabilityService);
         CmsSessionController cmsSessionCtrl = new CmsSessionController(ctx, this, rcsSettings,
-                localContentResolver, xmsLog, messagingLog, cmsLog);
+                localContentResolver, xmsLog, messagingLog, cmsLog, smsMmsLog);
         mServices.put(ImsServiceType.CMS, cmsSessionCtrl);
         mServices.put(ImsServiceType.INSTANT_MESSAGING, new InstantMessagingService(this,
                 rcsSettings, contactManager, messagingLog, historyLog, localContentResolver, ctx,

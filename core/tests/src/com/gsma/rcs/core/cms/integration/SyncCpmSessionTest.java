@@ -77,7 +77,7 @@ public class SyncCpmSessionTest extends AndroidTestCase {
         XmsLog xmsLog = XmsLog.getInstance(mContext, mSettings, localContentResolver);
         mMessagingLog = MessagingLog.getInstance(localContentResolver, mSettings);
         CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, mSettings,
-                localContentResolver, xmsLog, mMessagingLog, mCmsLog);
+                localContentResolver, xmsLog, mMessagingLog, mCmsLog, null);
         InstantMessagingService imService = new InstantMessagingService(null, mSettings, null,
                 mMessagingLog, null, localContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null,

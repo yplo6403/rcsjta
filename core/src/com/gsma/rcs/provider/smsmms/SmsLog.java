@@ -31,6 +31,7 @@ import com.gsma.services.rcs.contact.ContactId;
 
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
@@ -193,6 +194,17 @@ public class SmsLog implements ISmsLog {
     @Override
     public int deleteSms(long nativeId) {
         return mContentResolver.delete(ContentUris.withAppendedId(Sms.URI, nativeId), null, null);
+    }
+
+    @Override
+    public boolean markSmsAsRead(Long nativeId) {
+        if (sLogger.isActivated()) {
+            sLogger.debug("markSmsAsRead nativeId=" + nativeId);
+        }
+        ContentValues values = new ContentValues();
+        values.put(Telephony.TextBasedSmsColumns.READ, 1);
+        Uri uri = ContentUris.withAppendedId(Sms.URI, nativeId);
+        return mContentResolver.update(uri, values, null, null) > 0;
     }
 
 }

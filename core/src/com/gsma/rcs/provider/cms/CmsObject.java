@@ -78,20 +78,6 @@ public abstract class CmsObject {
         mMessageId = messageId;
     }
 
-    /**
-     * Constructor
-     *
-     * @param folder the folder
-     * @param messageId the message ID
-     * @param readStatus the read status
-     * @param deleteStatus the delete status
-     * @param messageType the message type
-     */
-    public CmsObject(String folder, String messageId, ReadStatus readStatus,
-            DeleteStatus deleteStatus, MessageType messageType) {
-        this(folder, messageId, PushStatus.PUSHED, readStatus, deleteStatus, messageType);
-    }
-
     public String getFolder() {
         return mFolder;
     }

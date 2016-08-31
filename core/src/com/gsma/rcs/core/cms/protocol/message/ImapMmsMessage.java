@@ -163,4 +163,10 @@ public class ImapMmsMessage extends ImapCpimMessage {
     public MultipartCpimBody getCpimBody() {
         return (MultipartCpimBody) getCpimMessage().getBody();
     }
+
+    @Override
+    public String toString() {
+        return "ImapMmsMessage{" + "subject='" + mSubject + '\'' + ",  messageId='" + mMmsId + '\''
+                + ", date=" + mDate + ", dir=" + getDirection() + ", remote=" + getContact() + '}';
+    }
 }

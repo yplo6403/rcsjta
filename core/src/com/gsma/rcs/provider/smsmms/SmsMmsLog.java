@@ -89,6 +89,11 @@ public class SmsMmsLog implements ISmsLog, IMmsLog {
     }
 
     @Override
+    public boolean markSmsAsRead(Long nativeId) {
+        return mSmsLog.markSmsAsRead(nativeId);
+    }
+
+    @Override
     public List<MmsDataObject> getMmsFromNativeProvider(long id, long ntpLocalOffset) {
         return mMmsLog.getMmsFromNativeProvider(id, ntpLocalOffset);
     }
@@ -102,5 +107,10 @@ public class SmsMmsLog implements ISmsLog, IMmsLog {
     @Override
     public int deleteMms(long nativeID) {
         return mMmsLog.deleteMms(nativeID);
+    }
+
+    @Override
+    public boolean markMmsAsRead(Long nativeId) {
+        return mMmsLog.markMmsAsRead(nativeId);
     }
 }

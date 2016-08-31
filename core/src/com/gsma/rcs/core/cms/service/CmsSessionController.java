@@ -43,7 +43,10 @@ import com.gsma.rcs.provider.cms.CmsData.ReadStatus;
 import com.gsma.rcs.provider.cms.CmsLog;
 import com.gsma.rcs.provider.messaging.MessagingLog;
 import com.gsma.rcs.provider.settings.RcsSettings;
+import com.gsma.rcs.provider.smsmms.SmsMmsLog;
 import com.gsma.rcs.provider.xms.XmsLog;
+import com.gsma.rcs.provider.xms.model.MmsDataObject;
+import com.gsma.rcs.provider.xms.model.XmsDataObject;
 import com.gsma.rcs.service.api.ChatServiceImpl;
 import com.gsma.rcs.service.api.CmsServiceImpl;
 import com.gsma.rcs.service.api.FileTransferServiceImpl;
@@ -82,6 +85,7 @@ public class CmsSessionController extends ImsService {
     private final ImsModule mImsModule;
     private final MessagingLog mMessagingLog;
     private final LocalContentResolver mLocalContentResolver;
+    private final SmsMmsLog mSmsMmsLog;
     private CmsServiceImpl mCmsServiceImpl;
     private FileTransferServiceImpl mFileTransferServiceImpl;
     private ChatServiceImpl mChatServiceImpl;
@@ -103,11 +107,12 @@ public class CmsSessionController extends ImsService {
      * @param localContentResolver the local content resolver
      * @param xmsLog The XMS log accessor
      * @param messagingLog The Chat log accessor
-     * @param cmsLog The Imap log accessor
+     * @param cmsLog The CMS log accessor
+     * @param smsMmsLog the SMS/MMS log accessor
      */
     public CmsSessionController(Context ctx, ImsModule parent, RcsSettings rcsSettings,
             LocalContentResolver localContentResolver, XmsLog xmsLog, MessagingLog messagingLog,
-            CmsLog cmsLog) {
+            CmsLog cmsLog, SmsMmsLog smsMmsLog) {
         super(parent, true);
         mCtx = ctx;
         mImsModule = parent;
@@ -118,6 +123,7 @@ public class CmsSessionController extends ImsService {
         mCmsLog = cmsLog;
         mOperationHandler = allocateBgHandler(CMS_OPERATION_THREAD_NAME);
         mImdnDeliveryReportHandler = new ImdnDeliveryReportHandler(mCmsLog);
+        mSmsMmsLog = smsMmsLog;
     }
 
     private Handler allocateBgHandler(String threadName) {
@@ -381,6 +387,15 @@ public class CmsSessionController extends ImsService {
     }
 
     public void onReadXmsMessage(ContactId contact, String messageId) {
+        XmsDataObject xms = mXmsLog.getXmsDataObject(contact, messageId);
+        Long nativeId = (xms == null) ? null : xms.getNativeId();
+        if (nativeId != null) {
+            if (xms instanceof MmsDataObject) {
+                mSmsMmsLog.markMmsAsRead(nativeId);
+            } else {
+                mSmsMmsLog.markSmsAsRead(nativeId);
+            }
+        }
         mCmsLog.updateXmsReadStatus(contact, messageId, ReadStatus.READ_REPORT_REQUESTED, null);
         if (mEventFrameworkManager != null) {
             mEventFrameworkManager.updateFlagsForXms(contact);

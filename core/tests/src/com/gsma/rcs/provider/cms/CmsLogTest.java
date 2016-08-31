@@ -251,7 +251,7 @@ public class CmsLogTest extends AndroidTestCase {
         assertEquals(DeleteStatus.DELETED, msgFromLog.getDeleteStatus());
         assertEquals(ReadStatus.READ, msgFromLog.getReadStatus());
         assertEquals(MessageType.MMS, msgFromLog.getMessageType());
-        assertNull(((CmsXmsObject) msgFromLog).getNativeProviderId());
+        assertNull(((CmsXmsObject) msgFromLog).getNativeId());
     }
 
     public void testRemoveMessage() {
@@ -433,7 +433,7 @@ public class CmsLogTest extends AndroidTestCase {
         cmsObjets = mCmsLog.getNativeMessages(MessageType.MMS);
         assertEquals(1, cmsObjets.size());
         Map.Entry<Long, CmsXmsObject> entry = cmsObjets.entrySet().iterator().next();
-        assertEquals((Long) 1L, entry.getValue().getNativeProviderId());
+        assertEquals((Long) 1L, entry.getValue().getNativeId());
     }
 
     public void testUpdateXmsPushStatus() {

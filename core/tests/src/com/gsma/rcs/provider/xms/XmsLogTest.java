@@ -114,10 +114,10 @@ public class XmsLogTest extends InstrumentationTestCase {
                 50000L);
         mSms = new SmsDataObject("sms-id", mContact2, "SMS test message",
                 RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, 200L);
-        mSms1 = new SmsDataObject("sms-id1", mContact1, "SMS1 test message",
-                RcsService.Direction.INCOMING, timestamp++, ReadStatus.UNREAD, "c'est vrai");
-        mSms2 = new SmsDataObject("sms-id2", mContact1, "SMS2 test message",
-                RcsService.Direction.INCOMING, timestamp, ReadStatus.UNREAD, "c'est vrai");
+        mSms1 = new SmsDataObject("sms-id1", mContact1, "SMS test message",
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, null);
+        mSms2 = new SmsDataObject("sms-id2", mContact1, "SMS test message",
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp, null);
     }
 
     protected void tearDown() throws Exception {

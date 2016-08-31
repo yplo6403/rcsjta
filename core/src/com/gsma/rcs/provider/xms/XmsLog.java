@@ -362,9 +362,8 @@ public class XmsLog {
                             if (pdu == null) {
                                 Uri localFile = FileUtils.createCopyOfSentFile(fileUri,
                                         mmsPart.getFileName(), mimeType, mRcsSettings);
-                                String filename = FileUtils.getFileName(mCtx, localFile);
                                 long fileSize = FileUtils.getFileSize(mCtx, localFile);
-                                build.withValue(PartData.KEY_FILENAME, filename)
+                                build.withValue(PartData.KEY_FILENAME, mmsPart.getFileName())
                                         .withValue(PartData.KEY_FILESIZE, fileSize)
                                         .withValue(PartData.KEY_CONTENT, localFile.toString());
 
@@ -380,7 +379,7 @@ public class XmsLog {
                                 Uri localUri = ContentManager.generateUriForSentContent(filename,
                                         mimeType, mRcsSettings);
                                 persistPdu(localUri, pdu);
-                                build.withValue(PartData.KEY_FILENAME, filename)
+                                build.withValue(PartData.KEY_FILENAME, mmsPart.getFileName())
                                         .withValue(PartData.KEY_FILESIZE, pdu.length)
                                         .withValue(PartData.KEY_CONTENT, localUri.toString());
                             }
@@ -506,12 +505,12 @@ public class XmsLog {
     }
 
     /**
-     * Get SMS messages IDs
+     * Get SMS message IDs matching correlator
      * 
      * @param contact the contact ID (i.e. the folder name)
      * @param direction the direction
      * @param correlator the correlation string
-     * @return the list of SMS messages IDs sorted by descending tiemstamp order
+     * @return the list of SMS messages IDs sorted by descending timestamp order
      */
     public List<String> getMessageIdsMatchingCorrelator(ContactId contact, Direction direction,
             String correlator) {
@@ -580,19 +579,18 @@ public class XmsLog {
                     .getColumnIndexOrThrow(XmsData.KEY_STATE)));
             ReasonCode reason = ReasonCode.valueOf(cursor.getInt(cursor
                     .getColumnIndexOrThrow(XmsData.KEY_REASON_CODE)));
+            int nativeIdColumnIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
+            Long nativeId = cursor.isNull(nativeIdColumnIdx) ? null : cursor
+                    .getLong(nativeIdColumnIdx);
             if (MimeType.TEXT_MESSAGE.equals(mimeType)) {
-                SmsDataObject sms = new SmsDataObject(messageId, contact, content, dir, date,
-                        readStatus);
+                SmsDataObject sms = new SmsDataObject(messageId, contact, content, dir, readStatus,
+                        date, nativeId);
                 sms.setTimestampSent(dateSent);
                 sms.setTimestampDelivered(dateDelivered);
                 sms.setState(state);
                 sms.setReasonCode(reason);
                 return sms;
-
             } else {
-                int nativeIdColumnIdx = cursor.getColumnIndexOrThrow(XmsData.KEY_NATIVE_ID);
-                Long nativeId = cursor.isNull(nativeIdColumnIdx) ? null : cursor
-                        .getLong(nativeIdColumnIdx);
                 List<MmsDataObject.MmsPart> mmsParts = new ArrayList<>(getParts(messageId));
                 MmsDataObject mms = new MmsDataObject(messageId, contact, content, dir, readStatus,
                         date, nativeId, mmsParts);

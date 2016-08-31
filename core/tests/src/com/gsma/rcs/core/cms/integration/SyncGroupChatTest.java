@@ -74,7 +74,6 @@ public class SyncGroupChatTest extends AndroidTestCase {
     private ImapCmsUtilTest mImapCmsUtilTest;
     private ImapGroupChatMessageImpl mIncomingGroupChatMessage;
     private ImapGroupChatMessageImpl mOutgoingGroupChatMessage;
-
     private ImapCpmSessionMessageImpl mImapCpmSessionMessage;
     private SyncLogUtilTest mLogUtilTest;
     private ArrayList<ContactId> mParticipants;
@@ -89,7 +88,7 @@ public class SyncGroupChatTest extends AndroidTestCase {
         XmsLog xmsLog = XmsLog.getInstance(mContext, mSettings, mLocalContentResolver);
         mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, mSettings);
         CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, mSettings,
-                mLocalContentResolver, xmsLog, mMessagingLog, mCmsLog);
+                mLocalContentResolver, xmsLog, mMessagingLog, mCmsLog, null);
         InstantMessagingService imService = new InstantMessagingService(null, mSettings, null,
                 mMessagingLog, null, mLocalContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, mMessagingLog, null,
