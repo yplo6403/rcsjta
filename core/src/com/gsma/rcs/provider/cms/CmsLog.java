@@ -289,7 +289,7 @@ public class CmsLog {
      */
     public void addXmsMessage(CmsXmsObject message) {
         ContentValues values = new ContentValues();
-        Long nativeId = message.getNativeProviderId();
+        Long nativeId = message.getNativeId();
         if (nativeId != null) {
             values.put(CmsData.KEY_NATIVE_ID, nativeId);
         }
@@ -683,6 +683,8 @@ public class CmsLog {
         values.put(CmsData.KEY_READ_STATUS, readStatus.toInt());
         if (uid != null) {
             values.put(CmsData.KEY_UID, uid);
+            // TODO check if regression
+            values.put(CmsData.KEY_PUSH_STATUS, PushStatus.PUSHED.toInt());
         } else {
             if (ReadStatus.READ == readStatus) {
                 sLogger.warn("updateXmsReadStatus ID=" + messageId
@@ -820,7 +822,7 @@ public class CmsLog {
         }, null);
         Map<Long, CmsXmsObject> messages = new HashMap<>();
         for (CmsObject item : cmData) {
-            messages.put(((CmsXmsObject) item).getNativeProviderId(), (CmsXmsObject) item);
+            messages.put(((CmsXmsObject) item).getNativeId(), (CmsXmsObject) item);
         }
         return messages;
     }

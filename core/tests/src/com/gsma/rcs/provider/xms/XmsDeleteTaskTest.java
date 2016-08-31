@@ -93,12 +93,12 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
                 PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED, null);
         mSms1 = new SmsDataObject("sms-id1", mContact1, "SMS1 test message",
-                RcsService.Direction.INCOMING, timestamp++, ReadStatus.UNREAD, "c'est vrai");
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp++, null);
         mCmsObjectSms1 = new CmsXmsObject(MessageType.SMS, mFolder1, mSms1.getMessageId(), 2,
                 PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED, null);
         mSms2 = new SmsDataObject("sms-id2", mContact1, "SMS2 test message",
-                RcsService.Direction.INCOMING, timestamp, ReadStatus.UNREAD, "c'est vrai");
+                RcsService.Direction.INCOMING, ReadStatus.UNREAD, timestamp, null);
         mCmsObjectSms2 = new CmsXmsObject(MessageType.SMS, mFolder1, mSms2.getMessageId(), 3,
                 PushStatus.PUSHED, CmsData.ReadStatus.READ_REPORT_REQUESTED,
                 DeleteStatus.NOT_DELETED, null);
@@ -122,7 +122,7 @@ public class XmsDeleteTaskTest extends InstrumentationTestCase {
         SmsMmsLog smsMmsLog = SmsMmsLog.getInstance(mContext, mContext.getContentResolver());
         MessagingLog mMessagingLog = MessagingLog.getInstance(mLocalContentResolver, settings);
         mCmsSessionCtrl = new CmsSessionController(mContext, null, settings, mLocalContentResolver,
-                mXmsLog, mMessagingLog, mCmsLog);
+                mXmsLog, mMessagingLog, mCmsLog, null);
         XmsManager xmsManager = new XmsManager(mContext, mXmsLog, smsMmsLog);
         InstantMessagingService imService = new InstantMessagingService(null, settings, null,
                 mMessagingLog, null, mLocalContentResolver, mContext, null, mCmsSessionCtrl);

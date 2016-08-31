@@ -58,18 +58,17 @@ public class XmsDataObjectFactory {
         ReadStatus readStatus = imapSmsMessage.isSeen() ? ReadStatus.READ : ReadStatus.UNREAD;
         CpimMessage cpimMessage = imapSmsMessage.getCpimMessage();
         // when fetching only headers CPIM message is null
-        String content = (cpimMessage == null ? "" : ((TextCpimBody) cpimMessage.getBody())
-                .getContent());
+        String content = cpimMessage == null ? "" : ((TextCpimBody) cpimMessage.getBody())
+                .getContent();
         SmsDataObject smsDataObject = new SmsDataObject(IdGenerator.generateMessageID(), contact,
-                content, direction, imapSmsMessage.getDate(), readStatus,
-                imapSmsMessage.getCorrelator());
+                content, direction, readStatus, imapSmsMessage.getDate(), null);
         smsDataObject.setState(Direction.INCOMING == direction ? State.RECEIVED : State.SENT);
         return smsDataObject;
     }
 
     public static MmsDataObject createMmsDataObject(Context context, RcsSettings rcsSettings,
             ImapMmsMessage imapMmsMessage) throws FileAccessException {
-        String messageId = imapMmsMessage.getMmsId();
+        String messageId = imapMmsMessage.getMessageId();
         ContactId contactId = imapMmsMessage.getContact();
         Direction direction = imapMmsMessage.getDirection();
         MultipartCpimBody multipartCpimBody = imapMmsMessage.getCpimBody();

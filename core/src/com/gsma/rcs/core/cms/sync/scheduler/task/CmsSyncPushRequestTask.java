@@ -208,7 +208,7 @@ public class CmsSyncPushRequestTask extends CmsSyncSchedulerTask {
                 imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction,
                         mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(), UUID
                                 .randomUUID().toString(), UUID.randomUUID().toString(),
-                        mms.getMessageId(), mms.getMmsParts());
+                        mms.getCorrelator(), mms.getMmsParts());
             }
             String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());
             if (!remoteFolders.contains(remoteFolder)) {

@@ -151,7 +151,7 @@ public class MmsIntegrationUtils {
                         readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, parts),
                 new MmsDataObject("messageId2", Test1.contact, "Hello!", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, parts),
-                new MmsDataObject("messageId3", Test1.contact, "Hello!", Direction.INCOMING,
+                new MmsDataObject("messageId3", Test1.contact, "Salut!", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 3L, parts),
 
         };
@@ -165,7 +165,7 @@ public class MmsIntegrationUtils {
         public static List<MmsPart> parts = new ArrayList<>();
 
         public static MmsDataObject[] conversation_remote = new MmsDataObject[] {
-                new MmsDataObject("messageId3", Test1.contact, "Hello", Direction.INCOMING,
+                new MmsDataObject("messageId3", Test1.contact, "Salut", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 3000, 2L, parts),
                 new MmsDataObject("messageId1", Test1.contact, "Hello!", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, parts),
@@ -174,7 +174,7 @@ public class MmsIntegrationUtils {
         public static MmsDataObject[] conversation_local = new MmsDataObject[] {
                 new MmsDataObject("messageId1", Test1.contact, "Hello!", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 1000, 1L, parts),
-                new MmsDataObject("messageId2", Test1.contact, "Hello!", Direction.INCOMING,
+                new MmsDataObject("messageId2", Test1.contact, "Hallo!", Direction.INCOMING,
                         readStatus, NtpTrustedTime.currentTimeMillis() + 2000, 2L, parts),
         };
 

@@ -60,4 +60,12 @@ public interface ISmsLog {
      * @return The number of rows deleted.
      */
     int deleteSms(long nativeID);
+
+    /**
+     * Marks native SMS as read
+     * 
+     * @param nativeId the native Id
+     * @return true if operation is successful
+     */
+    boolean markSmsAsRead(Long nativeId);
 }

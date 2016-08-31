@@ -47,12 +47,10 @@ public class ImapMmsMessageTest extends AndroidTestCase {
     private static final String FORMAT_PAYLOAD = "From: +33642575779\r\n" +
             "To: +33640332859\r\n" +
             "Date: %1$s\r\n" +
-            "Conversation-ID: 1443517760826\r\n" +
-            "Contribution-ID: 1443517760826\r\n" +
-            "Message-Correlator: myMmsId\r\n" +
+            "Conversation-ID: multimedia-message\r\n" +
+            "Contribution-ID: correlator\r\n" +
             "IMDN-Message-ID: 1443517760826\r\n" +
             "Message-Direction: received\r\n" +
-            "Message-Context: multimedia-message\r\n" +
             "Content-Type: message/cpim\r\n\r\n" +
             "From: +33642575779\r\n" +
             "To: +33640332859\r\n" +
@@ -100,18 +98,13 @@ public class ImapMmsMessageTest extends AndroidTestCase {
         Assert.assertEquals("+33642575779", imapMmsMessage.getHeader(Constants.HEADER_FROM));
         Assert.assertEquals("+33640332859", imapMmsMessage.getHeader(Constants.HEADER_TO));
         Assert.assertEquals(mImapDate, imapMmsMessage.getHeader(Constants.HEADER_DATE));
-        Assert.assertEquals("1443517760826",
+        Assert.assertEquals("multimedia-message",
                 imapMmsMessage.getHeader(Constants.HEADER_CONVERSATION_ID));
-        Assert.assertEquals("1443517760826",
+        Assert.assertEquals("correlator",
                 imapMmsMessage.getHeader(Constants.HEADER_CONTRIBUTION_ID));
-        Assert.assertEquals("myMmsId",
-                imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CORRELATOR));
         Assert.assertEquals("1443517760826",
                 imapMmsMessage.getHeader(Constants.HEADER_IMDN_MESSAGE_ID));
         Assert.assertEquals("received", imapMmsMessage.getHeader(Constants.HEADER_DIRECTION));
-        Assert.assertEquals("multimedia-message",
-                imapMmsMessage.getHeader(Constants.HEADER_MESSAGE_CONTEXT));
-        Assert.assertEquals("message/cpim", imapMmsMessage.getHeader(Constants.HEADER_CONTENT_TYPE));
 
         Assert.assertEquals("+33642575779",
                 imapMmsMessage.getCpimMessage().getHeader(Constants.HEADER_FROM));
@@ -146,7 +139,7 @@ public class ImapMmsMessageTest extends AndroidTestCase {
         parts.add(new MmsPart("myMmsId", "text/plain; charset=utf-8", "1"));
         ImapMmsMessage imapMmsMessage = new ImapMmsMessage(getContext(), mRemote, "+33642575779",
                 "+33640332859", "received", mDate, null, "1443517760826", "1443517760826",
-                "1443517760826", "myMmsId", parts);
+                "1443517760826", "correlator", parts);
 
         ((MultipartCpimBody) imapMmsMessage.getCpimMessage().getBody())
                 .setBoundary(MULTIPART_BOUNDARY);

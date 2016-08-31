@@ -70,5 +70,5 @@ public interface CmsEventListener {
      * @throws CmsSyncException
      */
     CmsObject searchLocalMessage(MessageType messageType, IImapMessage message)
-            throws CmsSyncException;
+            throws CmsSyncException, FileAccessException;
 }

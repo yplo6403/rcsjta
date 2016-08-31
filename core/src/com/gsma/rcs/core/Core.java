@@ -188,7 +188,8 @@ public class Core {
         // Synchronize with native XMS content providers (not performed in background)
         xmsSynchronizer.execute();
         mImsModule = new ImsModule(this, ctx, localContentResolver, rcsSettings, contactManager,
-                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog);
+                messagingLog, historyLog, richCallHistory, mAddressBookManager, xmsLog, cmsLog,
+                smsMmsLog);
         mNtpManager = new NtpManager(ctx, rcsSettings);
         if (logActivated) {
             sLogger.info("Terminal core is created with success");

@@ -33,7 +33,7 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
         versionCode 3
-        versionName "2.0"
+        versionName "CMS-MMSC 2.0"
         archivesBaseName = "RCS_Core"
     }
 

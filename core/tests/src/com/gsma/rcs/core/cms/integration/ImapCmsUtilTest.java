@@ -186,7 +186,7 @@ public class ImapCmsUtilTest {
                     MmsDataObject mms = (MmsDataObject) message;
                     imapMessage = new ImapMmsMessage(mContext, remote, from, to, direction,
                             mms.getTimestamp(), mms.getSubject(), UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString(), mms.getMessageId(), mms.getMessageId(),
+                            UUID.randomUUID().toString(), mms.getMessageId(), mms.getCorrelator(),
                             mms.getMmsParts());
                 }
                 String remoteFolder = CmsUtils.contactToCmsFolder(message.getContact());

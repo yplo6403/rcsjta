@@ -45,7 +45,8 @@ public class ImapMmsMessage extends ImapCpimMessage {
     private static final Logger sLogger = Logger.getLogger(ImapMmsMessage.class.getName());
 
     private String mSubject;
-    private String mMmsId;
+    private String mCorrelator;
+    private String mMessageId;
     private long mDate;
 
     /**
@@ -58,10 +59,15 @@ public class ImapMmsMessage extends ImapCpimMessage {
     public ImapMmsMessage(com.gsma.rcs.imaplib.imap.ImapMessage rawMessage, ContactId remote)
             throws CmsSyncMissingHeaderException {
         super(rawMessage, remote);
-        mMmsId = getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
-        if (mMmsId == null) {
+        mMessageId = getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
+        if (mMessageId == null) {
             throw new CmsSyncMissingHeaderException(
-                    Constants.HEADER_MESSAGE_CORRELATOR.concat(" IMAP header is missing"));
+                    Constants.HEADER_IMDN_MESSAGE_ID.concat(" IMAP header is missing"));
+        }
+        mCorrelator = getHeader(Constants.HEADER_CONTRIBUTION_ID);
+        if (mCorrelator == null) {
+            throw new CmsSyncMissingHeaderException(
+                    Constants.HEADER_CONTRIBUTION_ID.concat(" IMAP header is missing"));
         }
         String dateHeader = getHeader(Constants.HEADER_DATE);
         if (dateHeader == null) {
@@ -73,18 +79,16 @@ public class ImapMmsMessage extends ImapCpimMessage {
 
     public ImapMmsMessage(Context context, ContactId remote, String from, String to,
             String direction, long date, String subject, String conversationId,
-            String contributionId, String imdnMessageId, String mmsId, List<MmsPart> mmsParts) {
+            String contributionId, String imdnMessageId, String correlator, List<MmsPart> mmsParts) {
         super(remote);
         addHeader(Constants.HEADER_FROM, from);
         addHeader(Constants.HEADER_TO, to);
         addHeader(Constants.HEADER_DATE,
                 DateUtils.getDateAsString(date, DateUtils.CMS_IMAP_DATE_FORMAT));
-        addHeader(Constants.HEADER_CONVERSATION_ID, conversationId);
-        addHeader(Constants.HEADER_CONTRIBUTION_ID, contributionId);
-        addHeader(Constants.HEADER_MESSAGE_CORRELATOR, mmsId);
+        addHeader(Constants.HEADER_CONVERSATION_ID, Constants.MULTIMEDIA_MESSAGE);
+        addHeader(Constants.HEADER_CONTRIBUTION_ID, correlator);
         addHeader(Constants.HEADER_IMDN_MESSAGE_ID, imdnMessageId);
         addHeader(Constants.HEADER_DIRECTION, direction);
-        addHeader(Constants.HEADER_MESSAGE_CONTEXT, Constants.MULTIMEDIA_MESSAGE);
         addHeader(Constants.HEADER_CONTENT_TYPE, Constants.MESSAGE_CPIM);
 
         HeaderPart cpimHeaders = new HeaderPart();
@@ -148,8 +152,12 @@ public class ImapMmsMessage extends ImapCpimMessage {
         mSubject = cpimMessage.getHeader(Constants.HEADER_SUBJECT);
     }
 
-    public String getMmsId() {
-        return mMmsId;
+    public String getCorrelator() {
+        return mCorrelator;
+    }
+
+    public String getMessageId() {
+        return mMessageId;
     }
 
     public String getSubject() {
@@ -162,5 +170,12 @@ public class ImapMmsMessage extends ImapCpimMessage {
 
     public MultipartCpimBody getCpimBody() {
         return (MultipartCpimBody) getCpimMessage().getBody();
+    }
+
+    @Override
+    public String toString() {
+        return "ImapMmsMessage{" + "subject='" + mSubject + '\'' + ", correlator='" + mCorrelator
+                + '\'' + ", messageId='" + mMessageId + '\'' + ", date=" + mDate + ", dir="
+                + getDirection() + ", remote=" + getContact() + '}';
     }
 }

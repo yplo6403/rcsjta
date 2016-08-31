@@ -27,6 +27,7 @@ import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
 import com.gsma.rcs.core.cms.protocol.message.cpim.CpimMessage;
 import com.gsma.rcs.core.cms.protocol.message.cpim.text.TextCpimBody;
 import com.gsma.rcs.core.ims.service.im.filetransfer.http.FileTransferHttpInfoDocument;
+import com.gsma.rcs.imaplib.imap.Part;
 import com.gsma.rcs.provider.cms.CmsData.MessageType;
 import com.gsma.rcs.provider.settings.RcsSettings;
 import com.gsma.services.rcs.contact.ContactId;
@@ -45,24 +46,27 @@ public class ImapMessageResolver {
     public MessageType resolveType(com.gsma.rcs.imaplib.imap.ImapMessage imapMessage)
             throws CmsSyncMissingHeaderException, CmsSyncMessageNotSupportedException,
             CmsSyncHeaderFormatException {
-        String messageContext = imapMessage.getBody().getHeader(Constants.HEADER_MESSAGE_CONTEXT);
+        Part imapHeaders = imapMessage.getBody();
+        String messageContext = imapHeaders.getHeader(Constants.HEADER_MESSAGE_CONTEXT);
         if (messageContext != null) {
             messageContext = messageContext.toLowerCase();
             if (Constants.PAGER_MESSAGE.equals(messageContext)) {
                 // SMS legacy message
                 return MessageType.SMS;
-            } else if (Constants.MULTIMEDIA_MESSAGE.equals(messageContext)) {
-                // MMS legacy message
-                return MessageType.MMS;
             }
         }
-        String imapContentType = imapMessage.getBody().getHeader(Constants.HEADER_CONTENT_TYPE);
+        String imapContentType = imapHeaders.getHeader(Constants.HEADER_CONTENT_TYPE);
         if (imapContentType == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_CONTENT_TYPE
                     + " IMAP header is missing");
         }
         imapContentType = imapContentType.toLowerCase();
         if (Constants.MESSAGE_CPIM.equals(imapContentType)) {
+            String conversationId = imapHeaders.getHeader(Constants.HEADER_CONVERSATION_ID);
+            if (Constants.MULTIMEDIA_MESSAGE.equals(conversationId)) {
+                // MMS legacy message
+                return MessageType.MMS;
+            }
             String rawBody = imapMessage.getTextBody();
             if (rawBody.isEmpty()) {
                 /*

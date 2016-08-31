@@ -18,12 +18,11 @@
 
 package com.gsma.rcs.core.cms.protocol.message;
 
-import com.gsma.rcs.core.cms.Constants;
+import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncHeaderFormatException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMessageNotSupportedException;
 import com.gsma.rcs.core.cms.event.exception.CmsSyncMissingHeaderException;
-import com.gsma.rcs.RcsSettingsMock;
 import com.gsma.rcs.imaplib.imap.Flag;
 import com.gsma.rcs.imaplib.imap.ImapMessage;
 import com.gsma.rcs.imaplib.imap.ImapMessageMetadata;
@@ -44,6 +43,40 @@ public class ImapMessageResolverTest extends AndroidTestCase {
 
     private RcsSettings mSettings;
 
+    // @formatter:off
+    private static final String SMS_PAYLOAD = "From: +33642575779\r\n" +
+            "To: tel:+33640332859\r\n" +
+            "Date: mar., 29 09 2015 11:09:20.826 +0200\r\n" +
+            "Conversation-ID: 1443517760826\r\n" +
+            "Contribution-ID: 1443517760826\r\n" +
+            "IMDN-Message-ID: 1443517760826\r\n" +
+            "Message-Direction: received\r\n" +
+            "Message-Correlator: 1\r\n" +
+            "Message-Context: pager-message\r\n" +
+            "Content-Type: message/cpim\r\n\r\n" +
+            "From: +33642575779\r\n" +
+            "To: +33640332859\r\n" +
+            "imdn.Message-ID: 1443517760826\r\n" +
+            "DateTime: mar., 29 09 2015 11:09:20.826 +0200\r\n\r\n" +
+            "Content-Type: text/plain; charset=utf-8\r\n\r\n" +
+            "1)\r\n";
+
+    private static final String MMS_PAYLOAD = "From: +33642575779\r\n" +
+            "To: tel:+33640332859\r\n" +
+            "Date: mar., 29 09 2015 11:09:20.826 +0200\r\n" +
+            "Conversation-ID: multimedia-message\r\n" +
+            "Contribution-ID:  correlator\r\n" +
+            "IMDN-Message-ID: 1443517760826\r\n" +
+            "Message-Direction: received\r\n" +
+            "Content-Type: message/cpim\r\n\r\n " +
+            "From: +33642575779\r\n" +
+            "To: +33640332859\r\n" +
+            "imdn.Message-ID: 1443517760826\r\n" +
+            "DateTime: mar., 29 09 2015 11:09:20.826 +0200\r\n\r\n" +
+            "Content-Type: multipart/related; charset=utf-8\r\n\r\n" +
+            "1)\r\n";
+    // @formatter:on
+
     protected void setUp() throws Exception {
         super.setUp();
         mSettings = RcsSettingsMock.getMockSettings(mContext);
@@ -57,22 +90,9 @@ public class ImapMessageResolverTest extends AndroidTestCase {
     }
 
     public void testSms() throws CmsSyncException, RcsPermissionDeniedException {
-        String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
-                + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                + "Conversation-ID: 1443517760826" + Constants.CRLF
-                + "Contribution-ID: 1443517760826" + Constants.CRLF
-                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
-                + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
-                + "Message-Context: pager-message" + Constants.CRLF + "Content-Type: message/cpim"
-                + Constants.CRLF + Constants.CRLF + "From: +33642575779" + Constants.CRLF
-                + "To: +33640332859" + Constants.CRLF + "imdn.Message-ID: 1443517760826"
-                + Constants.CRLF + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                + Constants.CRLF + "Content-Type: text/plain; charset=utf-8" + Constants.CRLF
-                + Constants.CRLF + "1)" + Constants.CRLF;
-
         Integer uid = 12;
         Part part = new Part();
-        part.fromPayload(payload);
+        part.fromPayload(SMS_PAYLOAD);
         ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
         metadata.getFlags().add(Flag.Seen);
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);
@@ -88,23 +108,9 @@ public class ImapMessageResolverTest extends AndroidTestCase {
 
     public void testMms() throws CmsSyncMissingHeaderException,
             CmsSyncMessageNotSupportedException, CmsSyncHeaderFormatException {
-        String payload = "From: +33642575779" + Constants.CRLF + "To: tel:+33640332859"
-                + Constants.CRLF + "Date: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF
-                + "Conversation-ID: 1443517760826" + Constants.CRLF
-                + "Contribution-ID: 1443517760826" + Constants.CRLF
-                + "IMDN-Message-ID: 1443517760826" + Constants.CRLF + "Message-Direction: received"
-                + Constants.CRLF + "Message-Correlator: 1" + Constants.CRLF
-                + "Message-Context: multimedia-message" + Constants.CRLF
-                + "Content-Type: message/cpim" + Constants.CRLF + Constants.CRLF
-                + "From: +33642575779" + Constants.CRLF + "To: +33640332859" + Constants.CRLF
-                + "imdn.Message-ID: 1443517760826" + Constants.CRLF
-                + "DateTime: mar., 29 09 2015 11:09:20.826 +0200" + Constants.CRLF + Constants.CRLF
-                + "Content-Type: multipart/related; charset=utf-8" + Constants.CRLF + Constants.CRLF
-                + "1)" + Constants.CRLF;
-
         Integer uid = 12;
         Part part = new Part();
-        part.fromPayload(payload);
+        part.fromPayload(MMS_PAYLOAD);
         ImapMessageMetadata metadata = new ImapMessageMetadata(uid);
         metadata.getFlags().add(Flag.Seen);
         ImapMessage imapMessage = new ImapMessage(uid, metadata, part);

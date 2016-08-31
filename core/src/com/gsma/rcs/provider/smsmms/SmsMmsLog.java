@@ -7,14 +7,13 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  ******************************************************************************/
 
 package com.gsma.rcs.provider.smsmms;
@@ -36,7 +35,7 @@ import java.util.List;
 
 /**
  * A class to manage access to native SMS/MMS providers.
- * 
+ *
  * @author Philippe LEMORDANT
  */
 public class SmsMmsLog implements ISmsLog, IMmsLog {
@@ -89,6 +88,11 @@ public class SmsMmsLog implements ISmsLog, IMmsLog {
     }
 
     @Override
+    public boolean markSmsAsRead(Long nativeId) {
+        return mSmsLog.markSmsAsRead(nativeId);
+    }
+
+    @Override
     public List<MmsDataObject> getMmsFromNativeProvider(long id, long ntpLocalOffset) {
         return mMmsLog.getMmsFromNativeProvider(id, ntpLocalOffset);
     }
@@ -103,4 +107,10 @@ public class SmsMmsLog implements ISmsLog, IMmsLog {
     public int deleteMms(long nativeID) {
         return mMmsLog.deleteMms(nativeID);
     }
+
+    @Override
+    public boolean markMmsAsRead(Long nativeId) {
+        return mMmsLog.markMmsAsRead(nativeId);
+    }
+
 }

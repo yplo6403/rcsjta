@@ -97,7 +97,7 @@ public class SyncSmsTest extends AndroidTestCase {
                 settings);
         mLogUtilTest = SyncLogUtilTest.getInstance(mContext);
         CmsSessionController cmsSessionCtrl = new CmsSessionController(mContext, null, settings,
-                mLocalContentResolver, mXmsLog, messagingLog, mCmsLog);
+                mLocalContentResolver, mXmsLog, messagingLog, mCmsLog, null);
         InstantMessagingService imService = new InstantMessagingService(null, settings, null,
                 messagingLog, null, mLocalContentResolver, mContext, null, cmsSessionCtrl);
         ChatServiceImpl chatService = new ChatServiceImpl(imService, messagingLog, null, settings,

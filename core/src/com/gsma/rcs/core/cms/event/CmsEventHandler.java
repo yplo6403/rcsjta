@@ -645,7 +645,7 @@ public class CmsEventHandler implements CmsEventListener {
 
     @Override
     public CmsObject searchLocalMessage(MessageType messageType, IImapMessage message)
-            throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
+            throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException, FileAccessException {
         switch (messageType) {
             case SMS:
                 return searchLocalSmsMessage((ImapSmsMessage) message);
@@ -676,15 +676,15 @@ public class CmsEventHandler implements CmsEventListener {
         if (logActive) {
             sLogger.debug("searchLocalSmsMessage " + message);
         }
-        String folder = message.getFolder();
-        Integer uid = message.getUid();
-        // check if an entry already exists in imapData provider
-        CmsObject cmsObject = mCmsLog.getMessage(folder, uid);
         String msgId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
         if (msgId == null) {
             throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
+        String folder = message.getFolder();
+        Integer uid = message.getUid();
+        // check if an entry already exists in imapData provider
+        CmsObject cmsObject = mCmsLog.getMessage(folder, uid);
         if (cmsObject != null) {
             if (!msgId.equals(cmsObject.getMessageId())) {
                 if (logActive) {
@@ -693,23 +693,19 @@ public class CmsEventHandler implements CmsEventListener {
             }
             if (cmsObject instanceof CmsXmsObject) {
                 return (CmsXmsObject) cmsObject;
-
-            } else {
-                if (logActive) {
-                    sLogger.warn("searchLocalSmsMessage messageID " + msgId
-                            + " matches but not type!");
-                }
-                return null;
             }
+            if (logActive) {
+                sLogger.warn("searchLocalSmsMessage messageID " + msgId + " matches but not type!");
+            }
+            return null;
         }
         /*
          * get messages from provider with contact, direction and correlator fields messages are
          * sorted by Date DESC (more recent first).
          */
-        SmsDataObject smsData = XmsDataObjectFactory.createSmsDataObject(message);
-        String correlator = smsData.getCorrelator();
-        ContactId contact = smsData.getContact();
-        Direction dir = smsData.getDirection();
+        String correlator = message.getCorrelator();
+        ContactId contact = message.getContact();
+        Direction dir = message.getDirection();
         if (logActive) {
             sLogger.debug("searchLocalSmsMessage correlator='" + correlator + "' dir=" + dir);
         }
@@ -718,13 +714,12 @@ public class CmsEventHandler implements CmsEventListener {
             sLogger.debug("searchLocalSmsMessage matching IDs=" + Arrays.toString(ids.toArray()));
         }
         // take the first message which is not synchronized with CMS server (have no uid)
-        for (String id : ids) {
-            CmsXmsObject xmsObject = mCmsLog.getSmsData(contact, id);
+        for (String cmsId : ids) {
+            CmsXmsObject xmsObject = mCmsLog.getSmsData(contact, cmsId);
             if (xmsObject != null && xmsObject.getUid() == null) {
                 if (logActive) {
                     sLogger.debug("searchLocalSmsMessage select 1rst=" + xmsObject);
                 }
-                String cmsId = xmsObject.getMessageId();
                 if (!msgId.equals(cmsId)) {
                     /*
                      * If SMS is pushed by SMSC then message-id should be different from the local
@@ -740,7 +735,7 @@ public class CmsEventHandler implements CmsEventListener {
                     }
                     xmsObject = new CmsXmsObject(MessageType.SMS, folder, msgId, null,
                             xmsObject.getPushStatus(), xmsObject.getReadStatus(),
-                            xmsObject.getDeleteStatus(), xmsObject.getNativeProviderId());
+                            xmsObject.getDeleteStatus(), xmsObject.getNativeId());
                 }
                 return xmsObject;
             }
@@ -752,13 +747,85 @@ public class CmsEventHandler implements CmsEventListener {
     }
 
     private CmsXmsObject searchLocalMmsMessage(ImapMmsMessage message)
-            throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException {
-        String mmsId = message.getHeader(Constants.HEADER_MESSAGE_CORRELATOR);
-        if (mmsId == null) {
-            throw new CmsSyncMissingHeaderException(Constants.HEADER_MESSAGE_CORRELATOR
+            throws CmsSyncHeaderFormatException, CmsSyncMissingHeaderException, FileAccessException {
+        boolean logActive = sLogger.isActivated();
+        if (logActive) {
+            sLogger.debug("searchLocalMmsMessage " + message);
+        }
+        String msgId = message.getHeader(Constants.HEADER_IMDN_MESSAGE_ID);
+        if (msgId == null) {
+            throw new CmsSyncMissingHeaderException(Constants.HEADER_IMDN_MESSAGE_ID
                     + " IMAP header is missing");
         }
-        return mCmsLog.getMmsData(message.getContact(), mmsId);
+        String folder = message.getFolder();
+        Integer uid = message.getUid();
+        // check if an entry already exists in imapData provider
+        CmsObject cmsObject = mCmsLog.getMessage(folder, uid);
+        if (cmsObject != null) {
+            if (!msgId.equals(cmsObject.getMessageId())) {
+                if (logActive) {
+                    sLogger.warn("searchLocalMmsMessage messageID does not match " + msgId);
+                }
+            }
+            if (cmsObject instanceof CmsXmsObject) {
+                return (CmsXmsObject) cmsObject;
+            }
+            if (logActive) {
+                sLogger.warn("searchLocalMmsMessage messageID " + msgId + " matches but not type!");
+            }
+            return null;
+        }
+        /*
+         * get messages from provider with contact, direction and correlator fields messages are
+         * sorted by Date DESC (more recent first).
+         */
+        String correlator = message.getCorrelator();
+        ContactId contact = message.getContact();
+        Direction dir = message.getDirection();
+        if (logActive) {
+            sLogger.debug("searchLocalMmsMessage correlator='" + correlator + "' dir=" + dir);
+        }
+        List<String> ids = mXmsLog.getMessageIdsMatchingCorrelator(contact, dir, correlator);
+        if (logActive) {
+            sLogger.debug("searchLocalMmsMessage matching IDs=" + Arrays.toString(ids.toArray()));
+        }
+        // take the first message which is not synchronized with CMS server (have no uid)
+        for (String cmsId : ids) {
+            CmsXmsObject xmsObject = mCmsLog.getMmsData(contact, cmsId);
+            if (xmsObject != null && xmsObject.getUid() == null) {
+                if (logActive) {
+                    sLogger.debug("searchLocalMmsMessage select 1rst=" + xmsObject);
+                }
+                if (!msgId.equals(cmsId)) {
+                    /*
+                     * If MMS is pushed by MMSC then message-id should be different from the local
+                     * one. Update the local MMS message ID to reflect CMS.
+                     */
+                    Long nativeId = xmsObject.getNativeId();
+                    if (mCmsLog.updateSmsMessageId(contact, cmsId, msgId)) {
+                        if (!mXmsLog.updateMmsMessageId(contact, nativeId, msgId)) {
+                            if (logActive) {
+                                sLogger.warn("searchLocalMmsMessage: failed to update message ID "
+                                        + cmsId + " for XMS provider");
+                            }
+                        }
+                    } else {
+                        if (logActive) {
+                            sLogger.warn("searchLocalMmsMessage: failed to update message ID "
+                                    + cmsId + " for CMS provider");
+                        }
+                    }
+                    xmsObject = new CmsXmsObject(MessageType.MMS, folder, msgId, null,
+                            xmsObject.getPushStatus(), xmsObject.getReadStatus(),
+                            xmsObject.getDeleteStatus(), nativeId);
+                }
+                return xmsObject;
+            }
+        }
+        if (logActive) {
+            sLogger.warn("searchLocalMmsMessage no matching record in imap log");
+        }
+        return null;
     }
 
     private CmsRcsObject searchLocalCpimMessage(ImapCpimMessage message)

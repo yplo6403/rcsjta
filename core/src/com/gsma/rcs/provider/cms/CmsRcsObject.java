@@ -65,22 +65,6 @@ public final class CmsRcsObject extends CmsObject {
         mChatId = chatId;
     }
 
-    /**
-     * Constructor
-     *
-     * @param messageType the message type
-     * @param folder the folder
-     * @param readStatus the read status
-     * @param deleteStatus the delete status
-     * @param messageId the message ID
-     * @param chatId the chat ID
-     */
-    public CmsRcsObject(MessageType messageType, String folder, String messageId,
-            ReadStatus readStatus, DeleteStatus deleteStatus, String chatId) {
-        super(folder, messageId, readStatus, deleteStatus, messageType);
-        mChatId = chatId;
-    }
-
     public String getChatId() {
         return mChatId;
     }
