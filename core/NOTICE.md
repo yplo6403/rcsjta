@@ -25,7 +25,7 @@ Limitations :
 
 Release identification:
 
-	- RCS stack: 2.0.4
+	- RCS stack: CMS 1.0.1
 
 ----------
 
