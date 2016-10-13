@@ -37,8 +37,8 @@ android {
         applicationId "com.gsma.rcs.ri"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 2
-        versionName "2.0"
+        versionCode 1
+        versionName "CMS 1.0"
         archivesBaseName = "RI"
     }
 }
