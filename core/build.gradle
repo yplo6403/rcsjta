@@ -32,7 +32,7 @@ android {
         applicationId "com.gsma.rcs"
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
-        versionCode 3
+        versionCode 1
         versionName "CMS-MMSC 2.0"
         archivesBaseName = "RCS_Core"
     }
