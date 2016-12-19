@@ -1,18 +1,16 @@
-apply plugin: 'java'
+apply plugin: 'com.android.library'
 
-jar {
-    baseName = 'imaplib'
-    version =  '1.0.0'
-}
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    buildToolsVersion rootProject.buildToolsVersion
 
-sourceSets {
-    main {
-        java {
-            srcDir 'src'
-        }
-        resources {
-            srcDir 'src'
-        }
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+    }
+
+    lintOptions {
+        abortOnError false
     }
 }
 
